@@ -1,0 +1,80 @@
+regulation: "ISO 13485:2016"
+section: "§8.5.2 / §8.5.3"
+jurisdiction: GLOBAL
+processType: CAPA
+artifactType: CAPA
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.8.5.2.OBL.001"
+    kind: obligation
+    title: "Determine need for corrective action"
+    text: "The organization shall determine and implement any correction and corrective action needed to eliminate the cause of a detected nonconformity in order to prevent its recurrence."
+    sourceCitation: "ISO 13485:2016 §8.5.2(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nonconformance_record
+      - complaint_record
+      - audit_finding
+
+  - obligationId: "ISO13485.8.5.2.OBL.002"
+    kind: obligation
+    title: "Document procedure for corrective action"
+    text: "The organization shall document a procedure to define requirements for reviewing nonconformities, determining causes, evaluating need for action, and recording results of any investigation and of action taken."
+    sourceCitation: "ISO 13485:2016 §8.5.2(b)-(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - capa_procedure
+      - investigation_record
+
+  - obligationId: "ISO13485.8.5.2.OBL.003"
+    kind: obligation
+    title: "Verify corrective action effectiveness"
+    text: "The organization shall verify that the corrective action does not adversely affect the ability to meet applicable regulatory requirements or the safety and performance of the medical device."
+    sourceCitation: "ISO 13485:2016 §8.5.2(f)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - effectiveness_check_record
+
+  - obligationId: "ISO13485.8.5.3.OBL.001"
+    kind: obligation
+    title: "Determine need for preventive action"
+    text: "The organization shall determine action to eliminate the causes of potential nonconformities to prevent their occurrence."
+    sourceCitation: "ISO 13485:2016 §8.5.3(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - trend_data
+      - risk_analysis
+
+constraints:
+  - constraintId: "ISO13485.8.5.2.CON.001"
+    appliesTo: "ISO13485.8.5.2.OBL.001"
+    text: "Corrective actions taken shall be proportionate to the effects of the nonconformities encountered."
+    severity: hard
+
+  - constraintId: "ISO13485.8.5.2.CON.002"
+    appliesTo: "ISO13485.8.5.2.OBL.002"
+    text: "Records of investigations and actions shall be retained per the organization's record retention policy."
+    severity: hard
+
+definitions:
+  - definitionId: "ISO13485.DEF.CORRECTIVE_ACTION"
+    term: "Corrective Action"
+    text: "Action to eliminate the cause of a detected nonconformity or other undesirable situation."
+    sourceCitation: "ISO 9000:2015 §3.12.2"
+
+  - definitionId: "ISO13485.DEF.PREVENTIVE_ACTION"
+    term: "Preventive Action"
+    text: "Action to eliminate the cause of a potential nonconformity or other undesirable potential situation."
+    sourceCitation: "ISO 9000:2015 §3.12.1"
+
+relationships:
+  - from: "ISO13485.8.5.2.OBL.002"
+    to: "ISO13485.8.5.2.OBL.001"
+    type: PART_OF
+  - from: "ISO13485.8.5.2.OBL.003"
+    to: "ISO13485.8.5.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Corrective action verification feeds preventive analysis"

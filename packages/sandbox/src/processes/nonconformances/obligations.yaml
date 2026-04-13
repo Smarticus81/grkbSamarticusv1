@@ -1,0 +1,6 @@
+processType: NONCONFORMANCE
+jurisdiction: GLOBAL
+obligationIds:
+  - ISO13485.8.3.OBL.001
+  - ISO13485.8.3.OBL.002
+  - ISO13485.8.3.OBL.003

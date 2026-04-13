@@ -1,0 +1,525 @@
+regulation: "MDCG 2022-21 Guidance on Periodic Safety Update Report"
+section: "Sections 1-7"
+jurisdiction: EU
+processType: PSUR
+artifactType: PSUR
+version: "Rev.1"
+effectiveFrom: "2022-12-01"
+
+obligations:
+  # ─── Section 1: Scope and Purpose ───────────────────────────────────────────
+
+  - obligationId: "MDCG2022-21.1.OBL.001"
+    kind: obligation
+    title: "PSUR scope — applicable device classes"
+    text: "Manufacturers of class IIa, class IIb, and class III medical devices shall prepare a periodic safety update report (PSUR) for each device or each category or group of devices, summarising the results and conclusions of the analyses of post-market surveillance data gathered as a result of the PMS plan."
+    sourceCitation: "MDCG 2022-21 Section 1; EU MDR Article 86(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - psur
+      - pms_plan
+
+  - obligationId: "MDCG2022-21.1.OBL.002"
+    kind: obligation
+    title: "PSUR purpose — continuous benefit-risk evaluation"
+    text: "The PSUR shall serve as the primary instrument through which the manufacturer demonstrates that, throughout the lifecycle of the device, the benefit-risk determination remains acceptable based on post-market surveillance data."
+    sourceCitation: "MDCG 2022-21 Section 1.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - benefit_risk_analysis
+      - psur
+
+  - obligationId: "MDCG2022-21.1.OBL.003"
+    kind: obligation
+    title: "PSUR device identification"
+    text: "Each PSUR shall clearly identify the device or group of devices it covers, including the device name, UDI-DI, classification rule applied, risk class, intended purpose, and any relevant variants or accessories covered by the same PSUR."
+    sourceCitation: "MDCG 2022-21 Section 1.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - device_identification_record
+      - udi_record
+
+  # ─── Section 2: PSUR Content Requirements ──────────────────────────────────
+
+  - obligationId: "MDCG2022-21.2.OBL.001"
+    kind: obligation
+    title: "Summary of PMS data — complaints"
+    text: "The PSUR shall include a systematic summary and analysis of all complaints received during the reporting period, including trending of complaint categories, comparison with previous reporting periods, and identification of any new or emerging failure modes."
+    sourceCitation: "MDCG 2022-21 Section 2.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - complaint_record
+      - complaint_trend_analysis
+      - psur
+
+  - obligationId: "MDCG2022-21.2.OBL.002"
+    kind: obligation
+    title: "Summary of PMS data — vigilance reports"
+    text: "The PSUR shall include a summary and analysis of all serious incident reports and field safety corrective actions reported during the reporting period, including a description of any reportable events, root cause findings, and outcomes of investigations."
+    sourceCitation: "MDCG 2022-21 Section 2.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - serious_incident_report
+      - fsca_record
+      - fsn
+      - vigilance_summary
+
+  - obligationId: "MDCG2022-21.2.OBL.003"
+    kind: obligation
+    title: "Summary of PMS data — literature review"
+    text: "The PSUR shall include a systematic review of relevant scientific literature published during the reporting period, identifying any new safety signals, changes in the state of the art, or emerging risks relevant to the device or its intended purpose."
+    sourceCitation: "MDCG 2022-21 Section 2.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - literature_review
+      - literature_search_protocol
+
+  - obligationId: "MDCG2022-21.2.OBL.004"
+    kind: obligation
+    title: "Summary of PMS data — registries and databases"
+    text: "Where applicable, the PSUR shall include data from relevant registries, post-market studies, post-market clinical follow-up (PMCF), and any other sources of real-world performance data identified in the PMS plan."
+    sourceCitation: "MDCG 2022-21 Section 2.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pmcf_report
+      - registry_data
+      - pms_plan
+
+  - obligationId: "MDCG2022-21.2.OBL.005"
+    kind: obligation
+    title: "Volume of sales and usage data"
+    text: "The PSUR shall include an estimation of the volume of devices placed on the market (e.g. number of units sold or shipped) during the reporting period, broken down by geographical region where available, to enable meaningful rate-based analysis."
+    sourceCitation: "MDCG 2022-21 Section 2.2; EU MDR Article 86(1)(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sales_data
+
+  - obligationId: "MDCG2022-21.2.OBL.006"
+    kind: obligation
+    title: "Estimation of user and patient population"
+    text: "The PSUR shall include an estimation of the size and characteristics of the population using the device and, where practicable, the patient population exposed to the device, including any subgroups that may be at differential risk."
+    sourceCitation: "MDCG 2022-21 Section 2.3; EU MDR Article 86(1)(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - population_estimate
+      - sales_data
+
+  - obligationId: "MDCG2022-21.2.OBL.007"
+    kind: obligation
+    title: "Analysis of serious incidents and FSCAs"
+    text: "The PSUR shall contain a detailed analysis of serious incidents and field safety corrective actions (FSCAs), including assessment of root causes, classification of incident types, evaluation of the effectiveness of corrective actions taken, and a comparison of incident rates with previous reporting periods."
+    sourceCitation: "MDCG 2022-21 Section 2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - serious_incident_report
+      - fsca_record
+      - root_cause_analysis
+      - capa_effectiveness_record
+
+  - obligationId: "MDCG2022-21.2.OBL.008"
+    kind: obligation
+    title: "Trend analysis and statistical methods"
+    text: "The PSUR shall include a statistical trend analysis of complaints, incidents, and other PMS data, using appropriate validated statistical methods. Trends shall be compared over time and against established thresholds or acceptance criteria defined in the PMS plan."
+    sourceCitation: "MDCG 2022-21 Section 2.5; EU MDR Article 88"
+    mandatory: true
+    requiredEvidenceTypes:
+      - trend_analysis_report
+      - statistical_method_validation
+      - pms_plan
+
+  - obligationId: "MDCG2022-21.2.OBL.009"
+    kind: obligation
+    title: "Benefit-risk determination methodology"
+    text: "The PSUR shall describe the methodology used for the benefit-risk determination, including the criteria for evaluating benefits, the methods for identifying and characterising risks, and the approach to weighing benefits against risks. The methodology shall be consistent with the manufacturer's risk management process."
+    sourceCitation: "MDCG 2022-21 Section 2.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - benefit_risk_analysis
+      - risk_management_plan
+      - risk_management_report
+
+  - obligationId: "MDCG2022-21.2.OBL.010"
+    kind: obligation
+    title: "Conclusions on benefit-risk ratio"
+    text: "The PSUR shall set out clear, substantiated conclusions on the benefit-risk determination, stating whether the overall benefit-risk remains acceptable and providing justification based on the totality of evidence gathered during the reporting period."
+    sourceCitation: "MDCG 2022-21 Section 2.7; EU MDR Article 86(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - benefit_risk_analysis
+      - psur
+
+  - obligationId: "MDCG2022-21.2.OBL.011"
+    kind: obligation
+    title: "PMCF findings integration"
+    text: "The PSUR shall include the main findings of any post-market clinical follow-up (PMCF) activities undertaken during the reporting period, including outcomes of PMCF studies, and their impact on the benefit-risk determination."
+    sourceCitation: "MDCG 2022-21 Section 2.8; EU MDR Article 86(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pmcf_report
+      - pmcf_evaluation_report
+
+  - obligationId: "MDCG2022-21.2.OBL.012"
+    kind: obligation
+    title: "Preventive and corrective actions in PSUR"
+    text: "The PSUR shall describe all preventive and corrective actions taken or planned as a result of PMS data analysis during the reporting period, including rationale for the actions, implementation timelines, and assessment of effectiveness for previously implemented actions."
+    sourceCitation: "MDCG 2022-21 Section 2.9"
+    mandatory: true
+    requiredEvidenceTypes:
+      - capa_record
+      - capa_effectiveness_record
+      - preventive_action_record
+
+  - obligationId: "MDCG2022-21.2.OBL.013"
+    kind: obligation
+    title: "State of the art assessment"
+    text: "The PSUR shall assess whether the device still conforms to the generally acknowledged state of the art, taking into account changes in applicable standards, competitor technologies, emerging therapies, and scientific knowledge published during the reporting period."
+    sourceCitation: "MDCG 2022-21 Section 2.10"
+    mandatory: true
+    requiredEvidenceTypes:
+      - state_of_art_assessment
+      - literature_review
+
+  # ─── Section 3: PSUR Frequency and Timelines ───────────────────────────────
+
+  - obligationId: "MDCG2022-21.3.OBL.001"
+    kind: obligation
+    title: "Class III and implantable device PSUR frequency"
+    text: "Manufacturers of class III devices and implantable devices shall update the PSUR at least annually. The first PSUR shall cover the period from the date the device was placed on the market to the end of the first calendar year."
+    sourceCitation: "MDCG 2022-21 Section 3.1; EU MDR Article 86(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - psur
+      - psur_schedule
+
+  - obligationId: "MDCG2022-21.3.OBL.002"
+    kind: obligation
+    title: "Class IIa and IIb device PSUR frequency"
+    text: "Manufacturers of class IIa and class IIb devices shall update the PSUR when necessary and at least every two years, or more frequently if requested by the competent authority or the notified body."
+    sourceCitation: "MDCG 2022-21 Section 3.2; EU MDR Article 86(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - psur
+      - psur_schedule
+
+  - obligationId: "MDCG2022-21.3.OBL.003"
+    kind: obligation
+    title: "Class I device PMS report"
+    text: "Class I devices are not subject to PSUR requirements; instead, manufacturers shall prepare a PMS report as described in Article 85 of EU MDR. However, competent authorities may request PMS-related documentation at any time."
+    sourceCitation: "MDCG 2022-21 Section 3.3; EU MDR Article 85"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_report
+
+  - obligationId: "MDCG2022-21.3.OBL.004"
+    kind: obligation
+    title: "PSUR reporting period consistency"
+    text: "The PSUR reporting period shall be consistent and clearly defined, with no gaps between consecutive reporting periods. If the device is part of a group covered by a single PSUR, the reporting period shall be the same for all devices in the group."
+    sourceCitation: "MDCG 2022-21 Section 3.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - psur
+      - psur_schedule
+
+  # ─── Section 4: PSUR Submission Procedures ─────────────────────────────────
+
+  - obligationId: "MDCG2022-21.4.OBL.001"
+    kind: obligation
+    title: "Submission via EUDAMED"
+    text: "The PSUR shall be submitted electronically through EUDAMED. Until EUDAMED is fully functional, the PSUR shall be submitted to the notified body in accordance with the transitional provisions and any additional guidance from the competent authority."
+    sourceCitation: "MDCG 2022-21 Section 4.1; EU MDR Article 86(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_submission_record
+      - psur
+
+  - obligationId: "MDCG2022-21.4.OBL.002"
+    kind: obligation
+    title: "PSUR availability to competent authorities"
+    text: "The PSUR and any updates shall be made available to competent authorities and notified bodies upon request. Manufacturers shall ensure the PSUR is readily accessible and can be provided within a reasonable timeframe."
+    sourceCitation: "MDCG 2022-21 Section 4.2; EU MDR Article 86(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - psur
+      - document_control_record
+
+  # ─── Section 5: Relationship with PMS Plan and PMS Report ──────────────────
+
+  - obligationId: "MDCG2022-21.5.OBL.001"
+    kind: obligation
+    title: "PMS plan as basis for PSUR"
+    text: "The PSUR shall be based on and traceable to the PMS plan. The data sources, analysis methods, and thresholds described in the PMS plan shall be reflected in the PSUR. Any deviations from the PMS plan shall be documented and justified."
+    sourceCitation: "MDCG 2022-21 Section 5.1; EU MDR Article 84"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+      - psur
+
+  - obligationId: "MDCG2022-21.5.OBL.002"
+    kind: obligation
+    title: "PSUR drives PMS plan updates"
+    text: "Conclusions from the PSUR shall be used as input to update the PMS plan, the clinical evaluation, and the risk management documentation where findings warrant changes to the manufacturer's post-market activities."
+    sourceCitation: "MDCG 2022-21 Section 5.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+      - clinical_evaluation_report
+      - risk_management_report
+
+  # ─── Section 6: Notified Body Review Requirements ──────────────────────────
+
+  - obligationId: "MDCG2022-21.6.OBL.001"
+    kind: obligation
+    title: "Notified body PSUR assessment"
+    text: "The notified body shall assess the PSUR as part of its ongoing conformity assessment activities, including evaluation of the adequacy of the benefit-risk conclusions, the completeness of data sources, and the appropriateness of corrective actions."
+    sourceCitation: "MDCG 2022-21 Section 6.1; EU MDR Annex IX Section 4.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_assessment_report
+      - psur
+
+  - obligationId: "MDCG2022-21.6.OBL.002"
+    kind: obligation
+    title: "Notified body may request additional data"
+    text: "The notified body may request additional data, clarification, or supplementary analysis from the manufacturer if the PSUR is deemed incomplete or the conclusions are not adequately supported by the evidence presented."
+    sourceCitation: "MDCG 2022-21 Section 6.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_query_record
+      - manufacturer_response_record
+
+  - obligationId: "MDCG2022-21.6.OBL.003"
+    kind: obligation
+    title: "Notified body may trigger certificate action"
+    text: "Where the notified body identifies significant safety concerns or an unacceptable benefit-risk ratio from the PSUR review, it shall consider whether restrictions, suspensions, or withdrawals of the certificate are necessary."
+    sourceCitation: "MDCG 2022-21 Section 6.3; EU MDR Article 46"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_assessment_report
+      - certificate_action_record
+
+  # ─── Section 7: Updates to Benefit-Risk Determination ──────────────────────
+
+  - obligationId: "MDCG2022-21.7.OBL.001"
+    kind: obligation
+    title: "Continuous benefit-risk updating"
+    text: "The manufacturer shall continuously update the benefit-risk determination based on new PMS data. When new risks are identified or the severity or probability of known risks changes, the benefit-risk evaluation shall be re-performed and documented in the next PSUR."
+    sourceCitation: "MDCG 2022-21 Section 7.1; EU MDR Article 83(3)(g)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - benefit_risk_analysis
+      - risk_management_report
+      - psur
+
+  - obligationId: "MDCG2022-21.7.OBL.002"
+    kind: obligation
+    title: "Actions when benefit-risk becomes unacceptable"
+    text: "If the benefit-risk determination indicates that the overall benefit-risk is no longer acceptable, the manufacturer shall immediately take appropriate action, which may include field safety corrective actions, updating instructions for use, restricting the intended purpose, or withdrawal from the market."
+    sourceCitation: "MDCG 2022-21 Section 7.2; EU MDR Article 83(3)(h)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - benefit_risk_analysis
+      - fsca_record
+      - risk_management_report
+
+  - obligationId: "MDCG2022-21.7.OBL.003"
+    kind: obligation
+    title: "Impact on clinical evaluation"
+    text: "Updates to the benefit-risk determination in the PSUR shall be reflected in the clinical evaluation report. The manufacturer shall ensure consistency between the PSUR conclusions and the clinical evaluation throughout the lifecycle of the device."
+    sourceCitation: "MDCG 2022-21 Section 7.3; EU MDR Article 61"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - psur
+      - benefit_risk_analysis
+
+constraints:
+  - constraintId: "MDCG2022-21.CON.001"
+    appliesTo: "MDCG2022-21.2.OBL.010"
+    text: "PSUR benefit-risk conclusions shall be substantiated by quantitative and qualitative data; speculative or unsupported conclusions are not acceptable."
+    severity: hard
+
+  - constraintId: "MDCG2022-21.CON.002"
+    appliesTo: "MDCG2022-21.2.OBL.008"
+    text: "Trend analysis shall use validated statistical methods appropriate for the data volume and type. Selection of methods shall be justified."
+    severity: hard
+
+  - constraintId: "MDCG2022-21.CON.003"
+    appliesTo: "MDCG2022-21.3.OBL.001"
+    text: "For class III and implantable devices, no more than 12 months may elapse between consecutive PSUR reporting periods."
+    severity: hard
+
+  - constraintId: "MDCG2022-21.CON.004"
+    appliesTo: "MDCG2022-21.3.OBL.002"
+    text: "For class IIa and IIb devices, no more than 24 months may elapse between consecutive PSUR reporting periods unless a shorter interval is required by the notified body or competent authority."
+    severity: hard
+
+  - constraintId: "MDCG2022-21.CON.005"
+    appliesTo: "MDCG2022-21.2.OBL.005"
+    text: "Sales volume data shall reflect actual units placed on the market, not orders or forecasts. If exact figures are unavailable, the estimation methodology shall be documented."
+    severity: hard
+
+  - constraintId: "MDCG2022-21.CON.006"
+    appliesTo: "MDCG2022-21.5.OBL.001"
+    text: "The PSUR shall not introduce data sources, analysis methods, or thresholds that are not described in the PMS plan without documented justification for the deviation."
+    severity: hard
+
+  - constraintId: "MDCG2022-21.CON.007"
+    appliesTo: "MDCG2022-21.7.OBL.002"
+    text: "When the benefit-risk ratio becomes unacceptable, corrective action shall be initiated without delay and shall not await the next scheduled PSUR cycle."
+    severity: hard
+
+  - constraintId: "MDCG2022-21.CON.008"
+    appliesTo: "MDCG2022-21.2.OBL.007"
+    text: "Analysis of serious incidents shall distinguish between confirmed root cause, probable cause, and undetermined cause. Events with undetermined causality shall not be excluded from the analysis."
+    severity: hard
+
+  - constraintId: "MDCG2022-21.CON.009"
+    appliesTo: "MDCG2022-21.4.OBL.001"
+    text: "Transitional submission arrangements apply only until EUDAMED is fully functional. Manufacturers shall migrate to electronic submission via EUDAMED when directed by competent authorities."
+    severity: soft
+
+  - constraintId: "MDCG2022-21.CON.010"
+    appliesTo: "MDCG2022-21.2.OBL.003"
+    text: "Literature review methodology shall be systematic, reproducible, and documented, including search terms, databases searched, inclusion/exclusion criteria, and date ranges."
+    severity: hard
+
+definitions:
+  - definitionId: "MDCG2022-21.DEF.PSUR"
+    term: "Periodic Safety Update Report (PSUR)"
+    text: "A report prepared by the manufacturer of class IIa, IIb, or III medical devices that summarises the results and conclusions of the analyses of post-market surveillance data gathered as a result of the PMS plan, together with a rationale and description of any preventive and corrective actions taken."
+    sourceCitation: "EU MDR 2017/745 Article 2(66) and Article 86"
+
+  - definitionId: "MDCG2022-21.DEF.BENEFIT_RISK"
+    term: "Benefit-Risk Determination"
+    text: "The analysis of all assessments of benefit and risk of possible relevance for the use of the device for the intended purpose, when used in accordance with the intended purpose given by the manufacturer."
+    sourceCitation: "EU MDR 2017/745 Article 2(24)"
+
+  - definitionId: "MDCG2022-21.DEF.PMS"
+    term: "Post-Market Surveillance (PMS)"
+    text: "All activities carried out by manufacturers in cooperation with other economic operators to institute and keep up to date a systematic procedure to proactively collect and review experience gained from devices they place on the market."
+    sourceCitation: "EU MDR 2017/745 Article 2(60)"
+
+  - definitionId: "MDCG2022-21.DEF.SERIOUS_INCIDENT"
+    term: "Serious Incident"
+    text: "Any incident that directly or indirectly led, might have led, or might lead to the death of a patient, user or other person; the temporary or permanent serious deterioration of a patient's, user's or other person's state of health; or a serious public health threat."
+    sourceCitation: "EU MDR 2017/745 Article 2(65)"
+
+  - definitionId: "MDCG2022-21.DEF.FSCA"
+    term: "Field Safety Corrective Action (FSCA)"
+    text: "Any corrective action taken by a manufacturer for technical or medical reasons to prevent or reduce the risk of a serious incident in relation to a device made available on the market."
+    sourceCitation: "EU MDR 2017/745 Article 2(68)"
+
+  - definitionId: "MDCG2022-21.DEF.PMCF"
+    term: "Post-Market Clinical Follow-Up (PMCF)"
+    text: "A continuous process that updates the clinical evaluation and shall be addressed in the manufacturer's PMS plan. PMCF is conducted by proactively collecting and evaluating clinical data from the use of a device which bears the CE marking."
+    sourceCitation: "EU MDR 2017/745 Annex XIV Part B"
+
+  - definitionId: "MDCG2022-21.DEF.TREND_REPORTING"
+    term: "Trend Reporting"
+    text: "The process of systematically monitoring post-market surveillance data for statistically significant increases in the frequency or severity of incidents or expected side-effects that could have a significant impact on the benefit-risk analysis."
+    sourceCitation: "EU MDR 2017/745 Article 88"
+
+relationships:
+  # Internal structure relationships
+  - from: "MDCG2022-21.2.OBL.001"
+    to: "MDCG2022-21.2.OBL.010"
+    type: PART_OF
+    props:
+      note: "Complaint data feeds into overall benefit-risk conclusions"
+
+  - from: "MDCG2022-21.2.OBL.002"
+    to: "MDCG2022-21.2.OBL.010"
+    type: PART_OF
+    props:
+      note: "Vigilance data feeds into overall benefit-risk conclusions"
+
+  - from: "MDCG2022-21.2.OBL.008"
+    to: "MDCG2022-21.2.OBL.010"
+    type: PART_OF
+    props:
+      note: "Trend analysis informs benefit-risk conclusions"
+
+  - from: "MDCG2022-21.2.OBL.009"
+    to: "MDCG2022-21.2.OBL.010"
+    type: PART_OF
+    props:
+      note: "Benefit-risk methodology determines how conclusions are reached"
+
+  - from: "MDCG2022-21.2.OBL.010"
+    to: "MDCG2022-21.7.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "PSUR conclusions trigger updates to benefit-risk determination"
+
+  - from: "MDCG2022-21.7.OBL.001"
+    to: "MDCG2022-21.7.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Unacceptable benefit-risk triggers mandatory corrective action"
+
+  - from: "MDCG2022-21.5.OBL.001"
+    to: "MDCG2022-21.5.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "PSUR findings trigger PMS plan updates"
+
+  # Cross-references to EU MDR obligations
+  - from: "MDCG2022-21.1.OBL.001"
+    to: "EUMDR.86.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "MDCG guidance elaborates on MDR Article 86 PSUR requirement"
+
+  - from: "MDCG2022-21.1.OBL.001"
+    to: "EUMDR.86.PSUR.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "MDCG guidance provides detailed content requirements for MDR PSUR contents"
+
+  - from: "MDCG2022-21.3.OBL.001"
+    to: "EUMDR.86.PSUR.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "MDCG guidance specifies annual frequency for class III and implantable devices per MDR Article 86(2)"
+
+  - from: "MDCG2022-21.5.OBL.001"
+    to: "EUMDR.84.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PSUR shall be traceable to PMS plan as required by MDR Article 84"
+
+  - from: "MDCG2022-21.5.OBL.001"
+    to: "EUMDR.83.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PSUR is part of the overall PMS system required by MDR Article 83"
+
+  - from: "MDCG2022-21.2.OBL.002"
+    to: "EUMDR.87.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PSUR vigilance summary relates to MDR Article 87 serious incident reporting"
+
+  - from: "MDCG2022-21.2.OBL.002"
+    to: "EUMDR.87.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "PSUR vigilance summary relates to MDR Article 87 FSCA reporting"
+
+  - from: "MDCG2022-21.3.OBL.003"
+    to: "EUMDR.85.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Class I devices use PMS report per MDR Article 85 instead of PSUR"
+
+  - from: "MDCG2022-21.2.OBL.009"
+    to: "ISO14971.8.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PSUR benefit-risk methodology aligns with ISO 14971 residual risk evaluation"
+
+  - from: "MDCG2022-21.7.OBL.003"
+    to: "EUMDR.86.PSUR.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PSUR benefit-risk updates must be reflected in clinical evaluation per MDR Article 86(1)"

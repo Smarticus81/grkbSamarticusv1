@@ -1,0 +1,31 @@
+id: "<process-id>-v1"
+name: "<Process Name>"
+description: "<one-line description>"
+version: "1.0.0"
+regulations:
+  - regulation: "ISO 13485:2016"
+    section: "§<section>"
+jurisdictions:
+  - GLOBAL
+obligationIds:
+  - "<REG>.<SECTION>.OBL.001"
+requiredEvidenceTypes:
+  - "<evidence_type>"
+requiredAgentTypes:
+  - "<AgentClassName>"
+hitlGates:
+  - gateId: "approval-1"
+    approverRole: "quality_manager"
+    description: "Approve before implementation."
+steps:
+  - id: "step-1"
+    name: "First step"
+    description: "<what it does>"
+    agentType: "<AgentClassName>"
+    obligationIds:
+      - "<REG>.<SECTION>.OBL.001"
+    dependsOn: []
+    timeoutMs: 60000
+    retryPolicy:
+      maxRetries: 2
+      backoffMs: 5000

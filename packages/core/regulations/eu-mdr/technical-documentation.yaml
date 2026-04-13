@@ -1,0 +1,279 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Annex II, Annex III, Annex I"
+jurisdiction: EU_MDR
+processType: TECHNICAL_DOCUMENTATION
+artifactType: TECHNICAL_DOCUMENTATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  - obligationId: "EUMDR.AII.OBL.001"
+    kind: obligation
+    title: "Technical documentation shall be complete"
+    text: "The technical documentation shall be drawn up before application for conformity assessment is made and shall be kept up to date. The documentation shall enable assessment of the conformity of the device with the requirements of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Introduction"
+    mandatory: true
+    requiredEvidenceTypes:
+      - technical_documentation
+
+  - obligationId: "EUMDR.AII.1.OBL.001"
+    kind: obligation
+    title: "Device description and specification"
+    text: "The technical documentation shall contain a device description and specification including the device name, intended purpose, intended users, indications and contraindications, description of the patient population, principles of operation, risk class and applicable classification rules, and an explanation of any novel features."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 1.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - device_description
+      - intended_purpose_statement
+      - device_specification
+
+  - obligationId: "EUMDR.AII.1.OBL.002"
+    kind: obligation
+    title: "Reference to previous and similar device generations"
+    text: "The technical documentation shall include a reference to previous and similar generations of the device and a description of the differences, as well as an overview of the state of the art for devices in the corresponding medical field."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 1.1(d)-(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - device_history_record
+      - state_of_art_analysis
+
+  - obligationId: "EUMDR.AII.1.OBL.003"
+    kind: obligation
+    title: "Accessories and companion devices"
+    text: "The technical documentation shall include a description of accessories for the device, other devices and other products that are not devices and that are intended to be used in combination with it, together with a description of the interface and interaction between these."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 1.1(f)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - accessory_list
+      - combination_device_documentation
+
+  - obligationId: "EUMDR.AII.2.OBL.001"
+    kind: obligation
+    title: "Design and manufacturing information"
+    text: "The technical documentation shall include information to allow the design stages and manufacturing of the device to be understood. This shall include the complete information on the design and manufacturing process and its elements, including design input, design output, design review, design transfer and design changes."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_history_file
+      - manufacturing_process_description
+
+  - obligationId: "EUMDR.AII.2.OBL.002"
+    kind: obligation
+    title: "Manufacturing site and critical supplier information"
+    text: "The technical documentation shall include information on sites, including sub-contractors and suppliers, where design and manufacturing activities are performed, and the type and extent of controls exercised over those operations."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supplier_list
+      - supplier_qualification_records
+      - manufacturing_site_information
+
+  - obligationId: "EUMDR.AII.3.OBL.001"
+    kind: obligation
+    title: "General safety and performance requirements checklist"
+    text: "The technical documentation shall include a checklist demonstrating conformity with each applicable general safety and performance requirement set out in Annex I. The checklist shall identify the standard(s) or common specification(s) applied, and shall identify the document(s) providing evidence of conformity with each requirement."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - gspr_checklist
+      - standards_list
+
+  - obligationId: "EUMDR.AI.1.OBL.001"
+    kind: obligation
+    title: "Devices shall be safe and perform as intended"
+    text: "Devices shall achieve the performance intended by their manufacturer and shall be designed and manufactured in such a way that, during normal conditions of use, they are suitable for their intended purpose. They shall be safe and effective and shall not compromise the clinical condition or the safety of patients."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter I Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - performance_test_report
+      - safety_assessment
+
+  - obligationId: "EUMDR.AI.2.OBL.001"
+    kind: obligation
+    title: "Risk management"
+    text: "Manufacturers shall establish, implement, document and maintain a system for risk management. Risk management shall be understood as a continuous iterative process throughout the entire lifecycle of a device, requiring regular systematic updating."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter I Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_file
+      - risk_management_plan
+      - risk_management_report
+
+  - obligationId: "EUMDR.AI.2.OBL.002"
+    kind: obligation
+    title: "Risk control measures"
+    text: "Risk control measures adopted by manufacturers for the design and manufacture of the devices shall conform to safety principles, taking account of the generally acknowledged state of the art. Manufacturers shall eliminate or reduce risks as far as possible through safe design, take adequate protection measures, and provide information for safety."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter I Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_report
+      - residual_risk_evaluation
+
+  - obligationId: "EUMDR.AII.4.OBL.001"
+    kind: obligation
+    title: "Benefit-risk analysis and risk management"
+    text: "The technical documentation shall include the benefit-risk analysis referred to in Sections 1 and 8 of Annex I and the risk management solutions, including information on the risk management plan, the FMEA/fault tree analysis, the results and outcomes of the risk management process, and the overall residual risk and rationale for its acceptability."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - benefit_risk_analysis
+      - risk_management_file
+      - fmea_report
+
+  - obligationId: "EUMDR.AII.5.OBL.001"
+    kind: obligation
+    title: "Product verification and validation"
+    text: "The technical documentation shall include the results of verification and validation testing and its analysis, including pre-clinical and clinical data, specifically software verification and validation, biocompatibility, electrical safety and electromagnetic compatibility, performance and safety testing, and usability/human factors validation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - verification_report
+      - validation_report
+      - test_protocols
+      - test_reports
+
+  - obligationId: "EUMDR.AII.5.OBL.002"
+    kind: obligation
+    title: "Software verification and validation"
+    text: "For devices that incorporate software or for software that are devices in themselves, the technical documentation shall include evidence of the validation of the software as developed according to the state of the art, taking into account the principles of the development life cycle, risk management, verification and validation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 5.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - software_development_plan
+      - software_verification_report
+      - software_validation_report
+      - software_architecture_document
+
+  - obligationId: "EUMDR.AII.5.OBL.003"
+    kind: obligation
+    title: "Biocompatibility assessment"
+    text: "For devices or parts thereof that come into contact with the patient or user, the technical documentation shall include evidence of biocompatibility assessment covering information on the materials used, including chemical, biological and physical characterization."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 5.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - biocompatibility_test_report
+      - material_characterization
+
+  - obligationId: "EUMDR.AII.6.OBL.001"
+    kind: obligation
+    title: "Clinical evaluation documentation in technical file"
+    text: "The technical documentation shall include the clinical evaluation report and its updates, and the PMCF plan and PMCF evaluation reports as part of the clinical evaluation documentation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - pmcf_plan
+      - pmcf_report
+
+  - obligationId: "EUMDR.AIII.OBL.001"
+    kind: obligation
+    title: "Post-market surveillance documentation"
+    text: "The documentation on the post-market surveillance system to be set out in the technical documentation shall include the PMS plan, the PSUR (for class IIa, IIb and III devices) or the PMS report (for class I devices), and the PMCF plan and evaluation report."
+    sourceCitation: "Regulation (EU) 2017/745 Annex III"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+      - psur
+      - pms_report
+      - pmcf_plan
+      - pmcf_report
+
+  - obligationId: "EUMDR.AII.1.OBL.004"
+    kind: obligation
+    title: "Materials and components specification"
+    text: "The technical documentation shall include the qualitative and quantitative information on the materials and components of the device, including substances in contact with the human body, and the compatibility of the materials used with biological tissues, cells and body fluids."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 1.1(g)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - material_specification
+      - bill_of_materials
+
+  - obligationId: "EUMDR.AII.2.OBL.003"
+    kind: obligation
+    title: "Sterilisation information"
+    text: "For devices placed on the market in a sterile condition, the technical documentation shall include a description of the methods of sterilisation and validation data for sterilisation processes, including reprocessing data if applicable."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sterilisation_validation_report
+      - sterility_assurance_documentation
+    metadata:
+      conditional: "Only applicable to devices placed on the market in sterile condition"
+
+constraints:
+  - constraintId: "EUMDR.AII.CON.001"
+    appliesTo: "EUMDR.AII.OBL.001"
+    text: "Technical documentation shall be drawn up before application for conformity assessment. Retrospective compilation of documentation is not acceptable."
+    severity: hard
+
+  - constraintId: "EUMDR.AII.CON.002"
+    appliesTo: "EUMDR.AII.3.OBL.001"
+    text: "The GSPR checklist must address every applicable requirement in Annex I. Unapplied requirements must be explicitly justified as not applicable rather than omitted."
+    severity: hard
+
+  - constraintId: "EUMDR.AII.CON.003"
+    appliesTo: "EUMDR.AII.4.OBL.001"
+    text: "Benefit-risk analysis must not be a standalone document disconnected from the risk management file. It must be consistent with and traceable to the risk management outputs."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.CON.001"
+    appliesTo: "EUMDR.AI.2.OBL.002"
+    text: "Risk control measures shall follow the priority order: inherently safe design first, then protection measures, then information for safety. Deviation from this hierarchy must be justified."
+    severity: hard
+
+  - constraintId: "EUMDR.AII.CON.004"
+    appliesTo: "EUMDR.AII.5.OBL.002"
+    text: "For software classified as class IIa or higher, software validation must follow IEC 62304 or an equivalent recognized standard. Ad hoc testing alone is insufficient."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.TECHNICAL_DOCUMENTATION"
+    term: "Technical Documentation"
+    text: "The set of documents described in Annexes II and III that allow the conformity of a device with the requirements of the Regulation to be assessed."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II, Annex III"
+
+  - definitionId: "EUMDR.DEF.GSPR"
+    term: "General Safety and Performance Requirements"
+    text: "The requirements set out in Annex I of the MDR that all devices must meet, covering general requirements, requirements regarding design and manufacture, and requirements regarding the information supplied with the device."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I"
+
+  - definitionId: "EUMDR.DEF.BENEFIT_RISK"
+    term: "Benefit-Risk Determination"
+    text: "The analysis of all assessments of benefit and risk of possible relevance for the use of the device for the intended purpose, when used in accordance with the intended purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(24)"
+
+  - definitionId: "EUMDR.DEF.DESIGN_HISTORY_FILE"
+    term: "Design History File"
+    text: "A compilation of records which describes the design history of a finished device, demonstrating that the design was developed in accordance with the approved design plan and the requirements of the quality management system."
+    sourceCitation: "Regulation (EU) 2017/745 Annex II Section 2"
+
+relationships:
+  - from: "EUMDR.AII.6.OBL.001"
+    to: "EUMDR.XIV.A.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "Technical documentation clinical section references the clinical evaluation report"
+
+  - from: "EUMDR.AIII.OBL.001"
+    to: "EUMDR.83.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex III PMS documentation references PMS system obligations"
+
+  - from: "EUMDR.AIII.OBL.001"
+    to: "EUMDR.86.PSUR.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex III references PSUR for class IIa/IIb/III"
+
+  - from: "EUMDR.AII.4.OBL.001"
+    to: "EUMDR.AI.2.OBL.001"
+    type: PART_OF
+    props:
+      note: "Technical documentation risk section is part of overall risk management"
+
+  - from: "EUMDR.AII.5.OBL.003"
+    to: "EUMDR.AII.1.OBL.004"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "Biocompatibility assessment requires materials specification"

@@ -1,0 +1,290 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Articles 27-29, 51-60, Annex VIII"
+jurisdiction: EU_MDR
+processType: CLASSIFICATION_CONFORMITY
+artifactType: CLASSIFICATION_CONFORMITY
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  - obligationId: "EUMDR.51.OBL.001"
+    kind: obligation
+    title: "Device classification"
+    text: "Devices shall be divided into classes I, IIa, IIb and III, taking into account the intended purpose of the devices and their inherent risks. Classification shall be carried out in accordance with Annex VIII."
+    sourceCitation: "Regulation (EU) 2017/745 Article 51(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_rationale
+      - classification_record
+
+  - obligationId: "EUMDR.51.OBL.002"
+    kind: obligation
+    title: "Classification dispute resolution"
+    text: "Any disputes between the manufacturer and the relevant notified body arising from the application of Annex VIII shall be referred to the competent authority of the Member State in which the manufacturer has its registered place of business for a decision."
+    sourceCitation: "Regulation (EU) 2017/745 Article 51(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_record
+
+  - obligationId: "EUMDR.AVIII.OBL.001"
+    kind: obligation
+    title: "Apply classification rules systematically"
+    text: "The classification of devices shall be based on the intended purpose of the devices and shall take into account the duration of contact, the degree of invasiveness, the part of the body affected, and the risks associated with the technical design and manufacture. All implementing rules shall be applied with the most critical rule resulting in the higher classification."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VIII Chapter I Section 1-3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_rationale
+      - intended_purpose_statement
+
+  - obligationId: "EUMDR.AVIII.OBL.002"
+    kind: obligation
+    title: "Non-invasive device classification (Rules 1-4)"
+    text: "Non-invasive devices shall be classified according to Rules 1 through 4, covering general non-invasive devices (class I), devices for channelling or storing (class I or IIa), devices that modify composition of blood or other body liquids (class IIa or IIb), and devices in contact with injured skin (class I to IIb depending on wound type)."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VIII Chapter III Rules 1-4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_rationale
+
+  - obligationId: "EUMDR.AVIII.OBL.003"
+    kind: obligation
+    title: "Invasive device classification (Rules 5-8)"
+    text: "Invasive devices shall be classified according to Rules 5 through 8 based on body orifice invasiveness, surgically invasive transient/short-term use, surgically invasive long-term or implantable use, and active therapeutic devices."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VIII Chapter III Rules 5-8"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_rationale
+
+  - obligationId: "EUMDR.AVIII.OBL.004"
+    kind: obligation
+    title: "Active device classification (Rules 9-13)"
+    text: "Active devices shall be classified according to Rules 9 through 13, covering active therapeutic devices, active diagnostic devices, software, devices administering medicinal products, and devices incorporating integral medicinal substances."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VIII Chapter III Rules 9-13"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_rationale
+
+  - obligationId: "EUMDR.AVIII.OBL.005"
+    kind: obligation
+    title: "Special rules classification (Rules 14-22)"
+    text: "Special rules shall be applied for devices incorporating a medicinal substance (Rule 14), devices used for contraception or prevention of sexually transmitted diseases (Rule 15), devices for disinfection or sterilisation (Rule 16), devices composed of substances absorbed by the body (Rule 19), software intended to provide information for diagnostic or therapeutic decisions (Rule 11), and nanomaterial-containing devices (Rule 19)."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VIII Chapter III Rules 14-22"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_rationale
+      - special_rule_justification
+
+  - obligationId: "EUMDR.52.OBL.001"
+    kind: obligation
+    title: "Conformity assessment procedures"
+    text: "Before placing a device on the market, manufacturers shall undertake an assessment of the conformity of that device in accordance with the applicable conformity assessment procedures set out in Annexes IX to XI."
+    sourceCitation: "Regulation (EU) 2017/745 Article 52(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_record
+      - notified_body_certificate
+
+  - obligationId: "EUMDR.52.OBL.002"
+    kind: obligation
+    title: "Class I conformity assessment"
+    text: "Manufacturers of class I devices other than custom-made or investigational devices shall declare conformity of their products by issuing the EU declaration of conformity after drawing up the technical documentation, applying quality management system requirements, and carrying out applicable conformity assessment procedures."
+    sourceCitation: "Regulation (EU) 2017/745 Article 52(7)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - technical_documentation
+      - qms_certificate
+
+  - obligationId: "EUMDR.52.OBL.003"
+    kind: obligation
+    title: "Class IIa conformity assessment"
+    text: "Manufacturers of class IIa devices shall follow the conformity assessment procedure based on quality management system and assessment of technical documentation as set out in Annex IX, or the conformity assessment based on type examination as set out in Annex X coupled with the conformity assessment based on product conformity verification as set out in Annex XI."
+    sourceCitation: "Regulation (EU) 2017/745 Article 52(6)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_record
+      - notified_body_certificate
+
+  - obligationId: "EUMDR.52.OBL.004"
+    kind: obligation
+    title: "Class IIb and III conformity assessment"
+    text: "Manufacturers of class III devices and class IIb devices shall follow the conformity assessment procedure based on quality management system and assessment of technical documentation as set out in Annex IX, or the conformity assessment based on type examination as set out in Annex X coupled with assessment in Annex XI."
+    sourceCitation: "Regulation (EU) 2017/745 Article 52(3)-(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_record
+      - notified_body_certificate
+      - technical_documentation_assessment
+
+  - obligationId: "EUMDR.19.OBL.001"
+    kind: obligation
+    title: "EU declaration of conformity"
+    text: "The manufacturer shall draw up and keep up to date an EU declaration of conformity. The EU declaration of conformity shall contain the information set out in Annex IV and shall be translated into an official Union language or languages required by the Member State(s) in which the device is made available."
+    sourceCitation: "Regulation (EU) 2017/745 Article 19(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+
+  - obligationId: "EUMDR.20.OBL.001"
+    kind: obligation
+    title: "CE marking"
+    text: "Devices, other than custom-made or investigational devices, considered to be in conformity with the requirements of this Regulation shall bear the CE marking of conformity. The CE marking shall be affixed visibly, legibly and indelibly to the device or its sterile packaging. Where this is not possible, the CE marking shall be affixed to the packaging and the accompanying document."
+    sourceCitation: "Regulation (EU) 2017/745 Article 20(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - label_artwork
+
+  - obligationId: "EUMDR.20.OBL.002"
+    kind: obligation
+    title: "CE marking with notified body number"
+    text: "The CE marking shall be followed by the identification number of the notified body responsible for the conformity assessment procedures set out in Annexes IX to XI. The identification number shall also be indicated in any promotional material which mentions that the device fulfils the requirements for CE marking."
+    sourceCitation: "Regulation (EU) 2017/745 Article 20(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - notified_body_certificate
+    metadata:
+      conditional: "Not applicable to class I devices without measuring, sterile, or reprocessing functions"
+
+  - obligationId: "EUMDR.27.OBL.001"
+    kind: obligation
+    title: "Unique Device Identification system"
+    text: "The UDI system shall allow the identification and facilitate the traceability of devices. The UDI system shall consist of UDI-DI (device identifier) and UDI-PI (production identifier). The manufacturer shall assign a UDI to the device before placing it on the market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 27(1)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - udi_assignment_record
+
+  - obligationId: "EUMDR.27.OBL.002"
+    kind: obligation
+    title: "UDI carrier on device label"
+    text: "The UDI carrier shall be placed on the label of the device and on all higher levels of packaging. Where there is no packaging, the UDI carrier shall be placed on the device itself."
+    sourceCitation: "Regulation (EU) 2017/745 Article 27(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - udi_assignment_record
+
+  - obligationId: "EUMDR.28.OBL.001"
+    kind: obligation
+    title: "EUDAMED UDI database registration"
+    text: "Before placing a device on the market, the manufacturer shall enter or verify in EUDAMED the information referred to in Part A of Annex VI in accordance with the rules established by the issuing entity."
+    sourceCitation: "Regulation (EU) 2017/745 Article 28(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - udi_assignment_record
+
+  - obligationId: "EUMDR.29.OBL.001"
+    kind: obligation
+    title: "Registration of devices and economic operators"
+    text: "Before placing a device on the market, manufacturers, authorised representatives and importers shall register in EUDAMED. Economic operators shall verify and keep up to date the data referred to in Annex VI Part A."
+    sourceCitation: "Regulation (EU) 2017/745 Article 29(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - economic_operator_registration
+      - eudamed_registration_record
+
+  - obligationId: "EUMDR.56.OBL.001"
+    kind: obligation
+    title: "Certificates of conformity"
+    text: "The certificates issued by notified bodies shall be in an official Union language and shall contain the elements specified in Annex XII. The validity of certificates shall not exceed five years and may be extended for further periods of up to five years each."
+    sourceCitation: "Regulation (EU) 2017/745 Article 56(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_certificate
+      - certificate_validity_record
+
+constraints:
+  - constraintId: "EUMDR.51.CON.001"
+    appliesTo: "EUMDR.AVIII.OBL.001"
+    text: "When multiple classification rules apply to a single device, the rule that results in the highest risk class shall prevail. The manufacturer may not select the lower classification."
+    severity: hard
+
+  - constraintId: "EUMDR.52.CON.001"
+    appliesTo: "EUMDR.52.OBL.001"
+    text: "Conformity assessment must be completed before placing the device on the market. Conditional or provisional market placement pending assessment completion is not permitted."
+    severity: hard
+
+  - constraintId: "EUMDR.20.CON.001"
+    appliesTo: "EUMDR.20.OBL.001"
+    text: "The CE marking shall not be affixed to a device unless and until all applicable conformity assessment procedures have been completed. Premature CE marking is a regulatory violation."
+    severity: hard
+
+  - constraintId: "EUMDR.27.CON.001"
+    appliesTo: "EUMDR.27.OBL.001"
+    text: "A new UDI-DI shall be assigned whenever there is a change that could lead to misidentification of the device or ambiguity in traceability. Minor changes not affecting identification do not require a new UDI-DI."
+    severity: hard
+
+  - constraintId: "EUMDR.56.CON.001"
+    appliesTo: "EUMDR.56.OBL.001"
+    text: "Certificates shall not exceed five years validity. The manufacturer must plan for renewal well in advance to avoid a lapse in conformity status."
+    severity: hard
+
+  - constraintId: "EUMDR.52.CON.002"
+    appliesTo: "EUMDR.52.OBL.002"
+    text: "Class I devices with measuring function, sterile function, or reusable surgical instrument function require notified body involvement despite being class I."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.CONFORMITY_ASSESSMENT"
+    term: "Conformity Assessment"
+    text: "The process demonstrating whether the requirements of this Regulation relating to a device have been fulfilled."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(40)"
+
+  - definitionId: "EUMDR.DEF.CE_MARKING"
+    term: "CE Marking"
+    text: "A marking by which the manufacturer indicates that the device is in conformity with the applicable requirements set out in this Regulation and other applicable Union harmonisation legislation providing for its affixing."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(43)"
+
+  - definitionId: "EUMDR.DEF.UDI"
+    term: "Unique Device Identification"
+    text: "A series of numeric or alphanumeric characters that is created through an internationally accepted device identification and coding standard. It allows the unambiguous identification of a specific device on the market. The UDI is comprised of a UDI-DI and a UDI-PI."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(15)"
+
+  - definitionId: "EUMDR.DEF.NOTIFIED_BODY"
+    term: "Notified Body"
+    text: "A conformity assessment body designated in accordance with this Regulation to carry out third-party conformity assessment activities."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(42)"
+
+  - definitionId: "EUMDR.DEF.PLACING_ON_MARKET"
+    term: "Placing on the Market"
+    text: "The first making available of a device, other than an investigational device, on the Union market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(28)"
+
+relationships:
+  - from: "EUMDR.51.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Device classification determines which conformity assessment procedure applies"
+
+  - from: "EUMDR.52.OBL.001"
+    to: "EUMDR.19.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Successful conformity assessment triggers the EU declaration of conformity"
+
+  - from: "EUMDR.19.OBL.001"
+    to: "EUMDR.20.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "EU declaration of conformity is a prerequisite for CE marking"
+
+  - from: "EUMDR.27.OBL.001"
+    to: "EUMDR.28.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "UDI assignment must precede EUDAMED registration"
+
+  - from: "EUMDR.52.OBL.001"
+    to: "EUMDR.AII.OBL.001"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "Conformity assessment requires complete technical documentation"
+
+  - from: "EUMDR.51.OBL.001"
+    to: "EUMDR.AII.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Classification relies on intended purpose documented in technical documentation"

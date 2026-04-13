@@ -1,0 +1,142 @@
+regulation: "ISO 13485:2016"
+section: "§4.2"
+jurisdiction: GLOBAL
+processType: DOCUMENT_CONTROL
+artifactType: DOCUMENT
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.4.2.1.OBL.001"
+    kind: obligation
+    title: "Establish and maintain QMS documentation"
+    text: "The QMS documentation shall include documented statements of a quality policy and quality objectives, a quality manual, documented procedures and records required by this International Standard, documents including records determined by the organization to be necessary to ensure the effective planning, operation, and control of its processes, and other documentation specified by applicable regulatory requirements."
+    sourceCitation: "ISO 13485:2016 §4.2.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_policy
+      - quality_objectives
+      - qms_documentation_index
+
+  - obligationId: "ISO13485.4.2.2.OBL.001"
+    kind: obligation
+    title: "Create and maintain quality manual"
+    text: "The organization shall establish and maintain a quality manual that includes the scope of the QMS including details of and justification for any exclusion or non-application, the documented procedures established for the QMS or reference to them, and a description of the interaction between the processes of the QMS."
+    sourceCitation: "ISO 13485:2016 §4.2.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_manual
+
+  - obligationId: "ISO13485.4.2.3.OBL.001"
+    kind: obligation
+    title: "Establish medical device file"
+    text: "For each medical device type or medical device family, the organization shall establish and maintain one or more files either containing or referencing documents generated to demonstrate conformity to the requirements of this International Standard and conformity to applicable regulatory requirements."
+    sourceCitation: "ISO 13485:2016 §4.2.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - medical_device_file
+
+  - obligationId: "ISO13485.4.2.4.OBL.001"
+    kind: obligation
+    title: "Establish document control procedure"
+    text: "The organization shall establish a documented procedure to define the controls needed to review and approve documents for adequacy prior to issue, review and update as necessary and re-approve documents, ensure that changes and the current revision status of documents are identified, ensure that relevant versions of applicable documents are available at points of use, ensure that documents remain legible and readily identifiable, and ensure that documents of external origin are identified and their distribution controlled."
+    sourceCitation: "ISO 13485:2016 §4.2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_control_procedure
+      - document_register
+
+  - obligationId: "ISO13485.4.2.4.OBL.002"
+    kind: obligation
+    title: "Prevent use of obsolete documents"
+    text: "The organization shall ensure that obsolete documents are promptly removed from points of use or otherwise assured against unintended use, and are suitably identified if they are retained for any purpose."
+    sourceCitation: "ISO 13485:2016 §4.2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - obsolete_document_log
+      - document_retrieval_record
+
+  - obligationId: "ISO13485.4.2.4.OBL.003"
+    kind: obligation
+    title: "Document changes shall identify review authority"
+    text: "Changes to documents shall be reviewed and approved by the same function or organization that performed the original review and approval, or another designated function or organization that has access to pertinent background information."
+    sourceCitation: "ISO 13485:2016 §4.2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - change_approval_record
+      - document_revision_history
+
+  - obligationId: "ISO13485.4.2.5.OBL.001"
+    kind: obligation
+    title: "Establish records control procedure"
+    text: "The organization shall establish a documented procedure to define the controls needed for the identification, storage, security and integrity, retrieval, retention time, and disposition of records. The organization shall define and implement methods for protecting health information contained in records in accordance with applicable regulatory requirements."
+    sourceCitation: "ISO 13485:2016 §4.2.5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - records_control_procedure
+      - retention_schedule
+
+  - obligationId: "ISO13485.4.2.5.OBL.002"
+    kind: obligation
+    title: "Retain records for specified period"
+    text: "The organization shall retain records for at least the lifetime of the medical device as defined by the organization, or as specified by applicable regulatory requirements. The retention period shall be at least two years from the date of product release by the organization."
+    sourceCitation: "ISO 13485:2016 §4.2.5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - retention_policy
+      - record_disposal_log
+
+constraints:
+  - constraintId: "ISO13485.4.2.4.CON.001"
+    appliesTo: "ISO13485.4.2.4.OBL.001"
+    text: "Documents shall be approved by authorized personnel prior to issue. No unapproved documents shall be used in production or quality processes."
+    severity: hard
+
+  - constraintId: "ISO13485.4.2.4.CON.002"
+    appliesTo: "ISO13485.4.2.4.OBL.002"
+    text: "Obsolete documents retained for legal or knowledge-preservation purposes shall be clearly marked as obsolete and physically or electronically segregated from current documents."
+    severity: hard
+
+  - constraintId: "ISO13485.4.2.5.CON.001"
+    appliesTo: "ISO13485.4.2.5.OBL.002"
+    text: "Records shall remain legible, readily identifiable, and retrievable for the entire retention period. Electronic records shall be backed up and protected against unauthorized modification."
+    severity: hard
+
+definitions:
+  - definitionId: "ISO13485.DEF.DOCUMENT"
+    term: "Document"
+    text: "Information and the medium on which it is contained. The medium can be paper, magnetic, electronic, or optical computer disc, photograph, or master sample, or a combination thereof."
+    sourceCitation: "ISO 9000:2015 §3.8.5"
+
+  - definitionId: "ISO13485.DEF.RECORD"
+    term: "Record"
+    text: "Document stating results achieved or providing evidence of activities performed. Records can be used to document traceability and to provide evidence of verification, preventive action, and corrective action."
+    sourceCitation: "ISO 9000:2015 §3.8.10"
+
+  - definitionId: "ISO13485.DEF.QUALITY_MANUAL"
+    term: "Quality Manual"
+    text: "Document specifying the quality management system of an organization, including scope, documented procedures, and description of the interaction between QMS processes."
+    sourceCitation: "ISO 13485:2016 §4.2.2"
+
+relationships:
+  - from: "ISO13485.4.2.4.OBL.001"
+    to: "ISO13485.4.2.1.OBL.001"
+    type: PART_OF
+  - from: "ISO13485.4.2.5.OBL.001"
+    to: "ISO13485.4.2.1.OBL.001"
+    type: PART_OF
+  - from: "ISO13485.4.2.4.OBL.003"
+    to: "ISO13485.7.3.9.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Document change approval aligns with design and development change control requirements"
+  - from: "ISO13485.4.2.5.OBL.002"
+    to: "ISO13485.8.2.4.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Audit records must be retained per records control requirements"
+  - from: "ISO13485.4.2.3.OBL.001"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Medical device file references design and development documentation"

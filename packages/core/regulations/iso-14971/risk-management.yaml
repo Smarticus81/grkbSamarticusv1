@@ -1,0 +1,43 @@
+regulation: "ISO 14971:2019"
+section: "Whole standard"
+jurisdiction: GLOBAL
+processType: RISK_MANAGEMENT
+artifactType: RISK
+version: "1.0.0"
+effectiveFrom: "2019-12-01"
+
+obligations:
+  - obligationId: "ISO14971.4.OBL.001"
+    kind: obligation
+    title: "Establish a risk management process"
+    text: "The manufacturer shall establish, document, and maintain throughout the life cycle of the medical device an ongoing process for identifying hazards, estimating and evaluating associated risks, controlling those risks, and monitoring the effectiveness of the controls."
+    sourceCitation: "ISO 14971:2019 §4.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_plan
+      - risk_management_file
+
+  - obligationId: "ISO14971.5.OBL.001"
+    kind: obligation
+    title: "Risk analysis"
+    text: "The manufacturer shall identify and document known and foreseeable hazards associated with the medical device under both normal and fault conditions."
+    sourceCitation: "ISO 14971:2019 §5.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - hazard_list
+      - risk_analysis
+
+  - obligationId: "ISO14971.7.OBL.001"
+    kind: obligation
+    title: "Risk control measures"
+    text: "The manufacturer shall identify risk control measures appropriate for reducing the risk(s) to an acceptable level. The priority order is: inherent safety by design; protective measures; information for safety."
+    sourceCitation: "ISO 14971:2019 §7.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_control_record
+
+constraints:
+  - constraintId: "ISO14971.7.CON.001"
+    appliesTo: "ISO14971.7.OBL.001"
+    text: "Risk control measures must follow the priority order: inherent safety by design first, then protective measures, then information for safety. Lower-priority measures are unacceptable if a higher-priority measure is feasible."
+    severity: hard

@@ -1,0 +1,37 @@
+regulation: "ISO 13485:2016"
+section: "§8.2.4"
+jurisdiction: GLOBAL
+processType: AUDIT
+artifactType: AUDIT
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.8.2.4.OBL.001"
+    kind: obligation
+    title: "Conduct internal audits at planned intervals"
+    text: "The organization shall conduct internal audits at planned intervals to determine whether the QMS conforms to planned arrangements, requirements, and is effectively implemented and maintained."
+    sourceCitation: "ISO 13485:2016 §8.2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - audit_plan
+      - audit_schedule
+
+  - obligationId: "ISO13485.8.2.4.OBL.002"
+    kind: obligation
+    title: "Document audit findings"
+    text: "Records of audits and their results shall be maintained, including identification of nonconformities."
+    sourceCitation: "ISO 13485:2016 §8.2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - audit_finding
+      - audit_report
+
+  - obligationId: "ISO13485.8.2.4.OBL.003"
+    kind: obligation
+    title: "Auditor independence"
+    text: "Auditors shall not audit their own work."
+    sourceCitation: "ISO 13485:2016 §8.2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - auditor_assignment

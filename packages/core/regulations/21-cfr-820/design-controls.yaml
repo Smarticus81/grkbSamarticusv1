@@ -1,0 +1,203 @@
+regulation: "21 CFR Part 820 (FDA QSR)"
+section: "§820.30"
+jurisdiction: FDA
+processType: DESIGN_CONTROL
+artifactType: DESIGN
+version: "1.0.0"
+effectiveFrom: "1997-06-01"
+
+definitions:
+  - term: "Design History File (DHF)"
+    definition: "A compilation of records which describes the design history of a finished device (21 CFR §820.3(e))."
+  - term: "Design Input"
+    definition: "The physical and performance requirements of a device that are used as a basis for device design (21 CFR §820.3(f))."
+  - term: "Design Output"
+    definition: "The results of a design effort at each design phase and at the end of the total design effort, including the device, its packaging and labeling, and the device master record (21 CFR §820.3(g))."
+  - term: "Design Review"
+    definition: "A documented, comprehensive, systematic examination of a design to evaluate the adequacy of the design requirements, to evaluate the capability of the design to meet these requirements, and to identify problems (21 CFR §820.3(h))."
+  - term: "Verification"
+    definition: "Confirmation by examination and provision of objective evidence that specified requirements have been fulfilled (21 CFR §820.3(aa))."
+  - term: "Validation"
+    definition: "Confirmation by examination and provision of objective evidence that the particular requirements for a specific intended use can be consistently fulfilled. Design validation includes software validation and risk analysis (21 CFR §820.3(z))."
+
+obligations:
+  - obligationId: "CFR820.30.OBL.001"
+    kind: obligation
+    title: "Establish design control procedures"
+    text: "Each manufacturer of any class III or class II device, and the class I devices listed in paragraph (a)(2) of this section, shall establish and maintain procedures to control the design of the device in order to ensure that specified design requirements are met."
+    sourceCitation: "21 CFR §820.30(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_control_procedure
+
+  - obligationId: "CFR820.30.OBL.002"
+    kind: obligation
+    title: "Establish and maintain a design and development plan"
+    text: "Each manufacturer shall establish and maintain plans that describe or reference the design and development activities and define responsibility for implementation. The plans shall identify and describe the interfaces with different groups or activities that provide, or result in, input to the design and development process."
+    sourceCitation: "21 CFR §820.30(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_plan
+
+  - obligationId: "CFR820.30.OBL.003"
+    kind: obligation
+    title: "Update design plans as design evolves"
+    text: "The plans shall be reviewed, updated, and approved as design and development evolves."
+    sourceCitation: "21 CFR §820.30(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_plan_revision
+
+  - obligationId: "CFR820.30.OBL.004"
+    kind: obligation
+    title: "Establish design input requirements"
+    text: "Each manufacturer shall establish and maintain procedures to ensure that the design requirements relating to a device are appropriate and address the intended use of the device, including the needs of the user and patient."
+    sourceCitation: "21 CFR §820.30(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_input
+
+  - obligationId: "CFR820.30.OBL.005"
+    kind: obligation
+    title: "Review and approve design input requirements"
+    text: "The design input requirements shall be reviewed and approved by a designated individual(s). The approval, including the date and signature of the individual(s) approving the requirements, shall be documented."
+    sourceCitation: "21 CFR §820.30(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_input_approval
+
+  - obligationId: "CFR820.30.OBL.006"
+    kind: obligation
+    title: "Define design outputs in terms that allow evaluation"
+    text: "Each manufacturer shall establish and maintain procedures for defining and documenting design output in terms that allow an adequate evaluation of conformance to design input requirements."
+    sourceCitation: "21 CFR §820.30(d)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_output
+
+  - obligationId: "CFR820.30.OBL.007"
+    kind: obligation
+    title: "Design output meets design input"
+    text: "Design output procedures shall contain or make reference to acceptance criteria and shall ensure that those design outputs that are essential for the proper functioning of the device are identified."
+    sourceCitation: "21 CFR §820.30(d)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_output_acceptance_criteria
+
+  - obligationId: "CFR820.30.OBL.008"
+    kind: obligation
+    title: "Conduct design reviews at suitable stages"
+    text: "Each manufacturer shall establish and maintain procedures to ensure that formal documented reviews of the design results are planned and conducted at appropriate stages of the device's design development. The results of a design review, including identification of the design, the date, and the individual(s) performing the review, shall be documented in the design history file."
+    sourceCitation: "21 CFR §820.30(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_review_record
+
+  - obligationId: "CFR820.30.OBL.009"
+    kind: obligation
+    title: "Include independent reviewers in design reviews"
+    text: "The procedures shall ensure that each design review includes an individual(s) who does not have direct responsibility for the design stage being reviewed, as well as the specialists needed."
+    sourceCitation: "21 CFR §820.30(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_review_attendance
+
+  - obligationId: "CFR820.30.OBL.010"
+    kind: obligation
+    title: "Perform design verification"
+    text: "Each manufacturer shall establish and maintain procedures for verifying the device design. Design verification shall confirm that the design output meets the design input requirements. The results of the design verification, including identification of the design, method(s), the date, and the individual(s) performing the verification, shall be documented in the DHF."
+    sourceCitation: "21 CFR §820.30(f)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_verification_record
+
+  - obligationId: "CFR820.30.OBL.011"
+    kind: obligation
+    title: "Perform design validation"
+    text: "Each manufacturer shall establish and maintain procedures for validating the device design. Design validation shall be performed under defined operating conditions on initial production units, lots, or batches, or their equivalents. Design validation shall ensure that devices conform to defined user needs and intended uses and shall include testing of production units under actual or simulated use conditions."
+    sourceCitation: "21 CFR §820.30(g)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_validation_record
+
+  - obligationId: "CFR820.30.OBL.012"
+    kind: obligation
+    title: "Include software validation and risk analysis in design validation"
+    text: "Design validation shall include software validation and risk analysis, where appropriate. The results of the design validation, including identification of the design, method(s), the date, and the individual(s) performing the validation, shall be documented in the DHF."
+    sourceCitation: "21 CFR §820.30(g)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - software_validation_record
+      - risk_analysis_record
+
+  - obligationId: "CFR820.30.OBL.013"
+    kind: obligation
+    title: "Establish design transfer procedures"
+    text: "Each manufacturer shall establish and maintain procedures to ensure that the device design is correctly translated into production specifications."
+    sourceCitation: "21 CFR §820.30(h)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_transfer_record
+
+  - obligationId: "CFR820.30.OBL.014"
+    kind: obligation
+    title: "Evaluate and document design changes"
+    text: "Each manufacturer shall establish and maintain procedures for the identification, documentation, validation or where appropriate verification, review, and approval of design changes before their implementation."
+    sourceCitation: "21 CFR §820.30(i)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_change_record
+
+  - obligationId: "CFR820.30.OBL.015"
+    kind: obligation
+    title: "Maintain a design history file"
+    text: "Each manufacturer shall establish and maintain a DHF for each type of device. The DHF shall contain or reference the records necessary to demonstrate that the design was developed in accordance with the approved design plan and the requirements of this part."
+    sourceCitation: "21 CFR §820.30(j)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_history_file
+
+constraints:
+  - constraintId: "CFR820.30.CON.001"
+    appliesTo: "CFR820.30.OBL.005"
+    text: "Design inputs shall address intended use, performance requirements, safety and reliability, applicable regulatory requirements, and risk outputs from ISO 14971-compliant risk management."
+    severity: hard
+  - constraintId: "CFR820.30.CON.002"
+    appliesTo: "CFR820.30.OBL.011"
+    text: "Design validation must be performed on initial production units or equivalents, not on prototype or bench-level samples alone."
+    severity: hard
+  - constraintId: "CFR820.30.CON.003"
+    appliesTo: "CFR820.30.OBL.009"
+    text: "At least one independent reviewer (not directly responsible for the design stage) must participate in every design review."
+    severity: hard
+  - constraintId: "CFR820.30.CON.004"
+    appliesTo: "CFR820.30.OBL.014"
+    text: "Design changes shall not be implemented before documented review and approval. Changes affecting form, fit, function, or safety shall require re-verification or re-validation."
+    severity: hard
+
+relationships:
+  - from: "CFR820.30.OBL.002"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA design planning aligns with ISO 13485 §7.3.2 design and development planning"
+  - from: "CFR820.30.OBL.004"
+    to: "ISO13485.7.3.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA design input requirements align with ISO 13485 §7.3.3 design inputs"
+  - from: "CFR820.30.OBL.010"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA design verification aligns with ISO 13485 §7.3.6 design verification"
+  - from: "CFR820.30.OBL.011"
+    to: "ISO14971.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA design validation includes risk analysis per ISO 14971"
+  - from: "CFR820.30.OBL.014"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA design change control aligns with ISO 13485 §7.3.9 design changes"

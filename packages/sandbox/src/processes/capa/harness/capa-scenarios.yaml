@@ -1,0 +1,56 @@
+scenarios:
+  - name: "CAPA from complaint trigger - high severity"
+    agent: CAPAInitiationAgent
+    input:
+      triggerId: "COMP-2026-001"
+      triggerType: complaint
+      description: "Patient reported device malfunction during use"
+      severity: high
+    mockObligations: ["ISO13485.8.5.2.OBL.001"]
+    mockLLM: []
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.5.2.OBL.001"]
+      confidenceAbove: 0.5
+
+  - name: "CAPA from audit finding - medium severity"
+    agent: CAPAInitiationAgent
+    input:
+      triggerId: "AUDIT-2026-015"
+      triggerType: audit_finding
+      description: "Calibration records inconsistent"
+      severity: medium
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.5.2.OBL.001"]
+
+  - name: "Low severity does not require CAPA"
+    agent: CAPAInitiationAgent
+    input:
+      triggerId: "NC-2026-099"
+      triggerType: nonconformance
+      description: "Minor cosmetic defect"
+      severity: low
+    assertions:
+      traceChainValid: true
+
+  - name: "Root cause via 5-Why"
+    agent: RootCauseAnalysisAgent
+    input:
+      capaId: "CAPA-COMP-2026-001"
+      observations:
+        - "Device firmware crashed mid-procedure"
+        - "Recent firmware update introduced unhandled edge case"
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.5.2.OBL.002"]
+
+  - name: "Effectiveness check passes"
+    agent: EffectivenessCheckAgent
+    input:
+      capaId: "CAPA-COMP-2026-001"
+      postImplementationMetrics: { defect_rate: 1 }
+      baselineMetrics: { defect_rate: 10 }
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.5.2.OBL.003"]

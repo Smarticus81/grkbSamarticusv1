@@ -1,0 +1,35 @@
+regulation: "ISO 13485:2016"
+section: "§8.3"
+jurisdiction: GLOBAL
+processType: NONCONFORMANCE
+artifactType: NC
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.8.3.OBL.001"
+    kind: obligation
+    title: "Identify and control nonconforming product"
+    text: "The organization shall ensure that product which does not conform to product requirements is identified and controlled to prevent its unintended use or delivery."
+    sourceCitation: "ISO 13485:2016 §8.3.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nonconformance_record
+
+  - obligationId: "ISO13485.8.3.OBL.002"
+    kind: obligation
+    title: "Document nonconformity disposition"
+    text: "The organization shall document procedures for disposition of nonconforming product, including segregation, rework, concession, or scrap."
+    sourceCitation: "ISO 13485:2016 §8.3.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - disposition_record
+
+  - obligationId: "ISO13485.8.3.OBL.003"
+    kind: obligation
+    title: "Concession requires authorization"
+    text: "Concessions for use shall be subject to documented procedures and authorization by relevant personnel."
+    sourceCitation: "ISO 13485:2016 §8.3.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - concession_authorization

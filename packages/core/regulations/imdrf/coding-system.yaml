@@ -1,0 +1,23 @@
+regulation: "IMDRF Coding System"
+section: "Coding rules"
+jurisdiction: GLOBAL
+processType: VIGILANCE
+artifactType: CODING
+version: "2020.0"
+effectiveFrom: "2020-04-01"
+
+obligations:
+  - obligationId: "IMDRF.CODE.OBL.001"
+    kind: obligation
+    title: "Apply codes from all relevant annexes"
+    text: "Each adverse event shall be coded with at least one term from each applicable IMDRF annex (medical device problem, cause investigation, health effects, medical device component) so that the event is fully characterised."
+    sourceCitation: "IMDRF/AE WG/N43 FINAL:2020 §4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - imdrf_coded_event
+
+constraints:
+  - constraintId: "IMDRF.CODE.CON.001"
+    appliesTo: "IMDRF.CODE.OBL.001"
+    text: "Free-text descriptions are supplementary and shall not replace structured codes."
+    severity: hard

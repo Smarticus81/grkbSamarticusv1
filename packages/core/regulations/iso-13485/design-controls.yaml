@@ -1,0 +1,35 @@
+regulation: "ISO 13485:2016"
+section: "§7.3"
+jurisdiction: GLOBAL
+processType: DESIGN_CONTROL
+artifactType: DESIGN
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.7.3.OBL.001"
+    kind: obligation
+    title: "Plan design and development"
+    text: "The organization shall plan and control the design and development of product, including stages, review, verification, validation, and design transfer activities."
+    sourceCitation: "ISO 13485:2016 §7.3.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_plan
+
+  - obligationId: "ISO13485.7.3.OBL.002"
+    kind: obligation
+    title: "Document design inputs"
+    text: "Design and development inputs related to product requirements shall be determined and records maintained."
+    sourceCitation: "ISO 13485:2016 §7.3.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_input
+
+  - obligationId: "ISO13485.7.3.OBL.003"
+    kind: obligation
+    title: "Verify design outputs against inputs"
+    text: "Design and development verification shall be performed to ensure that design outputs meet the design inputs."
+    sourceCitation: "ISO 13485:2016 §7.3.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_verification_record

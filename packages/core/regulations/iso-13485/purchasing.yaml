@@ -1,0 +1,133 @@
+regulation: "ISO 13485:2016"
+section: "§7.4"
+jurisdiction: GLOBAL
+processType: PURCHASING
+artifactType: PURCHASING
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.7.4.1.OBL.001"
+    kind: obligation
+    title: "Establish purchasing process controls"
+    text: "The organization shall establish documented procedures to ensure that purchased product conforms to specified purchase information. The type and extent of control applied to the supplier and the purchased product shall be dependent upon the effect of the purchased product on subsequent product realization or the final product."
+    sourceCitation: "ISO 13485:2016 §7.4.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - purchasing_procedure
+      - approved_supplier_list
+
+  - obligationId: "ISO13485.7.4.1.OBL.002"
+    kind: obligation
+    title: "Evaluate and select suppliers"
+    text: "The organization shall evaluate and select suppliers based on their ability to supply product in accordance with the organization's requirements. Criteria for selection, evaluation, and re-evaluation shall be established and documented."
+    sourceCitation: "ISO 13485:2016 §7.4.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supplier_evaluation_record
+      - supplier_selection_criteria
+
+  - obligationId: "ISO13485.7.4.1.OBL.003"
+    kind: obligation
+    title: "Plan supplier monitoring and re-evaluation"
+    text: "The organization shall plan the monitoring and re-evaluation of suppliers. Supplier performance in meeting requirements for the purchased product shall be a factor in re-evaluation."
+    sourceCitation: "ISO 13485:2016 §7.4.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supplier_monitoring_plan
+      - supplier_performance_record
+
+  - obligationId: "ISO13485.7.4.1.OBL.004"
+    kind: obligation
+    title: "Maintain supplier records"
+    text: "Records of the results of evaluation, selection, monitoring, and re-evaluation of supplier capability or performance and any necessary actions arising from these activities shall be maintained."
+    sourceCitation: "ISO 13485:2016 §7.4.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supplier_evaluation_record
+      - supplier_audit_report
+
+  - obligationId: "ISO13485.7.4.2.OBL.001"
+    kind: obligation
+    title: "Specify purchasing information"
+    text: "Purchasing information shall describe the product to be purchased, including where appropriate product specifications, acceptance criteria, procedures, processes, equipment, qualification of personnel, and QMS requirements."
+    sourceCitation: "ISO 13485:2016 §7.4.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - purchase_order
+      - product_specification
+
+  - obligationId: "ISO13485.7.4.2.OBL.002"
+    kind: obligation
+    title: "Include supplier agreements for change notification"
+    text: "Purchasing information shall include, as applicable, a written agreement in which the supplier notifies the organization of changes in the purchased product prior to implementation of any changes that affect the ability of the purchased product to meet specified purchase requirements."
+    sourceCitation: "ISO 13485:2016 §7.4.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supplier_quality_agreement
+      - change_notification_clause
+
+  - obligationId: "ISO13485.7.4.3.OBL.001"
+    kind: obligation
+    title: "Verify purchased product"
+    text: "The organization shall establish and implement the inspection or other activities necessary for ensuring that purchased product meets specified purchase requirements."
+    sourceCitation: "ISO 13485:2016 §7.4.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - incoming_inspection_record
+      - acceptance_criteria
+
+  - obligationId: "ISO13485.7.4.3.OBL.002"
+    kind: obligation
+    title: "Verify product at supplier premises when required"
+    text: "Where the organization or its customer intends to perform verification at the supplier's premises, the organization shall state the intended verification arrangements and method of product release in the purchasing information."
+    sourceCitation: "ISO 13485:2016 §7.4.3"
+    mandatory: false
+    requiredEvidenceTypes:
+      - supplier_site_audit_report
+      - verification_arrangement
+
+constraints:
+  - constraintId: "ISO13485.7.4.1.CON.001"
+    appliesTo: "ISO13485.7.4.1.OBL.002"
+    text: "Supplier evaluation criteria shall consider the risk associated with the purchased product's effect on the quality of the finished medical device."
+    severity: hard
+
+  - constraintId: "ISO13485.7.4.1.CON.002"
+    appliesTo: "ISO13485.7.4.1.OBL.004"
+    text: "Supplier records shall be retained for at least the lifetime of the medical device or as specified by applicable regulatory requirements, whichever is longer."
+    severity: hard
+
+  - constraintId: "ISO13485.7.4.2.CON.001"
+    appliesTo: "ISO13485.7.4.2.OBL.001"
+    text: "The adequacy of specified purchase requirements shall be verified before their communication to the supplier."
+    severity: hard
+
+definitions:
+  - definitionId: "ISO13485.DEF.PURCHASED_PRODUCT"
+    term: "Purchased Product"
+    text: "Product, component, raw material, or service obtained from an external provider that is incorporated into or used in the realization of the medical device."
+    sourceCitation: "ISO 13485:2016 §3"
+
+  - definitionId: "ISO13485.DEF.APPROVED_SUPPLIER"
+    term: "Approved Supplier"
+    text: "A supplier that has been evaluated, meets the organization's selection criteria, and is authorized to provide specified products or services."
+    sourceCitation: "ISO 13485:2016 §7.4.1"
+
+relationships:
+  - from: "ISO13485.7.4.2.OBL.001"
+    to: "ISO13485.7.4.1.OBL.001"
+    type: PART_OF
+  - from: "ISO13485.7.4.3.OBL.001"
+    to: "ISO13485.7.4.1.OBL.001"
+    type: PART_OF
+  - from: "ISO13485.7.4.2.OBL.002"
+    to: "ISO13485.7.3.9.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Supplier change notification links to design and development change control"
+  - from: "ISO13485.7.4.1.OBL.002"
+    to: "ISO13485.8.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Supplier nonconformities feed into nonconforming product controls"

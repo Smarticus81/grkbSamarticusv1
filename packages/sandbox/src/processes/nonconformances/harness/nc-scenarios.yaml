@@ -1,0 +1,9 @@
+scenarios:
+  - name: "Critical safety NC"
+    agent: NCClassificationAgent
+    input: { ncId: "NC-1", description: "Safety-critical material lot mismatch" }
+    assertions: { traceChainValid: true }
+  - name: "Functional NC -> rework disposition"
+    agent: NCDispositionAgent
+    input: { ncId: "NC-2", classification: "major" }
+    assertions: { traceChainValid: true }

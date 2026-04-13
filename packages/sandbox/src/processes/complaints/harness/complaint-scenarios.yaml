@@ -1,0 +1,37 @@
+scenarios:
+  - name: "Patient harm complaint - critical"
+    agent: ComplaintIntakeAgent
+    input:
+      rawComplaint: "Patient suffered injury during procedure"
+      source: "field_report"
+      receivedAt: "2026-04-09T10:00:00Z"
+    assertions: { traceChainValid: true }
+
+  - name: "Device malfunction complaint"
+    agent: ComplaintIntakeAgent
+    input:
+      rawComplaint: "Device firmware caused malfunction"
+      source: "support_ticket"
+      receivedAt: "2026-04-09T10:00:00Z"
+    assertions: { traceChainValid: true }
+
+  - name: "Triage routes to reportable"
+    agent: ComplaintTriageAgent
+    input:
+      complaintId: "COMP-1"
+      category: patient_harm
+    assertions: { traceChainValid: true }
+
+  - name: "Trend detection finds UCL breach"
+    agent: TrendDetectionAgent
+    input:
+      series: [3, 4, 3, 5, 4, 3, 25]
+      windowDays: 30
+    assertions: { traceChainValid: true }
+
+  - name: "Trend detection no signal"
+    agent: TrendDetectionAgent
+    input:
+      series: [3, 4, 3, 5, 4, 3, 4]
+      windowDays: 30
+    assertions: { traceChainValid: true }

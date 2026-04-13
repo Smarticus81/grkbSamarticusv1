@@ -1,0 +1,167 @@
+regulation: "ISO 13485:2016"
+section: "§8.2 / §8.4"
+jurisdiction: GLOBAL
+processType: MONITORING
+artifactType: MONITORING
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.8.2.1.OBL.001"
+    kind: obligation
+    title: "Gather and monitor feedback data"
+    text: "The organization shall document procedures for gathering and monitoring information relating to whether the organization has met customer requirements, including feedback. These procedures shall include provisions for gathering data from production as well as post-production activities."
+    sourceCitation: "ISO 13485:2016 §8.2.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - feedback_procedure
+      - feedback_data_record
+
+  - obligationId: "ISO13485.8.2.1.OBL.002"
+    kind: obligation
+    title: "Use feedback as input to risk management"
+    text: "The feedback process shall include provisions for gathering data to serve as potential input into risk management and for monitoring and maintaining product requirements as well as product realization or improvement processes."
+    sourceCitation: "ISO 13485:2016 §8.2.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_input
+      - feedback_trend_analysis
+
+  - obligationId: "ISO13485.8.2.1.OBL.003"
+    kind: obligation
+    title: "Integrate complaint data into feedback system"
+    text: "If applicable regulatory requirements require the organization to gain specific experience from post-production activities, the review of this experience shall form part of the feedback process."
+    sourceCitation: "ISO 13485:2016 §8.2.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - post_market_surveillance_data
+      - complaint_trend_report
+
+  - obligationId: "ISO13485.8.2.4.OBL.004"
+    kind: obligation
+    title: "Plan internal audit program"
+    text: "An audit programme shall be planned, taking into consideration the status and importance of the processes and areas to be audited, as well as the results of previous audits. The audit criteria, scope, interval, and methods shall be defined and documented."
+    sourceCitation: "ISO 13485:2016 §8.2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - audit_programme
+      - audit_criteria_document
+
+  - obligationId: "ISO13485.8.2.4.OBL.005"
+    kind: obligation
+    title: "Take timely corrective actions on audit findings"
+    text: "Management responsible for the area being audited shall ensure that any necessary corrections and corrective actions are taken without undue delay to eliminate detected nonconformities and their causes."
+    sourceCitation: "ISO 13485:2016 §8.2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - corrective_action_record
+      - audit_followup_record
+
+  - obligationId: "ISO13485.8.2.5.OBL.001"
+    kind: obligation
+    title: "Monitor and measure QMS processes"
+    text: "The organization shall apply suitable methods for monitoring and, where applicable, measurement of the QMS processes. These methods shall demonstrate the ability of the processes to achieve planned results. When planned results are not achieved, correction and corrective action shall be taken, as appropriate."
+    sourceCitation: "ISO 13485:2016 §8.2.5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - process_monitoring_record
+      - process_performance_metrics
+
+  - obligationId: "ISO13485.8.2.6.OBL.001"
+    kind: obligation
+    title: "Monitor and measure product"
+    text: "The organization shall monitor and measure the characteristics of the product to verify that product requirements have been fulfilled. This shall be carried out at applicable stages of the product realization process in accordance with the documented planned and arrangements."
+    sourceCitation: "ISO 13485:2016 §8.2.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - product_inspection_record
+      - acceptance_test_record
+
+  - obligationId: "ISO13485.8.2.6.OBL.002"
+    kind: obligation
+    title: "Maintain product release records"
+    text: "Evidence of conformity with the acceptance criteria shall be maintained. Records shall identify the person(s) authorizing release of product. Product release and service delivery shall not proceed until planned arrangements have been satisfactorily completed."
+    sourceCitation: "ISO 13485:2016 §8.2.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - release_authorization_record
+      - conformity_certificate
+
+  - obligationId: "ISO13485.8.4.OBL.001"
+    kind: obligation
+    title: "Determine, collect, and analyze appropriate data"
+    text: "The organization shall determine, collect, and analyze appropriate data to demonstrate the suitability and effectiveness of the QMS and to evaluate where continual improvement of the effectiveness of the QMS can be made."
+    sourceCitation: "ISO 13485:2016 §8.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - data_analysis_report
+      - qms_effectiveness_review
+
+  - obligationId: "ISO13485.8.4.OBL.002"
+    kind: obligation
+    title: "Analyze data from specified sources"
+    text: "Analysis of data shall include data generated as a result of feedback, product conformity, characteristics and trends of processes and products including opportunities for improvement, suppliers, audits, and service reports as applicable."
+    sourceCitation: "ISO 13485:2016 §8.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - trend_analysis_report
+      - statistical_analysis_record
+
+constraints:
+  - constraintId: "ISO13485.8.2.1.CON.001"
+    appliesTo: "ISO13485.8.2.1.OBL.001"
+    text: "Feedback data collection shall commence during production activities and continue through post-production activities. The organization shall not limit feedback monitoring to complaint data alone."
+    severity: hard
+
+  - constraintId: "ISO13485.8.2.4.CON.001"
+    appliesTo: "ISO13485.8.2.4.OBL.004"
+    text: "The audit programme shall ensure that all processes and areas of the QMS are audited within a defined cycle, with higher-risk areas audited more frequently."
+    severity: hard
+
+  - constraintId: "ISO13485.8.2.6.CON.001"
+    appliesTo: "ISO13485.8.2.6.OBL.002"
+    text: "Product shall not be released until all planned monitoring and measurement activities have been satisfactorily completed unless otherwise approved by a relevant authority."
+    severity: hard
+
+  - constraintId: "ISO13485.8.4.CON.001"
+    appliesTo: "ISO13485.8.4.OBL.001"
+    text: "Statistical techniques used for data analysis shall be documented, including their rationale and suitability for the intended purpose."
+    severity: soft
+
+definitions:
+  - definitionId: "ISO13485.DEF.FEEDBACK"
+    term: "Feedback"
+    text: "Information provided by an external or internal customer regarding satisfaction or dissatisfaction with a product or the complaint-handling process."
+    sourceCitation: "ISO 13485:2016 §8.2.1"
+
+  - definitionId: "ISO13485.DEF.MONITORING"
+    term: "Monitoring"
+    text: "Determining the status of a system, a process, a product, a service, or an activity through observation, supervision, or critical assessment."
+    sourceCitation: "ISO 9000:2015 §3.11.3"
+
+relationships:
+  - from: "ISO13485.8.2.1.OBL.001"
+    to: "ISO13485.8.2.2.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Feedback monitoring is the umbrella process that includes complaint handling"
+  - from: "ISO13485.8.2.1.OBL.002"
+    to: "ISO14971.4.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Feedback data feeds into the risk management process as input"
+  - from: "ISO13485.8.2.4.OBL.005"
+    to: "ISO13485.8.5.2.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Audit findings triggering corrective actions feed into CAPA process"
+  - from: "ISO13485.8.4.OBL.002"
+    to: "ISO13485.5.6.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Data analysis results are a required input to management review"
+  - from: "ISO13485.8.2.5.OBL.001"
+    to: "ISO13485.8.5.2.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Process monitoring failures trigger corrective action"

@@ -1,0 +1,179 @@
+regulation: "ISO 14971:2019"
+section: "Clauses 9-10"
+jurisdiction: GLOBAL
+processType: RISK_MANAGEMENT
+artifactType: POST_PRODUCTION
+version: "1.0.0"
+effectiveFrom: "2019-12-01"
+
+obligations:
+  - obligationId: "ISO14971.9.OBL.001"
+    kind: obligation
+    title: "Collect production information for risk management"
+    text: "The manufacturer shall establish, document, and maintain a system to actively collect and review information about the medical device or similar devices in the production phase."
+    sourceCitation: "ISO 14971:2019 §9.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - production_information_collection_plan
+      - production_data_review_record
+
+  - obligationId: "ISO14971.9.OBL.002"
+    kind: obligation
+    title: "Review collected production information for safety relevance"
+    text: "The manufacturer shall review the collected information for possible relevance to safety, particularly whether previously unrecognized hazards or hazardous situations are present, whether an estimated risk arising from a hazardous situation is no longer acceptable, or whether the initial evaluation is otherwise invalidated."
+    sourceCitation: "ISO 14971:2019 §9.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - safety_relevance_assessment
+      - hazard_reassessment_record
+
+  - obligationId: "ISO14971.9.OBL.003"
+    kind: obligation
+    title: "Take action on production information findings"
+    text: "If production information is found to be safety-relevant, the manufacturer shall determine whether actions are needed. At a minimum, the manufacturer shall consider whether to initiate the risk management process for the identified problem and determine whether risk control measures or other actions already taken remain effective."
+    sourceCitation: "ISO 14971:2019 §9.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - corrective_action_assessment
+      - risk_control_effectiveness_review
+
+  - obligationId: "ISO14971.10.OBL.001"
+    kind: obligation
+    title: "Establish post-production monitoring system"
+    text: "The manufacturer shall establish, document, and maintain a system to actively collect and review information about the medical device or similar devices in the post-production phase. The system shall include a process for collecting publicly available information about comparable devices."
+    sourceCitation: "ISO 14971:2019 §10.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - post_production_monitoring_plan
+      - post_market_surveillance_procedure
+
+  - obligationId: "ISO14971.10.OBL.002"
+    kind: obligation
+    title: "Review post-production information for safety"
+    text: "The manufacturer shall review the collected post-production information for possible relevance to safety. The review shall include assessment of whether previously unrecognized hazards or hazardous situations exist, whether a risk is no longer acceptable, or whether the state of the art has changed in ways that affect the risk assessment."
+    sourceCitation: "ISO 14971:2019 §10.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - post_production_safety_review
+      - state_of_art_assessment
+
+  - obligationId: "ISO14971.10.OBL.003"
+    kind: obligation
+    title: "Feed post-production data back into risk management"
+    text: "If post-production information is found to be safety-relevant, the manufacturer shall feed the information back into the risk management process. The manufacturer shall consider whether the risk management plan, risk analysis, risk evaluation, risk control, or overall residual risk evaluation need to be updated."
+    sourceCitation: "ISO 14971:2019 §10.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_file_update
+      - feedback_loop_record
+
+  - obligationId: "ISO14971.10.OBL.004"
+    kind: obligation
+    title: "Review risk management activities"
+    text: "The manufacturer shall review the execution of the risk management plan to ensure that the risk management plan has been appropriately implemented, the overall residual risk is acceptable, and appropriate methods are in place to obtain relevant production and post-production information."
+    sourceCitation: "ISO 14971:2019 §10.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_review_record
+      - risk_management_report
+
+  - obligationId: "ISO14971.10.OBL.005"
+    kind: obligation
+    title: "Document risk management review results"
+    text: "The results of the risk management review shall be recorded in the risk management file. The risk management report shall provide a summary of the risk management activities, including a statement of overall residual risk acceptability and a description of the methods used to obtain relevant production and post-production information."
+    sourceCitation: "ISO 14971:2019 §10.5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_report
+      - risk_management_file
+
+constraints:
+  - constraintId: "ISO14971.9.CON.001"
+    appliesTo: "ISO14971.9.OBL.001"
+    text: "The production information collection system shall be operational before the device enters production. Information sources shall include internal manufacturing data, process deviations, and nonconformance reports."
+    severity: hard
+
+  - constraintId: "ISO14971.9.CON.002"
+    appliesTo: "ISO14971.9.OBL.003"
+    text: "When production information reveals a previously unrecognized hazard, the risk management process shall be initiated without undue delay. The device risk management file shall be updated accordingly."
+    severity: hard
+
+  - constraintId: "ISO14971.10.CON.001"
+    appliesTo: "ISO14971.10.OBL.001"
+    text: "Post-production monitoring shall continue throughout the entire life cycle of the medical device. The monitoring system shall include sources such as complaint data, regulatory authority databases, published literature, and field safety corrective actions for similar devices."
+    severity: hard
+
+  - constraintId: "ISO14971.10.CON.002"
+    appliesTo: "ISO14971.10.OBL.003"
+    text: "The feedback loop from post-production data to risk management shall be documented and auditable. All risk management file updates triggered by post-production data shall reference the source information."
+    severity: hard
+
+  - constraintId: "ISO14971.10.CON.003"
+    appliesTo: "ISO14971.10.OBL.004"
+    text: "The risk management review shall be conducted at defined intervals and shall be completed before the risk management report is finalized or updated."
+    severity: hard
+
+definitions:
+  - definitionId: "ISO14971.DEF.PRODUCTION_PHASE"
+    term: "Production Phase"
+    text: "The part of the life cycle of a medical device during which units of the device are manufactured according to the design specifications."
+    sourceCitation: "ISO 14971:2019 §3.13"
+
+  - definitionId: "ISO14971.DEF.POST_PRODUCTION"
+    term: "Post-Production"
+    text: "That part of the life cycle of the product after the design has been completed and the medical device has been manufactured. It includes distribution, installation, use, maintenance, and decommissioning or disposal."
+    sourceCitation: "ISO 14971:2019 §3.12"
+
+  - definitionId: "ISO14971.DEF.RISK_MANAGEMENT_FILE"
+    term: "Risk Management File"
+    text: "Set of records and other documents that are produced by the risk management process. The risk management file may form part of the medical device file."
+    sourceCitation: "ISO 14971:2019 §3.20"
+
+  - definitionId: "ISO14971.DEF.STATE_OF_ART"
+    term: "State of the Art"
+    text: "Developed stage of technical capability at a given time as regards products, processes, and services, based on the relevant consolidated findings of science, technology, and experience."
+    sourceCitation: "ISO 14971:2019 §3.27"
+
+relationships:
+  - from: "ISO14971.9.OBL.002"
+    to: "ISO14971.9.OBL.001"
+    type: PART_OF
+  - from: "ISO14971.9.OBL.003"
+    to: "ISO14971.9.OBL.002"
+    type: PART_OF
+  - from: "ISO14971.10.OBL.002"
+    to: "ISO14971.10.OBL.001"
+    type: PART_OF
+  - from: "ISO14971.10.OBL.003"
+    to: "ISO14971.10.OBL.002"
+    type: PART_OF
+  - from: "ISO14971.9.OBL.001"
+    to: "ISO14971.4.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Production information collection is part of the overall risk management process"
+  - from: "ISO14971.10.OBL.001"
+    to: "ISO14971.4.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Post-production monitoring is part of the ongoing risk management process throughout the life cycle"
+  - from: "ISO14971.10.OBL.003"
+    to: "ISO14971.7.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Post-production findings may require new or revised risk control measures"
+  - from: "ISO14971.10.OBL.004"
+    to: "ISO14971.8.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Risk management review includes re-evaluation of overall residual risk acceptability"
+  - from: "ISO14971.9.OBL.003"
+    to: "ISO13485.8.5.2.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Safety-relevant production findings may trigger corrective actions per ISO 13485 CAPA requirements"
+  - from: "ISO14971.10.OBL.001"
+    to: "ISO13485.8.2.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Post-production monitoring aligns with ISO 13485 feedback and monitoring requirements"

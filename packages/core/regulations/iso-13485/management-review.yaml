@@ -1,0 +1,26 @@
+regulation: "ISO 13485:2016"
+section: "§5.6"
+jurisdiction: GLOBAL
+processType: MANAGEMENT_REVIEW
+artifactType: MGMT_REVIEW
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.5.6.OBL.001"
+    kind: obligation
+    title: "Conduct management review at planned intervals"
+    text: "Top management shall review the QMS at documented planned intervals to ensure its continuing suitability, adequacy, and effectiveness."
+    sourceCitation: "ISO 13485:2016 §5.6.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - management_review_record
+
+  - obligationId: "ISO13485.5.6.OBL.002"
+    kind: obligation
+    title: "Review inputs"
+    text: "Management review inputs shall include feedback, complaint handling, audits, monitoring, CAPA status, and changes that could affect the QMS."
+    sourceCitation: "ISO 13485:2016 §5.6.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - review_input_pack

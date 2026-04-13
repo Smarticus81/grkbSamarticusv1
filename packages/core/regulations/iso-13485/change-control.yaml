@@ -1,0 +1,28 @@
+regulation: "ISO 13485:2016"
+section: "§7.3.9"
+jurisdiction: GLOBAL
+processType: CHANGE_CONTROL
+artifactType: CHANGE
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.7.3.9.OBL.001"
+    kind: obligation
+    title: "Document design and development changes"
+    text: "The organization shall document procedures to control design and development changes. Changes shall be reviewed, verified, validated as appropriate, and approved before implementation."
+    sourceCitation: "ISO 13485:2016 §7.3.9"
+    mandatory: true
+    requiredEvidenceTypes:
+      - change_request
+      - impact_assessment
+      - change_approval
+
+  - obligationId: "ISO13485.7.3.9.OBL.002"
+    kind: obligation
+    title: "Evaluate impact of changes"
+    text: "The review of design and development changes shall include evaluation of the effect on constituent parts and product already delivered."
+    sourceCitation: "ISO 13485:2016 §7.3.9"
+    mandatory: true
+    requiredEvidenceTypes:
+      - impact_assessment

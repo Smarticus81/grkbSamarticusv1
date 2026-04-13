@@ -1,0 +1,181 @@
+regulation: "21 CFR Part 820 (FDA QSR)"
+section: "§820.5, §820.20, §820.22, §820.25, §820.50"
+jurisdiction: FDA
+processType: MANAGEMENT_CONTROL
+artifactType: MANAGEMENT
+version: "1.0.0"
+effectiveFrom: "1997-06-01"
+
+definitions:
+  - term: "Quality Policy"
+    definition: "The overall quality intentions and direction of an organization with respect to quality, as established by management with executive responsibility."
+  - term: "Quality Audit"
+    definition: "A systematic, independent examination of a manufacturer's quality system that is performed at defined intervals and at sufficient frequency to determine whether quality system activities and their results comply with quality system procedures, whether these procedures are implemented effectively, and whether these procedures are suitable to achieve quality system objectives (21 CFR §820.3(t))."
+  - term: "Management Representative"
+    definition: "A member of management who has authority and responsibility for ensuring that quality system requirements are effectively established and maintained (21 CFR §820.20(b)(3))."
+  - term: "Purchasing Controls"
+    definition: "Procedures to ensure that all purchased or otherwise received product and services conform to specified requirements."
+
+obligations:
+  - obligationId: "CFR820.5.OBL.001"
+    kind: obligation
+    title: "Establish and maintain quality system"
+    text: "Each manufacturer shall establish and maintain a quality system that is appropriate for the specific medical device(s) designed or manufactured, and that meets the requirements of this part."
+    sourceCitation: "21 CFR §820.5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_system_documentation
+
+  - obligationId: "CFR820.20.OBL.001"
+    kind: obligation
+    title: "Establish quality policy"
+    text: "Management with executive responsibility shall establish its policy and objectives for, and commitment to, quality. Management with executive responsibility shall ensure that the quality policy is understood, implemented, and maintained at all levels of the organization."
+    sourceCitation: "21 CFR §820.20(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_policy
+
+  - obligationId: "CFR820.20.OBL.002"
+    kind: obligation
+    title: "Establish organizational structure and responsibilities"
+    text: "Each manufacturer shall establish and maintain an adequate organizational structure to ensure that devices are designed and produced in accordance with the requirements of this part."
+    sourceCitation: "21 CFR §820.20(b)(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - organizational_chart
+      - responsibility_matrix
+
+  - obligationId: "CFR820.20.OBL.003"
+    kind: obligation
+    title: "Provide adequate resources"
+    text: "Each manufacturer shall provide adequate resources, including the assignment of trained personnel, for management, performance of work, and assessment activities, including internal quality audits, to meet the requirements of this part."
+    sourceCitation: "21 CFR §820.20(b)(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - resource_allocation_record
+
+  - obligationId: "CFR820.20.OBL.004"
+    kind: obligation
+    title: "Appoint management representative"
+    text: "Management with executive responsibility shall appoint, and document the appointment of, a member of management who, irrespective of other responsibilities, shall have established authority over and responsibility for ensuring that quality system requirements are effectively established and effectively maintained, and reporting on the performance of the quality system to management with executive responsibility for review."
+    sourceCitation: "21 CFR §820.20(b)(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - management_representative_appointment
+
+  - obligationId: "CFR820.20.OBL.005"
+    kind: obligation
+    title: "Conduct management review"
+    text: "Management with executive responsibility shall review the suitability and effectiveness of the quality system at defined intervals and with sufficient frequency according to established procedures to ensure that the quality system satisfies the requirements of this part and the manufacturer's established quality policy and objectives. The dates and results of quality system reviews shall be documented."
+    sourceCitation: "21 CFR §820.20(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - management_review_record
+
+  - obligationId: "CFR820.20.OBL.006"
+    kind: obligation
+    title: "Establish quality planning procedures"
+    text: "Each manufacturer shall establish a quality plan which defines the quality practices, resources, and activities relevant to devices that are designed and manufactured. The manufacturer shall establish how the requirements for quality will be met."
+    sourceCitation: "21 CFR §820.20(d)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_plan
+
+  - obligationId: "CFR820.22.OBL.001"
+    kind: obligation
+    title: "Establish quality audit procedures"
+    text: "Each manufacturer shall establish procedures for quality audits and conduct such audits to assure that the quality system is in compliance with the established quality system requirements and to determine the effectiveness of the quality system. Quality audits shall be conducted by individuals who do not have direct responsibility for the matters being audited."
+    sourceCitation: "21 CFR §820.22"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_audit_procedure
+      - quality_audit_report
+
+  - obligationId: "CFR820.22.OBL.002"
+    kind: obligation
+    title: "Document corrective actions from quality audits"
+    text: "Corrective action(s), including a reaudit of deficient matters, shall be taken when necessary. A report of the results of each quality audit, and reaudit(s) where taken, shall be made and such reports shall be reviewed by management having responsibility for the matters audited."
+    sourceCitation: "21 CFR §820.22"
+    mandatory: true
+    requiredEvidenceTypes:
+      - audit_corrective_action_record
+
+  - obligationId: "CFR820.25.OBL.001"
+    kind: obligation
+    title: "Establish personnel training procedures"
+    text: "Each manufacturer shall establish procedures for identifying training needs and ensure that all personnel are trained to adequately perform their assigned responsibilities. Training shall be documented."
+    sourceCitation: "21 CFR §820.25(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - training_procedure
+      - training_record
+
+  - obligationId: "CFR820.50.OBL.001"
+    kind: obligation
+    title: "Establish purchasing controls"
+    text: "Each manufacturer shall establish and maintain procedures to ensure that all purchased or otherwise received product and services conform to specified requirements."
+    sourceCitation: "21 CFR §820.50(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - purchasing_procedure
+
+  - obligationId: "CFR820.50.OBL.002"
+    kind: obligation
+    title: "Evaluate and select suppliers"
+    text: "Each manufacturer shall establish and maintain the requirements, including quality requirements, that must be met by suppliers, contractors, and consultants. Each manufacturer shall evaluate and select potential suppliers, contractors, and consultants on the basis of their ability to meet specified requirements, including quality requirements."
+    sourceCitation: "21 CFR §820.50(a)(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - approved_supplier_list
+      - supplier_evaluation_record
+
+  - obligationId: "CFR820.50.OBL.003"
+    kind: obligation
+    title: "Establish purchasing data requirements"
+    text: "Each manufacturer shall establish and maintain data that clearly describe or reference the specified requirements, including quality requirements, for purchased or otherwise received product and services. Purchasing documents shall include, where possible, an agreement that the suppliers, contractors, and consultants agree to notify the manufacturer of changes in the product or service so that manufacturers may determine whether the changes may affect the quality of a finished device."
+    sourceCitation: "21 CFR §820.50(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - purchasing_specification
+      - supplier_change_notification_agreement
+
+constraints:
+  - constraintId: "CFR820.20.CON.001"
+    appliesTo: "CFR820.20.OBL.005"
+    text: "Management reviews must occur at defined intervals with sufficient frequency; annual reviews are the minimum acceptable frequency."
+    severity: hard
+  - constraintId: "CFR820.22.CON.001"
+    appliesTo: "CFR820.22.OBL.001"
+    text: "Quality auditors must be independent from the areas being audited; self-auditing is not permitted."
+    severity: hard
+  - constraintId: "CFR820.50.CON.001"
+    appliesTo: "CFR820.50.OBL.002"
+    text: "Suppliers providing components, materials, or services affecting device quality must be qualified before use; initial supply without evaluation is a nonconformance."
+    severity: hard
+
+relationships:
+  - from: "CFR820.20.OBL.001"
+    to: "ISO13485.5.6.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA management responsibility aligns with ISO 13485 §5.1 management commitment and §5.3 quality policy"
+  - from: "CFR820.20.OBL.005"
+    to: "ISO13485.5.6.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA management review aligns with ISO 13485 §5.6 management review"
+  - from: "CFR820.22.OBL.001"
+    to: "ISO13485.8.2.2.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA quality audit aligns with ISO 13485 §8.2.4 internal audit"
+  - from: "CFR820.25.OBL.001"
+    to: "ISO13485.5.6.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA personnel training aligns with ISO 13485 §6.2 human resources"
+  - from: "CFR820.50.OBL.001"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA purchasing controls align with ISO 13485 §7.4 purchasing"

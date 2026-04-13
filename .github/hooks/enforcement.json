@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-hooks",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "type": "command",
+        "command": "node scripts/check-agent-ground.mjs",
+        "timeout": 10
+      }
+    ]
+  }
+}

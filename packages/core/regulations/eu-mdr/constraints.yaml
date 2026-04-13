@@ -1,0 +1,23 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Cross-cutting constraints"
+jurisdiction: EU_MDR
+processType: GENERIC
+artifactType: GENERIC
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations: []
+
+constraints:
+  - constraintId: "EUMDR.GEN.CON.001"
+    appliesTo: "EUMDR.83.OBL.001"
+    text: "PMS activities shall be proportionate to the risk class and intended purpose of the device."
+    severity: hard
+  - constraintId: "EUMDR.GEN.CON.002"
+    appliesTo: "EUMDR.86.PSUR.OBL.001"
+    text: "PSUR conclusions shall be supported by data; speculative or unsupported conclusions are not acceptable."
+    severity: hard
+  - constraintId: "EUMDR.GEN.CON.003"
+    appliesTo: "EUMDR.87.OBL.001"
+    text: "Reportability decisions shall use IMDRF coding terminology."
+    severity: hard

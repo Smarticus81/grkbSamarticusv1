@@ -1,0 +1,31 @@
+regulation: "21 CFR Part 820 (FDA QSR)"
+section: "§820.198"
+jurisdiction: FDA
+processType: COMPLAINT
+artifactType: COMPLAINT
+version: "1.0.0"
+effectiveFrom: "1997-06-01"
+
+obligations:
+  - obligationId: "CFR820.198.OBL.001"
+    kind: obligation
+    title: "Maintain complaint files"
+    text: "Each manufacturer shall maintain complaint files. Each manufacturer shall establish and maintain procedures for receiving, reviewing, and evaluating complaints by a formally designated unit."
+    sourceCitation: "21 CFR §820.198(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - complaint_file
+
+  - obligationId: "CFR820.198.OBL.002"
+    kind: obligation
+    title: "Determine MDR reportability"
+    text: "Any complaint involving the possible failure of a device, labeling, or packaging to meet any of its specifications shall be reviewed, evaluated, and investigated, unless such investigation has already been performed for a similar complaint and another investigation is not necessary."
+    sourceCitation: "21 CFR §820.198(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - mdr_assessment
+
+relationships:
+  - from: "CFR820.198.OBL.001"
+    to: "ISO13485.8.2.2.OBL.001"
+    type: CROSS_REFERENCES

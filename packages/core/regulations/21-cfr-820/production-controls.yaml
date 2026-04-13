@@ -1,0 +1,186 @@
+regulation: "21 CFR Part 820 (FDA QSR)"
+section: "§820.70–§820.75"
+jurisdiction: FDA
+processType: PRODUCTION_CONTROL
+artifactType: PRODUCTION
+version: "1.0.0"
+effectiveFrom: "1997-06-01"
+
+definitions:
+  - term: "Process Validation"
+    definition: "Establishing by objective evidence that a process consistently produces a result or product meeting its predetermined specifications (21 CFR §820.3(z)(1))."
+  - term: "Production Record"
+    definition: "A compilation of records containing the production history of a finished device, including dates of manufacture, quantity, labeling, and any test data."
+  - term: "Controlled Environment"
+    definition: "A manufacturing environment where conditions (e.g., temperature, humidity, particulate levels) are monitored and maintained within specified limits."
+
+obligations:
+  - obligationId: "CFR820.70.OBL.001"
+    kind: obligation
+    title: "Develop and maintain production and process control procedures"
+    text: "Each manufacturer shall develop, conduct, control, and monitor production processes to ensure that a device conforms to its specifications. Where deviations from device specifications could occur as a result of the manufacturing process, the manufacturer shall establish and maintain process control procedures that describe any process controls necessary to ensure conformance to specifications."
+    sourceCitation: "21 CFR §820.70(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - production_control_procedure
+
+  - obligationId: "CFR820.70.OBL.002"
+    kind: obligation
+    title: "Monitor and control process parameters and component features"
+    text: "Where process controls are needed they shall include documented instructions, standard operating procedures (SOPs), and methods to monitor and control the applicable process parameters and component and device features."
+    sourceCitation: "21 CFR §820.70(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - process_monitoring_record
+      - standard_operating_procedure
+
+  - obligationId: "CFR820.70.OBL.003"
+    kind: obligation
+    title: "Approve process changes before implementation"
+    text: "Each manufacturer shall establish and maintain procedures for changes to a specification, method, process, or procedure. Such changes shall be verified or where appropriate validated according to §820.75, before implementation and these activities shall be documented."
+    sourceCitation: "21 CFR §820.70(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - process_change_record
+
+  - obligationId: "CFR820.70.OBL.004"
+    kind: obligation
+    title: "Control environmental conditions"
+    text: "Where environmental conditions could reasonably be expected to have an adverse effect on product quality, each manufacturer shall establish and maintain procedures to adequately control these environmental conditions. Environmental control system(s) shall be periodically inspected to verify that the system, including necessary equipment, is adequate and functioning properly."
+    sourceCitation: "21 CFR §820.70(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - environmental_monitoring_record
+      - environmental_control_procedure
+
+  - obligationId: "CFR820.70.OBL.005"
+    kind: obligation
+    title: "Ensure personnel competence"
+    text: "Each manufacturer shall establish and maintain requirements for the health, cleanliness, personal practices, and clothing of personnel if contact between such personnel and product or environment could reasonably be expected to have an adverse effect on product quality."
+    sourceCitation: "21 CFR §820.70(d)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - personnel_hygiene_procedure
+
+  - obligationId: "CFR820.70.OBL.006"
+    kind: obligation
+    title: "Prevent product contamination"
+    text: "Each manufacturer shall establish and maintain procedures to prevent contamination of equipment or product by substances that could reasonably be expected to have an adverse effect on product quality."
+    sourceCitation: "21 CFR §820.70(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - contamination_control_procedure
+
+  - obligationId: "CFR820.70.OBL.007"
+    kind: obligation
+    title: "Maintain buildings and facilities"
+    text: "Each manufacturer shall ensure that buildings are of suitable design and contain sufficient space to perform necessary operations, prevent mix-ups, and assure orderly handling."
+    sourceCitation: "21 CFR §820.70(f)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - facility_layout_record
+
+  - obligationId: "CFR820.70.OBL.008"
+    kind: obligation
+    title: "Maintain equipment and adjust as needed"
+    text: "Each manufacturer shall ensure that all equipment used in the manufacturing process meets specified requirements and is appropriately designed, constructed, placed, and installed to facilitate maintenance, adjustment, cleaning, and use."
+    sourceCitation: "21 CFR §820.70(g)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - equipment_maintenance_record
+
+  - obligationId: "CFR820.70.OBL.009"
+    kind: obligation
+    title: "Document equipment maintenance schedules and records"
+    text: "Each manufacturer shall establish and maintain schedules for the adjustment, cleaning, and other maintenance of equipment to ensure that manufacturing specifications are met. Maintenance activities, including the date and individual(s) performing the maintenance, shall be documented."
+    sourceCitation: "21 CFR §820.70(g)(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - equipment_maintenance_schedule
+      - equipment_maintenance_log
+
+  - obligationId: "CFR820.70.OBL.010"
+    kind: obligation
+    title: "Document inspection of manufacturing material"
+    text: "Each manufacturer shall establish and maintain procedures for the use and removal of manufacturing material to ensure that it is removed or limited to an amount that does not adversely affect the device's quality. The removal or reduction of such manufacturing material shall be documented."
+    sourceCitation: "21 CFR §820.70(h)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - manufacturing_material_record
+
+  - obligationId: "CFR820.70.OBL.011"
+    kind: obligation
+    title: "Control automated processes"
+    text: "When computers or automated data processing systems are used as part of production or the quality system, the manufacturer shall validate computer software for its intended use according to an established protocol. All software changes shall be validated before approval and issuance."
+    sourceCitation: "21 CFR §820.70(i)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - software_validation_record
+
+  - obligationId: "CFR820.75.OBL.001"
+    kind: obligation
+    title: "Validate processes where results cannot be fully verified"
+    text: "Where the results of a process cannot be fully verified by subsequent inspection and test, the process shall be validated with a high degree of assurance and approved according to established procedures. The validation activities and results, including the date and signature of the individual(s) approving the validation and where appropriate the major equipment validated, shall be documented."
+    sourceCitation: "21 CFR §820.75(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - process_validation_protocol
+      - process_validation_report
+
+  - obligationId: "CFR820.75.OBL.002"
+    kind: obligation
+    title: "Monitor and control validated processes"
+    text: "Each manufacturer shall establish and maintain procedures for monitoring and control of process parameters for validated processes to ensure that the specified requirements continue to be met."
+    sourceCitation: "21 CFR §820.75(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - validated_process_monitoring_record
+
+  - obligationId: "CFR820.75.OBL.003"
+    kind: obligation
+    title: "Revalidate processes when changes or deviations occur"
+    text: "Each manufacturer shall ensure that validated processes are revalidated when changes or process deviations occur that could affect the quality of the finished device or result in a change or deviation from the validated process. Such revalidation activities shall be documented."
+    sourceCitation: "21 CFR §820.75(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - process_revalidation_record
+
+constraints:
+  - constraintId: "CFR820.70.CON.001"
+    appliesTo: "CFR820.70.OBL.003"
+    text: "Process changes must be verified or validated before implementation; retrospective justification alone is insufficient."
+    severity: hard
+  - constraintId: "CFR820.70.CON.002"
+    appliesTo: "CFR820.70.OBL.004"
+    text: "Environmental monitoring shall include documented alert and action limits with defined responses for excursions."
+    severity: hard
+  - constraintId: "CFR820.75.CON.001"
+    appliesTo: "CFR820.75.OBL.001"
+    text: "Process validation must use statistical techniques with predetermined acceptance criteria; a single successful run is not sufficient."
+    severity: hard
+  - constraintId: "CFR820.75.CON.002"
+    appliesTo: "CFR820.75.OBL.003"
+    text: "Revalidation must be completed and approved before releasing product manufactured under changed process conditions."
+    severity: hard
+
+relationships:
+  - from: "CFR820.75.OBL.001"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA process validation aligns with ISO 13485 §7.5.6 validation of processes for production and service provision"
+  - from: "CFR820.70.OBL.001"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA production controls align with ISO 13485 §7.5.1 control of production and service provision"
+  - from: "CFR820.70.OBL.004"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA environmental controls align with ISO 13485 §6.4 work environment"
+  - from: "CFR820.70.OBL.011"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA automated process controls align with ISO 13485 §7.5.6 and §7.6 software validation"

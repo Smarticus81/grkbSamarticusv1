@@ -1,0 +1,727 @@
+regulation: "UK Medical Devices Regulations 2002 (SI 2002/618, as amended by SI 2019/791 and SI 2020/1478)"
+section: "Parts 1-6"
+jurisdiction: UK_MHRA
+processType: GENERIC
+artifactType: GENERIC
+version: "1.0.0"
+effectiveFrom: "2021-01-01"
+
+obligations:
+  # ---------------------------------------------------------------------------
+  # Part 1 -- General Provisions
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.1.OBL.001"
+    kind: obligation
+    title: "Scope and application of the Regulations"
+    text: "These Regulations apply to medical devices, active implantable medical devices, and in vitro diagnostic medical devices placed on the Great Britain market. Manufacturers, authorised representatives, and importers must ensure their devices comply with all applicable provisions."
+    sourceCitation: "UK MDR 2002, Regulation 2-3, as amended by SI 2019/791 Reg 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - regulatory_applicability_assessment
+
+  - obligationId: "UKMDR.2.OBL.001"
+    kind: obligation
+    title: "Interpretation of key terms"
+    text: "The terms 'medical device', 'manufacturer', 'authorised representative', 'placing on the market', 'putting into service', 'serious incident', and 'field safety corrective action' shall be interpreted in accordance with Regulation 2 as amended. All persons must apply these definitions consistently when determining regulatory obligations."
+    sourceCitation: "UK MDR 2002, Regulation 2, as amended by SI 2020/1478 Reg 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - glossary_reference
+
+  # ---------------------------------------------------------------------------
+  # Part 1 -- Placing on the Market
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.6.OBL.001"
+    kind: obligation
+    title: "Conditions for placing on the market"
+    text: "No person shall place a relevant device on the UK market unless it satisfies the essential requirements applicable to it, the appropriate conformity assessment procedure has been carried out, and it bears a UKCA marking (or CE marking during any applicable transitional period)."
+    sourceCitation: "UK MDR 2002, Regulation 6, as amended by SI 2019/791 Reg 6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_declaration
+      - ukca_marking_record
+
+  - obligationId: "UKMDR.7.OBL.001"
+    kind: obligation
+    title: "Custom-made device exemptions"
+    text: "A custom-made device is not required to bear a UKCA marking but must comply with essential requirements, be accompanied by a statement containing prescribed particulars, and the manufacturer must make the documentation available to the MHRA on request."
+    sourceCitation: "UK MDR 2002, Regulation 7"
+    mandatory: true
+    requiredEvidenceTypes:
+      - custom_made_statement
+      - technical_documentation
+
+  # ---------------------------------------------------------------------------
+  # Part 2 -- Essential Requirements (Schedule 1)
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.10.OBL.001"
+    kind: obligation
+    title: "Compliance with essential requirements"
+    text: "A relevant device must meet the essential requirements set out in Schedule 1 which apply to it, taking account of the intended purpose of the device. The manufacturer must demonstrate compliance through appropriate evidence including risk analysis, design verification, and clinical data."
+    sourceCitation: "UK MDR 2002, Regulation 10, Schedule 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - essential_requirements_checklist
+      - risk_analysis
+      - design_verification_record
+
+  - obligationId: "UKMDR.10.OBL.002"
+    kind: obligation
+    title: "General safety and performance requirements"
+    text: "Devices shall be designed and manufactured in such a way that, when used under the conditions and for the purposes intended, they will not compromise the clinical condition or safety of patients or the safety and health of users or other persons, provided that any risks which may be associated with their use constitute acceptable risks when weighed against the benefits to the patient."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part I, Para 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_benefit_analysis
+      - clinical_evaluation_report
+
+  - obligationId: "UKMDR.10.OBL.003"
+    kind: obligation
+    title: "Design and construction for safety"
+    text: "Devices shall be designed, manufactured, and packaged in such a way that their characteristics and performances are not adversely affected during transport and storage when handled in accordance with the manufacturer's instructions."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part I, Para 2-3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_output_record
+      - packaging_validation
+
+  - obligationId: "UKMDR.10.OBL.004"
+    kind: obligation
+    title: "Chemical, physical, and biological properties"
+    text: "Devices shall be designed and manufactured in such a way as to minimise the risks posed by substances leaching from the device. Particular attention shall be paid to tissues exposed, duration and frequency of exposure, and toxicity of substances used."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part II, Para 7"
+    mandatory: true
+    requiredEvidenceTypes:
+      - biocompatibility_assessment
+      - material_characterisation
+
+  - obligationId: "UKMDR.10.OBL.005"
+    kind: obligation
+    title: "Infection and microbial contamination"
+    text: "Devices and manufacturing processes shall be designed in such a way as to eliminate or reduce as far as practicable the risk of infection to the patient, user, and third parties. The design must allow easy and safe handling and, where necessary, minimise contamination of the device by the patient or vice versa during use."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part II, Para 8"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sterility_validation
+      - contamination_control_record
+
+  - obligationId: "UKMDR.10.OBL.006"
+    kind: obligation
+    title: "Devices incorporating software and software as a medical device"
+    text: "Devices incorporating electronic programmable systems, including software which is itself a medical device, shall be designed to ensure repeatability, reliability, and performance in line with their intended use. In the event of a single fault condition, appropriate means shall be adopted to eliminate or reduce resulting risks."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part II, Para 12"
+    mandatory: true
+    requiredEvidenceTypes:
+      - software_lifecycle_record
+      - software_verification_validation
+      - risk_analysis
+
+  # ---------------------------------------------------------------------------
+  # Part 2 -- Labelling and Instructions for Use
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.10.OBL.007"
+    kind: obligation
+    title: "Labelling requirements"
+    text: "The label shall bear the name or trade name and address of the manufacturer, the details strictly necessary for the user to identify the device and the contents of the packaging, the lot number or serial number, an indication of the date by which the device should be used (where relevant), and the UKCA marking."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part II, Para 13.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - label_review_record
+
+  - obligationId: "UKMDR.10.OBL.008"
+    kind: obligation
+    title: "Instructions for use"
+    text: "Each device shall be accompanied by instructions for use containing the information needed to use the device safely, the intended purpose, contraindications, warnings and precautions, and performance characteristics relevant to the user. Where appropriate, information shall be provided in a form that can be easily understood by the intended user."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part II, Para 13.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - instructions_for_use
+      - usability_assessment
+
+  # ---------------------------------------------------------------------------
+  # Part 2 -- Clinical Evidence
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.10.OBL.009"
+    kind: obligation
+    title: "Clinical evaluation"
+    text: "Confirmation of conformity with the essential requirements must include a clinical evaluation in accordance with Schedule 1. Clinical data supporting the essential requirements must be based on clinical investigations, published literature, or clinical experience, and must be sufficient in view of the characteristics of the device and its intended purpose."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part I, Para 6A, as amended by SI 2020/1478"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - clinical_investigation_plan
+      - clinical_data_summary
+
+  # ---------------------------------------------------------------------------
+  # Part 2 -- Classification (Schedule 4)
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.13.OBL.001"
+    kind: obligation
+    title: "Classification of medical devices"
+    text: "Medical devices other than active implantable and in vitro diagnostic medical devices shall be divided into Classes I, IIa, IIb, and III in accordance with the classification rules set out in Schedule 4. The manufacturer shall apply the classification rules taking into account the intended purpose and the inherent risks of the device."
+    sourceCitation: "UK MDR 2002, Regulation 13, Schedule 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_rationale
+      - intended_purpose_statement
+
+  - obligationId: "UKMDR.13.OBL.002"
+    kind: obligation
+    title: "Classification disputes"
+    text: "In cases of dispute between the manufacturer and the relevant UK Approved Body regarding the application of the classification rules, the matter shall be referred to the Secretary of State for a decision."
+    sourceCitation: "UK MDR 2002, Regulation 13(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - classification_rationale
+
+  # ---------------------------------------------------------------------------
+  # Part 2 -- Conformity Assessment (Regulations 14-19)
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.14.OBL.001"
+    kind: obligation
+    title: "EC Declaration of Conformity (full quality assurance)"
+    text: "For Class III devices, the manufacturer may follow the conformity assessment procedure for full quality assurance (Annex II equivalent as transposed into UK law). The manufacturer must maintain a quality management system covering design, manufacture, final inspection and testing, and must apply to a UK Approved Body for assessment of the QMS."
+    sourceCitation: "UK MDR 2002, Regulation 14, Schedule 3 Part II"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_management_system_certificate
+      - design_dossier
+      - declaration_of_conformity
+
+  - obligationId: "UKMDR.15.OBL.001"
+    kind: obligation
+    title: "EC type-examination"
+    text: "Where a conformity assessment procedure requires EC type-examination, the manufacturer must submit an application to a UK Approved Body together with the design documentation and a representative sample. The Approved Body shall examine and verify the device meets the essential requirements."
+    sourceCitation: "UK MDR 2002, Regulation 15, Schedule 3 Part III"
+    mandatory: true
+    requiredEvidenceTypes:
+      - type_examination_certificate
+      - technical_documentation
+
+  - obligationId: "UKMDR.16.OBL.001"
+    kind: obligation
+    title: "EC verification"
+    text: "The manufacturer must submit devices of a homogeneous batch for EC verification. The UK Approved Body shall carry out the appropriate examinations and tests to verify conformity with the type described in the type-examination certificate or with the essential requirements."
+    sourceCitation: "UK MDR 2002, Regulation 16, Schedule 3 Part IV"
+    mandatory: true
+    requiredEvidenceTypes:
+      - verification_certificate
+      - test_reports
+
+  - obligationId: "UKMDR.17.OBL.001"
+    kind: obligation
+    title: "Declaration of Conformity for Class I devices"
+    text: "For devices in Class I (other than those with a measuring function or supplied sterile), the manufacturer must draw up a UK Declaration of Conformity and maintain technical documentation demonstrating the device conforms with the essential requirements. The manufacturer may self-declare without Approved Body involvement."
+    sourceCitation: "UK MDR 2002, Regulation 17, Schedule 3 Part VII"
+    mandatory: true
+    requiredEvidenceTypes:
+      - declaration_of_conformity
+      - technical_documentation
+
+  - obligationId: "UKMDR.18.OBL.001"
+    kind: obligation
+    title: "Technical documentation requirements"
+    text: "The manufacturer must compile and maintain technical documentation sufficient to allow assessment of the device's conformity with the essential requirements. The documentation must include device description, design drawings, risk analysis, essential requirements checklist, clinical evaluation, labelling, and instructions for use."
+    sourceCitation: "UK MDR 2002, Regulation 18, Schedule 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - technical_documentation
+      - risk_analysis
+      - essential_requirements_checklist
+      - clinical_evaluation_report
+
+  - obligationId: "UKMDR.19.OBL.001"
+    kind: obligation
+    title: "UKCA marking affixation"
+    text: "A device which satisfies the essential requirements and for which the applicable conformity assessment procedure has been carried out must bear the UKCA marking. The marking shall be affixed visibly, legibly, and indelibly to the device or its sterile pack and, where appropriate, to the instructions for use."
+    sourceCitation: "UK MDR 2002, Regulation 19, as amended by SI 2019/791"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ukca_marking_record
+      - label_artwork
+
+  # ---------------------------------------------------------------------------
+  # Part 3 -- UK Approved Bodies
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.25.OBL.001"
+    kind: obligation
+    title: "Approved Body designation requirements"
+    text: "A body may only be designated as a UK Approved Body if it satisfies the criteria set out in the Regulations relating to organisational competence, independence, impartiality, technical knowledge, and resources. The Secretary of State shall designate and monitor UK Approved Bodies."
+    sourceCitation: "UK MDR 2002, Regulation 25-27, as amended by SI 2019/791"
+    mandatory: true
+    requiredEvidenceTypes:
+      - approved_body_certificate
+
+  # ---------------------------------------------------------------------------
+  # Part 4 -- Registration and Information
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.40.OBL.001"
+    kind: obligation
+    title: "Device registration with MHRA"
+    text: "Before a relevant device is placed on the UK market, the manufacturer or their UK Responsible Person must register the device with the MHRA. The registration must include the manufacturer's name and address, a description and intended purpose of the device, the device class, and the GMDN code or equivalent."
+    sourceCitation: "UK MDR 2002, Regulation 40, as amended by SI 2019/791 and SI 2020/1478"
+    mandatory: true
+    requiredEvidenceTypes:
+      - mhra_registration_record
+      - device_listing
+
+  - obligationId: "UKMDR.40.OBL.002"
+    kind: obligation
+    title: "MHRA registration updates"
+    text: "The manufacturer or UK Responsible Person must inform the MHRA of any significant changes to the registered information, including changes to the device, cessation of placing on the market, or changes to the manufacturer's details. Updates shall be provided without undue delay."
+    sourceCitation: "UK MDR 2002, Regulation 40(4)-(5), as amended"
+    mandatory: true
+    requiredEvidenceTypes:
+      - mhra_registration_record
+      - change_notification
+
+  - obligationId: "UKMDR.41.OBL.001"
+    kind: obligation
+    title: "Unique Device Identification (UDI)"
+    text: "Manufacturers must assign a Unique Device Identifier to their devices in accordance with the requirements set by the MHRA. The UDI shall enable unambiguous identification of the specific device on the market and facilitate traceability through the supply chain."
+    sourceCitation: "UK MDR 2002, Regulation 41, as amended by SI 2020/1478"
+    mandatory: true
+    requiredEvidenceTypes:
+      - udi_assignment_record
+      - udi_database_entry
+
+  # ---------------------------------------------------------------------------
+  # Part 4 -- Responsible Person (Regulation 58A)
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.58A.OBL.001"
+    kind: obligation
+    title: "UK Responsible Person designation"
+    text: "A manufacturer established outside the United Kingdom who places a device on the UK market must designate a sole UK Responsible Person. The UK Responsible Person must be established in the United Kingdom and shall act on behalf of the manufacturer in relation to the manufacturer's obligations under these Regulations."
+    sourceCitation: "UK MDR 2002, Regulation 58A, inserted by SI 2019/791"
+    mandatory: true
+    requiredEvidenceTypes:
+      - responsible_person_designation
+      - responsible_person_agreement
+
+  - obligationId: "UKMDR.58A.OBL.002"
+    kind: obligation
+    title: "UK Responsible Person obligations"
+    text: "The UK Responsible Person shall: (a) ensure the UK Declaration of Conformity and technical documentation have been drawn up; (b) keep available a copy of the technical documentation and the UK Declaration of Conformity for inspection by the MHRA; (c) comply with registration obligations; (d) forward to the manufacturer any request by the MHRA for samples or access to devices; (e) cooperate with the MHRA on preventive or corrective actions."
+    sourceCitation: "UK MDR 2002, Regulation 58A(3)-(5), as amended by SI 2020/1478"
+    mandatory: true
+    requiredEvidenceTypes:
+      - responsible_person_agreement
+      - technical_documentation
+      - declaration_of_conformity
+
+  # ---------------------------------------------------------------------------
+  # Part 5 -- Vigilance and Incident Reporting
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.45.OBL.001"
+    kind: obligation
+    title: "Reporting serious incidents to MHRA"
+    text: "The manufacturer must report to the MHRA any serious incident involving a device made available on the UK market. A serious incident is any malfunction or deterioration in characteristics or performance, or any inadequacy in the labelling or instructions for use that, directly or indirectly, led to, might have led to, or might lead to the death of a patient, user or other person, or the serious deterioration in their state of health."
+    sourceCitation: "UK MDR 2002, Regulation 45, as amended by SI 2020/1478"
+    mandatory: true
+    requiredEvidenceTypes:
+      - serious_incident_report
+      - incident_assessment_record
+
+  - obligationId: "UKMDR.45.OBL.002"
+    kind: obligation
+    title: "Incident reporting timelines"
+    text: "Serious incidents that represent a serious public health threat must be reported immediately and no later than 2 calendar days after the manufacturer becomes aware. Incidents involving death or unanticipated serious deterioration in health must be reported no later than 10 calendar days. All other reportable serious incidents must be reported no later than 15 calendar days."
+    sourceCitation: "UK MDR 2002, Regulation 45(3), as amended by SI 2020/1478"
+    mandatory: true
+    requiredEvidenceTypes:
+      - incident_timestamp_record
+      - serious_incident_report
+
+  - obligationId: "UKMDR.46.OBL.001"
+    kind: obligation
+    title: "Field safety corrective actions"
+    text: "The manufacturer must report to the MHRA any field safety corrective action taken in respect of a device made available on the UK market, including any recall, modification, exchange, destruction, or retrofit of the device. The manufacturer must issue a field safety notice to users and, where appropriate, patients."
+    sourceCitation: "UK MDR 2002, Regulation 46, as amended"
+    mandatory: true
+    requiredEvidenceTypes:
+      - fsca_record
+      - field_safety_notice
+      - distribution_record
+
+  - obligationId: "UKMDR.46.OBL.002"
+    kind: obligation
+    title: "Field safety notice content"
+    text: "A field safety notice must identify the device, describe the hazard, specify the action to be taken by users, provide a timeline for implementation, and include contact details for the manufacturer. The notice must be clear, concise, and written in English."
+    sourceCitation: "UK MDR 2002, Regulation 46, MHRA Guidance"
+    mandatory: true
+    requiredEvidenceTypes:
+      - field_safety_notice
+      - distribution_record
+
+  # ---------------------------------------------------------------------------
+  # Part 5 -- Trend Reporting
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.47.OBL.001"
+    kind: obligation
+    title: "Trend reporting"
+    text: "The manufacturer must report to the MHRA any statistically significant increase in the frequency or severity of non-serious incidents or expected side effects that could have a significant impact on the benefit-risk analysis and that has led or may lead to risks to the health or safety of patients, users, or other persons that are unacceptable when weighed against the intended benefits."
+    sourceCitation: "UK MDR 2002, Regulation 47, as amended by SI 2020/1478"
+    mandatory: true
+    requiredEvidenceTypes:
+      - trend_report
+      - statistical_analysis
+      - benefit_risk_analysis
+
+  # ---------------------------------------------------------------------------
+  # Part 5 -- Post-Market Surveillance
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.48.OBL.001"
+    kind: obligation
+    title: "Post-market surveillance system"
+    text: "The manufacturer shall plan, establish, document, implement, maintain, and update a post-market surveillance system proportionate to the risk class and appropriate for the type of device. The system must actively and systematically gather, record, and analyse data on the quality, performance, and safety of a device throughout its entire lifetime."
+    sourceCitation: "UK MDR 2002, Regulation 48, as amended by SI 2020/1478"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+      - pms_report
+
+  - obligationId: "UKMDR.48.OBL.002"
+    kind: obligation
+    title: "Post-market surveillance plan"
+    text: "The PMS plan shall address the collection of data from users, distributors, importers, and published literature. It shall include proactive and systematic processes for collecting data on clinical experience, complaint handling, trend analysis, and updates to the clinical evaluation. The plan shall specify indicators and thresholds for triggering corrective or preventive actions."
+    sourceCitation: "UK MDR 2002, Regulation 48, MHRA Guidance"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+      - clinical_evaluation_report
+
+  - obligationId: "UKMDR.48.OBL.003"
+    kind: obligation
+    title: "Post-market surveillance report"
+    text: "The manufacturer of Class I devices must prepare a PMS report summarising the results and conclusions of the analyses of PMS data, including a rationale and description of any preventive and corrective actions taken. The report must be updated when necessary and made available to the MHRA upon request."
+    sourceCitation: "UK MDR 2002, Regulation 48(5), as amended"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_report
+
+  - obligationId: "UKMDR.48.OBL.004"
+    kind: obligation
+    title: "Periodic safety update report (PSUR)"
+    text: "The manufacturer of Class IIa, IIb, and III devices must prepare a periodic safety update report (PSUR) for each device, summarising the results and conclusions of the PMS data analysis, the benefit-risk determination, the main findings of any PMCF, the volume of sales, and an estimate of the population using the device."
+    sourceCitation: "UK MDR 2002, Regulation 48(6)-(7), as amended"
+    mandatory: true
+    requiredEvidenceTypes:
+      - psur
+      - benefit_risk_analysis
+      - sales_data
+
+  # ---------------------------------------------------------------------------
+  # Part 6 -- Enforcement
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.52.OBL.001"
+    kind: obligation
+    title: "Compliance with enforcement notices"
+    text: "Where the MHRA issues a compliance notice requiring a person to take specified steps to comply with the Regulations, that person must comply within the period stated in the notice. Failure to comply with a compliance notice is an offence."
+    sourceCitation: "UK MDR 2002, Regulation 52-53, as amended"
+    mandatory: true
+    requiredEvidenceTypes:
+      - compliance_notice_response
+      - corrective_action_record
+
+  - obligationId: "UKMDR.55.OBL.001"
+    kind: obligation
+    title: "Offences and penalties"
+    text: "It is an offence to place on the market a device which does not comply with the essential requirements, to affix a UKCA marking to a device which does not conform, to fail to register a device, or to fail to report a serious incident. The MHRA may take enforcement action including product recall, withdrawal, or prohibition."
+    sourceCitation: "UK MDR 2002, Regulation 55-62, as amended by SI 2019/791"
+    mandatory: true
+    requiredEvidenceTypes:
+      - regulatory_compliance_assessment
+
+  # ---------------------------------------------------------------------------
+  # CAPA-Specific Obligations
+  # ---------------------------------------------------------------------------
+  - obligationId: "UKMDR.CAPA.OBL.001"
+    kind: obligation
+    title: "CAPA arising from vigilance"
+    text: "Where a serious incident or field safety corrective action reveals a systemic quality or design issue, the manufacturer must initiate a corrective and preventive action (CAPA) process. The CAPA must address root cause, define corrective measures, set timelines for implementation, and include verification of effectiveness."
+    sourceCitation: "UK MDR 2002, Regulation 45-46, read with Schedule 3 Part II Para 3.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - capa_record
+      - root_cause_analysis
+      - effectiveness_check_record
+
+  - obligationId: "UKMDR.CAPA.OBL.002"
+    kind: obligation
+    title: "Regulatory notification of CAPA outcomes"
+    text: "The manufacturer must provide the MHRA with a final report on the CAPA investigation outcome and the corrective measures implemented. Where the CAPA relates to a reportable serious incident, the final report must be submitted in accordance with the timelines agreed with the MHRA."
+    sourceCitation: "UK MDR 2002, Regulation 45(6), MHRA Guidance"
+    mandatory: true
+    requiredEvidenceTypes:
+      - capa_record
+      - serious_incident_report
+      - mhra_correspondence
+
+# =============================================================================
+# Constraints
+# =============================================================================
+constraints:
+  - constraintId: "UKMDR.6.CON.001"
+    appliesTo: "UKMDR.6.OBL.001"
+    text: "A device must not be placed on the UK market without a valid UKCA marking or, during a recognised transitional period, a CE marking from an EU Notified Body. Marketing without a valid conformity marking is a strict liability offence."
+    severity: hard
+
+  - constraintId: "UKMDR.10.CON.001"
+    appliesTo: "UKMDR.10.OBL.001"
+    text: "Essential requirements compliance must be demonstrated through objective evidence, not solely by manufacturer assertion. Self-certification is not acceptable for Class IIa, IIb, or III devices."
+    severity: hard
+
+  - constraintId: "UKMDR.10.CON.002"
+    appliesTo: "UKMDR.10.OBL.002"
+    text: "The risk-benefit analysis must be based on current clinical data and state-of-the-art knowledge. Outdated evidence is insufficient to demonstrate conformity."
+    severity: hard
+
+  - constraintId: "UKMDR.10.CON.003"
+    appliesTo: "UKMDR.10.OBL.009"
+    text: "Clinical evaluation must be updated throughout the device lifecycle and must not rely solely on pre-market data. Post-market clinical follow-up data shall be incorporated."
+    severity: hard
+
+  - constraintId: "UKMDR.13.CON.001"
+    appliesTo: "UKMDR.13.OBL.001"
+    text: "Where a device has multiple intended purposes spanning different classes, the highest applicable class must be applied."
+    severity: hard
+
+  - constraintId: "UKMDR.18.CON.001"
+    appliesTo: "UKMDR.18.OBL.001"
+    text: "Technical documentation must be maintained for at least 5 years after the last device is placed on the market (15 years for implantable devices). Documentation must be made available to the MHRA upon request."
+    severity: hard
+
+  - constraintId: "UKMDR.40.CON.001"
+    appliesTo: "UKMDR.40.OBL.001"
+    text: "Registration with the MHRA is a prerequisite for placing a device on the UK market. Unregistered devices must not be made available on the Great Britain market."
+    severity: hard
+
+  - constraintId: "UKMDR.45.CON.001"
+    appliesTo: "UKMDR.45.OBL.002"
+    text: "Reporting timelines start from the date the manufacturer becomes aware of the incident, not the date the investigation concludes. The clock cannot be paused for investigation purposes."
+    severity: hard
+
+  - constraintId: "UKMDR.45.CON.002"
+    appliesTo: "UKMDR.45.OBL.001"
+    text: "The determination of whether an incident is serious must use the MHRA definition aligned with IMDRF adverse event terminology. Under-reporting is an offence."
+    severity: hard
+
+  - constraintId: "UKMDR.46.CON.001"
+    appliesTo: "UKMDR.46.OBL.001"
+    text: "FSCA reporting to the MHRA must be made before or contemporaneously with the distribution of the field safety notice to end users. The MHRA must not learn of an FSCA from third-party sources."
+    severity: hard
+
+  - constraintId: "UKMDR.47.CON.001"
+    appliesTo: "UKMDR.47.OBL.001"
+    text: "Trend reports should include statistical methodology and significance thresholds. Manufacturers must define trigger points in their PMS plan. Failure to identify reportable trends constitutes a regulatory non-compliance."
+    severity: soft
+
+  - constraintId: "UKMDR.48.CON.001"
+    appliesTo: "UKMDR.48.OBL.001"
+    text: "PMS activities must be proportionate to the risk class and type of device. Class III devices require more intensive surveillance than Class I devices."
+    severity: hard
+
+  - constraintId: "UKMDR.48.CON.002"
+    appliesTo: "UKMDR.48.OBL.004"
+    text: "PSURs for Class III and implantable devices must be updated at least annually. For Class IIa and IIb devices, PSURs must be updated at least every two years or more frequently when warranted by findings."
+    severity: hard
+
+  - constraintId: "UKMDR.58A.CON.001"
+    appliesTo: "UKMDR.58A.OBL.001"
+    text: "A non-UK manufacturer must not place devices on the UK market without a designated UK Responsible Person. A UK Responsible Person may act for multiple manufacturers but must maintain distinct documentation for each."
+    severity: hard
+
+  - constraintId: "UKMDR.CAPA.CON.001"
+    appliesTo: "UKMDR.CAPA.OBL.001"
+    text: "CAPA actions must be proportionate to the severity of the nonconformity and the risk posed to patients and users. Over-engineered CAPAs that delay critical safety corrections are not acceptable."
+    severity: soft
+
+# =============================================================================
+# Definitions
+# =============================================================================
+definitions:
+  - definitionId: "UKMDR.DEF.MEDICAL_DEVICE"
+    term: "Medical Device"
+    text: "Any instrument, apparatus, appliance, software, material or other article, whether used alone or in combination, including the software intended by its manufacturer to be used specifically for diagnostic and/or therapeutic purposes and necessary for its proper application, intended by the manufacturer to be used for human beings for the purpose of diagnosis, prevention, monitoring, treatment or alleviation of disease; diagnosis, monitoring, treatment, alleviation of or compensation for an injury or handicap; investigation, replacement or modification of the anatomy or of a physiological process; control of conception."
+    sourceCitation: "UK MDR 2002, Regulation 2(1)"
+
+  - definitionId: "UKMDR.DEF.MANUFACTURER"
+    term: "Manufacturer"
+    text: "The natural or legal person with responsibility for the design, manufacture, packaging and labelling of a device before it is placed on the market under his own name, regardless of whether these operations are carried out by that person himself or on his behalf by a third party."
+    sourceCitation: "UK MDR 2002, Regulation 2(1)"
+
+  - definitionId: "UKMDR.DEF.PLACING_ON_MARKET"
+    term: "Placing on the Market"
+    text: "The first making available of a device, other than a device intended for clinical investigation or a custom-made device, on the United Kingdom market with a view to distribution and/or use, whether for payment or free of charge."
+    sourceCitation: "UK MDR 2002, Regulation 2(1), as amended by SI 2019/791"
+
+  - definitionId: "UKMDR.DEF.SERIOUS_INCIDENT"
+    term: "Serious Incident"
+    text: "Any malfunction or deterioration in the characteristics and/or performance of a device, or any inadequacy in the labelling or the instructions for use which, directly or indirectly, might have led, might lead to, or led to the death of a patient, user or other person or the serious deterioration in their state of health or a serious public health threat."
+    sourceCitation: "UK MDR 2002, Regulation 2(1), as amended by SI 2020/1478"
+
+  - definitionId: "UKMDR.DEF.FSCA"
+    term: "Field Safety Corrective Action"
+    text: "An action taken by a manufacturer to reduce a risk of death or serious deterioration in the state of health associated with the use of a device that is already placed on the market. Such action, whether associated with direct or indirect harm, should be reported to the MHRA and notified to users via a field safety notice."
+    sourceCitation: "UK MDR 2002, Regulation 2(1), MHRA Guidance"
+
+  - definitionId: "UKMDR.DEF.UK_RESPONSIBLE_PERSON"
+    term: "UK Responsible Person"
+    text: "A natural or legal person established in the United Kingdom designated by a manufacturer established outside the United Kingdom to act on the manufacturer's behalf in relation to specified tasks regarding the manufacturer's obligations under these Regulations."
+    sourceCitation: "UK MDR 2002, Regulation 58A(1), inserted by SI 2019/791"
+
+  - definitionId: "UKMDR.DEF.APPROVED_BODY"
+    term: "UK Approved Body"
+    text: "A conformity assessment body designated under the UK Medical Devices Regulations by the Secretary of State to carry out conformity assessment activities including auditing quality management systems and reviewing technical documentation and design dossiers."
+    sourceCitation: "UK MDR 2002, Regulation 25, as amended by SI 2019/791"
+
+  - definitionId: "UKMDR.DEF.UKCA_MARKING"
+    term: "UKCA Marking"
+    text: "The UK Conformity Assessed marking that indicates a device conforms with the applicable provisions of the UK Medical Devices Regulations. The UKCA marking replaces the CE marking for devices placed on the Great Britain market."
+    sourceCitation: "UK MDR 2002, Regulation 19, as amended by SI 2019/791"
+
+  - definitionId: "UKMDR.DEF.CLINICAL_EVALUATION"
+    term: "Clinical Evaluation"
+    text: "A systematic and planned process to continuously generate, collect, analyse and assess the clinical data pertaining to a device in order to verify the clinical safety and performance of the device, including clinical benefits, when used as intended by the manufacturer."
+    sourceCitation: "UK MDR 2002, Schedule 1, Part I, Para 6A"
+
+  - definitionId: "UKMDR.DEF.PMS"
+    term: "Post-Market Surveillance"
+    text: "All activities carried out by manufacturers in cooperation with other economic operators to institute and keep up to date a systematic procedure to proactively collect and review experience gained from devices placed on the market, in order to identify any need to immediately apply corrective or preventive actions."
+    sourceCitation: "UK MDR 2002, Regulation 48, as amended by SI 2020/1478"
+
+# =============================================================================
+# Relationships
+# =============================================================================
+relationships:
+  # Internal structure
+  - from: "UKMDR.10.OBL.002"
+    to: "UKMDR.10.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.10.OBL.003"
+    to: "UKMDR.10.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.10.OBL.004"
+    to: "UKMDR.10.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.10.OBL.005"
+    to: "UKMDR.10.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.10.OBL.006"
+    to: "UKMDR.10.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.10.OBL.007"
+    to: "UKMDR.10.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.10.OBL.008"
+    to: "UKMDR.10.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.10.OBL.009"
+    to: "UKMDR.10.OBL.001"
+    type: PART_OF
+
+  # Conformity assessment depends on classification
+  - from: "UKMDR.14.OBL.001"
+    to: "UKMDR.13.OBL.001"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "Conformity assessment route depends on device classification"
+  - from: "UKMDR.17.OBL.001"
+    to: "UKMDR.13.OBL.001"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "Class I self-declaration requires correct classification"
+
+  # Vigilance triggers CAPA
+  - from: "UKMDR.45.OBL.001"
+    to: "UKMDR.CAPA.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Serious incidents may trigger CAPA investigations"
+  - from: "UKMDR.46.OBL.001"
+    to: "UKMDR.CAPA.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "FSCAs may trigger or result from CAPA"
+
+  # Trend reporting feeds PMS
+  - from: "UKMDR.47.OBL.001"
+    to: "UKMDR.48.OBL.001"
+    type: PART_OF
+    props:
+      note: "Trend reporting is a component of the PMS system"
+
+  # PMS report hierarchy
+  - from: "UKMDR.48.OBL.002"
+    to: "UKMDR.48.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.48.OBL.003"
+    to: "UKMDR.48.OBL.001"
+    type: PART_OF
+  - from: "UKMDR.48.OBL.004"
+    to: "UKMDR.48.OBL.001"
+    type: PART_OF
+
+  # Responsible Person obligations
+  - from: "UKMDR.58A.OBL.002"
+    to: "UKMDR.58A.OBL.001"
+    type: PART_OF
+
+  # Registration is prerequisite for market placement
+  - from: "UKMDR.40.OBL.001"
+    to: "UKMDR.6.OBL.001"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "Device must be registered with MHRA before placing on UK market"
+
+  # UKCA marking depends on conformity assessment
+  - from: "UKMDR.19.OBL.001"
+    to: "UKMDR.14.OBL.001"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "UKCA marking requires completed conformity assessment"
+
+  # Cross-references to EU MDR
+  - from: "UKMDR.45.OBL.001"
+    to: "EUMDR.87.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "UK serious incident reporting parallels EU MDR Article 87 but reports to MHRA instead of competent authorities"
+  - from: "UKMDR.45.OBL.002"
+    to: "EUMDR.87.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "UK reporting timelines mirror EU MDR timelines (2/10/15 days)"
+  - from: "UKMDR.46.OBL.001"
+    to: "EUMDR.87.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "UK FSCA reporting aligns with EU MDR Article 87(1)(b)"
+  - from: "UKMDR.48.OBL.001"
+    to: "EUMDR.83.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "UK PMS requirements are modelled on EU MDR Article 83"
+  - from: "UKMDR.48.OBL.004"
+    to: "EUMDR.86.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "UK PSUR requirements parallel EU MDR Article 86"
+
+  # Cross-references to ISO 13485
+  - from: "UKMDR.CAPA.OBL.001"
+    to: "ISO13485.8.5.2.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "UK CAPA expectations align with ISO 13485 Section 8.5.2 corrective action requirements"
+  - from: "UKMDR.14.OBL.001"
+    to: "ISO13485.8.5.2.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Full QA conformity assessment route requires ISO 13485 compliant QMS"
+  - from: "UKMDR.CAPA.OBL.001"
+    to: "ISO13485.8.5.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "UK CAPA includes preventive action aligned with ISO 13485 Section 8.5.3"

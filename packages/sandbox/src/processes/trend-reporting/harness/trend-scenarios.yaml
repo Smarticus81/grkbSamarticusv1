@@ -1,0 +1,9 @@
+scenarios:
+  - name: "UCL/LCL signal"
+    agent: StatisticalTrendAgent
+    input: { series: [3, 4, 3, 5, 4, 3, 25], method: ucl_lcl }
+    assertions: { traceChainValid: true }
+  - name: "Poisson rate spike"
+    agent: StatisticalTrendAgent
+    input: { series: [2, 3, 2, 3, 2, 12], method: poisson }
+    assertions: { traceChainValid: true }

@@ -1,0 +1,5 @@
+processType: TREND
+jurisdiction: EU_MDR
+obligationIds:
+  - EUMDR.83.OBL.001
+  - EUMDR.86.PSUR.OBL.001

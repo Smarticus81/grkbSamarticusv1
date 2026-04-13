@@ -1,0 +1,23 @@
+regulation: "IMDRF Adverse Event Terminology"
+section: "Annexes A-G"
+jurisdiction: GLOBAL
+processType: VIGILANCE
+artifactType: TERMINOLOGY
+version: "2020.0"
+effectiveFrom: "2020-04-01"
+
+obligations:
+  - obligationId: "IMDRF.AET.OBL.001"
+    kind: obligation
+    title: "Use IMDRF adverse event terminology"
+    text: "Adverse event reports shall use IMDRF terminology and codes from Annexes A (medical device problem), B (cause investigation: type), C (cause investigation: investigation findings), D (cause investigation: investigation conclusion), E (health effects: clinical signs, symptoms and conditions), F (health effects: health impact), and G (medical device component)."
+    sourceCitation: "IMDRF/AE WG/N43 FINAL:2020"
+    mandatory: true
+    requiredEvidenceTypes:
+      - imdrf_coded_event
+
+definitions:
+  - definitionId: "IMDRF.DEF.SERIOUS_INJURY"
+    term: "Serious injury or serious deterioration in state of health"
+    text: "(a) life-threatening illness or injury; (b) permanent impairment of a body function or permanent damage to a body structure; (c) a condition necessitating medical or surgical intervention to prevent (a) or (b)."
+    sourceCitation: "IMDRF/AE WG/N43 FINAL:2020 §3"

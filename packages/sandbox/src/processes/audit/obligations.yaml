@@ -1,0 +1,6 @@
+processType: AUDIT
+jurisdiction: GLOBAL
+obligationIds:
+  - ISO13485.8.2.4.OBL.001
+  - ISO13485.8.2.4.OBL.002
+  - ISO13485.8.2.4.OBL.003

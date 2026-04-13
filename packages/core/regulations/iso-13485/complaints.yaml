@@ -1,0 +1,50 @@
+regulation: "ISO 13485:2016"
+section: "§8.2.2"
+jurisdiction: GLOBAL
+processType: COMPLAINT
+artifactType: COMPLAINT
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.8.2.2.OBL.001"
+    kind: obligation
+    title: "Document complaint handling procedure"
+    text: "The organization shall document procedures for timely complaint handling in accordance with applicable regulatory requirements."
+    sourceCitation: "ISO 13485:2016 §8.2.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - complaint_procedure
+
+  - obligationId: "ISO13485.8.2.2.OBL.002"
+    kind: obligation
+    title: "Receive and record complaints"
+    text: "Complaints shall be received and recorded with sufficient information to enable subsequent investigation."
+    sourceCitation: "ISO 13485:2016 §8.2.2(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - complaint_record
+
+  - obligationId: "ISO13485.8.2.2.OBL.003"
+    kind: obligation
+    title: "Evaluate need to investigate"
+    text: "The organization shall evaluate complaints to determine whether investigation is required."
+    sourceCitation: "ISO 13485:2016 §8.2.2(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - triage_record
+
+  - obligationId: "ISO13485.8.2.2.OBL.004"
+    kind: obligation
+    title: "Determine reportability"
+    text: "The organization shall determine whether complaints require reporting to regulatory authorities."
+    sourceCitation: "ISO 13485:2016 §8.2.2(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - reportability_assessment
+
+constraints:
+  - constraintId: "ISO13485.8.2.2.CON.001"
+    appliesTo: "ISO13485.8.2.2.OBL.002"
+    text: "Records shall include device identification, complainant information, and the nature of the complaint."
+    severity: hard

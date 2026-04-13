@@ -1,0 +1,190 @@
+regulation: "ISO 13485:2016"
+section: "§7.5"
+jurisdiction: GLOBAL
+processType: PRODUCTION
+artifactType: PRODUCTION
+version: "1.0.0"
+effectiveFrom: "2016-03-01"
+
+obligations:
+  - obligationId: "ISO13485.7.5.1.OBL.001"
+    kind: obligation
+    title: "Plan and carry out production under controlled conditions"
+    text: "The organization shall plan and carry out production and service provision under controlled conditions, including the availability of information describing product characteristics, availability of work instructions, use of suitable equipment, availability and use of monitoring and measuring devices, and implementation of defined operations for labelling and packaging."
+    sourceCitation: "ISO 13485:2016 §7.5.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - production_plan
+      - work_instructions
+      - equipment_qualification
+
+  - obligationId: "ISO13485.7.5.1.OBL.002"
+    kind: obligation
+    title: "Establish documented requirements for product cleanliness"
+    text: "The organization shall establish documented requirements for cleanliness of product or contamination control of product if the product is cleaned prior to sterilization or its use, if it is supplied non-sterile and is to be subjected to a cleaning process prior to sterilization or its use, if it cannot be cleaned prior to sterilization or its use and its cleanliness is of significance in use, or if process agents are to be removed from product during manufacture."
+    sourceCitation: "ISO 13485:2016 §7.5.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - cleanliness_specification
+      - cleaning_validation_record
+
+  - obligationId: "ISO13485.7.5.1.OBL.003"
+    kind: obligation
+    title: "Document installation and verification requirements"
+    text: "The organization shall document requirements for medical device installation and acceptance criteria for verification of installation as appropriate."
+    sourceCitation: "ISO 13485:2016 §7.5.3"
+    mandatory: false
+    requiredEvidenceTypes:
+      - installation_procedure
+      - installation_verification_record
+
+  - obligationId: "ISO13485.7.5.1.OBL.004"
+    kind: obligation
+    title: "Document servicing activities"
+    text: "Where servicing is a specified requirement, the organization shall document servicing procedures, reference materials, and reference measuring procedures as required for performing servicing activities and verifying that product requirements are met."
+    sourceCitation: "ISO 13485:2016 §7.5.4"
+    mandatory: false
+    requiredEvidenceTypes:
+      - servicing_procedure
+      - service_record
+
+  - obligationId: "ISO13485.7.5.2.OBL.001"
+    kind: obligation
+    title: "Validate production and service provision processes"
+    text: "The organization shall validate any processes for production and service provision where the resulting output cannot be or is not verified by subsequent monitoring or measurement. This includes any processes where deficiencies become apparent only after the product is in use or the service has been delivered."
+    sourceCitation: "ISO 13485:2016 §7.5.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - process_validation_protocol
+      - process_validation_report
+
+  - obligationId: "ISO13485.7.5.2.OBL.002"
+    kind: obligation
+    title: "Document process validation procedures"
+    text: "Validation shall demonstrate the ability of these processes to achieve planned results consistently, including defined criteria for review and approval of the processes, approval of equipment and qualification of personnel, use of specific methods and procedures, requirements for records, revalidation, and software validation."
+    sourceCitation: "ISO 13485:2016 §7.5.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - validation_protocol
+      - equipment_qualification_record
+      - personnel_qualification_record
+
+  - obligationId: "ISO13485.7.5.2.OBL.003"
+    kind: obligation
+    title: "Validate sterilization processes"
+    text: "The organization shall document procedures for the validation of processes for sterilization and sterile barrier systems. Sterilization processes shall be validated prior to initial use and following product or process changes as appropriate."
+    sourceCitation: "ISO 13485:2016 §7.5.7"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sterilization_validation_record
+      - sterile_barrier_validation
+
+  - obligationId: "ISO13485.7.5.3.OBL.001"
+    kind: obligation
+    title: "Identify product throughout realization"
+    text: "The organization shall identify the product by suitable means throughout product realization and shall identify the product status with respect to monitoring and measurement requirements throughout product realization."
+    sourceCitation: "ISO 13485:2016 §7.5.8"
+    mandatory: true
+    requiredEvidenceTypes:
+      - product_identification_record
+      - lot_batch_record
+
+  - obligationId: "ISO13485.7.5.3.OBL.002"
+    kind: obligation
+    title: "Maintain traceability system"
+    text: "The organization shall document procedures for traceability. Such procedures shall define the extent of traceability in accordance with applicable regulatory requirements and the records to be maintained."
+    sourceCitation: "ISO 13485:2016 §7.5.9.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - traceability_procedure
+      - traceability_matrix
+
+  - obligationId: "ISO13485.7.5.3.OBL.003"
+    kind: obligation
+    title: "Maintain traceability for implantable devices"
+    text: "For implantable medical devices, the organization shall require that records of all materials, components, and work environment conditions used be maintained, and that distribution records of medical devices by the organization or its authorized representatives include records of the name and address of the shipping package consignee."
+    sourceCitation: "ISO 13485:2016 §7.5.9.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - implant_traceability_record
+      - distribution_record
+
+  - obligationId: "ISO13485.7.5.4.OBL.001"
+    kind: obligation
+    title: "Preserve product conformity"
+    text: "The organization shall document procedures for or work instructions to preserve the conformity of product to requirements during processing, storage, handling, and distribution. Preservation shall apply to the constituent parts of a medical device."
+    sourceCitation: "ISO 13485:2016 §7.5.11"
+    mandatory: true
+    requiredEvidenceTypes:
+      - preservation_procedure
+      - storage_condition_record
+
+  - obligationId: "ISO13485.7.5.4.OBL.002"
+    kind: obligation
+    title: "Protect product from alteration and damage"
+    text: "The organization shall protect product from alteration, contamination, or damage when exposed to expected conditions and hazards during processing, storage, handling, and distribution by designing and constructing suitable packaging and shipping containers and documenting requirements for any special conditions needed."
+    sourceCitation: "ISO 13485:2016 §7.5.11"
+    mandatory: true
+    requiredEvidenceTypes:
+      - packaging_specification
+      - shipping_validation_record
+
+constraints:
+  - constraintId: "ISO13485.7.5.1.CON.001"
+    appliesTo: "ISO13485.7.5.1.OBL.001"
+    text: "Production processes shall be performed in accordance with validated methods and approved work instructions. Deviations from established processes shall be documented and justified."
+    severity: hard
+
+  - constraintId: "ISO13485.7.5.2.CON.001"
+    appliesTo: "ISO13485.7.5.2.OBL.001"
+    text: "Process validation shall be completed and approved before product produced by the validated process is released for use or delivery."
+    severity: hard
+
+  - constraintId: "ISO13485.7.5.2.CON.002"
+    appliesTo: "ISO13485.7.5.2.OBL.003"
+    text: "Sterilization validation records shall be retained for at least the lifetime of the equipment or as required by applicable regulatory requirements."
+    severity: hard
+
+  - constraintId: "ISO13485.7.5.3.CON.001"
+    appliesTo: "ISO13485.7.5.3.OBL.002"
+    text: "Traceability records for implantable devices shall include the identity of all materials and components used and records of any special environmental conditions."
+    severity: hard
+
+definitions:
+  - definitionId: "ISO13485.DEF.PROCESS_VALIDATION"
+    term: "Process Validation"
+    text: "Establishing by objective evidence that a process consistently produces a result or product meeting its predetermined specifications."
+    sourceCitation: "ISO 13485:2016 §3.17"
+
+  - definitionId: "ISO13485.DEF.TRACEABILITY"
+    term: "Traceability"
+    text: "The ability to trace the history, application, or location of that which is under consideration, including origin of materials and parts, processing history, and distribution and location of the product after delivery."
+    sourceCitation: "ISO 9000:2015 §3.6.13"
+
+  - definitionId: "ISO13485.DEF.STERILE_BARRIER"
+    term: "Sterile Barrier System"
+    text: "Minimum package that prevents ingress of microorganisms and allows aseptic presentation of the product at the point of use."
+    sourceCitation: "ISO 11607-1:2019 §3.27"
+
+relationships:
+  - from: "ISO13485.7.5.3.OBL.001"
+    to: "ISO13485.7.5.1.OBL.001"
+    type: PART_OF
+  - from: "ISO13485.7.5.3.OBL.002"
+    to: "ISO13485.7.5.3.OBL.001"
+    type: PART_OF
+  - from: "ISO13485.7.5.2.OBL.001"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "Process validation supports design verification of manufacturing processes"
+  - from: "ISO13485.7.5.1.OBL.004"
+    to: "ISO13485.8.2.2.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Servicing activities may generate complaint data"
+  - from: "ISO13485.7.5.3.OBL.002"
+    to: "ISO13485.8.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Traceability enables identification and control of nonconforming product"

@@ -1,0 +1,237 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Article 10(11), Annex I Chapter III"
+jurisdiction: EU_MDR
+processType: LABELING
+artifactType: LABELING
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  - obligationId: "EUMDR.AI.23.OBL.001"
+    kind: obligation
+    title: "General labeling and IFU obligation"
+    text: "Each device shall be accompanied by the information needed to identify the device and the manufacturer, and by any safety and performance information relevant to the user or any other person, as appropriate. Such information may appear on the device itself, on the packaging, or in the instructions for use."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - instructions_for_use
+
+  - obligationId: "EUMDR.AI.23.OBL.002"
+    kind: obligation
+    title: "Label content requirements"
+    text: "The label shall bear the name or trade name of the device, the details strictly necessary for a user to identify the device, the lot number or serial number preceded by the words 'LOT NUMBER' or 'SERIAL NUMBER' or an equivalent symbol, the UDI carrier, an unambiguous indication of the time limit for using or implanting the device safely, an indication of the condition of the device (sterile, specific microbial state), and any relevant warnings or precautions."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - label_review_record
+
+  - obligationId: "EUMDR.AI.23.OBL.003"
+    kind: obligation
+    title: "Manufacturer identification on label"
+    text: "The label shall bear the name, registered trade name or registered trademark of the manufacturer and the address of its registered place of business. For imported devices, the label shall also bear the name and address of the importer and the authorised representative."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.2(a)-(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+
+  - obligationId: "EUMDR.AI.23.OBL.004"
+    kind: obligation
+    title: "Sterile device labeling"
+    text: "For devices delivered in a sterile condition, the label shall bear an indication of the sterile state, the sterilisation method, and the word 'STERILE' or the appropriate symbol. The packaging which maintains the sterile condition shall bear these markings."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.2(g)-(h)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - sterilisation_validation_report
+    metadata:
+      conditional: "Only applicable to devices delivered in sterile condition"
+
+  - obligationId: "EUMDR.AI.23.OBL.005"
+    kind: obligation
+    title: "Instructions for use - general requirements"
+    text: "Each device shall be accompanied by instructions for use (IFU). By way of exception, no IFU shall be required for class I and class IIa devices if such devices can be used safely without any such instructions and unless otherwise provided by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.1(d)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - instructions_for_use
+
+  - obligationId: "EUMDR.AI.23.OBL.006"
+    kind: obligation
+    title: "Instructions for use - content requirements"
+    text: "The instructions for use shall contain the intended purpose of the device with a clear specification of indications, contraindications, the target patient population and intended users, the performance characteristics of the device, information on residual risks and undesirable side-effects, installation and use instructions, the degree of accuracy claimed for devices with a measuring function, and any information needed to verify whether the device is properly installed."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - instructions_for_use
+      - ifu_review_record
+
+  - obligationId: "EUMDR.AI.23.OBL.007"
+    kind: obligation
+    title: "IFU - warnings and precautions"
+    text: "The instructions for use shall contain warnings, precautions, and/or measures to be taken in the event of malfunction of the device or changes in its performance that may affect safety, warnings, precautions and/or measures to be taken as regards the exposure, in reasonably foreseeable environmental conditions, to magnetic fields, external electrical influences, electrostatic discharge, pressure or variations in pressure, acceleration, thermal ignition sources, etc."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.4(j)-(l)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - instructions_for_use
+      - risk_management_report
+
+  - obligationId: "EUMDR.AI.23.OBL.008"
+    kind: obligation
+    title: "IFU - medicinal substance or biological material information"
+    text: "Where the device contains a substance considered to be a medicinal product or human blood or plasma derivative, the instructions for use shall identify the substance, and provide relevant interactions, contraindications, and adverse reactions information."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.4(q)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - instructions_for_use
+      - medicinal_substance_documentation
+    metadata:
+      conditional: "Only applicable to devices incorporating medicinal substances or biological materials"
+
+  - obligationId: "EUMDR.AI.23.OBL.009"
+    kind: obligation
+    title: "IFU - implantable device requirements"
+    text: "For implantable devices, the instructions for use shall provide information allowing the surgeon to determine the most appropriate device and any accessories, and the information necessary to provide the implant card to the patient, the information to be contained on the implant card, and the expected lifetime of the device."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.4(u)-(v)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - instructions_for_use
+      - implant_card_template
+    metadata:
+      conditional: "Only applicable to implantable devices"
+
+  - obligationId: "EUMDR.AI.23.OBL.010"
+    kind: obligation
+    title: "Language requirements for labeling and IFU"
+    text: "The information supplied with the device, including the label and IFU, shall be provided in the official Union language(s) determined by the Member State in which the device is made available to the user or patient."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.1(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - translation_records
+      - language_coverage_matrix
+
+  - obligationId: "EUMDR.AI.23.OBL.011"
+    kind: obligation
+    title: "Use of harmonised symbols"
+    text: "Information supplied by the manufacturer on the label or IFU may use internationally recognised symbols. Any symbol or identification colour used shall conform to the harmonised standards or common specifications. In areas where no harmonised standards or common specifications exist, the symbols and colours shall be described in the documentation accompanying the device."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.1(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - symbol_reference_list
+      - label_artwork
+
+  - obligationId: "EUMDR.AI.23.OBL.012"
+    kind: obligation
+    title: "Date of manufacture on label"
+    text: "The label shall bear the date of manufacture. The date of manufacture may be included in the lot number or serial number, provided the date is clearly identifiable."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.2(j)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+
+  - obligationId: "EUMDR.10.11.OBL.001"
+    kind: obligation
+    title: "Electronic instructions for use"
+    text: "By way of derogation, instructions for use may be provided in electronic form under conditions established by Commission Implementing Regulation. The manufacturer shall make the IFU available in paper form upon request of the user, free of additional charge. Devices for self-testing or near-patient testing shall always include paper IFU."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(11)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - electronic_ifu_justification
+      - paper_ifu_availability_procedure
+    metadata:
+      conditional: "Only applicable when manufacturer opts for electronic IFU"
+
+  - obligationId: "EUMDR.AI.23.OBL.013"
+    kind: obligation
+    title: "IFU - reprocessing information for reusable devices"
+    text: "For reusable devices, information on the appropriate processes for reuse, including cleaning, disinfection, decontamination, packaging, and the method of re-sterilisation, and any restriction on the number of reuses shall be provided."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.4(m)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - instructions_for_use
+      - reprocessing_validation_report
+    metadata:
+      conditional: "Only applicable to reusable devices"
+
+  - obligationId: "EUMDR.AI.23.OBL.014"
+    kind: obligation
+    title: "IFU - disposal information"
+    text: "Information on any risks related to disposal of the device, its accessories and consumables, if any, and on safe disposal procedures shall be provided in the instructions for use."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter III Section 23.4(s)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - instructions_for_use
+
+constraints:
+  - constraintId: "EUMDR.AI.23.CON.001"
+    appliesTo: "EUMDR.AI.23.OBL.002"
+    text: "Label content must be legible to the intended user and indelible. Where label size is limited, the minimum legally required elements must appear on the label itself, with remaining elements permitted on the outer packaging or IFU."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.23.CON.002"
+    appliesTo: "EUMDR.AI.23.OBL.010"
+    text: "The language of labeling and IFU must match the official language requirements of each target market Member State. A single-language version is not sufficient for multi-market distribution unless all target Member States accept that language."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.23.CON.003"
+    appliesTo: "EUMDR.AI.23.OBL.011"
+    text: "Symbols shall conform to EN ISO 15223-1 for medical device labels. Non-standard symbols require explanation in the IFU."
+    severity: hard
+
+  - constraintId: "EUMDR.10.11.CON.001"
+    appliesTo: "EUMDR.10.11.OBL.001"
+    text: "Electronic IFU may not be used for implantable devices or for class III devices unless specifically justified. Devices intended for lay users (self-testing, near-patient testing) must always include paper instructions."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.23.CON.004"
+    appliesTo: "EUMDR.AI.23.OBL.005"
+    text: "The exemption from providing IFU for class I and IIa devices is narrow: it applies only where the device can be used safely without instructions. The manufacturer bears the burden of demonstrating safe use without IFU."
+    severity: soft
+
+definitions:
+  - definitionId: "EUMDR.DEF.LABEL"
+    term: "Label"
+    text: "The written, printed or graphic information appearing on the device itself, or on the packaging of each unit, or on the packaging of multiple devices."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(13)"
+
+  - definitionId: "EUMDR.DEF.IFU"
+    term: "Instructions for Use"
+    text: "The information provided by the manufacturer to inform the user of a device's intended purpose and proper use and of any precautions to be taken."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(14)"
+
+  - definitionId: "EUMDR.DEF.INTENDED_PURPOSE"
+    term: "Intended Purpose"
+    text: "The use for which a device is intended according to the data supplied by the manufacturer on the label, in the instructions for use or in promotional or sales materials or statements and as specified by the manufacturer in the clinical evaluation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(12)"
+
+relationships:
+  - from: "EUMDR.AI.23.OBL.001"
+    to: "EUMDR.27.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Label requirements include UDI carrier placement"
+
+  - from: "EUMDR.AI.23.OBL.002"
+    to: "EUMDR.20.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Label must include CE marking"
+
+  - from: "EUMDR.AI.23.OBL.006"
+    to: "EUMDR.AII.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "IFU intended purpose must align with technical documentation device description"
+
+  - from: "EUMDR.AI.23.OBL.007"
+    to: "EUMDR.AI.2.OBL.002"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "IFU warnings derive from risk management residual risk information for safety"
+
+  - from: "EUMDR.AI.23.OBL.001"
+    to: "EUMDR.AII.OBL.001"
+    type: PART_OF
+    props:
+      note: "Labeling and IFU are part of the technical documentation"

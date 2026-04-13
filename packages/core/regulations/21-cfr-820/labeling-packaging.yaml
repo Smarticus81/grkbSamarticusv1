@@ -1,0 +1,152 @@
+regulation: "21 CFR Part 820 (FDA QSR)"
+section: "§820.80, §820.86, §820.120, §820.130"
+jurisdiction: FDA
+processType: LABELING_PACKAGING
+artifactType: LABELING
+version: "1.0.0"
+effectiveFrom: "1997-06-01"
+
+definitions:
+  - term: "Labeling"
+    definition: "Written, printed, or graphic matter affixed to, accompanying, or associated with a medical device or any of its containers or wrappers, including instructions for use (21 CFR §801.1)."
+  - term: "Acceptance Activities"
+    definition: "Inspections, tests, or other verification activities performed on incoming product, in-process materials, or finished devices to ensure conformance to specifications."
+  - term: "Acceptance Status"
+    definition: "The condition of product or material with respect to whether it has been inspected/tested and whether it passed or failed."
+  - term: "Finished Device"
+    definition: "Any device or accessory to any device that is suitable for use or capable of functioning, whether or not it is packaged, labeled, or sterilized (21 CFR §820.3(l))."
+
+obligations:
+  - obligationId: "CFR820.80.OBL.001"
+    kind: obligation
+    title: "Establish receiving acceptance procedures"
+    text: "Each manufacturer shall establish and maintain procedures for acceptance activities. Incoming product shall be inspected, tested, or otherwise verified as conforming to specified requirements. Acceptance or rejection shall be documented."
+    sourceCitation: "21 CFR §820.80(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - incoming_inspection_procedure
+      - incoming_inspection_record
+
+  - obligationId: "CFR820.80.OBL.002"
+    kind: obligation
+    title: "Establish in-process acceptance procedures"
+    text: "Each manufacturer shall establish and maintain acceptance procedures, where appropriate, to ensure that specified requirements for in-process product are met. Such procedures shall ensure that in-process product is controlled until the required inspection and tests or other verification activities have been completed, or necessary approvals are received, and are documented."
+    sourceCitation: "21 CFR §820.80(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - in_process_inspection_procedure
+      - in_process_inspection_record
+
+  - obligationId: "CFR820.80.OBL.003"
+    kind: obligation
+    title: "Establish finished device acceptance procedures"
+    text: "Each manufacturer shall establish and maintain procedures for finished device acceptance to ensure that each production run, lot, or batch of finished devices meets acceptance criteria. Finished devices shall be held in quarantine or otherwise adequately controlled until released. Finished device acceptance records shall demonstrate that the finished device meets specifications including the date(s), results, signature of the individual(s) conducting the test, and where appropriate the equipment used."
+    sourceCitation: "21 CFR §820.80(c)–(d)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - final_inspection_procedure
+      - final_release_record
+
+  - obligationId: "CFR820.80.OBL.004"
+    kind: obligation
+    title: "Use sampling plans based on valid statistical rationale"
+    text: "When sampling is used for acceptance activities, the sampling plan shall be written, based on a valid statistical rationale, and shall ensure that each production run, lot, or batch is adequately sampled. The sampling plan and its statistical rationale shall be documented."
+    sourceCitation: "21 CFR §820.80(a)–(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sampling_plan
+
+  - obligationId: "CFR820.86.OBL.001"
+    kind: obligation
+    title: "Identify acceptance status of product"
+    text: "Each manufacturer shall identify by suitable means the acceptance status of product, to indicate the conformance or nonconformance of product with acceptance criteria. The identification of acceptance status shall be maintained throughout manufacturing, packaging, labeling, installation, and servicing of the product to ensure that only product which has passed the required acceptance activities is distributed, used, or installed."
+    sourceCitation: "21 CFR §820.86"
+    mandatory: true
+    requiredEvidenceTypes:
+      - acceptance_status_record
+
+  - obligationId: "CFR820.120.OBL.001"
+    kind: obligation
+    title: "Establish device labeling procedures"
+    text: "Each manufacturer shall establish and maintain procedures to control labeling activities."
+    sourceCitation: "21 CFR §820.120(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - labeling_control_procedure
+
+  - obligationId: "CFR820.120.OBL.002"
+    kind: obligation
+    title: "Inspect labeling for accuracy"
+    text: "Each manufacturer shall establish and maintain procedures that provide for an inspection of labeling for accuracy, including the correct expiration date, control number, storage instructions, handling instructions, and any additional processing instructions. Such inspection shall be performed on each unit, lot, or batch of labeling prior to use. Labeling not meeting requirements shall be rejected."
+    sourceCitation: "21 CFR §820.120(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - labeling_inspection_record
+
+  - obligationId: "CFR820.120.OBL.003"
+    kind: obligation
+    title: "Store labeling with proper identification and prevent mix-ups"
+    text: "Each manufacturer shall store labeling in a manner that provides proper identification and is designed to prevent mix-ups."
+    sourceCitation: "21 CFR §820.120(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - labeling_storage_record
+
+  - obligationId: "CFR820.120.OBL.004"
+    kind: obligation
+    title: "Control labeling issuance"
+    text: "Each manufacturer shall control labeling and packaging operations to prevent labeling mix-ups. The label and labeling used for each production unit, lot, or batch shall be documented in the DHR."
+    sourceCitation: "21 CFR §820.120(d)–(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - labeling_issuance_record
+
+  - obligationId: "CFR820.130.OBL.001"
+    kind: obligation
+    title: "Ensure device packaging and shipping containers meet specifications"
+    text: "Each manufacturer shall ensure that device packaging and shipping containers are designed and constructed to protect the device from alteration or damage during the customary conditions of processing, storage, handling, and distribution."
+    sourceCitation: "21 CFR §820.130"
+    mandatory: true
+    requiredEvidenceTypes:
+      - packaging_specification
+      - packaging_validation_record
+
+constraints:
+  - constraintId: "CFR820.80.CON.001"
+    appliesTo: "CFR820.80.OBL.003"
+    text: "Finished devices must not be released for distribution until all required acceptance activities have been completed and documented with pass results."
+    severity: hard
+  - constraintId: "CFR820.80.CON.002"
+    appliesTo: "CFR820.80.OBL.004"
+    text: "Sampling plans must be based on a valid statistical rationale; ad hoc or convenience sampling is not acceptable."
+    severity: hard
+  - constraintId: "CFR820.120.CON.001"
+    appliesTo: "CFR820.120.OBL.002"
+    text: "Labeling inspection must verify accuracy of all variable data (expiration date, lot/control number, storage conditions) before the labeling is applied to product."
+    severity: hard
+  - constraintId: "CFR820.130.CON.001"
+    appliesTo: "CFR820.130.OBL.001"
+    text: "Packaging validation shall demonstrate protection under reasonably foreseeable conditions of transport, including vibration, temperature extremes, and humidity per ISTA or equivalent standards."
+    severity: hard
+
+relationships:
+  - from: "CFR820.80.OBL.001"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA receiving acceptance aligns with ISO 13485 §7.4.3 verification of purchased product"
+  - from: "CFR820.80.OBL.003"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA finished device acceptance aligns with ISO 13485 §8.2.4 monitoring and measurement of product"
+  - from: "CFR820.120.OBL.001"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA labeling controls align with ISO 13485 §7.5.1.1 general requirements for production and service provision"
+  - from: "CFR820.130.OBL.001"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA packaging controls align with ISO 13485 §7.5.1.1 and §7.5.5 preservation of product"

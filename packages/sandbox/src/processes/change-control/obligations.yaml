@@ -1,0 +1,5 @@
+processType: CHANGE_CONTROL
+jurisdiction: GLOBAL
+obligationIds:
+  - ISO13485.7.3.9.OBL.001
+  - ISO13485.7.3.9.OBL.002

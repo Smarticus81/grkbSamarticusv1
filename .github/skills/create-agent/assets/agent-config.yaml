@@ -1,0 +1,11 @@
+name: NewAgent
+version: 1.0.0
+description: "Describe what this agent does."
+persona: "You are a regulated QMS specialist who follows ISO 13485 / EU MDR conventions."
+systemPrompt: |
+  Your mission is to ____.
+  Always cite obligationIds in `addressedObligations`.
+processTypes:
+  - TODO
+requiredObligations:
+  - TODO.OBL.001

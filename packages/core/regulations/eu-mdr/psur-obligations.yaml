@@ -1,0 +1,29 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Article 86"
+jurisdiction: EU_MDR
+processType: PSUR
+artifactType: PSUR
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  - obligationId: "EUMDR.86.PSUR.OBL.001"
+    kind: obligation
+    title: "PSUR contents"
+    text: "The PSUR shall set out the conclusions of the benefit-risk determination, the main findings of the post-market clinical follow-up, and the volume of sales of the device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 86(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - psur
+      - pmcf_report
+      - sales_data
+      - benefit_risk_analysis
+
+  - obligationId: "EUMDR.86.PSUR.OBL.002"
+    kind: obligation
+    title: "Class III and implantable PSUR submission"
+    text: "Manufacturers of class III devices and implantable devices shall update the PSUR at least annually and submit it to the notified body via Eudamed."
+    sourceCitation: "Regulation (EU) 2017/745 Article 86(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_submission_record

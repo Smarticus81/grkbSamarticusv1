@@ -1,0 +1,46 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Articles 83-86"
+jurisdiction: EU_MDR
+processType: PMS
+artifactType: PMS
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  - obligationId: "EUMDR.83.OBL.001"
+    kind: obligation
+    title: "Establish a post-market surveillance system"
+    text: "Manufacturers shall plan, establish, document, implement, maintain and update a post-market surveillance system in a manner that is proportionate to the risk class and appropriate for the type of device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 83(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+
+  - obligationId: "EUMDR.84.OBL.001"
+    kind: obligation
+    title: "PMS plan content"
+    text: "The post-market surveillance system shall be based on a post-market surveillance plan, the requirements for which are set out in Section 1.1 of Annex III."
+    sourceCitation: "Regulation (EU) 2017/745 Article 84"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+
+  - obligationId: "EUMDR.85.OBL.001"
+    kind: obligation
+    title: "PMS report for class I devices"
+    text: "Manufacturers of class I devices shall prepare a post-market surveillance report summarising the results and conclusions of the analyses of the post-market surveillance data."
+    sourceCitation: "Regulation (EU) 2017/745 Article 85"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_report
+
+  - obligationId: "EUMDR.86.OBL.001"
+    kind: obligation
+    title: "PSUR for class IIa, IIb, and III devices"
+    text: "Manufacturers of class IIa, class IIb and class III devices shall prepare a periodic safety update report (PSUR) for each device summarising the results and conclusions of the analyses of the post-market surveillance data."
+    sourceCitation: "Regulation (EU) 2017/745 Article 86"
+    mandatory: true
+    requiredEvidenceTypes:
+      - psur
+      - benefit_risk_analysis
+      - sales_data

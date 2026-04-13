@@ -1,0 +1,191 @@
+regulation: "ISO 14971:2019"
+section: "Clause 7"
+jurisdiction: GLOBAL
+processType: RISK_MANAGEMENT
+artifactType: RISK_CONTROL
+version: "1.0.0"
+effectiveFrom: "2019-12-01"
+
+obligations:
+  - obligationId: "ISO14971.7.1.OBL.001"
+    kind: obligation
+    title: "Identify risk control option analysis"
+    text: "The manufacturer shall identify risk control measure(s) that are appropriate for reducing the risk(s) to an acceptable level. Risk control options shall be analyzed using the priority order: inherent safety by design, protective measures in the medical device itself or in the manufacturing process, and information for safety."
+    sourceCitation: "ISO 14971:2019 §7.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_control_option_analysis
+      - risk_evaluation_record
+
+  - obligationId: "ISO14971.7.1.OBL.002"
+    kind: obligation
+    title: "Select risk control measures using priority hierarchy"
+    text: "The manufacturer shall use one or more of the risk control options in the following priority order: inherent safety by design, protective measures in the medical device itself or in the manufacturing process, information for safety. If a higher-priority risk control option is feasible, the manufacturer shall use it. Lower-priority measures alone are not acceptable when a higher-priority measure is practicable."
+    sourceCitation: "ISO 14971:2019 §7.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_control_selection_rationale
+      - design_modification_record
+
+  - obligationId: "ISO14971.7.2.OBL.001"
+    kind: obligation
+    title: "Implement risk control measures"
+    text: "The manufacturer shall implement the risk control measure(s) selected and shall verify the implementation of the risk control measure(s) in the risk management file."
+    sourceCitation: "ISO 14971:2019 §7.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_control_implementation_record
+      - implementation_verification_record
+
+  - obligationId: "ISO14971.7.2.OBL.002"
+    kind: obligation
+    title: "Verify risk control implementation effectiveness"
+    text: "The manufacturer shall verify that the risk control measure(s) has been implemented correctly and is effective. Verification activities shall be documented in the risk management file."
+    sourceCitation: "ISO 14971:2019 §7.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - effectiveness_verification_record
+      - risk_management_file_update
+
+  - obligationId: "ISO14971.7.3.OBL.001"
+    kind: obligation
+    title: "Evaluate residual risk"
+    text: "After risk control measures have been applied, the manufacturer shall evaluate any residual risk using the criteria defined in the risk management plan. If the residual risk is not judged acceptable, further risk control measures shall be applied."
+    sourceCitation: "ISO 14971:2019 §7.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - residual_risk_evaluation
+      - updated_risk_analysis
+
+  - obligationId: "ISO14971.7.3.OBL.002"
+    kind: obligation
+    title: "Perform risk-benefit analysis for unacceptable residual risk"
+    text: "If the residual risk is not judged acceptable using the criteria established in the risk management plan and further risk control is not practicable, the manufacturer may gather and review data and literature to determine if the medical benefits of the intended use outweigh the residual risk."
+    sourceCitation: "ISO 14971:2019 §7.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - benefit_risk_analysis
+      - clinical_evidence_review
+
+  - obligationId: "ISO14971.7.4.OBL.001"
+    kind: obligation
+    title: "Assess risks from risk control measures"
+    text: "The manufacturer shall review the effect of the risk control measure(s) to identify whether new hazards or hazardous situations are introduced by the risk control measure(s), whether previously identified hazardous situations are affected by the risk control measure(s), and whether the estimated risks for all identified hazardous situations are re-evaluated."
+    sourceCitation: "ISO 14971:2019 §7.5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - new_hazard_assessment
+      - risk_re_evaluation_record
+
+  - obligationId: "ISO14971.7.5.OBL.001"
+    kind: obligation
+    title: "Verify completeness of risk control"
+    text: "The manufacturer shall ensure that the risks from all identified hazardous situations have been considered. The results of risk control shall be recorded in the risk management file."
+    sourceCitation: "ISO 14971:2019 §7.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_control_completeness_checklist
+      - risk_management_file_update
+
+  - obligationId: "ISO14971.7.5.OBL.002"
+    kind: obligation
+    title: "Document risk control traceability"
+    text: "The manufacturer shall establish traceability between identified hazards, hazardous situations, risk control measures, and verification of implementation for each risk control measure in the risk management file."
+    sourceCitation: "ISO 14971:2019 §7.6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_traceability_matrix
+      - risk_management_file
+
+  - obligationId: "ISO14971.7.6.OBL.001"
+    kind: obligation
+    title: "Evaluate overall residual risk after all controls"
+    text: "After all risk control measures have been implemented and verified, the manufacturer shall evaluate the overall residual risk posed by the medical device. The overall residual risk shall be evaluated against the criteria defined in the risk management plan taking into account the contributions of all residual risks."
+    sourceCitation: "ISO 14971:2019 §8"
+    mandatory: true
+    requiredEvidenceTypes:
+      - overall_residual_risk_evaluation
+      - risk_management_report
+
+constraints:
+  - constraintId: "ISO14971.7.1.CON.001"
+    appliesTo: "ISO14971.7.1.OBL.002"
+    text: "Risk control measures must follow the priority order: inherent safety by design first, then protective measures, then information for safety. Lower-priority measures are unacceptable if a higher-priority measure is feasible."
+    severity: hard
+
+  - constraintId: "ISO14971.7.2.CON.001"
+    appliesTo: "ISO14971.7.2.OBL.001"
+    text: "Risk control measures shall not be considered implemented until verification evidence is documented in the risk management file."
+    severity: hard
+
+  - constraintId: "ISO14971.7.3.CON.001"
+    appliesTo: "ISO14971.7.3.OBL.001"
+    text: "Residual risk that exceeds the acceptability criteria shall not be accepted without performing a benefit-risk analysis demonstrating that the medical benefit outweighs the residual risk."
+    severity: hard
+
+  - constraintId: "ISO14971.7.4.CON.001"
+    appliesTo: "ISO14971.7.4.OBL.001"
+    text: "Any new hazards introduced by risk control measures shall be treated as new identified hazards and subjected to the full risk management process."
+    severity: hard
+
+  - constraintId: "ISO14971.7.5.CON.001"
+    appliesTo: "ISO14971.7.5.OBL.001"
+    text: "Risk control shall not be considered complete until all identified hazardous situations have been addressed and documented in the risk management file."
+    severity: hard
+
+definitions:
+  - definitionId: "ISO14971.DEF.RESIDUAL_RISK"
+    term: "Residual Risk"
+    text: "Risk remaining after risk control measures have been taken."
+    sourceCitation: "ISO 14971:2019 §3.16"
+
+  - definitionId: "ISO14971.DEF.RISK_CONTROL"
+    term: "Risk Control"
+    text: "Process in which decisions are made and measures are implemented by which risks are reduced to, or maintained within, specified levels."
+    sourceCitation: "ISO 14971:2019 §3.18"
+
+  - definitionId: "ISO14971.DEF.INHERENT_SAFETY"
+    term: "Inherent Safety by Design"
+    text: "Risk reduction achieved through design choices that eliminate hazards or reduce the associated risks without the use of protective measures."
+    sourceCitation: "ISO 14971:2019 §7.1"
+
+  - definitionId: "ISO14971.DEF.PROTECTIVE_MEASURE"
+    term: "Protective Measure"
+    text: "Measure incorporated into the medical device design or manufacturing process, or provided as information for safety, to reduce risk."
+    sourceCitation: "ISO 14971:2019 §7.1"
+
+relationships:
+  - from: "ISO14971.7.2.OBL.001"
+    to: "ISO14971.7.1.OBL.001"
+    type: PART_OF
+  - from: "ISO14971.7.3.OBL.001"
+    to: "ISO14971.7.2.OBL.001"
+    type: PART_OF
+  - from: "ISO14971.7.5.OBL.001"
+    to: "ISO14971.7.3.OBL.001"
+    type: PART_OF
+  - from: "ISO14971.7.1.OBL.001"
+    to: "ISO14971.5.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Risk control option analysis depends on completed risk analysis and hazard identification"
+  - from: "ISO14971.7.3.OBL.002"
+    to: "ISO14971.8.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Risk-benefit analysis for individual risks feeds into overall residual risk evaluation"
+  - from: "ISO14971.7.6.OBL.001"
+    to: "ISO14971.8.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Overall residual risk evaluation extends the existing benefit-risk analysis obligation"
+  - from: "ISO14971.7.2.OBL.001"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "Risk control implementation verification aligns with design verification activities"
+  - from: "ISO14971.7.4.OBL.001"
+    to: "ISO14971.4.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "New hazards from risk control measures feed back into the risk management process"

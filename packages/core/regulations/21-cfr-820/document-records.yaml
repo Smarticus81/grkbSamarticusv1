@@ -1,0 +1,169 @@
+regulation: "21 CFR Part 820 (FDA QSR)"
+section: "§820.40, §820.180, §820.184, §820.186, §820.198"
+jurisdiction: FDA
+processType: DOCUMENT_CONTROL
+artifactType: DOCUMENT
+version: "1.0.0"
+effectiveFrom: "1997-06-01"
+
+definitions:
+  - term: "Device Master Record (DMR)"
+    definition: "A compilation of records containing the procedures and specifications for a finished device (21 CFR §820.3(j))."
+  - term: "Device History Record (DHR)"
+    definition: "A compilation of records containing the production history of a finished device (21 CFR §820.3(i))."
+  - term: "Quality System Record (QSR)"
+    definition: "A compilation of records containing the procedures and activities that define the quality system, including the quality policy, quality objectives, and organizational structure."
+  - term: "Document"
+    definition: "Any written, printed, or electronic information that describes, defines, specifies, reports, or certifies activities, requirements, procedures, or results."
+  - term: "Record"
+    definition: "A document stating results achieved or providing evidence of activities performed."
+
+obligations:
+  - obligationId: "CFR820.40.OBL.001"
+    kind: obligation
+    title: "Establish document control procedures"
+    text: "Each manufacturer shall establish and maintain procedures to control all documents that are required by this part. The procedures shall provide for the review and approval of all documents before issuance."
+    sourceCitation: "21 CFR §820.40(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_control_procedure
+
+  - obligationId: "CFR820.40.OBL.002"
+    kind: obligation
+    title: "Ensure current approved documents are available"
+    text: "Each manufacturer shall ensure that all approved documents are current and available at all locations for which they are designated, used, or otherwise necessary. Obsolete documents shall be promptly removed from points of use or otherwise prevented from unintended use."
+    sourceCitation: "21 CFR §820.40(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_distribution_record
+
+  - obligationId: "CFR820.40.OBL.003"
+    kind: obligation
+    title: "Review and approve document changes"
+    text: "Changes to documents shall be reviewed and approved by an individual(s) in the same function or organization that performed the original review and approval, unless specifically designated otherwise. Approved changes shall be communicated to the appropriate personnel in a timely manner."
+    sourceCitation: "21 CFR §820.40(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_change_record
+
+  - obligationId: "CFR820.180.OBL.001"
+    kind: obligation
+    title: "Maintain general quality system records"
+    text: "All records required by this part shall be maintained at the manufacturing establishment or other location that is reasonably accessible to responsible officials of the manufacturer and to employees of FDA designated to perform inspections."
+    sourceCitation: "21 CFR §820.180(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - record_retention_schedule
+
+  - obligationId: "CFR820.180.OBL.002"
+    kind: obligation
+    title: "Ensure records are legible and retrievable"
+    text: "All records required by this part shall be legible and shall be stored to minimize deterioration and to prevent loss. Those records stored in automated data processing systems shall be backed up."
+    sourceCitation: "21 CFR §820.180(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - record_storage_procedure
+      - backup_verification_record
+
+  - obligationId: "CFR820.180.OBL.003"
+    kind: obligation
+    title: "Retain records for required period"
+    text: "All records required by this part shall be retained for a period of time equivalent to the design and expected life of the device, but in no case less than 2 years from the date of release for commercial distribution by the manufacturer."
+    sourceCitation: "21 CFR §820.180(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - retention_period_record
+
+  - obligationId: "CFR820.180.OBL.004"
+    kind: obligation
+    title: "Mark confidential records"
+    text: "Records deemed confidential by the manufacturer may be marked to aid FDA in determining whether information may be disclosed under the public information regulation in part 20 of this chapter."
+    sourceCitation: "21 CFR §820.180(c)"
+    mandatory: false
+    requiredEvidenceTypes:
+      - confidentiality_marking_procedure
+
+  - obligationId: "CFR820.184.OBL.001"
+    kind: obligation
+    title: "Maintain device master record"
+    text: "Each manufacturer shall maintain device master records (DMR). Each manufacturer shall ensure that each DMR is prepared and approved in accordance with §820.40."
+    sourceCitation: "21 CFR §820.184"
+    mandatory: true
+    requiredEvidenceTypes:
+      - device_master_record
+
+  - obligationId: "CFR820.184.OBL.002"
+    kind: obligation
+    title: "Include required DMR contents"
+    text: "The DMR for each type of device shall include, or refer to the location of, the following information: device specifications including appropriate drawings, composition, formulation, component specifications, and software specifications; production process specifications including the appropriate equipment specifications, production methods, production procedures, and production environment specifications; quality assurance procedures and specifications including acceptance criteria and quality assurance equipment to be used; packaging and labeling specifications, including methods and processes used; and installation, maintenance, and servicing procedures and methods."
+    sourceCitation: "21 CFR §820.184(a)–(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - dmr_content_checklist
+
+  - obligationId: "CFR820.186.OBL.001"
+    kind: obligation
+    title: "Maintain quality system record"
+    text: "Each manufacturer shall maintain a quality system record (QSR). The QSR shall include, or refer to the location of, procedures and the documentation of activities required by this part that are not specific to a particular type of device(s), including but not limited to: management reviews (§820.20); quality audits (§820.22); supplier controls; CAPA; and personnel training."
+    sourceCitation: "21 CFR §820.186"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_system_record
+
+  - obligationId: "CFR820.DHR.OBL.001"
+    kind: obligation
+    title: "Maintain device history record"
+    text: "Each manufacturer shall maintain device history records (DHR). Each manufacturer shall establish and maintain procedures to ensure that DHRs for each batch, lot, or unit are maintained to demonstrate that the device is manufactured in accordance with the DMR and the requirements of this part."
+    sourceCitation: "21 CFR §820.184"
+    mandatory: true
+    requiredEvidenceTypes:
+      - device_history_record
+
+  - obligationId: "CFR820.DHR.OBL.002"
+    kind: obligation
+    title: "Include required DHR contents"
+    text: "The DHR shall include, or refer to the location of, the following information: the dates of manufacture; the quantity manufactured; the quantity released for distribution; the acceptance records which demonstrate the device is manufactured in accordance with the DMR; the primary identification label and labeling used for each production unit; and any unique device identifier (UDI) or universal product code (UPC), and any other device identification(s) and control number(s) used."
+    sourceCitation: "21 CFR §820.184"
+    mandatory: true
+    requiredEvidenceTypes:
+      - dhr_content_checklist
+
+constraints:
+  - constraintId: "CFR820.40.CON.001"
+    appliesTo: "CFR820.40.OBL.001"
+    text: "Documents must not be used until formally reviewed and approved; draft or unapproved documents shall not be present at points of use."
+    severity: hard
+  - constraintId: "CFR820.40.CON.002"
+    appliesTo: "CFR820.40.OBL.003"
+    text: "Document changes must be reviewed and approved by personnel from the same function as the original approvers unless a specific delegation is documented."
+    severity: hard
+  - constraintId: "CFR820.180.CON.001"
+    appliesTo: "CFR820.180.OBL.003"
+    text: "Minimum record retention is 2 years from date of commercial distribution; longer retention is required if the device design and expected life exceeds 2 years."
+    severity: hard
+  - constraintId: "CFR820.184.CON.001"
+    appliesTo: "CFR820.184.OBL.002"
+    text: "DMR must be complete; missing specifications, drawings, or process parameters constitute a nonconformance."
+    severity: hard
+
+relationships:
+  - from: "CFR820.40.OBL.001"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA document controls align with ISO 13485 §4.2.4 control of documents"
+  - from: "CFR820.180.OBL.001"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA general record requirements align with ISO 13485 §4.2.5 control of records"
+  - from: "CFR820.184.OBL.001"
+    to: "ISO13485.7.3.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA DMR requirements align with ISO 13485 §4.2.3 medical device file"
+  - from: "CFR820.198.OBL.001"
+    to: "ISO13485.8.2.2.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "FDA complaint files align with ISO 13485 §8.2.2 complaint handling"

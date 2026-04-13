@@ -1,0 +1,9 @@
+processType: COMPLAINT
+jurisdiction: GLOBAL
+obligationIds:
+  - ISO13485.8.2.2.OBL.001
+  - ISO13485.8.2.2.OBL.002
+  - ISO13485.8.2.2.OBL.003
+  - ISO13485.8.2.2.OBL.004
+  - CFR820.198.OBL.001
+  - CFR820.198.OBL.002

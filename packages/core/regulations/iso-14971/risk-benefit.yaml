@@ -1,0 +1,18 @@
+regulation: "ISO 14971:2019"
+section: "§8"
+jurisdiction: GLOBAL
+processType: RISK_MANAGEMENT
+artifactType: RISK_BENEFIT
+version: "1.0.0"
+effectiveFrom: "2019-12-01"
+
+obligations:
+  - obligationId: "ISO14971.8.OBL.001"
+    kind: obligation
+    title: "Evaluate overall residual risk acceptability"
+    text: "The manufacturer shall decide whether the overall residual risk posed by the medical device is acceptable. If the overall residual risk is judged unacceptable, the manufacturer may gather and review data to determine whether the medical benefits of the intended use outweigh the residual risk."
+    sourceCitation: "ISO 14971:2019 §8"
+    mandatory: true
+    requiredEvidenceTypes:
+      - benefit_risk_analysis
+      - residual_risk_summary

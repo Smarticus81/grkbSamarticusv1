@@ -1,0 +1,42 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Articles 87-92"
+jurisdiction: EU_MDR
+processType: VIGILANCE
+artifactType: VIGILANCE
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  - obligationId: "EUMDR.87.OBL.001"
+    kind: obligation
+    title: "Report serious incidents"
+    text: "Manufacturers shall report any serious incident involving devices made available on the Union market, except expected side-effects which are clearly documented in the product information."
+    sourceCitation: "Regulation (EU) 2017/745 Article 87(1)(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - serious_incident_report
+
+  - obligationId: "EUMDR.87.OBL.002"
+    kind: obligation
+    title: "Report field safety corrective actions"
+    text: "Manufacturers shall report any field safety corrective action in respect of devices made available on the Union market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 87(1)(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - fsca_record
+      - fsn
+
+  - obligationId: "EUMDR.87.OBL.003"
+    kind: obligation
+    title: "Reporting timelines"
+    text: "Manufacturers shall report serious incidents immediately and not later than 15 days; events involving death or serious deterioration in health not later than 10 days; serious public health threats not later than 2 days."
+    sourceCitation: "Regulation (EU) 2017/745 Article 87(3)-(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - incident_timestamp_record
+
+constraints:
+  - constraintId: "EUMDR.87.CON.001"
+    appliesTo: "EUMDR.87.OBL.003"
+    text: "Reporting clocks start when the manufacturer becomes aware of the incident, not when the investigation completes."
+    severity: hard

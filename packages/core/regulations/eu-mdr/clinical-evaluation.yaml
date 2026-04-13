@@ -1,0 +1,291 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Article 61, Annex XIV, Annex XV"
+jurisdiction: EU_MDR
+processType: CLINICAL_EVALUATION
+artifactType: CLINICAL_EVALUATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  - obligationId: "EUMDR.61.OBL.001"
+    kind: obligation
+    title: "Conduct clinical evaluation for every device"
+    text: "Confirmation of conformity with relevant general safety and performance requirements set out in Annex I under the normal conditions of the intended use of the device, and the evaluation of the undesirable side-effects and of the acceptability of the benefit-risk ratio, shall be based on clinical data providing sufficient clinical evidence."
+    sourceCitation: "Regulation (EU) 2017/745 Article 61(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - clinical_data
+
+  - obligationId: "EUMDR.61.OBL.002"
+    kind: obligation
+    title: "Demonstrate clinical evidence sufficiency"
+    text: "The manufacturer shall specify and justify the level of clinical evidence necessary to demonstrate conformity with the relevant general safety and performance requirements. That level of clinical evidence shall be appropriate in view of the characteristics of the device and its intended purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Article 61(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_plan
+      - clinical_evidence_justification
+
+  - obligationId: "EUMDR.61.OBL.003"
+    kind: obligation
+    title: "Use appropriate clinical data sources"
+    text: "Clinical data shall be sourced from clinical investigations of the device concerned, clinical investigations or other studies reported in scientific literature of a device demonstrated to be equivalent, reports published in peer-reviewed scientific literature on other clinical experience of either the device or an equivalent device, and clinically relevant information from post-market surveillance."
+    sourceCitation: "Regulation (EU) 2017/745 Article 61(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_report
+      - literature_review
+      - pms_data
+
+  - obligationId: "EUMDR.61.OBL.004"
+    kind: obligation
+    title: "Clinical investigation for class III and implantable devices"
+    text: "In the case of implantable devices and class III devices, clinical investigations shall be performed unless it is duly justified to rely on existing clinical data. The justification for not performing clinical investigations shall be documented and maintained."
+    sourceCitation: "Regulation (EU) 2017/745 Article 61(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_report
+      - clinical_investigation_waiver_justification
+
+  - obligationId: "EUMDR.61.OBL.005"
+    kind: obligation
+    title: "Equivalence demonstration requirements"
+    text: "Where the manufacturer claims equivalence to an existing device as a basis for the clinical evaluation, the equivalence shall be demonstrated by means of adequate data taking into account technical, biological and clinical characteristics."
+    sourceCitation: "Regulation (EU) 2017/745 Article 61(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - equivalence_assessment
+      - technical_comparison
+      - biological_comparison
+      - clinical_comparison
+
+  - obligationId: "EUMDR.61.OBL.006"
+    kind: obligation
+    title: "Contract for equivalent device access"
+    text: "Where the manufacturer claims equivalence to a device manufactured by another manufacturer, the manufacturer shall have a contract with that other manufacturer that explicitly allows the first manufacturer full access to the technical documentation on an ongoing basis."
+    sourceCitation: "Regulation (EU) 2017/745 Article 61(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - equivalence_access_contract
+
+  - obligationId: "EUMDR.61.OBL.007"
+    kind: obligation
+    title: "Clinical evaluation throughout device lifecycle"
+    text: "The clinical evaluation and its documentation shall be updated throughout the life cycle of the device concerned with clinical data obtained from the implementation of the manufacturer's PMCF plan and the post-market surveillance plan."
+    sourceCitation: "Regulation (EU) 2017/745 Article 61(11)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - pmcf_report
+      - pms_report
+
+  - obligationId: "EUMDR.XIV.A.OBL.001"
+    kind: obligation
+    title: "Clinical evaluation plan"
+    text: "The clinical evaluation shall be thorough and objective, and shall be planned. It shall be based on a clinical evaluation plan that shall specify the intended purpose of the device and the clinical benefits expected, and shall identify the general safety and performance requirements to be supported by clinical data."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part A Section 1(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_plan
+
+  - obligationId: "EUMDR.XIV.A.OBL.002"
+    kind: obligation
+    title: "Clinical evaluation plan - methodology"
+    text: "The clinical evaluation plan shall specify the methodology to be used for examining the qualifications of clinical data sources, for identification of relevant data, for appraisal of each data set and for analysis of data sets including the criteria for assessment of the benefit-risk ratio and the acceptability thresholds."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part A Section 1(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_plan
+      - data_appraisal_criteria
+
+  - obligationId: "EUMDR.XIV.A.OBL.003"
+    kind: obligation
+    title: "Clinical evaluation report"
+    text: "The clinical evaluation and its outcome shall be documented in a clinical evaluation report, which shall support the assessment of the conformity of the device. The clinical evaluation report shall contain sufficient information to allow the clinical evaluation to be understood and to be independently reviewed."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part A Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+
+  - obligationId: "EUMDR.XIV.A.OBL.004"
+    kind: obligation
+    title: "Clinical evaluation report updates"
+    text: "The clinical evaluation report shall be updated throughout the life cycle of the device with data from post-market surveillance including PMCF, PMS reports and PSURs."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part A Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - pmcf_report
+      - psur
+
+  - obligationId: "EUMDR.XIV.B.OBL.001"
+    kind: obligation
+    title: "PMCF plan"
+    text: "The manufacturer shall establish, document and maintain a post-market clinical follow-up plan. The PMCF plan shall specify the methods and procedures for proactively collecting and evaluating clinical data with the aim of confirming the safety and performance throughout the expected lifetime of the device, identifying previously unknown side-effects and monitoring the identified side-effects and contraindications."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part B Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pmcf_plan
+
+  - obligationId: "EUMDR.XIV.B.OBL.002"
+    kind: obligation
+    title: "PMCF plan - methods"
+    text: "The PMCF plan shall include specific methods to be used such as PMCF studies, registries, surveys and the collection of clinical experience from clinical use. The PMCF plan shall reference the relevant parts of the PMS plan."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part B Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pmcf_plan
+      - pms_plan
+
+  - obligationId: "EUMDR.XIV.B.OBL.003"
+    kind: obligation
+    title: "PMCF evaluation report"
+    text: "The results of the PMCF shall be analysed by the manufacturer and documented in a PMCF evaluation report that shall be part of the clinical evaluation report and the technical documentation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part B Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pmcf_report
+      - clinical_evaluation_report
+
+  - obligationId: "EUMDR.XV.OBL.001"
+    kind: obligation
+    title: "Clinical investigation application"
+    text: "The sponsor of a clinical investigation shall submit an application to the Member State in which the investigation is to be conducted, accompanied by the documentation referred to in Chapter II of Annex XV."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XV Chapter I Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_application
+      - investigational_device_dossier
+
+  - obligationId: "EUMDR.XV.OBL.002"
+    kind: obligation
+    title: "Clinical investigation plan"
+    text: "The clinical investigation plan shall set out the rationale, objectives, design and proposed analysis, methodology, monitoring, conduct and record-keeping of the investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XV Chapter II Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+
+  - obligationId: "EUMDR.XV.OBL.003"
+    kind: obligation
+    title: "Informed consent"
+    text: "Informed consent shall be written, dated and signed by the subject or their legally designated representative after being informed of all aspects of the clinical investigation that are relevant to the subject's decision to participate."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XV Chapter II Section 4.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - informed_consent_form
+      - informed_consent_records
+
+  - obligationId: "EUMDR.XV.OBL.004"
+    kind: obligation
+    title: "Clinical investigation report"
+    text: "The sponsor shall prepare a clinical investigation report documenting all the results and conclusions of the investigation. The report shall cover all investigational sites. Where part of the investigation has been performed outside the Union, the full data shall still be included."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XV Chapter III"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_report
+
+  - obligationId: "EUMDR.XIV.A.OBL.005"
+    kind: obligation
+    title: "Pre-clinical data requirements"
+    text: "The clinical evaluation shall include the review of pre-clinical testing data that is relevant to the assessment of clinical safety and performance, including biocompatibility testing, bench testing, simulation and animal studies where relevant."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part A Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - biocompatibility_test_report
+      - bench_test_report
+      - preclinical_data
+
+  - obligationId: "EUMDR.XIV.A.OBL.006"
+    kind: obligation
+    title: "Literature search methodology"
+    text: "Where the clinical evaluation is based on clinical data from literature, the literature search strategy and the results shall be documented. The search shall be systematic, comprehensive, reproducible and use clearly defined criteria for selection, appraisal and analysis."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIV Part A Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - literature_search_protocol
+      - literature_search_report
+
+constraints:
+  - constraintId: "EUMDR.61.CON.001"
+    appliesTo: "EUMDR.61.OBL.005"
+    text: "Equivalence shall be demonstrated on technical (design, materials, specifications), biological (biocompatibility, tissue contact) and clinical (intended purpose, clinical condition, duration of use, population) characteristics simultaneously. All three must be addressed."
+    severity: hard
+
+  - constraintId: "EUMDR.61.CON.002"
+    appliesTo: "EUMDR.61.OBL.006"
+    text: "Without a contract granting full access to the equivalent device's technical documentation, equivalence claims to another manufacturer's device are not permitted for class III and implantable devices."
+    severity: hard
+
+  - constraintId: "EUMDR.61.CON.003"
+    appliesTo: "EUMDR.61.OBL.004"
+    text: "A clinical investigation waiver for class III or implantable devices must be scientifically justified and documented. Mere absence of adverse events is insufficient justification."
+    severity: hard
+
+  - constraintId: "EUMDR.XIV.B.CON.001"
+    appliesTo: "EUMDR.XIV.B.OBL.001"
+    text: "The PMCF plan shall not be a generic document. It must be device-specific and address the particular risks, residual uncertainties and clinical questions for the device concerned."
+    severity: hard
+
+  - constraintId: "EUMDR.XIV.A.CON.001"
+    appliesTo: "EUMDR.XIV.A.OBL.006"
+    text: "Literature search must be repeatable and documented with search terms, databases, date ranges and inclusion/exclusion criteria. Cherry-picking of favourable publications is not acceptable."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.CLINICAL_EVALUATION"
+    term: "Clinical Evaluation"
+    text: "A systematic and planned process to continuously generate, collect, analyse and assess the clinical data pertaining to a device in order to verify the safety and performance, including clinical benefits, of the device when used as intended by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(44)"
+
+  - definitionId: "EUMDR.DEF.CLINICAL_EVIDENCE"
+    term: "Clinical Evidence"
+    text: "Clinical data and clinical evaluation results pertaining to a device of a sufficient amount and quality to allow a qualified assessment of whether the device is safe and achieves the intended clinical benefit(s), when used as intended by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(51)"
+
+  - definitionId: "EUMDR.DEF.CLINICAL_INVESTIGATION"
+    term: "Clinical Investigation"
+    text: "Any systematic investigation involving one or more human subjects, undertaken to assess the safety or performance of a device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(45)"
+
+  - definitionId: "EUMDR.DEF.PMCF"
+    term: "Post-Market Clinical Follow-up"
+    text: "A continuous process that updates the clinical evaluation and shall be addressed in the manufacturer's post-market surveillance plan. When conducting PMCF, the manufacturer shall proactively collect and evaluate clinical data from the use of the device in or on humans."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(46), Annex XIV Part B"
+
+  - definitionId: "EUMDR.DEF.SPONSOR"
+    term: "Sponsor"
+    text: "Any individual, company, institution or organisation which takes responsibility for the initiation, for the management and setting up of the financing of the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(49)"
+
+relationships:
+  - from: "EUMDR.61.OBL.007"
+    to: "EUMDR.XIV.B.OBL.001"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "Lifecycle update requires PMCF plan outputs"
+
+  - from: "EUMDR.XIV.B.OBL.003"
+    to: "EUMDR.XIV.A.OBL.004"
+    type: PART_OF
+    props:
+      note: "PMCF evaluation report feeds into clinical evaluation report updates"
+
+  - from: "EUMDR.XIV.B.OBL.001"
+    to: "EUMDR.83.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PMCF plan references PMS system"
+
+  - from: "EUMDR.XIV.B.OBL.003"
+    to: "EUMDR.86.PSUR.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PMCF results feed into PSUR"
+
+  - from: "EUMDR.XV.OBL.004"
+    to: "EUMDR.XIV.A.OBL.003"
+    type: SATISFIES
+    props:
+      note: "Clinical investigation report provides data for clinical evaluation report"
