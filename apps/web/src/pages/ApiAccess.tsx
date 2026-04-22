@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { RegulatorCompactStrip } from '../components/ui/RegulatorAssets.js';
 import { api } from '../lib/queryClient.js';
 
 /* ─── Types ─── */
@@ -140,7 +141,7 @@ function buildIntegrationPrompt(tool: ToolChoice, apiKey: string | null, process
    Headers: { "Authorization": "Bearer ${apiKey ?? 'YOUR_KEY_HERE'}" }`;
   }
 
-  return `I want to add Smarticus compliance checking to my ${processType || 'QMS'} workflow. Smarticus is a compliance API for medical device and pharma — it validates AI-generated documents against 303 regulatory requirements across 8 regulations (EU MDR, ISO 13485, 21 CFR 820, etc.).
+  return `I want to add Smarticus compliance checking to my ${processType || 'QMS'} workflow. Smarticus is a compliance API for medical device and pharma. It validates AI-generated documents against regulatory requirements across EU MDR, ISO 13485, 21 CFR 820, and the rest of the coverage set.
 
 1. ADD the Smarticus MCP server. I use ${toolName}. ${mcpConfigBlock}
 
@@ -248,7 +249,7 @@ export function ApiAccess() {
   };
 
   const copyPrompt = () => {
-    const key = newKey?.rawKey ?? (keys.length > 0 ? `${keys[0]!.keyPrefix}…` : null);
+    const key = newKey?.rawKey ?? (keys.length > 0 ? `${keys[0]!.keyPrefix}...` : null);
     navigator.clipboard.writeText(buildIntegrationPrompt(tool, key, processDesc));
     setPromptCopied(true);
     setTimeout(() => setPromptCopied(false), 3000);
@@ -261,7 +262,7 @@ export function ApiAccess() {
   const isVibeCoder = tool !== null && tool !== 'dev-team';
   const isDevTeam = tool === 'dev-team';
   const hasKey = keys.length > 0 || newKey !== null;
-  const activeKey = newKey?.rawKey ?? (keys.length > 0 ? `${keys[0]!.keyPrefix}…` : null);
+  const activeKey = newKey?.rawKey ?? (keys.length > 0 ? `${keys[0]!.keyPrefix}...` : null);
 
   const lbl: React.CSSProperties = {
     display: 'block', fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
@@ -304,6 +305,9 @@ export function ApiAccess() {
             <button onClick={() => setView('guide')} style={pillBtn(view === 'guide')}>Setup Guide</button>
             <button onClick={() => setView('keys')} style={pillBtn(view === 'keys')}>API Keys{keys.length > 0 ? ` (${keys.length})` : ''}</button>
           </div>
+        </div>
+        <div style={{ width: 320, maxWidth: '34vw' }}>
+          <RegulatorCompactStrip />
         </div>
         {view === 'keys' && (
           <button onClick={() => setShowForm(!showForm)} style={{
@@ -478,7 +482,7 @@ export function ApiAccess() {
                         fontSize: 12, color: '#6FA646', fontWeight: 500,
                         display: 'flex', alignItems: 'center', gap: 8,
                       }}>
-                        ✓ Key ready {activeKey && <code style={{ fontFamily: 'var(--font-mono)' }}>{activeKey.length > 20 ? activeKey.slice(0, 20) + '…' : activeKey}</code>}
+                        Key ready {activeKey && <code style={{ fontFamily: 'var(--font-mono)' }}>{activeKey.length > 20 ? activeKey.slice(0, 20) + '...' : activeKey}</code>}
                       </div>
                     ) : (
                       <button onClick={() => { setView('keys'); setShowForm(true); }} style={{
@@ -585,7 +589,7 @@ export function ApiAccess() {
                       fontFamily: 'var(--font-mono)', whiteSpace: 'pre-wrap', overflow: 'auto',
                       maxHeight: 200, marginBottom: 12,
                     }}>
-                      {buildIntegrationPrompt(tool, activeKey, processDesc).substring(0, 400)}…
+                      {buildIntegrationPrompt(tool, activeKey, processDesc).substring(0, 400)}...
                     </div>
                     <button onClick={copyPrompt} style={{
                       width: '100%', padding: '11px 0', borderRadius: 8,
@@ -744,7 +748,7 @@ export function ApiAccess() {
                       fontFamily: 'var(--font-sans)', opacity: keyName.trim() ? 1 : 0.5,
                     }}
                   >
-                    {creating ? 'Creating…' : 'Create key'}
+                    {creating ? 'Creating...' : 'Create key'}
                   </button>
                   <button
                     onClick={() => setShowForm(false)}
@@ -770,7 +774,7 @@ export function ApiAccess() {
           )}
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading keys…</div>
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading keys...</div>
           ) : keys.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 32px', background: 'var(--bg-root)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
               <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>No API keys yet</div>
@@ -799,7 +803,7 @@ export function ApiAccess() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                     <div>
                       <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{k.name}</div>
-                      <code style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{k.keyPrefix}…</code>
+                      <code style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{k.keyPrefix}...</code>
                     </div>
                     <span style={{
                       fontSize: 10, padding: '3px 8px', borderRadius: 4,

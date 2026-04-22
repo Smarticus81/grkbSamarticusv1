@@ -8,5 +8,5 @@ export function fmtDate(input: string | Date): string {
 }
 
 export function shortHash(hash: string): string {
-  return hash.length > 12 ? `${hash.slice(0, 6)}…${hash.slice(-4)}` : hash;
+  return hash.length > 12 ? `${hash.slice(0, 6)}...${hash.slice(-4)}` : hash;
 }

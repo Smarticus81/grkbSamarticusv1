@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { RegulatorCompactStrip } from '../components/ui/RegulatorAssets.js';
 import { api } from '../lib/queryClient.js';
 import { shortHash } from '../lib/utils.js';
 
@@ -207,15 +208,18 @@ export function TraceExplorer({ initialId }: Props) {
       <div style={{ marginBottom: 40 }}>
         <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Decision Traces</h1>
         <p style={{ color: 'var(--text-tertiary)', fontSize: 14, margin: 0, maxWidth: 680, lineHeight: 1.6 }}>
-          Every time Smarticus generates a document, it records every decision — what was decided, why, and which regulation backs it up. This is the audit trail you hand to your Notified Body or FDA auditor.
+          Every time Smarticus generates a document, it records what was decided, why, and which regulation supports it. This is the audit trail you hand to your notified body or FDA auditor.
         </p>
+        <div style={{ marginTop: 16, maxWidth: 420 }}>
+          <RegulatorCompactStrip />
+        </div>
       </div>
 
-      {/* Search bar — prominent and centered-ish */}
+      {/* Search bar */}
       <div style={{ display: 'flex', gap: 10, marginBottom: 32, alignItems: 'center', maxWidth: '560px' }}>
         <div style={{ flex: 1 }}>
           <input
-            placeholder="Enter a document or process ID…"
+            placeholder="Enter a document or process ID..."
             value={showDemo ? 'demo-psur-2026-q1-cardiosense' : pid}
             onChange={(e) => { setPid(e.target.value); setShowDemo(false); }}
             onKeyDown={(e) => e.key === 'Enter' && load()}
@@ -257,7 +261,7 @@ export function TraceExplorer({ initialId }: Props) {
             transition: 'all 0.2s',
           }}
         >
-          {loading ? 'Loading…' : 'Load'}
+          {loading ? 'Loading...' : 'Load'}
         </button>
         {activeChain.length > 0 && (
           <button

@@ -13,6 +13,7 @@ import { tracing } from './middleware/tracing.js';
 import graph from './routes/graph.js';
 import traces from './routes/traces.js';
 import apiKeysRoute from './routes/api-keys.js';
+import sandbox from './routes/sandbox.js';
 
 const app = express();
 app.use(cors());
@@ -28,10 +29,11 @@ app.use('/api', auth, tenancy);
 app.use('/api/graph', graph);
 app.use('/api/traces', traces);
 app.use('/api/api-keys', apiKeysRoute);
+app.use('/api/sandbox', sandbox);
 
 const port = Number(process.env.API_PORT ?? 4000);
 const host = process.env.API_HOST ?? '0.0.0.0';
 app.listen(port, host, () => {
   console.log(`Regulatory Ground API listening on http://${host}:${port}`);
-  console.log('Routes: /api/graph, /api/traces, /api/api-keys, /health');
+  console.log('Routes: /api/graph, /api/traces, /api/api-keys, /api/sandbox, /health');
 });

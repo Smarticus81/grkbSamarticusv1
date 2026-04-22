@@ -1,194 +1,457 @@
-/**
- * Thinkerton & Smarticus SVG logos
+﻿/**
+ * Smarticus / Thinkertons brand marks.
+ *
+ * Smarticus visual: a stylised navy "S" cradling two linked orange nodes —
+ * the obligation graph held by the regulatory frame.
+ *
+ * Wordmark: lowercase "smarticus" with the apex of the "A" replaced by an
+ * orange triangle that doubles as the "graph node" accent.
+ *
+ * Thinkertons visual: a minimalist "T" with a strong crossbar — appears only
+ * on the landing page, in the by-Thinkertons lockup, and in the audit badge.
  */
 
-interface LogoProps {
+import type { CSSProperties, ReactNode } from 'react';
+
+interface MarkProps {
   size?: number;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
+  /** Primary stroke color. Defaults to brand navy via `--ink`. */
+  color?: string;
+  /** Accent color for the orange graph nodes. Defaults to `--orange`. */
+  accent?: string;
+  /** Render in single-color form (no orange). Used in monochrome lockups. */
+  monochrome?: boolean;
 }
 
-/**
- * Thinkerton logo — a stylized brain/lightbulb mark in teal/cyan.
- * Inspired by the original Thinkerton brand: a thinking head silhouette 
- * with interconnected neural pathways forming a "T".
- */
-export function ThinkertonLogo({ size = 32, className, style }: LogoProps) {
+/* ────────────────────────────────────────────────────────────────────────
+ * SmarticusMark
+ * Navy "S" cradle (open at top-right and bottom-left) cradling two linked
+ * orange nodes — a circle, an edge, a circle. Reads as "regulatory frame +
+ * knowledge graph".
+ * ──────────────────────────────────────────────────────────────────────── */
+export function SmarticusMark({
+  size = 28,
+  className,
+  style,
+  color = 'var(--ink)',
+  accent = 'var(--orange)',
+  monochrome = false,
+}: MarkProps) {
+  const accentColor = monochrome ? color : accent;
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 64 64"
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={style}
+      aria-hidden="true"
     >
-      {/* Head silhouette */}
+      {/*
+        Stylised "S" built from two mirrored hook arcs — matches the Smarticus
+        brand mark: a rounded upper hook opening to the right and a rounded
+        lower hook opening to the left, pinched at the centre where the
+        orange node link crosses.
+      */}
       <path
-        d="M32 6C19.85 6 10 15.85 10 28c0 7.18 3.44 13.56 8.76 17.58C20.4 46.82 22 49.5 22 52v2c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-2c0-2.5 1.6-5.18 3.24-6.42C50.56 41.56 54 35.18 54 28 54 15.85 44.15 6 32 6Z"
-        fill="url(#thinkerton-grad)"
-        opacity="0.15"
-      />
-      {/* Neural network paths forming abstract "T" */}
-      <path
-        d="M20 26h24M32 26v18"
-        stroke="url(#thinkerton-grad)"
-        strokeWidth="3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* Neural nodes */}
-      <circle cx="20" cy="26" r="3" fill="var(--neo-cyan, #5CC3C9)" />
-      <circle cx="32" cy="26" r="3" fill="var(--accent-bright, #0E8CC2)" />
-      <circle cx="44" cy="26" r="3" fill="var(--neo-cyan, #5CC3C9)" />
-      <circle cx="32" cy="44" r="3" fill="var(--neo-green, #90CB62)" />
-      {/* Branching connections */}
-      <line x1="26" y1="26" x2="22" y2="18" stroke="var(--neo-cyan, #5CC3C9)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      <line x1="38" y1="26" x2="42" y2="18" stroke="var(--neo-cyan, #5CC3C9)" strokeWidth="1.5" strokeLinecap="round" opacity="0.6" />
-      <line x1="32" y1="35" x2="24" y2="38" stroke="var(--neo-green, #90CB62)" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-      <line x1="32" y1="35" x2="40" y2="38" stroke="var(--neo-green, #90CB62)" strokeWidth="1.5" strokeLinecap="round" opacity="0.5" />
-      {/* Small synapse dots */}
-      <circle cx="22" cy="18" r="2" fill="var(--neo-cyan, #5CC3C9)" opacity="0.7" />
-      <circle cx="42" cy="18" r="2" fill="var(--neo-cyan, #5CC3C9)" opacity="0.7" />
-      <circle cx="24" cy="38" r="2" fill="var(--neo-green, #90CB62)" opacity="0.6" />
-      <circle cx="40" cy="38" r="2" fill="var(--neo-green, #90CB62)" opacity="0.6" />
-      {/* Base line (chin of lightbulb) */}
-      <line x1="26" y1="52" x2="38" y2="52" stroke="var(--border-default, #1E5270)" strokeWidth="2" strokeLinecap="round" />
-      <line x1="28" y1="56" x2="36" y2="56" stroke="var(--border-default, #1E5270)" strokeWidth="2" strokeLinecap="round" />
-      <defs>
-        <linearGradient id="thinkerton-grad" x1="10" y1="6" x2="54" y2="56" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#5CC3C9" />
-          <stop offset="0.5" stopColor="#0E8CC2" />
-          <stop offset="1" stopColor="#90CB62" />
-        </linearGradient>
-      </defs>
-    </svg>
-  );
-}
-
-/**
- * Smarticus logo — a compliance shield with an "S" neural pathway and graph nodes.
- * Represents: AI intelligence (neural path) + regulatory protection (shield) + 
- * knowledge graph connectivity (nodes).
- */
-export function SmarticusLogo({ size = 32, className, style }: LogoProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 64 64"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      style={style}
-    >
-      {/* Shield shape */}
-      <path
-        d="M32 4L8 16v16c0 14.4 10.24 27.84 24 32 13.76-4.16 24-17.6 24-32V16L32 4Z"
-        fill="url(#smarticus-shield)"
-        opacity="0.12"
-        stroke="url(#smarticus-border)"
-        strokeWidth="2"
-      />
-      {/* Inner shield highlight */}
-      <path
-        d="M32 10L14 19.5v12.5c0 11.2 7.68 21.6 18 24.8 10.32-3.2 18-13.6 18-24.8V19.5L32 10Z"
-        fill="none"
-        stroke="url(#smarticus-border)"
-        strokeWidth="1"
-        opacity="0.3"
-      />
-      {/* "S" neural pathway — the core mark */}
-      <path
-        d="M38 20c0 0-4-2-8 0s-6 6-4 10 6 6 8 8 2 6-2 8"
-        stroke="url(#smarticus-s-grad)"
-        strokeWidth="3"
+        d="M54 18 C 54 9, 44 6, 34 8 C 22 10, 14 18, 16 26 C 17.5 32, 24 33, 32 32"
+        stroke={color}
+        strokeWidth="4"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
       />
-      {/* Graph nodes along the S path */}
-      <circle cx="38" cy="20" r="2.5" fill="var(--neo-cyan, #5CC3C9)" />
-      <circle cx="26" cy="24" r="2.5" fill="var(--accent-bright, #0E8CC2)" />
-      <circle cx="34" cy="34" r="2.5" fill="var(--neo-green, #90CB62)" />
-      <circle cx="32" cy="46" r="2.5" fill="var(--neo-marigold, #FFA901)" />
-      {/* Radiating connection lines from nodes */}
-      <line x1="38" y1="20" x2="46" y2="18" stroke="var(--neo-cyan, #5CC3C9)" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
-      <line x1="26" y1="24" x2="18" y2="22" stroke="var(--accent-bright, #0E8CC2)" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
-      <line x1="34" y1="34" x2="44" y2="36" stroke="var(--neo-green, #90CB62)" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
-      <line x1="32" y1="46" x2="22" y2="48" stroke="var(--neo-marigold, #FFA901)" strokeWidth="1" strokeLinecap="round" opacity="0.4" />
-      {/* Tiny endpoint dots */}
-      <circle cx="46" cy="18" r="1.5" fill="var(--neo-cyan, #5CC3C9)" opacity="0.5" />
-      <circle cx="18" cy="22" r="1.5" fill="var(--accent-bright, #0E8CC2)" opacity="0.5" />
-      <circle cx="44" cy="36" r="1.5" fill="var(--neo-green, #90CB62)" opacity="0.5" />
-      <circle cx="22" cy="48" r="1.5" fill="var(--neo-marigold, #FFA901)" opacity="0.5" />
-      <defs>
-        <linearGradient id="smarticus-shield" x1="8" y1="4" x2="56" y2="64" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#0A6190" />
-          <stop offset="1" stopColor="#5CC3C9" />
-        </linearGradient>
-        <linearGradient id="smarticus-border" x1="8" y1="4" x2="56" y2="64" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#5CC3C9" />
-          <stop offset="0.5" stopColor="#0E8CC2" />
-          <stop offset="1" stopColor="#90CB62" />
-        </linearGradient>
-        <linearGradient id="smarticus-s-grad" x1="24" y1="18" x2="40" y2="48" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#5CC3C9" />
-          <stop offset="0.4" stopColor="#0E8CC2" />
-          <stop offset="0.7" stopColor="#90CB62" />
-          <stop offset="1" stopColor="#FFA901" />
-        </linearGradient>
-      </defs>
+      <path
+        d="M10 46 C 10 55, 20 58, 30 56 C 42 54, 50 46, 48 38 C 46.5 32, 40 31, 32 32"
+        stroke={color}
+        strokeWidth="4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
+      {/* Linked graph nodes — the obligation graph held inside the cradle. */}
+      <line
+        x1="18" y1="42" x2="46" y2="22"
+        stroke={accentColor}
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+      <circle cx="18" cy="42" r="4.6" fill={accentColor} />
+      <circle cx="46" cy="22" r="4.6" fill={accentColor} />
     </svg>
   );
 }
 
-/**
- * Compact Smarticus icon — just the shield mark, for sidebar/favicon use
- */
-export function SmarticusIcon({ size = 24, className, style }: LogoProps) {
+/* ────────────────────────────────────────────────────────────────────────
+ * SmarticusWordmark
+ * Lowercase "smarticus" with the apex of the "A" replaced by an orange
+ * triangle. Inter Tight 500, tight tracking. Optional REGULATORY
+ * INTELLIGENCE. ENGINEERED. tagline.
+ * ──────────────────────────────────────────────────────────────────────── */
+export function SmarticusWordmark({
+  size = 22,
+  color,
+  accent,
+  tagline,
+  showSub,
+  showMark = true,
+  monochrome = false,
+  style,
+}: {
+  size?: number;
+  color?: string;
+  accent?: string;
+  /** REGULATORY INTELLIGENCE. ENGINEERED. (or custom). Pass `false` to hide. */
+  tagline?: string | false;
+  /** Backwards-compat alias for `tagline`. If true, shows default tagline. */
+  showSub?: boolean;
+  showMark?: boolean;
+  monochrome?: boolean;
+  style?: CSSProperties;
+}) {
+  const inkColor = color ?? 'var(--ink)';
+  const accentColor = monochrome ? inkColor : (accent ?? 'var(--orange)');
+  const resolvedTagline =
+    tagline === false
+      ? null
+      : tagline ?? (showSub ? 'REGULATORY INTELLIGENCE. ENGINEERED.' : null);
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: Math.round(size * 0.5),
+        color: inkColor,
+        ...style,
+      }}
+    >
+      {showMark && (
+        <SmarticusMark
+          size={size + 14}
+          color={inkColor}
+          accent={accentColor}
+          monochrome={monochrome}
+        />
+      )}
+      <span
+        style={{
+          display: 'inline-flex',
+          flexDirection: 'column',
+          lineHeight: 1.0,
+          gap: 4,
+        }}
+      >
+        <span
+          style={{
+            fontFamily: 'var(--sans)',
+            fontSize: size,
+            fontWeight: 500,
+            letterSpacing: '-0.04em',
+            textTransform: 'lowercase',
+            color: inkColor,
+            display: 'inline-flex',
+            alignItems: 'baseline',
+          }}
+        >
+          {/* "sm" */}
+          <span>sm</span>
+          {/* "a" with orange triangle apex replacement */}
+          <span style={{ position: 'relative', display: 'inline-block' }}>
+            a
+            <svg
+              viewBox="0 0 12 8"
+              width={size * 0.42}
+              height={size * 0.28}
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: `-${size * 0.18}px`,
+                transform: 'translateX(-50%)',
+              }}
+              aria-hidden="true"
+            >
+              <path d="M6 0 L12 8 L0 8 Z" fill={accentColor} />
+            </svg>
+          </span>
+          {/* "rticus" */}
+          <span>rticus</span>
+        </span>
+        {resolvedTagline && (
+          <span
+            className="brand-tagline"
+            style={{ fontSize: Math.max(8.5, size * 0.42) }}
+          >
+            {resolvedTagline}
+          </span>
+        )}
+      </span>
+    </span>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ * ThinkertonsMark
+ * A bold "T" with an extended top crossbar. Navy ink only.
+ * ──────────────────────────────────────────────────────────────────────── */
+export function ThinkertonsMark({
+  size = 28,
+  className,
+  style,
+  color = 'var(--ink)',
+}: Omit<MarkProps, 'accent' | 'monochrome'>) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 24 24"
+      viewBox="0 0 48 48"
       fill="none"
-      xmlns="http://www.w3.org/2000/svg"
       className={className}
       style={style}
+      aria-hidden="true"
     >
-      <path
-        d="M12 2L3 6.5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12v-6L12 2Z"
-        fill="url(#sicon-bg)"
-        opacity="0.15"
-        stroke="url(#sicon-stroke)"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M14.5 8c0 0-1.5-.8-3 0s-2.2 2.2-1.5 3.8 2.2 2.2 3 3 .8 2.2-.8 3"
-        stroke="url(#sicon-s)"
-        strokeWidth="2"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <circle cx="14.5" cy="8" r="1.5" fill="var(--neo-cyan, #5CC3C9)" />
-      <circle cx="12.2" cy="17.8" r="1.5" fill="var(--neo-marigold, #FFA901)" />
-      <defs>
-        <linearGradient id="sicon-bg" x1="3" y1="2" x2="21" y2="20" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#0A6190" />
-          <stop offset="1" stopColor="#5CC3C9" />
-        </linearGradient>
-        <linearGradient id="sicon-stroke" x1="3" y1="2" x2="21" y2="20" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#5CC3C9" />
-          <stop offset="1" stopColor="#0E8CC2" />
-        </linearGradient>
-        <linearGradient id="sicon-s" x1="10" y1="7" x2="15" y2="18" gradientUnits="userSpaceOnUse">
-          <stop stopColor="#5CC3C9" />
-          <stop offset="0.5" stopColor="#0E8CC2" />
-          <stop offset="1" stopColor="#FFA901" />
-        </linearGradient>
-      </defs>
+      {/* Outer top bar — extends past the column edges */}
+      <line x1="6" y1="10" x2="42" y2="10" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+      {/* Inner top bar — narrower, sits below */}
+      <line x1="14" y1="16" x2="34" y2="16" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
+      {/* Stem */}
+      <line x1="24" y1="16" x2="24" y2="42" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
     </svg>
   );
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+ * ThinkertonsWordmark
+ * Lowercase "thinkertons" with optional FOUNDATION. EXPERTISE. IMPACT.
+ * tagline. Used inside the by-Thinkertons lockup and the landing footer.
+ * ──────────────────────────────────────────────────────────────────────── */
+export function ThinkertonsWordmark({
+  size = 18,
+  color,
+  showMark = true,
+  tagline,
+  style,
+}: {
+  size?: number;
+  color?: string;
+  showMark?: boolean;
+  tagline?: string | false;
+  style?: CSSProperties;
+}) {
+  const inkColor = color ?? 'var(--ink)';
+  const resolvedTagline =
+    tagline === false ? null : tagline ?? null;
+
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: Math.round(size * 0.4),
+        color: inkColor,
+        ...style,
+      }}
+    >
+      {showMark && <ThinkertonsMark size={size + 6} color={inkColor} />}
+      <span style={{ display: 'inline-flex', flexDirection: 'column', gap: 4, lineHeight: 1 }}>
+        <span
+          style={{
+            fontFamily: 'var(--sans)',
+            fontSize: size,
+            fontWeight: 500,
+            letterSpacing: '-0.035em',
+            textTransform: 'lowercase',
+          }}
+        >
+          thinkertons
+        </span>
+        {resolvedTagline && (
+          <span className="brand-tagline" style={{ fontSize: Math.max(8.5, size * 0.42) }}>
+            {resolvedTagline}
+          </span>
+        )}
+      </span>
+    </span>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ * SmarticusByThinkertonsLockup
+ * The combined brand lockup from sheet panel 3.
+ *  [Smarticus mark + lowercase wordmark + tagline]  |  BY  thinkertons
+ * Used on the landing page only.
+ * ──────────────────────────────────────────────────────────────────────── */
+export function SmarticusByThinkertonsLockup({
+  size = 22,
+  color,
+  accent,
+  style,
+}: {
+  size?: number;
+  color?: string;
+  accent?: string;
+  style?: CSSProperties;
+}) {
+  const inkColor = color ?? 'var(--ink)';
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 18,
+        color: inkColor,
+        ...style,
+      }}
+    >
+      <SmarticusWordmark
+        size={size}
+        color={inkColor}
+        accent={accent}
+        tagline="REGULATORY INTELLIGENCE. ENGINEERED."
+      />
+      <span
+        aria-hidden="true"
+        style={{
+          width: 1,
+          height: size + 16,
+          background: inkColor,
+          opacity: 0.35,
+          flexShrink: 0,
+        }}
+      />
+      <span
+        style={{
+          display: 'inline-flex',
+          alignItems: 'baseline',
+          gap: 8,
+        }}
+      >
+        <span
+          className="brand-tagline"
+          style={{ fontSize: Math.max(8.5, size * 0.42), color: inkColor, opacity: 0.6 }}
+        >
+          BY
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--sans)',
+            fontSize: size * 0.78,
+            fontWeight: 500,
+            letterSpacing: '-0.035em',
+            textTransform: 'lowercase',
+            color: inkColor,
+          }}
+        >
+          thinkertons
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ * SmarticusBadge
+ * Circular seal version. Two concentric rings, Smarticus mark in the centre,
+ * "SMARTICUS" arched along the top of the inner ring, "BY THINKERTONS"
+ * arched along the bottom. Two small orange dots at the meridians.
+ * ──────────────────────────────────────────────────────────────────────── */
+export function SmarticusBadge({
+  size = 96,
+  color = 'var(--ink)',
+  accent = 'var(--orange)',
+  className,
+  style,
+}: MarkProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 200 200"
+      fill="none"
+      className={className}
+      style={style}
+      aria-hidden="true"
+    >
+      <defs>
+        <path id="badge-arc-top" d="M 30,100 A 70,70 0 0 1 170,100" />
+        <path id="badge-arc-bottom" d="M 35,108 A 65,65 0 0 0 165,108" />
+      </defs>
+      <circle cx="100" cy="100" r="95" stroke={color} strokeWidth="1.6" />
+      <circle cx="100" cy="100" r="78" stroke={color} strokeWidth="1.2" />
+      <circle cx="100" cy="100" r="58" stroke={color} strokeWidth="1.2" />
+      {/* Meridian dots */}
+      <circle cx="13" cy="100" r="3.5" fill={accent} />
+      <circle cx="187" cy="100" r="3.5" fill={accent} />
+      {/* Centre mark */}
+      <g transform="translate(70, 68) scale(0.95)">
+        <SmarticusMark size={64} color={color} accent={accent} />
+      </g>
+      <text
+        fill={color}
+        style={{
+          fontFamily: 'var(--sans)',
+          fontSize: 13,
+          fontWeight: 500,
+          letterSpacing: '0.34em',
+          textTransform: 'uppercase',
+        }}
+      >
+        <textPath href="#badge-arc-top" startOffset="50%" textAnchor="middle">
+          SMARTICUS
+        </textPath>
+      </text>
+      <text
+        fill={color}
+        style={{
+          fontFamily: 'var(--sans)',
+          fontSize: 10,
+          fontWeight: 500,
+          letterSpacing: '0.34em',
+          textTransform: 'uppercase',
+        }}
+      >
+        <textPath href="#badge-arc-bottom" startOffset="50%" textAnchor="middle">
+          BY THINKERTONS
+        </textPath>
+      </text>
+    </svg>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ * BrandSidebarBlock
+ * Small composition used in the app shell sidebar — mark + lowercase
+ * wordmark stacked above the brand tagline.
+ * ──────────────────────────────────────────────────────────────────────── */
+export function BrandSidebarBlock({
+  onClick,
+  children,
+}: {
+  onClick?: () => void;
+  children?: ReactNode;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        cursor: onClick ? 'pointer' : 'default',
+        padding: '4px 0 12px',
+      }}
+    >
+      <SmarticusWordmark size={18} tagline="REGULATORY INTELLIGENCE. ENGINEERED." />
+      {children}
+    </div>
+  );
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+ * Backwards-compatible aliases.
+ * Earlier code referenced these names; keep them so we never break a
+ * consumer when we evolve the canonical exports.
+ * ──────────────────────────────────────────────────────────────────────── */
+export const SmarticusIcon = SmarticusMark;
+export const SmarticusLogo = SmarticusMark;
+export const ThinkertonLogo = ThinkertonsMark;

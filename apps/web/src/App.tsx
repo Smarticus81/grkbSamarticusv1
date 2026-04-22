@@ -6,79 +6,104 @@ import { Dashboard } from './pages/Dashboard.js';
 import { TraceExplorer } from './pages/TraceExplorer.js';
 import { RegulationManager } from './pages/RegulationManager.js';
 import { ApiAccess } from './pages/ApiAccess.js';
+import { Sandbox } from './pages/Sandbox.js';
 import { ThemeToggle } from './components/ui/ThemeToggle.js';
-import { SmarticusIcon } from './components/ui/logos.js';
+import { RegulatorCompactStrip } from './components/ui/RegulatorAssets.js';
+import { SmarticusWordmark } from './components/ui/logos.js';
+import { REG_COUNT, OBLIGATION_COUNT } from './lib/coverage.js';
 
-const NAV: { href: string; label: string; icon: string }[] = [
-  { href: '/app', label: 'Dashboard', icon: '⊞' },
-  { href: '/app/regulations', label: 'Requirements', icon: '⬡' },
-  { href: '/app/traces', label: 'Audit Trails', icon: '◇' },
-  { href: '/app/api-access', label: 'Connect', icon: '⟁' },
+const NAV: { href: string; label: string; n: string }[] = [
+  { href: '/app',              label: 'Overview',     n: '01' },
+  { href: '/app/sandbox',      label: 'Sandbox',      n: '02' },
+  { href: '/app/regulations',  label: 'Regulations',  n: '03' },
+  { href: '/app/traces',       label: 'Traces',       n: '04' },
+  { href: '/app/api-access',   label: 'Connect',      n: '05' },
 ];
 
-function NavLink({ href, label, icon }: { href: string; label: string; icon: string }) {
+function NavLink({ href, label, n }: { href: string; label: string; n: string }) {
   const [location] = useLocation();
   const isExact = location === href || location === `${href}/`;
   const isNested = href !== '/app' && location.startsWith(href);
-  const isDashboard = href === '/app' && (location === '/app' || location === '/app/');
-  const active = isExact || isNested || isDashboard;
+  const isOverview = href === '/app' && (location === '/app' || location === '/app/');
+  const active = isExact || isNested || isOverview;
   return (
     <Link
       href={href}
       style={{
-        display: 'flex',
+        display: 'grid',
+        gridTemplateColumns: '28px 1fr',
         alignItems: 'center',
-        gap: 10,
-        padding: '9px 14px',
-        borderRadius: 'var(--radius-md)',
-        color: active ? 'var(--neo-cyan)' : 'var(--text-tertiary)',
-        background: active ? 'var(--accent-muted)' : 'transparent',
+        padding: '10px 14px',
         textDecoration: 'none',
-        fontSize: 13,
-        fontWeight: active ? 600 : 400,
-        transition: 'all 0.2s cubic-bezier(.4,0,.2,1)',
-        borderLeft: active ? '2px solid var(--neo-cyan)' : '2px solid transparent',
+        borderBottom: '0',
+        color: active ? 'var(--ink)' : 'var(--ink-3)',
+        background: 'transparent',
+        fontSize: 13.5,
+        letterSpacing: '-0.005em',
+        position: 'relative',
+        transition: 'color var(--t-fast) var(--ease)',
       }}
     >
-      <span style={{ fontSize: 14, opacity: active ? 1 : 0.5, transition: 'opacity 0.2s' }}>{icon}</span>
-      {label}
+      <span
+        style={{
+          fontFamily: 'var(--mono)',
+          fontSize: 10,
+          letterSpacing: '0.14em',
+          color: active ? 'var(--ink-2)' : 'var(--ink-4)',
+        }}
+      >
+        {n}
+      </span>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+        {label}
+        {active && (
+          <span
+            style={{
+              width: 4,
+              height: 4,
+              borderRadius: '50%',
+              background: 'var(--signal)',
+              marginLeft: 4,
+            }}
+          />
+        )}
+      </span>
     </Link>
   );
 }
 
 function AppShell() {
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-surface)' }}>
-      {/* Sidebar */}
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--paper)' }}>
       <nav
         style={{
-          width: 200,
-          borderRight: '1px solid var(--border-subtle)',
-          padding: '20px 12px',
+          width: 214,
+          borderRight: '1px solid var(--rule)',
+          padding: '18px 0',
           display: 'flex',
           flexDirection: 'column',
           flexShrink: 0,
-          background: 'var(--bg-root)',
+          background: 'var(--paper)',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
         }}
       >
-        {/* Logo */}
-        <div style={{ padding: '0 14px', marginBottom: 32 }}>
-          <Link href="/" style={{ textDecoration: 'none' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <SmarticusIcon size={28} />
-              <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                  Smarticus
-                </span>
-                <span style={{ fontSize: 10, fontWeight: 400, color: 'var(--text-muted)', letterSpacing: '0.02em' }}>
-                  by Thinkertons
-                </span>
-              </div>
-            </div>
+        <div style={{ padding: '0 14px 20px' }}>
+          <Link
+            href="/"
+            style={{
+              textDecoration: 'none',
+              border: 0,
+              display: 'inline-flex',
+              color: 'var(--ink)',
+            }}
+          >
+            <SmarticusWordmark size={16} tagline="REGULATORY INTELLIGENCE. ENGINEERED." />
           </Link>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           {NAV.map((item) => (
             <NavLink key={item.href} {...item} />
           ))}
@@ -86,36 +111,41 @@ function AppShell() {
 
         <div style={{ flex: 1 }} />
 
-        {/* Graph stats badge */}
-        <div style={{
-          padding: '12px 14px', borderRadius: 'var(--radius-md)',
-          background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
-          marginBottom: 12,
-        }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-            Requirement Coverage
+        <div
+          style={{
+            margin: '0 12px 12px',
+            padding: '12px',
+            borderTop: '1px solid var(--rule)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="signal-dot" />
+            <span className="eyebrow" style={{ color: 'var(--ink-2)', fontSize: 10 }}>
+              Ground / live
+            </span>
           </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--neo-cyan)', lineHeight: 1 }}>303</div>
-              <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>requirements</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--neo-green)', lineHeight: 1 }}>8</div>
-              <div style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2 }}>regulations</div>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ink-3)' }}>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{REG_COUNT} regulations</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{OBLIGATION_COUNT} obligations</span>
           </div>
+          <RegulatorCompactStrip />
         </div>
 
-        {/* Bottom actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '0 4px' }}>
+        <div style={{ padding: '0 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.14em' }}>
+            v0.1
+          </span>
           <ThemeToggle />
         </div>
       </nav>
 
-      {/* Main content */}
-      <main style={{ flex: 1, overflow: 'auto', background: 'var(--bg-surface)', height: '100vh' }}>
+      <main style={{ flex: 1, overflow: 'auto', background: 'var(--paper)', minHeight: '100vh' }}>
         <Switch>
+          <Route path="/app/sandbox">{() => <Sandbox />}</Route>
+          <Route path="/app/sandbox/:taskId">{(params) => <Sandbox initialTaskId={params.taskId} />}</Route>
           <Route path="/app/regulations" component={RegulationManager} />
           <Route path="/app/traces/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
           <Route path="/app/traces">{() => <TraceExplorer />}</Route>

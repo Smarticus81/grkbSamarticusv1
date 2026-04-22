@@ -1,399 +1,587 @@
-import { useState, useCallback } from 'react';
 import { useLocation } from 'wouter';
+import { RegulatorHeroRail } from '../components/ui/RegulatorAssets.js';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
-import { SmarticusLogo, ThinkertonLogo } from '../components/ui/logos.js';
+import { SmarticusWordmark, SmarticusMark, SmarticusByThinkertonsLockup } from '../components/ui/logos.js';
+import { REGULATIONS, REG_COUNT, OBLIGATION_COUNT } from '../lib/coverage.js';
 
-/* ---- Regulatory body badges for the ribbon ---- */
-/* Each entry uses a recognizable SVG icon representing the issuing body */
-function RegBadge({ body }: { body: typeof REGULATORY_BODIES[number] }) {
+/* ── Featured product rows (Mistral-style alternating showcase) ── */
+const PRODUCTS: {
+  eyebrow: string;
+  title: string;
+  body: string;
+  bullets: string[];
+  cta: { label: string; to: string };
+  visual: 'psur' | 'complaints' | 'imdrf' | 'graph';
+}[] = [
+  {
+    eyebrow: 'Authoring',
+    title: 'PSUR Compiler.',
+    body: 'A full PSUR draft under MDCG 2022-21 in about ten minutes. Sections, evidence, citations, and a coverage matrix.',
+    bullets: [
+      'MDCG 2022-21 section structure',
+      'Cross-references to EU MDR Articles 85 and 86',
+      'Evidence pulled from your QMS, never stored by us',
+      'Citations on every claim',
+    ],
+    cta: { label: 'Open in sandbox', to: '/app' },
+    visual: 'psur',
+  },
+  {
+    eyebrow: 'Vigilance',
+    title: 'Complaint Scheduler.',
+    body: 'Triage incoming complaints against the timelines that actually apply to them. EU MDR, 21 CFR 820, and ISO 13485 in one queue.',
+    bullets: [
+      'EU MDR Article 87 reporting clocks',
+      '21 CFR 803 MDR decisioning',
+      'ISO 13485 §8.2.2 evidence trail',
+      'Auto-coded with IMDRF Annex A through G',
+    ],
+    cta: { label: 'Open in sandbox', to: '/app' },
+    visual: 'complaints',
+  },
+  {
+    eyebrow: 'Coding',
+    title: 'IMDRF Auto-Coder.',
+    body: 'Adverse-event narratives in. IMDRF codes out. Annexes A through G, with rationale and confidence on every code.',
+    bullets: [
+      'Annex A through G coverage',
+      'Rationale and confidence per code',
+      'Reviewable in the sandbox before connecting to production',
+      'Versioned against IMDRF terminology releases',
+    ],
+    cta: { label: 'Open in sandbox', to: '/app' },
+    visual: 'imdrf',
+  },
+  {
+    eyebrow: 'The knowledge graph',
+    title: 'One graph. Eight regulations. Every relationship.',
+    body: 'Your agents query Smarticus instead of re-reading the regulation. The graph holds the obligations, the cross-references, the evidence types, and the constraints — versioned, citable, and replayable.',
+    bullets: [
+      `${OBLIGATION_COUNT} obligations across ${REG_COUNT} regulations and standards`,
+      'Walks chains like ISO 13485 §8.5.2 → 820.100 → EU MDR Annex IX',
+      'Versioned to the source date so an audit can be replayed',
+      'Smarticus never sees your proprietary data',
+    ],
+    cta: { label: 'Browse the graph', to: '/app/regulations' },
+    visual: 'graph',
+  },
+];
+
+/* ── Other tools shown as a compact list under the showcase ── */
+const TOOLS_MORE: { name: string; one: string; reg: string }[] = [
+  { name: 'PMS Plan Builder',    one: 'Schedules PMS activity per Articles 83 to 86.',         reg: 'EU MDR' },
+  { name: 'CAPA Evaluator',      one: 'Checks a CAPA file against ISO 13485 and 820.100.',     reg: 'ISO 13485 / 21 CFR 820' },
+  { name: 'Risk File Watcher',   one: 'Re-scores a risk file when an input changes.',          reg: 'ISO 14971' },
+  { name: 'Internal Audit Pack', one: 'Generates audit plan, checklist, and report scaffold.', reg: 'ISO 13485' },
+  { name: 'External DB Search',  one: 'Searches MAUDE, EUDAMED, and recall databases.',        reg: 'Cross-jurisdiction' },
+  { name: 'Trending Engine',     one: 'Detects device trends against your reporting threshold.', reg: 'EU MDR / 21 CFR 820' },
+];
+
+/* ── SVG visuals (paper-and-ink with orange accent) ── */
+function VisualPSUR() {
   return (
-    <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-      {body.shape === 'eu-stars' && (
-        /* EU flag stars circle */
-        <>
-          <circle cx="18" cy="18" r="16" stroke={body.color} strokeWidth="1.5" fill={`${body.color}10`} />
-          {Array.from({ length: 12 }).map((_, i) => {
-            const angle = (i * 30 - 90) * Math.PI / 180;
-            const cx = 18 + 11 * Math.cos(angle);
-            const cy = 18 + 11 * Math.sin(angle);
-            return <circle key={i} cx={cx} cy={cy} r="1.5" fill={body.color} />;
-          })}
-          <text x="18" y="21" textAnchor="middle" fontSize="8" fontWeight="700" fill={body.color} fontFamily="var(--font-sans)">EU</text>
-        </>
-      )}
-      {body.shape === 'iso-globe' && (
-        /* ISO globe/ring mark */
-        <>
-          <circle cx="18" cy="18" r="14" stroke={body.color} strokeWidth="1.5" fill="none" />
-          <ellipse cx="18" cy="18" rx="8" ry="14" stroke={body.color} strokeWidth="1" fill="none" opacity="0.5" />
-          <line x1="4" y1="18" x2="32" y2="18" stroke={body.color} strokeWidth="1" opacity="0.4" />
-          <text x="18" y="21" textAnchor="middle" fontSize="7" fontWeight="700" fill={body.color} fontFamily="var(--font-mono)">ISO</text>
-        </>
-      )}
-      {body.shape === 'fda-shield' && (
-        /* FDA shield */
-        <>
-          <path d="M18 3L4 9v9c0 8.4 5.95 16.2 14 18.6 8.05-2.4 14-10.2 14-18.6V9L18 3Z" stroke={body.color} strokeWidth="1.5" fill={`${body.color}10`} />
-          <text x="18" y="22" textAnchor="middle" fontSize="8" fontWeight="800" fill={body.color} fontFamily="var(--font-sans)">FDA</text>
-        </>
-      )}
-      {body.shape === 'uk-crown' && (
-        /* UK crown simplified */
-        <>
-          <circle cx="18" cy="18" r="15" stroke={body.color} strokeWidth="1.5" fill={`${body.color}10`} />
-          <path d="M11 22L13 13L18 17L23 13L25 22Z" stroke={body.color} strokeWidth="1.5" fill="none" strokeLinejoin="round" />
-          <circle cx="18" cy="11" r="2" fill={body.color} />
-          <text x="18" y="28" textAnchor="middle" fontSize="5" fontWeight="600" fill={body.color} fontFamily="var(--font-sans)">MHRA</text>
-        </>
-      )}
-      {body.shape === 'imdrf-globe' && (
-        /* IMDRF interlocking rings */
-        <>
-          <circle cx="14" cy="18" r="10" stroke={body.color} strokeWidth="1.5" fill="none" />
-          <circle cx="22" cy="18" r="10" stroke={body.color} strokeWidth="1.5" fill="none" opacity="0.6" />
-          <text x="18" y="21" textAnchor="middle" fontSize="5.5" fontWeight="700" fill={body.color} fontFamily="var(--font-mono)">IMDRF</text>
-        </>
-      )}
-      {body.shape === 'mdcg-hex' && (
-        /* MDCG hexagon */
-        <>
-          <polygon points="18,3 32,10.5 32,25.5 18,33 4,25.5 4,10.5" stroke={body.color} strokeWidth="1.5" fill={`${body.color}10`} />
-          <text x="18" y="20" textAnchor="middle" fontSize="6" fontWeight="700" fill={body.color} fontFamily="var(--font-mono)">MDCG</text>
-        </>
-      )}
-      {body.shape === 'iec-bolt' && (
-        /* IEC lightning bolt in circle */
-        <>
-          <circle cx="18" cy="18" r="15" stroke={body.color} strokeWidth="1.5" fill={`${body.color}10`} />
-          <path d="M20 6L12 20h6l-2 14 10-16h-6l2-12Z" fill={body.color} opacity="0.7" />
-        </>
-      )}
+    <svg viewBox="0 0 480 320" width="100%" height="100%" fill="none">
+      <rect width="480" height="320" fill="var(--paper)" />
+      <rect x="40" y="32" width="240" height="256" rx="4" stroke="var(--ink)" strokeWidth="1.2" fill="var(--paper)" />
+      <rect x="56" y="52" width="160" height="10" fill="var(--ink)" />
+      <rect x="56" y="74" width="120" height="6" fill="var(--ink-3)" />
+      {[100, 116, 132, 148, 164, 180, 196].map((y) => (
+        <rect key={y} x="56" y={y} width="208" height="4" fill="var(--ink-4)" rx="1" />
+      ))}
+      <rect x="56" y="216" width="80" height="36" rx="2" fill="var(--orange)" />
+      <text x="96" y="239" textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="#fff" letterSpacing="0.1em">SECTION 7</text>
+      <rect x="300" y="60" width="148" height="20" rx="2" stroke="var(--ink)" strokeWidth="1" />
+      <text x="312" y="74" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">MDCG 2022-21 §6.4</text>
+      <rect x="300" y="92" width="148" height="20" rx="2" stroke="var(--ink)" strokeWidth="1" />
+      <text x="312" y="106" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">EU MDR ART. 86</text>
+      <rect x="300" y="124" width="148" height="20" rx="2" fill="var(--orange)" />
+      <text x="312" y="138" fontFamily="var(--mono)" fontSize="9" fill="#fff" letterSpacing="0.12em">VALIDATED ✓</text>
+      <line x1="300" y1="180" x2="448" y2="180" stroke="var(--rule-strong)" />
+      <text x="300" y="200" fontFamily="var(--mono)" fontSize="9.5" fill="var(--ink-2)" letterSpacing="0.08em">10 MIN TO DRAFT</text>
+      <text x="300" y="220" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">28 sections</text>
+      <text x="300" y="238" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">142 evidence refs</text>
+      <text x="300" y="256" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">100% citation coverage</text>
     </svg>
   );
 }
 
-const REGULATORY_BODIES = [
-  { abbr: 'EU MDR', name: 'EU Medical Device Regulation', color: '#5CC3C9', shape: 'eu-stars' as const },
-  { abbr: 'ISO 13485', name: 'Quality Management Systems', color: '#90CB62', shape: 'iso-globe' as const },
-  { abbr: 'ISO 14971', name: 'Risk Management', color: '#FFA901', shape: 'iso-globe' as const },
-  { abbr: '21 CFR 820', name: 'FDA Quality System Regulation', color: '#F96746', shape: 'fda-shield' as const },
-  { abbr: 'UK MDR', name: 'UK Medical Devices Regulations', color: '#5CC3C9', shape: 'uk-crown' as const },
-  { abbr: 'IMDRF', name: 'International Medical Device Regulators Forum', color: '#90CB62', shape: 'imdrf-globe' as const },
-  { abbr: 'MDCG', name: 'Medical Device Coordination Group', color: '#FFA901', shape: 'mdcg-hex' as const },
-  { abbr: 'IEC 62304', name: 'Medical Device Software Lifecycle', color: '#F96746', shape: 'iec-bolt' as const },
-];
+function VisualComplaints() {
+  return (
+    <svg viewBox="0 0 480 320" width="100%" height="100%" fill="none">
+      <rect width="480" height="320" fill="var(--paper)" />
+      {[
+        { y: 50,  reg: 'EU MDR Art. 87', sla: '15 days', state: 'on track' },
+        { y: 110, reg: '21 CFR 803.50',  sla: '30 days', state: 'on track' },
+        { y: 170, reg: 'EU MDR Art. 87', sla: '2 days',  state: 'urgent', urgent: true },
+        { y: 230, reg: 'ISO 13485 §8.2.2', sla: '5 days', state: 'on track' },
+      ].map((row, i) => (
+        <g key={i}>
+          <rect x="40" y={row.y} width="400" height="44" rx="2" stroke={row.urgent ? 'var(--orange)' : 'var(--ink)'} strokeWidth="1.2" fill={row.urgent ? 'var(--orange)' : 'var(--paper)'} />
+          <circle cx="60" cy={row.y + 22} r="5" fill={row.urgent ? '#fff' : 'var(--orange)'} />
+          <text x="80" y={row.y + 19} fontFamily="var(--sans)" fontSize="12" fill={row.urgent ? '#fff' : 'var(--ink)'}>Complaint #{1041 + i}</text>
+          <text x="80" y={row.y + 34} fontFamily="var(--mono)" fontSize="10" fill={row.urgent ? '#fff' : 'var(--ink-3)'} letterSpacing="0.06em">{row.reg}</text>
+          <text x="320" y={row.y + 19} fontFamily="var(--sans)" fontSize="11" fill={row.urgent ? '#fff' : 'var(--ink-2)'}>SLA {row.sla}</text>
+          <text x="320" y={row.y + 34} fontFamily="var(--mono)" fontSize="9.5" fill={row.urgent ? '#fff' : 'var(--ink-3)'} letterSpacing="0.1em">{row.state.toUpperCase()}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
 
-/* ---- Modal component ---- */
-function Modal({ open, onClose, title, children }: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-}) {
-  if (!open) return null;
+function VisualIMDRF() {
+  const codes = [
+    { code: 'A040104', label: 'Battery problem' },
+    { code: 'B0301',   label: 'Inappropriate use' },
+    { code: 'C04',     label: 'Death' },
+    { code: 'D0207',   label: 'Manufacturing process' },
+    { code: 'E0102',   label: 'Software issue' },
+    { code: 'F0203',   label: 'Patient injury' },
+  ];
+  return (
+    <svg viewBox="0 0 480 320" width="100%" height="100%" fill="none">
+      <rect width="480" height="320" fill="var(--paper)" />
+      <rect x="32" y="36" width="200" height="248" rx="4" stroke="var(--ink)" strokeWidth="1.2" fill="var(--paper)" />
+      <text x="44" y="58" fontFamily="var(--mono)" fontSize="9.5" fill="var(--ink-3)" letterSpacing="0.14em">NARRATIVE INPUT</text>
+      {[78, 94, 110, 126, 142, 158, 174, 190, 206, 222].map((y, i) => (
+        <rect key={y} x="44" y={y} width={i % 2 === 0 ? 176 : 152} height="4" fill="var(--ink-4)" rx="1" />
+      ))}
+      <line x1="244" y1="160" x2="288" y2="160" stroke="var(--orange)" strokeWidth="2" markerEnd="url(#arr)" />
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--orange)" />
+        </marker>
+      </defs>
+      {codes.map((c, i) => (
+        <g key={c.code}>
+          <rect x="296" y={36 + i * 42} width="148" height="34" rx="2" fill={i === 2 ? 'var(--orange)' : 'var(--paper)'} stroke={i === 2 ? 'var(--orange)' : 'var(--ink)'} strokeWidth="1.1" />
+          <text x="306" y={56 + i * 42} fontFamily="var(--mono)" fontSize="11" fill={i === 2 ? '#fff' : 'var(--ink)'} letterSpacing="0.05em">{c.code}</text>
+          <text x="306" y={68 + i * 42} fontFamily="var(--sans)" fontSize="10" fill={i === 2 ? '#fff' : 'var(--ink-3)'}>{c.label}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function VisualGraph() {
+  const nodes = [
+    { x: 90, y: 70,  l: 'EU MDR' },
+    { x: 240, y: 50, l: 'ISO 13485' },
+    { x: 390, y: 80, l: 'ISO 14971' },
+    { x: 70, y: 200, l: '21 CFR 820' },
+    { x: 240, y: 230, l: 'IMDRF' },
+    { x: 410, y: 210, l: 'MDCG 2022-21' },
+  ];
+  const edges = [
+    [0, 1], [1, 2], [0, 3], [1, 3], [3, 4], [4, 5], [1, 5], [0, 5], [2, 4], [1, 4],
+  ];
+  return (
+    <svg viewBox="0 0 480 320" width="100%" height="100%" fill="none">
+      <rect width="480" height="320" fill="var(--paper)" />
+      {edges.map(([a, b], i) => {
+        const n1 = nodes[a as number];
+        const n2 = nodes[b as number];
+        if (!n1 || !n2) return null;
+        return (
+          <line
+            key={i}
+            x1={n1.x} y1={n1.y}
+            x2={n2.x} y2={n2.y}
+            stroke="var(--rule-strong)" strokeWidth="1"
+          />
+        );
+      })}
+      {nodes.map((n, i) => (
+        <g key={i}>
+          <circle cx={n.x} cy={n.y} r="22" fill={i === 1 ? 'var(--orange)' : 'var(--paper)'} stroke={i === 1 ? 'var(--orange)' : 'var(--ink)'} strokeWidth="1.4" />
+          <text x={n.x} y={n.y + 4} textAnchor="middle" fontFamily="var(--mono)" fontSize="9" fill={i === 1 ? '#fff' : 'var(--ink)'} letterSpacing="0.06em">{n.l}</text>
+        </g>
+      ))}
+      <text x="240" y="298" textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-3)" letterSpacing="0.18em">
+        OBLIGATIONS · DEFINITIONS · EVIDENCE · CONSTRAINTS
+      </text>
+    </svg>
+  );
+}
+
+function ProductVisual({ kind }: { kind: 'psur' | 'complaints' | 'imdrf' | 'graph' }) {
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, zIndex: 2000,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '2rem',
-        background: 'rgba(1, 18, 28, 0.80)',
-        backdropFilter: 'blur(8px)',
-        animation: 'fadeIn 0.2s ease-out',
+        position: 'relative',
+        width: '100%',
+        aspectRatio: '4 / 3',
+        borderRadius: 'var(--r-3)',
+        border: '1px solid var(--rule)',
+        background: 'var(--paper-deep)',
+        overflow: 'hidden',
       }}
-      onClick={onClose}
     >
       <div
+        className="halftone"
         style={{
-          position: 'relative',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-default)',
-          borderRadius: 'var(--radius-xl)',
-          maxWidth: 720, width: '100%', maxHeight: '80vh',
-          overflow: 'auto',
-          boxShadow: '0 24px 80px rgba(0,0,0,0.5), 0 0 40px var(--accent-glow)',
-          animation: 'fadeIn 0.3s cubic-bezier(.4,0,.2,1)',
+          position: 'absolute', inset: 0, opacity: 0.08, pointerEvents: 'none',
         }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '20px 28px', borderBottom: '1px solid var(--border-subtle)',
-          position: 'sticky', top: 0, background: 'var(--bg-surface)', zIndex: 1,
-        }}>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em', margin: 0 }}>{title}</h2>
-          <button onClick={onClose} style={{
-            background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-sm)', width: 32, height: 32,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', color: 'var(--text-tertiary)', fontSize: 16, lineHeight: 1,
-          }}>{String.fromCharCode(0x2715)}</button>
-        </div>
-        <div style={{ padding: '28px' }}>{children}</div>
+      />
+      <div style={{ position: 'absolute', inset: 16 }}>
+        {kind === 'psur'       && <VisualPSUR />}
+        {kind === 'complaints' && <VisualComplaints />}
+        {kind === 'imdrf'      && <VisualIMDRF />}
+        {kind === 'graph'      && <VisualGraph />}
       </div>
     </div>
   );
 }
 
-/* ---- Modal: How It Works ---- */
-function HowItWorksContent() {
-  const steps = [
-    { title: 'Checks the rules first', desc: 'Before generating anything, Smarticus identifies exactly which regulations and requirements apply to your document, device class, and target market.' },
-    { title: 'Generates your document', desc: 'AI writes your QMS document \u2014 PSUR, CAPA, risk analysis, clinical evaluation \u2014 with every applicable requirement built into the process.' },
-    { title: 'Validates every section', desc: 'Each section is automatically checked against the specific regulatory requirements it must satisfy. Failed checks are flagged and corrected.' },
-    { title: 'Creates your audit trail', desc: 'Every decision the AI made is recorded \u2014 what it decided, why, and which regulation supports it. Hand this to your auditor with confidence.' },
-  ];
+function CheckOrange() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      {steps.map((step, i) => (
-        <div key={i} style={{
-          display: 'flex', gap: 16, alignItems: 'flex-start',
-          padding: '16px 20px', borderRadius: 'var(--radius-md)',
-          background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
-        }}>
-          <div style={{
-            flexShrink: 0, width: 32, height: 32, borderRadius: '50%',
-            background: 'var(--accent-muted)', border: '1px solid var(--accent-bright)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 700, color: 'var(--accent-bright)',
-            fontFamily: 'var(--font-mono)',
-          }}>{i + 1}</div>
-          <div>
-            <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 6px' }}>{step.title}</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: 0, lineHeight: 1.6 }}>{step.desc}</p>
-          </div>
-        </div>
-      ))}
-    </div>
+    <span className="check-orange" aria-hidden="true">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M2 5.4l2.1 2L8 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
   );
 }
 
-/* ---- Modal: Why Trust It ---- */
-function WhyTrustContent() {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ padding: '24px', borderRadius: 'var(--radius-md)', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)' }}>
-        <pre style={{ fontFamily: 'var(--font-mono)', fontSize: 13, lineHeight: 1.6, color: 'var(--neo-cyan)', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{`1. Smarticus checks which regulations apply
-   \u2192 EU MDR, MDCG 2022-21, ISO 14971
-
-2. AI generates your PSUR sections
-   \u2192 Complaint trends, risk analysis, conclusions
-
-3. Every section is validated against requirements
-   \u2192 23 requirements checked, 23 passed \u2713
-
-4. Complete audit trail created automatically
-   \u2192 Ready for your Notified Body review`}</pre>
-      </div>
-      <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-        PSURs, CAPAs, risk analyses, clinical evaluations — Smarticus generates compliant QMS documents using AI, then automatically checks every section against the applicable regulations.
-      </p>
-      <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>
-        What used to take your team weeks now takes minutes. And your auditor gets a complete decision trail for every document.
-      </p>
-    </div>
-  );
-}
-
-/* ---- Modal: Coverage ---- */
-function CoverageContent() {
-  const regs = [
-    { name: 'EU MDR 2017/745', count: 47, color: 'var(--neo-cyan)' },
-    { name: 'ISO 13485:2016', count: 53, color: 'var(--neo-green)' },
-    { name: 'ISO 14971:2019', count: 44, color: 'var(--neo-marigold)' },
-    { name: '21 CFR Part 820', count: 62, color: 'var(--neo-hibiscus)' },
-    { name: 'UK MDR 2002', count: 45, color: 'var(--neo-cyan)' },
-    { name: 'IMDRF', count: 28, color: 'var(--neo-green)' },
-    { name: 'MDCG 2022-21', count: 18, color: 'var(--neo-marigold)' },
-    { name: 'Custom', count: 6, color: 'var(--neo-hibiscus)' },
-  ];
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-        {regs.map(r => (
-          <div key={r.name} style={{
-            padding: '16px 20px', borderRadius: 'var(--radius-md)',
-            background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: r.color }} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{r.name}</span>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{r.count}</span>
-          </div>
-        ))}
-      </div>
-      <div style={{ padding: '16px 20px', borderRadius: 'var(--radius-md)', background: 'var(--accent-muted)', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
-        <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--neo-green)', fontFamily: 'var(--font-mono)' }}>8</span>
-        <span style={{ fontSize: 13, color: 'var(--text-secondary)', marginLeft: 8 }}>regulations covered across 5 markets</span>
-      </div>
-    </div>
-  );
-}
-
-/* ============ MAIN LANDING PAGE ============ */
-function LandingPage() {
+export function LandingPage() {
   const [, navigate] = useLocation();
-  const [modal, setModal] = useState<'how' | 'trust' | 'coverage' | null>(null);
-  const closeModal = useCallback(() => setModal(null), []);
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', background: 'var(--bg-root)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--paper)', minHeight: '100vh', color: 'var(--ink)' }}>
       <style>{`
-        @keyframes linePulse { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.6; } }
-        @keyframes orbFloat { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; } 50% { transform: translateY(-30px) scale(1.05); opacity: 0.6; } }
-        @keyframes ribbonScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .lp-line { stroke: var(--neo-cyan); stroke-width: 1; opacity: 0.4; animation: linePulse 4s ease-in-out infinite; }
-        .lp-line:nth-child(2) { animation-delay: 0.4s; }
-        .lp-line:nth-child(3) { animation-delay: 0.8s; }
-        .lp-line:nth-child(4) { animation-delay: 1.2s; }
-        .lp-line:nth-child(5) { animation-delay: 1.6s; }
-        .lp-node1 { animation: orbFloat 8s ease-in-out infinite; }
-        .lp-node2 { animation: orbFloat 10s ease-in-out infinite reverse; }
-        .lp-node3 { animation: orbFloat 12s ease-in-out infinite; }
-        .lp-node4 { animation: orbFloat 9s ease-in-out infinite reverse; }
-        .lp-node5 { animation: orbFloat 11s ease-in-out infinite; }
-        .lp-btn-primary { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .lp-btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(14, 140, 194, 0.6); }
-        .lp-btn-outline { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .lp-btn-outline:hover { border-color: var(--accent-bright); color: var(--accent-bright); background: rgba(14, 140, 194, 0.08); }
-        .lp-nav-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .lp-nav-btn:hover { background: var(--bg-surface); border-color: var(--accent-bright); color: var(--accent-bright); }
-        .lp-card { transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
-        .lp-card:hover { border-color: var(--accent-bright); transform: translateY(-4px); box-shadow: 0 8px 32px rgba(14, 140, 194, 0.15); }
-        @media (max-width: 768px) {
-          .lp-cards { flex-direction: column !important; }
-          .lp-cta { flex-direction: column !important; width: 100% !important; }
-          .lp-cta button { width: 100%; }
-          .lp-stats { flex-wrap: wrap !important; gap: 1rem !important; padding: 1rem !important; }
+        .nav-link {
+          color: var(--ink-3); font-size: 13px; letter-spacing: -0.005em;
+          border: 0; background: transparent; cursor: pointer; padding: 6px 2px;
+          transition: color var(--t-fast) var(--ease); font-family: var(--sans);
+        }
+        .nav-link:hover { color: var(--ink); }
+        .container { max-width: 1240px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+
+        .hero-display {
+          font-family: var(--sans);
+          font-size: clamp(56px, 9vw, 132px);
+          font-weight: 500;
+          letter-spacing: -0.045em;
+          line-height: 0.96;
+          margin: 0;
+          color: var(--ink);
+        }
+        .hero-display .accent { color: var(--orange); }
+
+        .product-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 64px;
+          align-items: center;
+          padding: 56px 0;
+          border-top: 1px solid var(--rule);
+        }
+        .product-row.flip > .product-visual { order: -1; }
+
+        .check-list { display: grid; gap: 12px; margin-top: 22px; padding: 0; list-style: none; }
+        .check-list li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; color: var(--ink-2); line-height: 1.5; }
+
+        .more-tool {
+          display: grid; grid-template-columns: 1fr auto;
+          gap: 20px; align-items: baseline; padding: 16px 0;
+          border-top: 1px solid var(--rule);
+        }
+
+        @media (max-width: 880px) {
+          .product-row { grid-template-columns: 1fr; gap: 28px; padding: 40px 0; }
+          .product-row.flip > .product-visual { order: 0; }
+          .nav-mid { display: none !important; }
         }
       `}</style>
 
-      {/* ---- Nav ---- */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, height: 64, zIndex: 1000,
-        backdropFilter: 'blur(12px)', background: 'rgba(1, 18, 28, 0.85)',
-        borderBottom: '1px solid var(--border-subtle)',
-      }}>
-        <div style={{ width: '100%', height: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <SmarticusLogo size={28} />
-            <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
-              <span style={{ fontFamily: 'var(--font-sans)', fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Smarticus</span>
-              <span style={{ fontSize: 9, fontWeight: 400, color: 'var(--text-muted)', letterSpacing: '0.02em' }}>by Thinkertons</span>
-            </div>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+      {/* ── Nav ── */}
+      <nav
+        style={{
+          position: 'sticky', top: 0, zIndex: 50,
+          background: 'color-mix(in srgb, var(--paper) 92%, transparent)',
+          backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--rule)',
+        }}
+      >
+        <div className="container" style={{ padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <SmarticusWordmark size={16} tagline={false} />
+          <div className="nav-mid" style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
+            <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Tools</button>
+            <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Knowledge graph</button>
+            <button className="nav-link" onClick={() => document.getElementById('coverage')?.scrollIntoView({ behavior: 'smooth' })}>Coverage</button>
+            <button className="nav-link" onClick={() => navigate('/app/api-access')}>For developers</button>
             <ThemeToggle />
-            <button className="lp-nav-btn" style={{ padding: '8px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/app')}>
-              Open Dashboard
+            <button className="btn btn-orange" onClick={() => navigate('/app')}>
+              Open the sandbox
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ---- Hero ---- */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative', paddingTop: 84, paddingBottom: 40 }}>
-        {/* Background nodes */}
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-          <svg style={{ position: 'absolute', width: '100%', height: '100%', opacity: 0.3 }} viewBox="0 0 1200 800" preserveAspectRatio="none">
-            <line x1="100" y1="100" x2="400" y2="200" className="lp-line" />
-            <line x1="400" y1="200" x2="700" y2="150" className="lp-line" />
-            <line x1="700" y1="150" x2="900" y2="300" className="lp-line" />
-            <line x1="100" y1="600" x2="500" y2="550" className="lp-line" />
-            <line x1="500" y1="550" x2="800" y2="600" className="lp-line" />
-          </svg>
-          <div className="lp-node1" style={{ position: 'absolute', width: 80, height: 80, top: '15%', left: '8%', borderRadius: '50%', border: '2px solid var(--neo-cyan)', opacity: 0.4 }} />
-          <div className="lp-node2" style={{ position: 'absolute', width: 120, height: 120, top: '50%', right: '10%', borderRadius: '50%', border: '2px solid var(--neo-green)', opacity: 0.4 }} />
-          <div className="lp-node3" style={{ position: 'absolute', width: 60, height: 60, bottom: '20%', left: '12%', borderRadius: '50%', border: '2px solid var(--neo-marigold)', opacity: 0.4 }} />
-          <div className="lp-node4" style={{ position: 'absolute', width: 100, height: 100, top: '10%', right: '25%', borderRadius: '50%', border: '2px solid var(--neo-hibiscus)', opacity: 0.4 }} />
-          <div className="lp-node5" style={{ position: 'absolute', width: 70, height: 70, bottom: '25%', right: '20%', borderRadius: '50%', border: '2px solid var(--accent-bright)', opacity: 0.4 }} />
-        </div>
+      {/* ── Hero ── */}
+      <section style={{ position: 'relative', overflow: 'hidden' }}>
+        <div
+          aria-hidden="true"
+          className="halftone"
+          style={{
+            position: 'absolute', inset: 0, opacity: 0.22,
+            maskImage: 'radial-gradient(ellipse 70% 80% at 80% 30%, #000 30%, transparent 75%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 80% 30%, #000 30%, transparent 75%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div className="container" style={{ position: 'relative', padding: '92px 32px 48px' }}>
+          <div className="eyebrow rise" style={{ marginBottom: 28 }}>
+            <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
+            For medical device and pharma QARA teams
+          </div>
 
-        {/* Hero text */}
-        <div style={{ position: 'relative', zIndex: 10, textAlign: 'center', maxWidth: 700, padding: '0 2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <h1 style={{ fontFamily: 'var(--font-sans)', fontSize: 'clamp(36px, 5.5vw, 60px)', fontWeight: 700, letterSpacing: '-0.02em', lineHeight: 1.1, color: 'var(--text-primary)', margin: '0 0 1.5rem' }}>
-            Generate QMS documents in{' '}
-            <span style={{ background: 'linear-gradient(135deg, var(--neo-cyan), var(--accent-bright))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>minutes, not months</span>
-            {' \u2014 '}and trust every word.
+          <h1 className="hero-display rise-1" style={{ maxWidth: 1100 }}>
+            Regulation. <span className="accent">In every agent.</span>
           </h1>
-          <p style={{ fontFamily: 'var(--font-sans)', fontSize: 18, color: 'var(--text-secondary)', margin: '0 0 2.5rem', lineHeight: 1.5, maxWidth: 580 }}>
-            AI-powered QMS that knows EU MDR, ISO 13485, 21 CFR 820, and 5 more regulations by heart. Every output is validated. Every decision is audit-ready.
+
+          <p
+            className="rise-2"
+            style={{
+              marginTop: 30, maxWidth: 720, fontSize: 18, lineHeight: 1.5,
+              color: 'var(--ink-2)',
+            }}
+          >
+            Smarticus is where medical device and pharma teams pick up AI tools
+            and agents that already know EU MDR, ISO 13485, ISO 14971, 21 CFR 820,
+            IMDRF, and MDCG 2022-21. PSUR drafts, complaint triage, IMDRF coding,
+            CAPA reviews, PMS plans. Test them in the sandbox. Connect them to
+            your QMS when you are ready.
           </p>
 
-          {/* CTA */}
-          <div className="lp-cta" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '2.5rem' }}>
-            <button className="lp-btn-primary" style={{ padding: '12px 28px', borderRadius: 'var(--radius-md)', border: 'none', background: 'linear-gradient(135deg, var(--accent), var(--accent-bright))', color: 'white', fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(14, 140, 194, 0.4)' }} onClick={() => navigate('/app')}>
-              Open Dashboard
+          <div className="rise-3" style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button className="btn btn-orange" onClick={() => navigate('/app')}>
+              Open the sandbox
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
-            <button className="lp-btn-outline" style={{ padding: '12px 28px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-default)', background: 'transparent', color: 'var(--text-primary)', fontFamily: 'var(--font-sans)', fontSize: 14, fontWeight: 600, cursor: 'pointer' }} onClick={() => navigate('/app/api-access')}>
-              Connect Your Tools
+            <button className="btn btn-ghost" onClick={() => navigate('/app/api-access')}>
+              Connect via MCP
             </button>
           </div>
 
-          {/* Feature cards */}
-          <div className="lp-cards" style={{ display: 'flex', gap: 16, width: '100%', maxWidth: 680, marginBottom: '2.5rem' }}>
-            {[
-              { key: 'how' as const, label: 'How It Works', icon: '\u2B21', desc: '4-step grounded AI pipeline' },
-              { key: 'trust' as const, label: 'Why Trust It', icon: '\u25C7', desc: 'Validated & audit-ready' },
-              { key: 'coverage' as const, label: 'Coverage', icon: '\u27C1', desc: '8 regulations, 5 markets' },
-            ].map(card => (
-              <div key={card.key} className="lp-card" style={{ flex: 1, padding: 20, borderRadius: 'var(--radius-lg)', background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', backdropFilter: 'blur(8px)', textAlign: 'left', cursor: 'pointer' }} onClick={() => setModal(card.key)}>
-                <div style={{ fontSize: 18, marginBottom: 8, opacity: 0.7, color: 'var(--neo-cyan)' }}>{card.icon}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>{card.label}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4 }}>{card.desc}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Stats strip -- now in normal flow, not absolute */}
-          <div className="lp-stats" style={{ display: 'flex', gap: '3rem', padding: '1.25rem 2rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)', background: 'var(--bg-elevated)', backdropFilter: 'blur(10px)' }}>
-            {[
-              { value: '8', label: 'Regulations', color: 'var(--neo-cyan)' },
-              { value: '5', label: 'Markets', color: 'var(--neo-green)' },
-              { value: '303', label: 'Requirements', color: 'var(--text-secondary)' },
-              { value: '23', label: 'QMS Processes', color: 'var(--text-secondary)' },
-            ].map(stat => (
-              <div key={stat.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em', color: stat.color }}>{stat.value}</span>
-                <span style={{ fontFamily: 'var(--font-sans)', fontSize: 10, fontWeight: 500, letterSpacing: '0.05em', textTransform: 'uppercase' as const, color: 'var(--text-muted)' }}>{stat.label}</span>
-              </div>
-            ))}
+          <div className="rise-4" style={{ marginTop: 18 }}>
+            <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 13.5 }}>
+              <span style={{ color: 'var(--ink)', fontWeight: 500 }}>Verifiable. Traceable. Auditable.</span>
+              {' '}Smarticus never sees your proprietary data.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ---- Regulatory Body Ribbon ---- */}
-      <div style={{ overflow: 'hidden', borderTop: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)', padding: '18px 0', background: 'var(--bg-elevated)' }}>
-        <div style={{ display: 'flex', gap: 40, animation: 'ribbonScroll 30s linear infinite', width: 'max-content' }}>
-          {[...REGULATORY_BODIES, ...REGULATORY_BODIES].map((body, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, padding: '0 8px' }}>
-              <RegBadge body={body} />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>{body.abbr}</span>
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>{body.name}</span>
+      {/* ── Regulator strip ── */}
+      <section className="container" style={{ padding: '8px 32px 56px' }}>
+        <RegulatorHeroRail />
+      </section>
+
+      {/* ── Product showcase rows ── */}
+      <section id="products" className="container" style={{ padding: '24px 32px 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+          <h2 style={{ fontSize: 'clamp(28px, 3.4vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0 }}>
+            Pre-built tools, bound to the rules.
+          </h2>
+          <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 14, maxWidth: 480 }}>
+            Each tool ships pre-bound to the obligations it must satisfy. Outputs
+            are checked against those obligations before they leave the agent.
+          </p>
+        </div>
+
+        {PRODUCTS.map((p, i) => (
+          <article key={p.title} className={`product-row ${i % 2 === 1 ? 'flip' : ''}`}>
+            <div>
+              <div className="eyebrow" style={{ marginBottom: 14 }}>{p.eyebrow}</div>
+              <h3 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', lineHeight: 1.05, margin: 0 }}>
+                {p.title}
+              </h3>
+              <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 520 }}>
+                {p.body}
+              </p>
+              <ul className="check-list">
+                {p.bullets.map((b) => (
+                  <li key={b}>
+                    <CheckOrange />
+                    <span>{b}</span>
+                  </li>
+                ))}
+              </ul>
+              <div style={{ marginTop: 26 }}>
+                <button className="btn btn-orange" onClick={() => navigate(p.cta.to)}>
+                  {p.cta.label}
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
               </div>
+            </div>
+            <div className="product-visual">
+              <ProductVisual kind={p.visual} />
+            </div>
+          </article>
+        ))}
+      </section>
+
+      {/* ── More tools ── */}
+      <section className="container" style={{ padding: '40px 32px 56px' }}>
+        <div className="eyebrow" style={{ marginBottom: 16 }}>And more in the catalog</div>
+        <div style={{ borderTop: '1px solid var(--rule-strong)', borderBottom: '1px solid var(--rule-strong)' }}>
+          {TOOLS_MORE.map((t) => (
+            <div key={t.name} className="more-tool" style={{ borderTop: 0 }}>
+              <div>
+                <div style={{ fontSize: 15, color: 'var(--ink)' }}>{t.name}</div>
+                <div style={{ fontSize: 13.5, color: 'var(--ink-3)', marginTop: 2 }}>{t.one}</div>
+              </div>
+              <span className="eyebrow" style={{ color: 'var(--ink-4)', whiteSpace: 'nowrap' }}>{t.reg}</span>
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* ---- Footer ---- */}
-      <div style={{ padding: '1.5rem 2rem', textAlign: 'center', borderTop: '1px solid var(--border-subtle)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 6 }}>
-          <ThinkertonLogo size={18} />
-          <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--text-muted)' }}>A Thinkertons Product</span>
+      {/* ── Knowledge graph deep section (anchor) ── */}
+      <section id="graph" className="container" style={{ padding: '40px 32px 24px' }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Powered by the knowledge graph</div>
+        <h2 style={{ fontSize: 'clamp(34px, 4.6vw, 60px)', fontWeight: 500, letterSpacing: '-0.035em', margin: 0, lineHeight: 1.04, maxWidth: 980 }}>
+          Your agents inherit regulatory awareness.
+        </h2>
+        <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
+          One graph holds <strong style={{ color: 'var(--ink)' }}>{REG_COUNT} regulations and standards</strong> with all
+          the relationships between them. Agents query the graph at qualification
+          (before they execute) and at validation (before output leaves the agent).
+          The graph is versioned, citable, and replayable on the date of an audit.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 36, alignItems: 'center' }}>
+          <ProductVisual kind="graph" />
+          <ul className="check-list" style={{ marginTop: 0 }}>
+            {[
+              'Cross-references walk chains like ISO 13485 §8.5.2 → 820.100 → EU MDR Annex IX',
+              'Versioned to source — replay any audit on the date it was conducted',
+              'Queryable by process, jurisdiction, evidence type, or citation',
+              'Connects to QMS agents for charts, CAPAs, internal audits, risk profile changes, device trending, PATERs, PSURs',
+              'Smarticus never sees your proprietary data — agents query the graph; payloads stay in your tenant',
+            ].map((b) => (
+              <li key={b}><CheckOrange /><span>{b}</span></li>
+            ))}
+          </ul>
         </div>
-        <span style={{ fontFamily: 'var(--font-sans)', fontSize: 11, color: 'var(--text-muted)' }}>{'\u00A9'} 2026 Thinkertons. Smarticus {'\u2014'} compliant AI for medical devices and pharma.</span>
-      </div>
+      </section>
 
-      {/* ---- Modals ---- */}
-      <Modal open={modal === 'how'} onClose={closeModal} title="How It Works"><HowItWorksContent /></Modal>
-      <Modal open={modal === 'trust'} onClose={closeModal} title="Why Trust Smarticus"><WhyTrustContent /></Modal>
-      <Modal open={modal === 'coverage'} onClose={closeModal} title="Regulatory Coverage"><CoverageContent /></Modal>
+      {/* ── Coverage band ── */}
+      <section id="coverage" style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', padding: '48px 0' }}>
+        <div className="container">
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 22 }}>
+            <h2 style={{ fontSize: 'clamp(24px, 2.6vw, 34px)', fontWeight: 500, letterSpacing: '-0.025em', margin: 0 }}>
+              Coverage today.
+            </h2>
+            <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 14 }}>
+              {REG_COUNT} regulations · {OBLIGATION_COUNT} obligations · growing
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
+            {REGULATIONS.map((r) => (
+              <div
+                key={r.name}
+                style={{
+                  padding: 16, background: 'var(--paper)',
+                  border: '1px solid var(--rule)', borderRadius: 'var(--r-2)',
+                }}
+              >
+                <div className="eyebrow" style={{ marginBottom: 8, fontSize: 10 }}>{r.name}</div>
+                <div style={{ fontFamily: 'var(--sans)', fontSize: 30, fontWeight: 400, letterSpacing: '-0.03em', color: 'var(--ink)', lineHeight: 1 }}>
+                  {r.count}
+                </div>
+                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', marginTop: 4 }}>obligations</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── The contract ── */}
+      <section className="container" style={{ padding: '56px 32px' }}>
+        <div className="eyebrow" style={{ marginBottom: 18 }}>The contract</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: '1px solid var(--rule-strong)', borderBottom: '1px solid var(--rule-strong)' }}>
+          {[
+            { n: '01', t: 'Verifiable', b: 'Every output is checked against the obligation it must satisfy before it leaves the agent.' },
+            { n: '02', t: 'Traceable',  b: 'Every decision is written into a SHA-256 chain with actor, evidence, and obligation context.' },
+            { n: '03', t: 'Auditable',  b: 'Every regulation is versioned and replayable. Pull a complete audit pack for any process instance.' },
+          ].map((c, i) => (
+            <div key={c.n} style={{ padding: '22px 24px', borderLeft: i === 0 ? 0 : '1px solid var(--rule)' }}>
+              <div className="eyebrow" style={{ marginBottom: 12 }}>{c.n} / {c.t}</div>
+              <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>{c.b}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Final CTA ── */}
+      <section style={{ background: 'var(--ink)', color: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
+        <div
+          aria-hidden="true"
+          className="halftone halftone-orange"
+          style={{
+            position: 'absolute', inset: 0, opacity: 0.35,
+            maskImage: 'radial-gradient(ellipse 60% 80% at 90% 50%, #000 20%, transparent 75%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 60% 80% at 90% 50%, #000 20%, transparent 75%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <div className="container" style={{ position: 'relative', padding: '88px 32px' }}>
+          <h2
+            style={{
+              fontFamily: 'var(--sans)',
+              fontSize: 'clamp(40px, 6vw, 84px)',
+              fontWeight: 500, letterSpacing: '-0.04em', lineHeight: 1.02,
+              color: 'var(--paper)', maxWidth: 1100, margin: 0,
+            }}
+          >
+            Pick a tool. Run it in the sandbox.<br />
+            <span style={{ color: 'var(--orange)' }}>Connect it to your QMS.</span>
+          </h2>
+          <p style={{ marginTop: 18, color: 'var(--ink-4)', fontSize: 15, maxWidth: 640 }}>
+            Verifiable. Traceable. Auditable. Without giving us your proprietary data.
+          </p>
+          <div style={{ marginTop: 26, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button className="btn btn-orange" onClick={() => navigate('/app')}>
+              Open the sandbox
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+            <button
+              className="btn btn-ghost"
+              style={{ color: 'var(--paper)', borderColor: 'var(--ink-3)' }}
+              onClick={() => navigate('/app/api-access')}
+            >
+              Connect via MCP
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <footer
+        className="container"
+        style={{
+          padding: '40px 32px 56px',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 28,
+          borderTop: '1px solid var(--rule)',
+        }}
+      >
+        <SmarticusByThinkertonsLockup size={20} />
+        <div
+          style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16,
+            color: 'var(--ink-3)', fontSize: 11, fontFamily: 'var(--mono)', letterSpacing: '0.14em',
+            width: '100%', borderTop: '1px solid var(--rule)', paddingTop: 18, textTransform: 'uppercase',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <SmarticusMark size={14} />
+            <span>Smarticus · Regulatory ground</span>
+          </div>
+          <span>2026 · Built by Thinkertons</span>
+        </div>
+      </footer>
     </div>
   );
 }
 
-export { LandingPage };
 export default LandingPage;

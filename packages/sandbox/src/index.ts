@@ -33,3 +33,6 @@ export { NC_PROCESS } from './processes/nonconformances/NCProcessDefinition.js';
 export { TREND_PROCESS } from './processes/trend-reporting/TrendProcessDefinition.js';
 export { CHANGE_PROCESS } from './processes/change-control/ChangeProcessDefinition.js';
 export { AUDIT_PROCESS } from './processes/audit/AuditProcessDefinition.js';
+
+// tasks (single-step task agents for the sandbox)
+export * from './tasks/index.js';
