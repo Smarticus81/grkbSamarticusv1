@@ -46,7 +46,7 @@ pnpm test                 # run vitest in all packages
 pnpm test:harness         # run agent test harnesses (sandbox)
 pnpm db:push              # push Drizzle schema to Postgres
 pnpm seed:graph           # seed Neo4j obligation graph from regulations/*.yaml
-pnpm seed:all             # full seed (graph + any future seeders)
+pnpm seed:all             # currently aliased to seed:graph (placeholder for future seeders)
 pnpm lint                 # eslint
 pnpm format               # prettier
 
@@ -91,6 +91,7 @@ regulatory-ground/
 │   │     process/         Process definitions, instances, HITL gates, validator
 │   │     db/              Drizzle schema + connection (PG + Neo4j)
 │   │     harness/         Test harness (mock graph, mock LLM, assertions)
+│   │     skills/          In-code skill definitions consumed by agents
 │   │   regulations/       YAML obligation definitions (8 regulations, 303 obligations)
 │   │
 │   └── sandbox/           @regground/sandbox
@@ -98,6 +99,7 @@ regulatory-ground/
 │         workspace/       Multi-tenant isolation
 │         processes/       capa, complaints, nonconformances, trend-reporting, change-control, audit
 │         runtime/         SandboxRunner, SSE streaming, state machine
+│         tasks/           Reusable task primitives composed by process definitions
 │         templates/       Generators for SKILL.md / .agent.md / .instructions.md / hooks.json
 │
 └── apps/
@@ -203,3 +205,13 @@ obligation-mapper, process-designer, regulatory-analyst, trace-investigator).
 
 `.github/instructions/` has domain-specific coding guidance for agents, Drizzle,
 Neo4j, and tracing patterns.
+
+`.github/prompts/` has reusable prompt templates (`explain-obligation`,
+`gap-analysis`, `map-evidence`).
+
+`.github/hooks/enforcement.json` defines repo-level enforcement hooks (e.g.
+blocking direct LLM SDK imports, requiring Zod boundaries).
+
+`scripts/check-agent-ground.mjs` is a standalone audit script that verifies
+every agent under `packages/sandbox/src/processes/**/agents/` is properly
+grounded (extends `BaseGroundedAgent`, declares obligations, etc.).
