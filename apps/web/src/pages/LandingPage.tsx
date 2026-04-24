@@ -18,17 +18,17 @@ const PRODUCTS: {
   {
     eyebrow: 'Authoring',
     title: 'PSUR Compiler.',
-    body: 'A full PSUR draft under MDCG 2022-21 in about ten minutes. Sections, evidence, citations, and a coverage matrix.',
+    body: 'A full PSUR draft under MDCG 2022-21 in about ten minutes. Sections, required data, citations, and a coverage matrix.',
     bullets: [
       'MDCG 2022-21 section structure',
       'Cross-references to EU MDR Articles 85 and 86',
-      'Evidence pulled from your QMS, never stored by us',
+      'Required data pulled from your QMS, never stored by us',
       'Citations on every claim',
     ],
     cta: { label: 'Open in sandbox', to: '/app' },
     visual: 'psur',
     before: 'A PSUR draft with unsupported claims and manual citation cleanup.',
-    after: 'A PSUR draft structured to MDCG 2022-21, checked against EU MDR Articles 83\u201386, with evidence coverage and traceable citations.',
+    after: 'A PSUR draft structured to MDCG 2022-21, checked against EU MDR Articles 83\u201386, with required data coverage and traceable citations.',
   },
   {
     eyebrow: 'Vigilance',
@@ -37,7 +37,7 @@ const PRODUCTS: {
     bullets: [
       'EU MDR Article 87 reporting clocks',
       '21 CFR 803 MDR decisioning',
-      'ISO 13485 \u00a78.2.2 evidence trail',
+      'ISO 13485 \u00a78.2.2 required data trail',
       'Auto-coded with IMDRF Annex A through G',
     ],
     cta: { label: 'Open in sandbox', to: '/app' },
@@ -61,19 +61,19 @@ const PRODUCTS: {
     after: 'Automated codes across Annexes A\u2013G with rationale, confidence, and version-locked terminology.',
   },
   {
-    eyebrow: 'The knowledge graph',
-    title: 'One graph. Eight regulations. Every relationship.',
-    body: 'Your agents query Smarticus instead of re-reading the regulation. The graph holds the obligations, the cross-references, the evidence types, and the constraints \u2014 versioned, citable, and replayable.',
+    eyebrow: 'The requirements engine',
+    title: 'One map. Eight regulations. Every relationship.',
+    body: 'Your agents query Smarticus instead of re-reading the regulation. The requirements engine holds the requirements, the cross-references, the required data types, and the constraints \u2014 versioned, citable, and replayable.',
     bullets: [
-      `${OBLIGATION_COUNT} obligations across ${REG_COUNT} regulations and standards`,
+      `${OBLIGATION_COUNT} requirements across ${REG_COUNT} regulations and standards`,
       'Walks chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
       'Versioned to the source date so an audit can be replayed',
       'Smarticus never sees your proprietary data',
     ],
-    cta: { label: 'Browse the graph', to: '/app/regulations' },
+    cta: { label: 'Browse the requirements', to: '/app/requirements' },
     visual: 'graph',
     before: 'Agents that parse PDF regulations at runtime with no cross-reference awareness.',
-    after: 'Agents that query a versioned graph of obligations, constraints, evidence types, and cross-references in milliseconds.',
+    after: 'Requirement-aware agents that query a versioned map of requirements, constraints, required data types, and cross-references in milliseconds.',
   },
 ];
 
@@ -99,7 +99,7 @@ function VisualPSUR() {
       <line x1="300" y1="180" x2="448" y2="180" stroke="var(--rule-strong)" />
       <text x="300" y="200" fontFamily="var(--mono)" fontSize="9.5" fill="var(--ink-2)" letterSpacing="0.08em">10 MIN TO DRAFT</text>
       <text x="300" y="220" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">28 sections</text>
-      <text x="300" y="238" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">142 evidence refs</text>
+      <text x="300" y="238" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">142 data refs</text>
       <text x="300" y="256" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">100% citation coverage</text>
     </svg>
   );
@@ -197,7 +197,7 @@ function VisualGraph() {
         </g>
       ))}
       <text x="240" y="298" textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-3)" letterSpacing="0.18em">
-        OBLIGATIONS \u00b7 DEFINITIONS \u00b7 EVIDENCE \u00b7 CONSTRAINTS
+        REQUIREMENTS \u00b7 DEFINITIONS \u00b7 REQUIRED DATA \u00b7 CONSTRAINTS
       </text>
     </svg>
   );
@@ -331,12 +331,12 @@ export function LandingPage() {
           <SmarticusWordmark size={16} tagline={false} />
           <div className="nav-mid" style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
             <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Products</button>
-            <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Knowledge graph</button>
+            <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Requirements</button>
             <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Builder</button>
-            <button className="nav-link" onClick={() => navigate('/app/api-access')}>Developers</button>
+            <button className="nav-link" onClick={() => navigate('/app/connect')}>Developers</button>
             <ThemeToggle />
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Run a grounded agent
+              Open the sandbox
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
@@ -362,7 +362,7 @@ export function LandingPage() {
           </div>
 
           <h1 className="hero-display rise-1" style={{ maxWidth: 1100 }}>
-            AI agents that know the <span className="accent">rules</span> before they act.
+            Regulatory Infrastructure that makes QMS and AI, <span className="accent">consistent and compliant</span>.
           </h1>
 
           <p
@@ -372,24 +372,22 @@ export function LandingPage() {
               color: 'var(--ink-2)',
             }}
           >
-            Smarticus grounds medical device and pharma AI agents in EU MDR,
-            21 CFR 820, ISO 13485, ISO 14971, IMDRF, UK MDR, and MDCG guidance
-            &mdash; with evidence checks, citations, and audit-ready traces.
+            Smarticus enables QMS teams to use AI, to prepare PSUR drafts, complaint assessments, IMDRF coding, perform audits, PMS plans, and provides traceability and auditability.
           </p>
 
           <div className="rise-3" style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Run a grounded agent
+              Open the sandbox
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
-            <button className="btn btn-ghost" onClick={() => navigate('/app/api-access')}>
-              Connect via MCP
+            <button className="btn btn-ghost" onClick={() => navigate('/app/builder')}>
+              Build a QMS tool
             </button>
           </div>
 
           <div className="rise-4" style={{ marginTop: 18 }}>
             <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 640 }}>
-              Your proprietary data stays in your tenant. Smarticus provides the regulatory graph, guardrails, and traceability layer.
+              Smarticus prepares and checks the work. Your QMS team owns final review and release.
             </p>
           </div>
         </div>
@@ -405,27 +403,27 @@ export function LandingPage() {
         <div className="container">
           <div className="eyebrow" style={{ marginBottom: 14 }}>The problem</div>
           <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-            Generic AI is fast. Regulated AI has to be <span style={{ color: 'var(--orange)' }}>right</span>.
+            Generic AI is fast. QMS work has to be <span style={{ color: 'var(--orange)' }}>defensible</span>.
           </h2>
 
           <div className="pain-grid">
             <div className="pain-card">
               <div style={{ marginBottom: 14 }}><PainIcon /></div>
-              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Hallucinated citations</h3>
+              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Missing requirements</h3>
               <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
                 AI outputs that reference rules incorrectly or invent requirements.
               </p>
             </div>
             <div className="pain-card">
               <div style={{ marginBottom: 14 }}><PainIcon /></div>
-              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Missing evidence</h3>
+              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Missing required data</h3>
               <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
                 AI drafts that sound complete but skip required records.
               </p>
             </div>
             <div className="pain-card">
               <div style={{ marginBottom: 14 }}><PainIcon /></div>
-              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>No audit trail</h3>
+              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>No decision trail</h3>
               <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
                 Decisions that cannot be replayed, defended, or verified.
               </p>
@@ -433,7 +431,7 @@ export function LandingPage() {
           </div>
 
           <p style={{ marginTop: 32, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
-            Smarticus fixes this by grounding every agent action in <strong style={{ color: 'var(--ink)' }}>obligations</strong>, <strong style={{ color: 'var(--ink)' }}>evidence</strong>, and <strong style={{ color: 'var(--ink)' }}>traceability</strong>.
+            Smarticus fixes this by grounding every agent action in <strong style={{ color: 'var(--ink)' }}>requirements</strong>, <strong style={{ color: 'var(--ink)' }}>required data</strong>, and <strong style={{ color: 'var(--ink)' }}>decision trails</strong>.
           </p>
         </div>
       </section>
@@ -445,8 +443,8 @@ export function LandingPage() {
             Pre-built tools, bound to the rules.
           </h2>
           <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 14, maxWidth: 480 }}>
-            Each tool ships pre-bound to the obligations it must satisfy. Outputs
-            are checked against those obligations before they leave the agent.
+            Each tool ships pre-bound to the requirements it must satisfy. Outputs
+            are checked against those requirements before they leave the agent.
           </p>
         </div>
 
@@ -497,21 +495,21 @@ export function LandingPage() {
       <section id="graph" className="container" style={{ padding: '64px 32px 48px' }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>The ground</div>
         <h2 style={{ fontSize: 'clamp(34px, 4.6vw, 60px)', fontWeight: 500, letterSpacing: '-0.035em', margin: 0, lineHeight: 1.04, maxWidth: 980 }}>
-          The regulatory graph your agents can reason from.
+          The requirements map your agents can reason from.
         </h2>
         <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
-          One graph holds <strong style={{ color: 'var(--ink)' }}>{REG_COUNT} regulations and standards</strong> with all
-          the relationships between them. Agents query the graph at qualification
+          One map holds <strong style={{ color: 'var(--ink)' }}>{REG_COUNT} regulations and standards</strong> with all
+          the relationships between them. Agents query the requirements map at readiness check
           (before they execute) and at validation (before output leaves the agent).
         </p>
 
         {/* Stats counters */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginTop: 36 }}>
           {[
-            { label: 'Obligations', value: OBLIGATION_COUNT },
+            { label: 'Requirements', value: OBLIGATION_COUNT },
             { label: 'Constraints', value: 98 },
             { label: 'Definitions', value: 55 },
-            { label: 'Evidence types', value: 347 },
+            { label: 'Required data types', value: 347 },
             { label: 'Cross-references', value: '1,200+' },
             { label: 'Jurisdictions', value: REG_COUNT },
           ].map((s) => (
@@ -531,15 +529,15 @@ export function LandingPage() {
               {[
                 'Cross-references walk chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
                 'Versioned to source \u2014 replay any audit on the date it was conducted',
-                'Queryable by process, jurisdiction, evidence type, or citation',
-                'Smarticus never sees your proprietary data \u2014 agents query the graph; payloads stay in your tenant',
+                'Queryable by process, jurisdiction, required data type, or citation',
+                'Smarticus never sees your proprietary data \u2014 agents query the requirements map; payloads stay in your tenant',
               ].map((b) => (
                 <li key={b}><CheckOrange /><span>{b}</span></li>
               ))}
             </ul>
             <div style={{ marginTop: 26 }}>
-              <button className="btn btn-orange" onClick={() => navigate('/app/regulations')}>
-                Browse the graph
+              <button className="btn btn-orange" onClick={() => navigate('/app/requirements')}>
+                Browse the requirements
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             </div>
@@ -552,17 +550,17 @@ export function LandingPage() {
         <div className="container">
           <div className="eyebrow" style={{ marginBottom: 14 }}>Agent builder</div>
           <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-            Build by intent, not by prompt.
+            Build by QMS intent, not by prompt.
           </h2>
           <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-            Choose a regulatory job. Smarticus assembles the agent, obligations, evidence, and validation path.
+            Choose a regulatory job. Smarticus assembles the agent, requirements, required data, and validation path.
           </p>
 
           <div className="flow-steps" style={{ marginTop: 48, marginBottom: 48 }}>
             {[
-              { step: '1', label: 'Choose process' },
-              { step: '2', label: 'Select scope' },
-              { step: '3', label: 'Attach evidence' },
+              { step: '1', label: 'Choose QMS job' },
+              { step: '2', label: 'Select requirements' },
+              { step: '3', label: 'Attach required data' },
               { step: '4', label: 'Run sandbox' },
               { step: '5', label: 'Export or connect' },
             ].map((s) => (
@@ -586,10 +584,10 @@ export function LandingPage() {
       <section className="container" style={{ padding: '64px 32px' }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>For developers</div>
         <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-          One connection. Regulatory guardrails everywhere.
+          Connect Smarticus requirement checks to your AI tools.
         </h2>
         <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-          Connect any MCP-compatible agent to the Smarticus knowledge graph. Eleven tools, one line to install.
+          Connect any MCP-compatible agent to the Smarticus requirements engine. Eleven tools, one line to install.
         </p>
 
         <pre style={{ marginTop: 28, fontSize: 14, padding: '18px 22px', maxWidth: 480 }}>
@@ -623,7 +621,7 @@ export function LandingPage() {
         </div>
 
         <div style={{ marginTop: 28 }}>
-          <button className="btn btn-ghost" onClick={() => navigate('/app/api-access')}>
+          <button className="btn btn-ghost" onClick={() => navigate('/app/connect')}>
             View developer docs
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
@@ -651,7 +649,7 @@ export function LandingPage() {
               color: 'var(--paper)', maxWidth: 1100, margin: 0,
             }}
           >
-            Give your agents a <span style={{ color: 'var(--orange)' }}>regulatory conscience</span>.
+            Give your QMS team an AI co-pilot they can <span style={{ color: 'var(--orange)' }}>trust</span>.
           </h2>
 
           <div style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -669,7 +667,7 @@ export function LandingPage() {
           </div>
 
           <p style={{ marginTop: 24, color: 'var(--ink-4)', fontSize: 14, maxWidth: 560 }}>
-            This is not a chatbot. This is regulatory infrastructure for AI agents.
+            Smarticus does not replace QMS judgment. It prepares, checks, and traces the work so your team can review with confidence.
           </p>
         </div>
       </section>

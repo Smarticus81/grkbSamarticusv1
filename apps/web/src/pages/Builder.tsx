@@ -1,7 +1,7 @@
 /**
  * Smarticus Builder — low-code regulatory intent experience.
  *
- * 6-step flow: Job > Scope > Evidence > Guardrails > Output > Deploy
+ * 6-step flow: QMS Job > Requirements > Required Data > Review Controls > Output Package > Connect
  * Left sidebar stepper, center canvas, right sidebar regulatory inspector.
  * Client-side only — no API calls. State management via React hooks.
  */
@@ -56,12 +56,12 @@ type GuardrailDef = {
 /* ── Data ──────────────────────────────────────────────────────────── */
 
 const STEPS = [
-  { key: 'job',        label: 'Job',        question: 'What regulatory job should this agent perform?' },
-  { key: 'scope',      label: 'Scope',      question: 'Which rules should govern the agent?' },
-  { key: 'evidence',   label: 'Evidence',   question: 'What evidence can the agent use?' },
-  { key: 'guardrails', label: 'Guardrails', question: 'What safety controls apply?' },
-  { key: 'output',     label: 'Output',     question: 'What should the agent produce?' },
-  { key: 'deploy',     label: 'Deploy',     question: 'How should this agent run?' },
+  { key: 'job',        label: 'QMS Job',        question: 'What QMS job should this tool perform?' },
+  { key: 'scope',      label: 'Requirements',    question: 'Which requirements should govern this tool?' },
+  { key: 'evidence',   label: 'Required Data',   question: 'What required data can the tool use?' },
+  { key: 'guardrails', label: 'Review Controls', question: 'What review controls apply?' },
+  { key: 'output',     label: 'Output Package',  question: 'What should this tool produce?' },
+  { key: 'deploy',     label: 'Connect',         question: 'How should this tool connect?' },
 ] as const;
 
 const REGULATIONS_ALL = [
@@ -77,8 +77,8 @@ const REGULATIONS_ALL = [
 const JOBS: Job[] = [
   {
     id: 'psur-compiler',
-    title: 'PSUR Compiler',
-    description: 'Creates a PSUR draft with citations and evidence coverage.',
+    title: 'PSUR Draft Package',
+    description: 'Creates a PSUR draft with citations and required data coverage.',
     regulations: ['EU MDR', 'MDCG 2022-21'],
     risk: 'HIGH',
     outputType: 'Draft document + coverage matrix',
@@ -96,7 +96,7 @@ const JOBS: Job[] = [
   },
   {
     id: 'complaint-triage',
-    title: 'Complaint Triage',
+    title: 'Complaint Review Assistant',
     description: 'Triage incoming complaints against regulatory timelines.',
     regulations: ['EU MDR', '21 CFR 820', 'ISO 13485'],
     risk: 'HIGH',
@@ -115,7 +115,7 @@ const JOBS: Job[] = [
   },
   {
     id: 'imdrf-coder',
-    title: 'IMDRF Auto-Coder',
+    title: 'IMDRF Coding Assistant',
     description: 'Code adverse events with IMDRF Annexes A through G.',
     regulations: ['IMDRF'],
     risk: 'MEDIUM',
@@ -134,7 +134,7 @@ const JOBS: Job[] = [
   },
   {
     id: 'capa-evaluator',
-    title: 'CAPA Evaluator',
+    title: 'CAPA File Evaluator',
     description: 'Evaluate a CAPA against ISO 13485 and 21 CFR 820.',
     regulations: ['ISO 13485', '21 CFR 820'],
     risk: 'HIGH',
@@ -211,17 +211,17 @@ const JOBS: Job[] = [
 ];
 
 const OUTPUT_FORMATS: OutputFormat[] = [
-  { id: 'draft-doc',       title: 'Draft Document',       description: 'Structured document with sections, citations, and evidence refs' },
-  { id: 'coverage-matrix', title: 'Coverage Matrix',      description: 'Obligation x evidence coverage grid' },
+  { id: 'draft-doc',       title: 'Draft Document',       description: 'Structured document with sections, citations, and required data refs' },
+  { id: 'coverage-matrix', title: 'Coverage Matrix',      description: 'Requirement x required data coverage grid' },
   { id: 'json-api',        title: 'JSON API Response',    description: 'Structured JSON for downstream systems' },
-  { id: 'audit-pack',      title: 'Audit Pack',           description: 'Complete audit-ready package with traces' },
+  { id: 'audit-pack',      title: 'Audit Pack',           description: 'Complete audit-ready package with decision trails' },
 ];
 
 const DEPLOY_OPTIONS: DeployOption[] = [
   {
     id: 'sandbox',
     title: 'Sandbox Only',
-    description: 'Test in the sandbox before production',
+    description: 'Test in the sandbox before connecting',
     cta: 'Run in sandbox',
   },
   {
@@ -263,26 +263,26 @@ const DEPLOY_OPTIONS: DeployOption[] = [
 const GUARDRAILS: GuardrailDef[] = [
   {
     id: 'qualification-gate',
-    title: 'Qualification Gate',
-    description: 'Blocks execution if mandatory obligations lack evidence',
+    title: 'Readiness Check',
+    description: 'Blocks execution if mandatory requirements lack required data',
     defaultOn: true,
   },
   {
     id: 'strict-output-schema',
-    title: 'Strict Output Schema',
+    title: 'Output Check',
     description: 'Validates output structure before release',
     defaultOn: true,
   },
   {
     id: 'human-review-gate',
-    title: 'Human Review Gate',
+    title: 'Review Gate',
     description: 'Requires human approval before output is final',
     defaultOn: true,
   },
   {
     id: 'compliance-validator',
-    title: 'Compliance Validator',
-    description: '5-validator pipeline checks output against obligations',
+    title: 'Validation Check',
+    description: '5-validator pipeline checks output against requirements',
     defaultOn: true,
   },
 ];
@@ -404,11 +404,11 @@ export function Builder() {
         <div>
           <div className="eyebrow" style={{ marginBottom: 8 }}>Agent builder</div>
           <h1 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.025em', margin: 0 }}>
-            Build a regulatory intent.
+            Build a QMS tool.
           </h1>
           <p style={{ marginTop: 6, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 600, margin: '6px 0 0' }}>
-            Define what the agent does, which rules govern it, and how it runs.
-            Smarticus grounds every step in the obligation knowledge graph.
+            Define what the tool does, which requirements govern it, and how it connects.
+            Smarticus grounds every step in the requirements engine.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -699,7 +699,7 @@ export function Builder() {
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr>
-                        <th>Required Evidence</th>
+                        <th>Required Data</th>
                         <th style={{ textAlign: 'right' }}>Status</th>
                       </tr>
                     </thead>
@@ -744,13 +744,13 @@ export function Builder() {
                         fontStyle: 'italic',
                       }}
                     >
-                      Smarticus will not fabricate evidence it does not have.
+                      Smarticus will not fabricate required data it does not have.
                     </p>
                   </div>
                 </>
               ) : (
                 <div style={{ padding: 24, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-                  Select a job in Step 1 to see evidence requirements.
+                  Select a job in Step 1 to see required data.
                 </div>
               )}
             </div>
@@ -983,7 +983,7 @@ export function Builder() {
                     </div>
                     <div>
                       <div style={{ color: 'var(--ink-4)', fontSize: 11, fontFamily: 'var(--mono)', letterSpacing: '0.1em', marginBottom: 2 }}>
-                        GUARDRAILS
+                        REVIEW CONTROLS
                       </div>
                       <div style={{ color: 'var(--ink)' }}>
                         {GUARDRAILS.filter((g) => guardrailState[g.id]).length} of {GUARDRAILS.length} active
@@ -1011,7 +1011,7 @@ export function Builder() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
             <span className="pulse-orange" />
             <span className="eyebrow" style={{ color: 'var(--ink-2)', fontSize: 10 }}>
-              Regulatory inspector
+              QMS Inspector
             </span>
           </div>
 
@@ -1032,7 +1032,7 @@ export function Builder() {
           {/* Applicable Obligations */}
           <div style={{ marginBottom: 20 }}>
             <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-              Applicable obligations
+              Applicable Requirements
             </div>
             {inspector.obligationCount > 0 ? (
               <>
@@ -1082,7 +1082,7 @@ export function Builder() {
           {/* Missing Evidence */}
           <div style={{ marginBottom: 20 }}>
             <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-              Missing evidence
+              Missing Required Data
             </div>
             {inspector.missingEvidence.length > 0 ? (
               <>
@@ -1118,7 +1118,7 @@ export function Builder() {
             ) : selectedJob ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span className="dot-ok" />
-                <span style={{ fontSize: 12, color: 'var(--ok)' }}>All evidence connected</span>
+                <span style={{ fontSize: 12, color: 'var(--ok)' }}>All required data connected</span>
               </div>
             ) : (
               <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>Select a job to view</span>
@@ -1130,7 +1130,7 @@ export function Builder() {
           {/* Review Gates */}
           <div style={{ marginBottom: 20 }}>
             <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-              Review gates
+              Review Controls
             </div>
             {inspector.activeGates.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1153,7 +1153,7 @@ export function Builder() {
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span className="dot-warn" />
-                <span style={{ fontSize: 12, color: 'var(--warn)' }}>No gates active</span>
+                <span style={{ fontSize: 12, color: 'var(--warn)' }}>No review controls active</span>
               </div>
             )}
           </div>
@@ -1163,17 +1163,17 @@ export function Builder() {
           {/* Trace Status */}
           <div>
             <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-              Trace status
+              Decision Trail Status
             </div>
             {inspector.traceConfigured ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
                 <span className="dot-ok" />
-                <span style={{ color: 'var(--ok)' }}>Trace will be generated</span>
+                <span style={{ color: 'var(--ok)' }}>Decision trail will be generated</span>
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
                 <span className="dot-warn" />
-                <span style={{ color: 'var(--warn)' }}>No trace configured</span>
+                <span style={{ color: 'var(--warn)' }}>No decision trail configured</span>
               </div>
             )}
           </div>

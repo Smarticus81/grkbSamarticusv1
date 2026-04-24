@@ -202,11 +202,11 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
         <div>
           <div className="eyebrow" style={{ marginBottom: 10 }}>The sandbox</div>
           <h1 style={{ fontSize: 30, fontWeight: 500, letterSpacing: '-0.025em', margin: 0 }}>
-            Pick an agent. Run it. Watch it talk to the graph.
+            Pick an agent. Run it. Watch it check the requirements.
           </h1>
           <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 14, maxWidth: 640 }}>
-            Each agent is pre-bound to its regulatory obligations. Sample data is loaded.
-            Run it with the graph, run it without, and see the difference.
+            Each agent is pre-bound to its regulatory requirements. Sample data is loaded.
+            Run it Smarticus-guided, run it generic, and see the difference.
           </p>
         </div>
         <SmarticusWordmark size={14} tagline="REGULATORY INTELLIGENCE. ENGINEERED." />
@@ -256,7 +256,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   <h2 style={{ margin: '6px 0 4px', fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{detail.name}</h2>
                   <div style={{ color: 'var(--ink-3)', fontSize: 13 }}>{detail.oneLiner}</div>
                   <div style={{ color: 'var(--ink-4)', fontSize: 11, marginTop: 6, letterSpacing: '0.06em' }}>
-                    {detail.obligations.length} obligation(s) · jurisdiction {detail.jurisdiction}
+                    {detail.obligations.length} requirement(s) · jurisdiction {detail.jurisdiction}
                   </div>
                 </div>
                 <button onClick={downloadAgent} className="btn-orange" style={{ whiteSpace: 'nowrap' }}>
@@ -276,7 +276,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                       color: mode === m ? 'var(--paper)' : 'var(--ink-2)',
                       border: 0, cursor: 'pointer', borderRight: '1px solid var(--rule)',
                     }}
-                  >{m === 'with-graph' ? 'Smarticus-grounded' : m === 'without-graph' ? 'Ungrounded AI' : 'Compare'}</button>
+                  >{m === 'with-graph' ? 'Smarticus-guided' : m === 'without-graph' ? 'Generic AI' : 'Compare'}</button>
                 ))}
               </div>
 
@@ -320,24 +320,25 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   color: 'var(--ink-2)',
                   lineHeight: 1.55,
                 }}>
-                  Grounded run consulted <strong style={{ color: 'var(--ink)' }}>{result.withGraph.score.obligationsConsulted}</strong> obligations,
-                  attached <strong style={{ color: 'var(--ink)' }}>{result.withGraph.citations.length}</strong> citations,{' '}
+                  Smarticus-guided run checked <strong style={{ color: 'var(--ink)' }}>{result.withGraph.score.obligationsConsulted}</strong> requirements,
+                  used <strong style={{ color: 'var(--ink)' }}>{result.withGraph.citations.length}</strong> required data items, attached{' '}
+                  <strong style={{ color: 'var(--ink)' }}>{result.withGraph.citations.length}</strong> source citations,{' '}
                   <strong style={{ color: result.withGraph.score.strictGatePass ? 'var(--ok)' : 'var(--err)' }}>
-                    {result.withGraph.score.strictGatePass ? 'passed' : 'failed'} StrictGate
+                    {result.withGraph.score.strictGatePass ? 'passed' : 'failed'} output check
                   </strong>,
-                  and generated trace <strong style={{ color: 'var(--ink)', fontFamily: 'var(--mono)' }}>#{result.runId}</strong>.
+                  and created a decision trail <strong style={{ color: 'var(--ink)', fontFamily: 'var(--mono)' }}>#{result.runId}</strong>.
                 </div>
               )}
 
               {/* Console: single or split */}
               {mode === 'compare' ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  <ConsolePanel title="Smarticus-grounded AI"    lane="with-graph"    events={withEvents}    result={result?.withGraph} />
-                  <ConsolePanel title="Ungrounded AI" lane="without-graph" events={withoutEvents} result={result?.withoutGraph} />
+                  <ConsolePanel title="Smarticus-guided AI"    lane="with-graph"    events={withEvents}    result={result?.withGraph} />
+                  <ConsolePanel title="Generic AI" lane="without-graph" events={withoutEvents} result={result?.withoutGraph} />
                 </div>
               ) : (
                 <ConsolePanel
-                  title={mode === 'with-graph' ? 'Smarticus-grounded AI' : 'Ungrounded AI'}
+                  title={mode === 'with-graph' ? 'Smarticus-guided AI' : 'Generic AI'}
                   lane={mode}
                   events={mode === 'with-graph' ? withEvents : withoutEvents}
                   result={mode === 'with-graph' ? result?.withGraph : result?.withoutGraph}
@@ -350,16 +351,16 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           )}
         </section>
 
-        {/* Live graph activity */}
+        {/* Live requirement lookups */}
         <aside style={{ borderLeft: '1px solid var(--rule)', background: 'var(--paper-deep)', padding: '20px 18px', position: 'sticky', top: 0, height: '100vh', overflow: 'auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
             <span className="pulse-orange" />
-            <span className="eyebrow" style={{ color: 'var(--ink-2)' }}>Smarticus knowledge graph</span>
+            <span className="eyebrow" style={{ color: 'var(--ink-2)' }}>Requirement lookups</span>
           </div>
           <GraphTicker events={events.filter((e) => e.type === 'graph.query' || e.type === 'graph.cite')} />
           {detail && (
             <div style={{ marginTop: 24 }}>
-              <div className="eyebrow" style={{ color: 'var(--ink-2)', marginBottom: 10 }}>Required obligations</div>
+              <div className="eyebrow" style={{ color: 'var(--ink-2)', marginBottom: 10 }}>Applicable requirements</div>
               {detail.obligations.map((o) => (
                 <div key={o.obligationId} style={{ padding: '10px 12px', borderLeft: '2px solid var(--orange)', background: 'var(--paper)', marginBottom: 8, fontSize: 12 }}>
                   <div style={{ fontWeight: 500, color: 'var(--ink)' }}>{o.citation}</div>
@@ -392,12 +393,12 @@ function ConsolePanel({ title, lane, events, result }: { title: string; lane: La
         {events.map((e, i) => <EventLine key={i} event={e} />)}
         {result?.score?.strictGatePass === true && (
           <div style={{ marginTop: 8, padding: '4px 8px', background: 'rgba(255,255,255,0.06)', display: 'inline-block' }}>
-            ✓ StrictGate validated
+            ✓ Output check validated
           </div>
         )}
         {result?.score?.strictGatePass === false && (
           <div style={{ marginTop: 8, padding: '4px 8px', background: 'rgba(250,80,15,0.18)', color: '#FF7A3D', display: 'inline-block' }}>
-            ✗ StrictGate failed: {result.score.violations.join(', ')}
+            ✗ Output check failed: {result.score.violations.join(', ')}
           </div>
         )}
       </div>
@@ -439,12 +440,12 @@ function EventLine({ event }: { event: LaneEvent }) {
 }
 
 function GraphTicker({ events }: { events: LaneEvent[] }) {
-  if (events.length === 0) return <div style={{ color: 'var(--ink-3)', fontSize: 12.5, lineHeight: 1.55 }}>Live agent ↔ graph activity will stream here when a run starts.</div>;
+  if (events.length === 0) return <div style={{ color: 'var(--ink-3)', fontSize: 12.5, lineHeight: 1.55 }}>Live requirement lookups will stream here when a run starts.</div>;
   return (
     <div style={{ fontSize: 12, lineHeight: 1.55 }}>
       {events.slice(-30).map((e, i) => (
         <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid var(--rule)' }}>
-          <div style={{ color: 'var(--ink-4)', fontSize: 10, letterSpacing: '0.08em', marginBottom: 2 }}>{e.lane === 'with-graph' ? 'Smarticus-grounded AI' : 'Ungrounded AI'}</div>
+          <div style={{ color: 'var(--ink-4)', fontSize: 10, letterSpacing: '0.08em', marginBottom: 2 }}>{e.lane === 'with-graph' ? 'Smarticus-guided AI' : 'Generic AI'}</div>
           {e.type === 'graph.query' && (
             <>
               <div style={{ color: 'var(--ink-2)' }}>{e.message}</div>
@@ -469,24 +470,24 @@ function EvalCard({ result, judging, onJudge }: { result: RunResult; judging: bo
   return (
     <div style={{ marginTop: 18, background: '#fff', border: '1px solid var(--rule)', padding: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div className="eyebrow">Eval — Smarticus-grounded AI vs Ungrounded AI</div>
+        <div className="eyebrow">Eval — Smarticus-guided AI vs Generic AI</div>
         <button onClick={onJudge} disabled={judging} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-2)', padding: '6px 12px', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
-          {judging ? 'Scoring…' : 'Score with LLM judge'}
+          {judging ? 'Scoring…' : 'Score with quality review'}
         </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-        <Metric label="Obligation coverage" withVal={w ? `${Math.round(w.coverage * 100)}%` : '—'} withoutVal={wo ? `${Math.round(wo.coverage * 100)}%` : '—'} bar={{ withN: (w?.coverage ?? 0), withoutN: (wo?.coverage ?? 0) }} />
-        <Metric label="Citations attached"  withVal={`${w?.citations ?? 0}`} withoutVal={`${wo?.citations ?? 0}`} bar={{ withN: Math.min(1, (w?.citations ?? 0) / 8), withoutN: Math.min(1, (wo?.citations ?? 0) / 8) }} />
-        <Metric label="StrictGate"           withVal={w?.strictGatePass ? 'Pass' : 'Fail'} withoutVal={wo?.strictGatePass ? 'Pass' : 'Fail'} bar={{ withN: w?.strictGatePass ? 1 : 0, withoutN: wo?.strictGatePass ? 1 : 0 }} />
+        <Metric label="Requirement coverage" withVal={w ? `${Math.round(w.coverage * 100)}%` : '—'} withoutVal={wo ? `${Math.round(wo.coverage * 100)}%` : '—'} bar={{ withN: (w?.coverage ?? 0), withoutN: (wo?.coverage ?? 0) }} />
+        <Metric label="Source citations"  withVal={`${w?.citations ?? 0}`} withoutVal={`${wo?.citations ?? 0}`} bar={{ withN: Math.min(1, (w?.citations ?? 0) / 8), withoutN: Math.min(1, (wo?.citations ?? 0) / 8) }} />
+        <Metric label="Output check"           withVal={w?.strictGatePass ? 'Pass' : 'Fail'} withoutVal={wo?.strictGatePass ? 'Pass' : 'Fail'} bar={{ withN: w?.strictGatePass ? 1 : 0, withoutN: wo?.strictGatePass ? 1 : 0 }} />
       </div>
 
       {(result.withGraph?.judge || result.withoutGraph?.judge) && (
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--rule)' }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>LLM judge</div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Quality review</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <JudgePanel title="Smarticus-grounded AI"    judge={result.withGraph?.judge} />
-            <JudgePanel title="Ungrounded AI" judge={result.withoutGraph?.judge} />
+            <JudgePanel title="Smarticus-guided AI"    judge={result.withGraph?.judge} />
+            <JudgePanel title="Generic AI" judge={result.withoutGraph?.judge} />
           </div>
         </div>
       )}
@@ -500,7 +501,7 @@ function Metric({ label, withVal, withoutVal, bar }: { label: string; withVal: s
       <div className="eyebrow" style={{ marginBottom: 8 }}>{label}</div>
       <div style={{ marginBottom: 6 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>
-          <span>Smarticus-grounded AI</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withVal}</span>
+          <span>Smarticus-guided AI</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withVal}</span>
         </div>
         <div style={{ height: 6, background: 'var(--paper-2, #E8E4DA)', borderRadius: 3, overflow: 'hidden' }}>
           <div style={{ width: `${Math.round(bar.withN * 100)}%`, height: '100%', background: 'var(--orange)' }} />
@@ -508,7 +509,7 @@ function Metric({ label, withVal, withoutVal, bar }: { label: string; withVal: s
       </div>
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>
-          <span>Ungrounded AI</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withoutVal}</span>
+          <span>Generic AI</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withoutVal}</span>
         </div>
         <div style={{ height: 6, background: 'var(--paper-2, #E8E4DA)', borderRadius: 3, overflow: 'hidden' }}>
           <div style={{ width: `${Math.round(bar.withoutN * 100)}%`, height: '100%', background: 'var(--ink-4)' }} />

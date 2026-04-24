@@ -202,14 +202,14 @@ export function RegulationManager() {
       <div style={{ padding: '20px 28px 16px', borderBottom: '1px solid var(--rule)', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0 }}>
-            <div className="eyebrow" style={{ marginBottom: 8 }}>Knowledge graph / requirements</div>
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Requirements Map</div>
             <h1 style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
               Every requirement your agents must satisfy.
             </h1>
             <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '6px 0 0', maxWidth: 540, lineHeight: 1.5 }}>
               {total > 0
-                ? `${total} obligations across ${Object.keys(regs).length} regulations. Filter by process or search by citation.`
-                : 'Connect the graph database to see live requirements.'}
+                ? `${total} requirements across ${Object.keys(regs).length} regulations. Filter by process or search by citation.`
+                : 'Connect the requirements database to see live requirements.'}
             </p>
             <div style={{ marginTop: 12, maxWidth: 420 }}>
               <RegulatorCompactStrip />
@@ -263,7 +263,7 @@ export function RegulationManager() {
           )}
           {data.isError && (
             <div style={{ padding: 12, fontSize: 12.5, color: 'var(--err)', border: '1px solid var(--rule-strong)', borderRadius: 'var(--r-2)' }}>
-              Graph database unreachable. Showing process types only.
+              Requirements database unreachable. Showing process types only.
             </div>
           )}
 
@@ -339,21 +339,21 @@ export function RegulationManager() {
             <div style={{ maxWidth: 620 }}>
               <div className="eyebrow" style={{ marginBottom: 10 }}>How to use this</div>
               <h2 style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-                Pick a regulation on the left to read its obligations.
+                Pick a regulation on the left to browse its requirements.
               </h2>
               <p style={{ marginTop: 12, color: 'var(--ink-3)', fontSize: 14, lineHeight: 1.6 }}>
-                Each obligation in the graph is bound to its source citation,
-                jurisdiction, evidence types, and any cross-references to other
-                regulations. Agents query this graph at qualification time
+                Each requirement in the map is bound to its source citation,
+                jurisdiction, required data types, and any cross-references to other
+                regulations. Agents query this map at readiness check time
                 (before they execute) and at validation time (before output
                 leaves the agent).
               </p>
               <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                 {[
-                  { k: 'Citation-bound',  v: 'Each obligation points to its exact paragraph in the source text.' },
+                  { k: 'Citation-bound',  v: 'Each requirement points to its exact paragraph in the source text.' },
                   { k: 'Versioned',       v: 'Older versions stay queryable so you can replay an audit on its date.' },
-                  { k: 'Cross-referenced',v: 'ISO, FDA, EU, UK, and IMDRF cross-references are walkable as graph edges.' },
-                  { k: 'Process-aware',   v: 'Each obligation is tagged with the QMS processes it constrains.' },
+                  { k: 'Cross-referenced',v: 'ISO, FDA, EU, UK, and IMDRF cross-references are walkable across the map.' },
+                  { k: 'Process-aware',   v: 'Each requirement is tagged with the QMS processes it constrains.' },
                 ].map((c) => (
                   <div key={c.k} style={{ padding: 14, border: '1px solid var(--rule)', borderRadius: 'var(--r-2)' }}>
                     <div className="eyebrow" style={{ marginBottom: 6 }}>{c.k}</div>
@@ -370,7 +370,7 @@ export function RegulationManager() {
                 <div>
                   <div className="eyebrow" style={{ marginBottom: 6 }}>{regLabel(selectedReg)}</div>
                   <h2 style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-                    {selectedObligations.length} obligation{selectedObligations.length !== 1 ? 's' : ''}
+                    {selectedObligations.length} requirement{selectedObligations.length !== 1 ? 's' : ''}
                     {processFilter ? ` for ${friendlyProcess(processFilter)}` : ''}
                   </h2>
                 </div>
@@ -408,7 +408,7 @@ export function RegulationManager() {
                 ))}
                 {selectedObligations.length === 0 && (
                   <div style={{ padding: 24, color: 'var(--ink-3)', fontSize: 13.5, textAlign: 'center' }}>
-                    No obligations match the current filters.
+                    No requirements match the current filters.
                   </div>
                 )}
               </div>

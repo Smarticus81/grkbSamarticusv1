@@ -33,13 +33,13 @@ interface CreateKeyResult {
 /* ─── Scopes ─── */
 const AVAILABLE_SCOPES = [
   { id: 'graph:read', label: 'Read Requirements', desc: 'Query regulations and requirements' },
-  { id: 'compliance:check', label: 'Compliance Check', desc: 'Validate outputs against requirements' },
-  { id: 'traces:read', label: 'View Traces', desc: 'Read decision traces' },
+  { id: 'compliance:check', label: 'Validation Check', desc: 'Validate outputs against requirements' },
+  { id: 'traces:read', label: 'View Decision Trails', desc: 'Read decision trails' },
   { id: 'graph:write', label: 'Write Requirements', desc: 'Add or update requirements (admin)' },
   { id: 'processes:read', label: 'Read Processes', desc: 'View process definitions' },
   { id: 'processes:write', label: 'Write Processes', desc: 'Create or launch processes' },
-  { id: 'evidence:read', label: 'Read Evidence', desc: 'Query evidence records' },
-  { id: 'evidence:write', label: 'Write Evidence', desc: 'Upload evidence' },
+  { id: 'evidence:read', label: 'Read Required Data', desc: 'Query required data records' },
+  { id: 'evidence:write', label: 'Write Required Data', desc: 'Upload required data' },
 ];
 
 /* ─── Tool options ─── */
@@ -141,15 +141,15 @@ function buildIntegrationPrompt(tool: ToolChoice, apiKey: string | null, process
    Headers: { "Authorization": "Bearer ${apiKey ?? 'YOUR_KEY_HERE'}" }`;
   }
 
-  return `I want to add Smarticus compliance checking to my ${processType || 'QMS'} workflow. Smarticus is a compliance API for medical device and pharma. It validates AI-generated documents against regulatory requirements across EU MDR, ISO 13485, 21 CFR 820, and the rest of the coverage set.
+  return `I want to add Smarticus requirement checks to my ${processType || 'QMS'} workflow. Smarticus is a compliance API for medical device and pharma. It validates AI-generated documents against regulatory requirements across EU MDR, ISO 13485, 21 CFR 820, and the rest of the coverage set.
 
 1. ADD the Smarticus MCP server. I use ${toolName}. ${mcpConfigBlock}
 
-2. INTEGRATE compliance checks:
+2. INTEGRATE requirement checks:
    - Call regground_discover_obligations with process type and target market
    - Call regground_check_qualification before running the agent
    - Call regground_validate_compliance after generation
-   - Every decision is recorded in a tamper-proof audit trail
+   - Every decision is recorded in a tamper-proof decision trail
 
 3. Available tools: regground_discover_obligations, regground_check_qualification, regground_validate_compliance, regground_get_obligation, regground_explain_obligation, regground_search_obligations, regground_get_evidence_requirements, regground_find_obligation_path, regground_get_graph_stats, regground_list_process_types, regground_list_jurisdictions
 
@@ -157,7 +157,7 @@ ${keyLine}
 
 My agent does: ${processType || '(describe your agent process)'}
 
-Please integrate Smarticus so every document section is validated against the applicable regulations, and every AI decision is recorded for audit.`;
+Please integrate Smarticus so every document section is validated against the applicable requirements, and every AI decision is recorded for audit.`;
 }
 
 /* ─── Main component ─── */
@@ -300,7 +300,7 @@ export function ApiAccess() {
           boxShadow: '0 0 20px rgba(14,140,194,0.3)',
         }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Connect</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Connect Smarticus</h1>
           <div style={{ display: 'flex', gap: 6 }}>
             <button onClick={() => setView('guide')} style={pillBtn(view === 'guide')}>Setup Guide</button>
             <button onClick={() => setView('keys')} style={pillBtn(view === 'keys')}>API Keys{keys.length > 0 ? ` (${keys.length})` : ''}</button>
@@ -366,7 +366,7 @@ export function ApiAccess() {
                 What tool does your team use?
               </h2>
               <p style={{ fontSize: 14, color: 'var(--text-tertiary)', margin: '0 0 32px', lineHeight: 1.6, maxWidth: 600 }}>
-                Pick your AI coding tool and we'll generate the setup instructions your developer needs.
+                Connect Smarticus requirement checks to your AI tools. Pick your AI coding tool and we'll generate the setup instructions your developer needs.
               </p>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, maxWidth: 1000 }}>
@@ -633,7 +633,7 @@ export function ApiAccess() {
 
               <div style={{ maxWidth: 800, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                 <p>
-                  <strong style={{ color: 'var(--text-primary)' }}>MCP Server</strong>: Use the @regground/mcp-server via npx or HTTP
+                  <strong style={{ color: 'var(--text-primary)' }}>MCP Integration</strong>: MCP is available for teams that want Smarticus requirement checks inside AI development tools. Use the @regground/mcp-server via npx or HTTP.
                 </p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                   <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: 4 }}>
@@ -641,7 +641,7 @@ export function ApiAccess() {
                   </code>
                 </p>
                 <p style={{ marginTop: 12 }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>11 Available tools</strong>: regground_discover_obligations, regground_check_qualification, regground_validate_compliance, and 8 more.
+                  <strong style={{ color: 'var(--text-primary)' }}>11 Available tools</strong>: discover requirements, check readiness, validate output, and 8 more.
                 </p>
                 <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                   See <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: 4 }}>https://docs.smarticus.ai/mcp</code> for full API documentation.

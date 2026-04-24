@@ -19,9 +19,9 @@ const NAV: { href: string; label: string; n: string }[] = [
   { href: '/app',              label: 'Command',    n: '01' },
   { href: '/app/builder',     label: 'Builder',    n: '02' },
   { href: '/app/sandbox',     label: 'Sandbox',    n: '03' },
-  { href: '/app/graph',       label: 'Graph',      n: '04' },
-  { href: '/app/traces',      label: 'Traces',     n: '05' },
-  { href: '/app/api-access',  label: 'Connect',    n: '06' },
+  { href: '/app/requirements', label: 'Requirements',   n: '04' },
+  { href: '/app/trails',      label: 'Decision Trails', n: '05' },
+  { href: '/app/connect',     label: 'Connect',         n: '06' },
 ];
 
 /**
@@ -215,7 +215,7 @@ function AppShell() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ink-3)' }}>
             <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{REG_COUNT} regulations</span>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{OBLIGATION_COUNT} obligations</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{OBLIGATION_COUNT} requirements</span>
           </div>
           <RegulatorCompactStrip />
         </div>
@@ -235,10 +235,10 @@ function AppShell() {
             <Route path="/app/builder" component={Builder} />
             <Route path="/app/sandbox">{() => <Sandbox />}</Route>
             <Route path="/app/sandbox/:taskId">{(params) => <Sandbox initialTaskId={params.taskId} />}</Route>
-            <Route path="/app/graph" component={RegulationManager} />
-            <Route path="/app/traces/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
-            <Route path="/app/traces">{() => <TraceExplorer />}</Route>
-            <Route path="/app/api-access" component={ApiAccess} />
+            <Route path="/app/requirements" component={RegulationManager} />
+            <Route path="/app/trails/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
+            <Route path="/app/trails">{() => <TraceExplorer />}</Route>
+            <Route path="/app/connect" component={ApiAccess} />
             <Route path="/app/demo/capa" component={DemoCapa} />
             <Route><CommandCenter /></Route>
           </Switch>

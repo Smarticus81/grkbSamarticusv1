@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { REGULATOR_ASSETS } from '../../lib/regulators.js';
 
 function useAssetAvailability() {
@@ -6,21 +6,15 @@ function useAssetAvailability() {
     Object.fromEntries(REGULATOR_ASSETS.map((item) => [item.id, null])),
   );
 
-  const missingCount = useMemo(
-    () => Object.values(availability).filter((value) => value === false).length,
-    [availability],
-  );
-
   return {
     availability,
-    missingCount,
     markLoaded: (id: string) => setAvailability((current) => ({ ...current, [id]: true })),
     markMissing: (id: string) => setAvailability((current) => ({ ...current, [id]: false })),
   };
 }
 
 export function RegulatorHeroRail() {
-  const { availability, missingCount, markLoaded, markMissing } = useAssetAvailability();
+  const { availability, markLoaded, markMissing } = useAssetAvailability();
 
   return (
     <div style={{ marginTop: 28 }}>
@@ -35,7 +29,8 @@ export function RegulatorHeroRail() {
         }}
       >
         {REGULATOR_ASSETS.map((item) => {
-          const hasAsset = availability[item.id] !== false;
+          const isMissing = availability[item.id] === false;
+          if (isMissing) return null;
 
           return (
             <div
@@ -59,15 +54,13 @@ export function RegulatorHeroRail() {
                   justifyContent: 'flex-start',
                 }}
               >
-                {hasAsset ? (
-                  <img
-                    src={item.assetPath}
-                    alt={`${item.authority} official mark`}
-                    style={{ maxHeight: 28, maxWidth: '100%', objectFit: 'contain' }}
-                    onLoad={() => markLoaded(item.id)}
-                    onError={() => markMissing(item.id)}
-                  />
-                ) : null}
+                <img
+                  src={item.assetPath}
+                  alt={`${item.authority} official mark`}
+                  style={{ maxHeight: 28, maxWidth: '100%', objectFit: 'contain' }}
+                  onLoad={() => markLoaded(item.id)}
+                  onError={() => markMissing(item.id)}
+                />
               </div>
               <div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink)', lineHeight: 1.35 }}>{item.label}</div>
@@ -79,12 +72,6 @@ export function RegulatorHeroRail() {
           );
         })}
       </div>
-      {missingCount > 0 ? (
-        <p style={{ margin: '10px 0 0', color: 'var(--ink-3)', fontSize: 12.5, lineHeight: 1.5, maxWidth: 760 }}>
-          Official regulator marks are wired in, but {missingCount} asset file{missingCount === 1 ? '' : 's'} are not present in the repo yet.
-          Add the licensed SVGs under <code>/public/regulators</code> to render them site-wide.
-        </p>
-      ) : null}
     </div>
   );
 }

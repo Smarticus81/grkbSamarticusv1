@@ -5,15 +5,15 @@
 
 import { useEffect, useState } from 'react';
 
-/* ── Animated obligation chain SVG ────────────────────────────────────── */
+/* ── Animated requirement chain SVG ───────────────────────────────────── */
 
 const CHAIN_NODES = [
   { label: 'ISO 13485 \u00A78.5.2' },
   { label: '21 CFR 820.100' },
   { label: 'EU MDR Annex IX' },
-  { label: 'Required evidence' },
+  { label: 'Required data' },
   { label: 'Agent output validation' },
-  { label: 'Audit trace' },
+  { label: 'Decision trail' },
 ];
 
 function ObligationPathwaySVG() {
@@ -51,7 +51,7 @@ function ObligationPathwaySVG() {
       })}
       {CHAIN_NODES.map((node, i) => {
         const y = startY + i * nodeSpacing;
-        const isVerified = node.label === 'Audit trace';
+        const isVerified = node.label === 'Decision trail';
         return (
           <g key={`node-${i}`}>
             <circle
@@ -150,13 +150,13 @@ function GapCard({ index, obligationId, citation, description }: {
 
 const TRACE_EVENTS = [
   { time: '00:00.000', actor: 'SandboxRunner', decision: 'Process started', hash: 'a3f8c1d2' },
-  { time: '00:00.012', actor: 'QualificationGate', decision: 'Qualification passed', hash: 'b7e2f401' },
-  { time: '00:00.089', actor: 'GraphClient', decision: 'Graph queried (14 obligations)', hash: 'c9d4a823' },
-  { time: '00:00.134', actor: 'EvidenceChecker', decision: 'Evidence checked', hash: 'd1f6b935' },
+  { time: '00:00.012', actor: 'QualificationGate', decision: 'Readiness check passed', hash: 'b7e2f401' },
+  { time: '00:00.089', actor: 'GraphClient', decision: 'Requirements checked (14 requirements)', hash: 'c9d4a823' },
+  { time: '00:00.134', actor: 'EvidenceChecker', decision: 'Required data checked', hash: 'd1f6b935' },
   { time: '00:01.247', actor: 'LLMAbstraction', decision: 'LLM response received', hash: 'e4a8c047' },
-  { time: '00:01.289', actor: 'StrictGate', decision: 'StrictGate passed', hash: 'f2b9d159' },
-  { time: '00:01.301', actor: 'ComplianceValidator', decision: 'Compliance check passed', hash: 'a5c1e261' },
-  { time: '00:01.310', actor: 'DecisionTraceService', decision: 'Trace sealed', hash: 'b8d2f373' },
+  { time: '00:01.289', actor: 'StrictGate', decision: 'Output check passed', hash: 'f2b9d159' },
+  { time: '00:01.301', actor: 'ComplianceValidator', decision: 'Validation check passed', hash: 'a5c1e261' },
+  { time: '00:01.310', actor: 'DecisionTraceService', decision: 'Decision trail sealed', hash: 'b8d2f373' },
 ];
 
 function TraceTimeline() {
@@ -232,7 +232,7 @@ export function DemoCapa() {
           Watch Smarticus ground a CAPA evaluation.
         </h1>
         <p style={{ fontSize: 17, color: 'var(--ink-3)', maxWidth: 640, lineHeight: 1.55, margin: 0 }}>
-          A generic CAPA draft goes in. A regulation-aware, evidence-checked, audit-ready output comes out.
+          A generic CAPA draft goes in. A regulation-aware, data-checked, audit-ready output comes out.
         </p>
       </Section>
 
@@ -260,7 +260,7 @@ Effectiveness: Will monitor field returns for 6 months.`}
 
       {/* Step 2: Smarticus detects missing obligations */}
       <Section>
-        <StepLabel number={2} label="Smarticus detects missing obligations" />
+        <StepLabel number={2} label="Smarticus detects missing requirements" />
         <div style={{ marginBottom: 28 }}>
           <DetectionSVG />
         </div>
@@ -287,7 +287,7 @@ Effectiveness: Will monitor field returns for 6 months.`}
             index={3}
             obligationId="ISO-14971-7.4"
             citation="ISO 14971 \u00A77.4"
-            description="No evidence of risk re-assessment per ISO 14971"
+            description="No required data for risk re-assessment per ISO 14971"
           />
         </div>
       </Section>
@@ -296,7 +296,7 @@ Effectiveness: Will monitor field returns for 6 months.`}
 
       {/* Step 3: Obligation pathway visualization */}
       <Section>
-        <StepLabel number={3} label="Obligation pathway visualization" />
+        <StepLabel number={3} label="Requirement pathway visualization" />
         <div style={{
           background: 'var(--paper-deep)',
           border: '1px solid var(--rule)',
@@ -311,12 +311,12 @@ Effectiveness: Will monitor field returns for 6 months.`}
 
       {/* Step 4: Evidence requirements */}
       <Section>
-        <StepLabel number={4} label="Evidence requirements" />
+        <StepLabel number={4} label="Required data" />
         <div style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-2)', overflow: 'hidden' }}>
           <table>
             <thead>
               <tr>
-                <th>Evidence Type</th>
+                <th>Required Data Type</th>
                 <th>Required By</th>
                 <th>Status</th>
               </tr>
@@ -362,7 +362,7 @@ ID: CAPA-2024-0847  |  Trace: #RG-4102
 2. Root Cause Investigation (ISO 13485 \u00A78.5.2(b), 21 CFR 820.100(a)(1))
    Methodology: 5-Why + Fishbone analysis
    Root cause: Material incompatibility between EPDM seal and cleaning agent residue.
-   Evidence: Material compatibility test report MTR-2024-0122.
+   Required data: Material compatibility test report MTR-2024-0122.
 
 3. Corrective Action (21 CFR 820.100(a)(2))
    Replace EPDM seal with medical-grade silicone (USP Class VI).
@@ -382,8 +382,8 @@ ID: CAPA-2024-0847  |  Trace: #RG-4102
    Technical documentation updated per STED structure.
    Design history file: DHF-2024-0031 rev 4.
 
-Citations: 6 obligations satisfied | 4 evidence records attached
-StrictGate: PASSED | Compliance score: 1.0`}
+Citations: 6 requirements satisfied | 4 required data records attached
+Output Check: PASSED | Validation score: 1.0`}
         </div>
       </Section>
 
@@ -391,7 +391,7 @@ StrictGate: PASSED | Compliance score: 1.0`}
 
       {/* Step 6: Sealed trace */}
       <Section>
-        <StepLabel number={6} label="Sealed trace" />
+        <StepLabel number={6} label="Sealed decision trail" />
         <div style={{
           background: 'var(--paper-deep)',
           border: '1px solid var(--rule)',
@@ -416,7 +416,7 @@ StrictGate: PASSED | Compliance score: 1.0`}
             lineHeight: 1.15,
           }}>
             This is not a chatbot.{' '}
-            <span style={{ color: 'var(--orange)' }}>This is regulatory infrastructure for AI agents.</span>
+            <span style={{ color: 'var(--orange)' }}>This is QMS infrastructure for AI-assisted regulated work.</span>
           </h2>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 32 }}>
             <a

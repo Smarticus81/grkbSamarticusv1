@@ -17,7 +17,7 @@ knowledge graph. Three go-to-market surfaces:
    validate, trace. This is the #1 priority.
 2. **Knowledge Graph API** — RESTful + GraphQL API for non-MCP integrations.
    Paid SaaS tier for enterprise agent platforms that need compliance grounding.
-3. **Agent Builder** (future) — A web UI where QARA professionals configure
+3. **Agent Builder** (future) — A web UI where QMS professionals configure
    grounded agents against the KG, export portable agent code, and build
    multi-agent process abstractions (e.g., PSUR generator, CAPA orchestrator).
 

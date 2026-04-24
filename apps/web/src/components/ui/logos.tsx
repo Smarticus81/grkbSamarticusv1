@@ -1,11 +1,15 @@
 ﻿/**
  * Smarticus / Thinkertons brand marks.
  *
- * Smarticus visual: a stylised navy "S" cradling two linked orange nodes —
- * the obligation graph held by the regulatory frame.
+ * Smarticus visual: an institutional requirements-grid seal. Outer rounded
+ * square = controlled process boundary. Three internal nodes = requirements,
+ * required data, review output. One burnt-orange verified node. Connecting
+ * paths form a requirements → data → output flow.
  *
- * Wordmark: lowercase "smarticus" with the apex of the "A" replaced by an
- * orange triangle that doubles as the "graph node" accent.
+ * Works at 16px, 32px, 96px. Works monochrome. Feels like regulatory
+ * infrastructure, not a startup toy.
+ *
+ * Wordmark: "Smarticus" with refined casing, orange verified-dot accent.
  *
  * Thinkertons visual: a minimalist "T" with a strong crossbar — appears only
  * on the landing page, in the by-Thinkertons lockup, and in the audit badge.
@@ -27,9 +31,14 @@ interface MarkProps {
 
 /* ────────────────────────────────────────────────────────────────────────
  * SmarticusMark
- * Navy "S" cradle (open at top-right and bottom-left) cradling two linked
- * orange nodes — a circle, an edge, a circle. Reads as "regulatory frame +
- * knowledge graph".
+ * Institutional requirements-grid seal:
+ * - Outer rounded square = controlled process boundary
+ * - Three internal nodes = requirements (top-left), required data (top-right),
+ *   review output (bottom-center)
+ * - One orange verified node (review output)
+ * - Connecting paths: requirement → data → output
+ * - Subtle broken symmetry = intelligence, not bureaucracy
+ * Works at 16px, 32px, 96px. Works monochrome.
  * ──────────────────────────────────────────────────────────────────────── */
 export function SmarticusMark({
   size = 28,
@@ -50,46 +59,40 @@ export function SmarticusMark({
       style={style}
       aria-hidden="true"
     >
-      {/*
-        Stylised "S" built from two mirrored hook arcs — matches the Smarticus
-        brand mark: a rounded upper hook opening to the right and a rounded
-        lower hook opening to the left, pinched at the centre where the
-        orange node link crosses.
-      */}
-      <path
-        d="M54 18 C 54 9, 44 6, 34 8 C 22 10, 14 18, 16 26 C 17.5 32, 24 33, 32 32"
+      {/* Outer rounded square — controlled process boundary */}
+      <rect
+        x="4" y="4" width="56" height="56" rx="8"
         stroke={color}
-        strokeWidth="4"
+        strokeWidth="2.4"
+        fill="none"
+      />
+      {/* Connecting paths: requirement → data, requirement → output, data → output */}
+      <line x1="20" y1="22" x2="44" y2="22" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="20" y1="22" x2="32" y2="44" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      <line x1="44" y1="22" x2="32" y2="44" stroke={color} strokeWidth="1.8" strokeLinecap="round" />
+      {/* Node: Requirements (top-left) */}
+      <circle cx="20" cy="22" r="4.5" fill={color} />
+      {/* Node: Required Data (top-right) */}
+      <circle cx="44" cy="22" r="4.5" fill={color} />
+      {/* Node: Review Output — verified (bottom-center, orange) */}
+      <circle cx="32" cy="44" r="5" fill={accentColor} />
+      {/* Small verification check inside orange node */}
+      <path
+        d="M29.5 44 L31 45.8 L34.5 42"
+        stroke={monochrome ? 'var(--paper)' : '#fff'}
+        strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
       />
-      <path
-        d="M10 46 C 10 55, 20 58, 30 56 C 42 54, 50 46, 48 38 C 46.5 32, 40 31, 32 32"
-        stroke={color}
-        strokeWidth="4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-      {/* Linked graph nodes — the obligation graph held inside the cradle. */}
-      <line
-        x1="18" y1="42" x2="46" y2="22"
-        stroke={accentColor}
-        strokeWidth="2.6"
-        strokeLinecap="round"
-      />
-      <circle cx="18" cy="42" r="4.6" fill={accentColor} />
-      <circle cx="46" cy="22" r="4.6" fill={accentColor} />
     </svg>
   );
 }
 
 /* ────────────────────────────────────────────────────────────────────────
  * SmarticusWordmark
- * Lowercase "smarticus" with the apex of the "A" replaced by an orange
- * triangle. Inter Tight 500, tight tracking. Optional REGULATORY
- * INTELLIGENCE. ENGINEERED. tagline.
+ * "Smarticus" in Inter Tight 500 with refined casing and a small orange
+ * verified-dot after the name. Clean, institutional, not playful.
  * ──────────────────────────────────────────────────────────────────────── */
 export function SmarticusWordmark({
   size = 22,
@@ -150,35 +153,24 @@ export function SmarticusWordmark({
             fontFamily: 'var(--sans)',
             fontSize: size,
             fontWeight: 500,
-            letterSpacing: '-0.04em',
-            textTransform: 'lowercase',
+            letterSpacing: '-0.03em',
             color: inkColor,
             display: 'inline-flex',
             alignItems: 'baseline',
+            gap: Math.round(size * 0.2),
           }}
         >
-          {/* "sm" */}
-          <span>sm</span>
-          {/* "a" with orange triangle apex replacement */}
-          <span style={{ position: 'relative', display: 'inline-block' }}>
-            a
-            <svg
-              viewBox="0 0 12 8"
-              width={size * 0.42}
-              height={size * 0.28}
-              style={{
-                position: 'absolute',
-                left: '50%',
-                top: `-${size * 0.18}px`,
-                transform: 'translateX(-50%)',
-              }}
-              aria-hidden="true"
-            >
-              <path d="M6 0 L12 8 L0 8 Z" fill={accentColor} />
-            </svg>
-          </span>
-          {/* "rticus" */}
-          <span>rticus</span>
+          <span>Smarticus</span>
+          {/* Verified dot — the brand accent */}
+          <svg
+            width={Math.max(4, size * 0.22)}
+            height={Math.max(4, size * 0.22)}
+            viewBox="0 0 8 8"
+            style={{ flexShrink: 0, marginBottom: Math.round(size * 0.08) }}
+            aria-hidden="true"
+          >
+            <circle cx="4" cy="4" r="4" fill={accentColor} />
+          </svg>
         </span>
         {resolvedTagline && (
           <span

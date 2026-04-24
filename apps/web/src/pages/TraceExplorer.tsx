@@ -29,12 +29,12 @@ interface Props {
 /* ─── Friendly event type labels ─── */
 function friendlyEvent(eventType: string): { label: string; color: string } {
   const lower = eventType.toLowerCase();
-  if (lower.includes('qualif') || lower.includes('gate')) return { label: 'Qualification check', color: '#0E8CC2' };
-  if (lower.includes('valid') || lower.includes('compliance')) return { label: 'Compliance validation', color: '#8b5cf6' };
-  if (lower.includes('decision') || lower.includes('trace')) return { label: 'Decision recorded', color: '#90CB62' };
+  if (lower.includes('qualif') || lower.includes('gate')) return { label: 'Readiness check passed', color: '#0E8CC2' };
+  if (lower.includes('valid') || lower.includes('compliance')) return { label: 'Validation check', color: '#8b5cf6' };
+  if (lower.includes('decision') || lower.includes('trace')) return { label: 'Decision trail recorded', color: '#90CB62' };
   if (lower.includes('start') || lower.includes('init')) return { label: 'Process started', color: '#5CC3C9' };
   if (lower.includes('complete') || lower.includes('end')) return { label: 'Process completed', color: '#6FA646' };
-  if (lower.includes('reject') || lower.includes('fail')) return { label: 'Requirement not met', color: '#F96746' };
+  if (lower.includes('reject') || lower.includes('fail')) return { label: 'Requirement not satisfied', color: '#F96746' };
   if (lower.includes('correct') || lower.includes('retry')) return { label: 'Correction applied', color: '#FFA901' };
   return { label: eventType, color: 'var(--text-tertiary)' };
 }
@@ -206,7 +206,7 @@ export function TraceExplorer({ initialId }: Props) {
     <div style={{ padding: '32px 40px', position: 'relative', minHeight: '100vh' }}>
       {/* Header section */}
       <div style={{ marginBottom: 40 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Decision Traces</h1>
+        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Decision Trails</h1>
         <p style={{ color: 'var(--text-tertiary)', fontSize: 14, margin: 0, maxWidth: 680, lineHeight: 1.6 }}>
           Every time Smarticus generates a document, it records what was decided, why, and which regulation supports it. This is the audit trail you hand to your notified body or FDA auditor.
         </p>
@@ -301,7 +301,7 @@ export function TraceExplorer({ initialId }: Props) {
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
           <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-bright)', boxShadow: '0 0 8px rgba(14,140,194,0.5)' }} />
-          Example — This is the audit trail from an AI-generated PSUR for a Class IIb cardiac device.
+          Example — This is the decision trail from an AI-generated PSUR for a Class IIb cardiac device.
         </div>
       )}
 
@@ -334,7 +334,7 @@ export function TraceExplorer({ initialId }: Props) {
               <span style={{
                 fontSize: 14, fontWeight: 700, color: 'var(--text-primary)',
               }}>
-                {activeVerification.valid ? '✓ Trace Verified' : '✗ Verification Failed'}
+                {activeVerification.valid ? '✓ Decision Trail Verified' : '✗ Verification Failed'}
               </span>
             </div>
             <span style={{
@@ -345,7 +345,7 @@ export function TraceExplorer({ initialId }: Props) {
             </span>
             {!activeVerification.valid && activeVerification.brokenAt !== undefined && (
               <div style={{ marginTop: 8, fontSize: 11, color: 'var(--danger)' }}>
-                Trace breaks at entry #{activeVerification.brokenAt}
+                Decision chain breaks at entry #{activeVerification.brokenAt}
               </div>
             )}
           </div>
@@ -561,7 +561,7 @@ export function TraceExplorer({ initialId }: Props) {
           <FloatingNodes />
 
           <div style={{ fontSize: 18, color: 'var(--text-primary)', marginBottom: 8, fontWeight: 700, marginTop: 16 }}>
-            {pid && verification === null ? 'No trace found' : 'No trace loaded'}
+            {pid && verification === null ? 'No decision trail found' : 'No decision trail loaded'}
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 28, lineHeight: 1.6 }}>
             Enter a document ID above to load its audit trail, or view an example to see what Smarticus records.
@@ -583,7 +583,7 @@ export function TraceExplorer({ initialId }: Props) {
               e.currentTarget.style.borderColor = 'var(--border-default)';
             }}
           >
-            View example trace
+            View example decision trail
           </button>
         </div>
       )}

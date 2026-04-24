@@ -17,28 +17,28 @@ interface QuickAction {
 
 const QUICK_ACTIONS: QuickAction[] = [
   {
-    title: 'PSUR Compiler',
+    title: 'PSUR Draft Package',
     description: 'Draft a PSUR with MDCG 2022-21 structure',
     badges: ['EU MDR', 'MDCG 2022-21'],
     risk: 'high',
     href: '/app/builder?preset=psur',
   },
   {
-    title: 'CAPA Evaluator',
-    description: 'Check a CAPA against ISO 13485 + 21 CFR 820',
+    title: 'CAPA File Evaluator',
+    description: 'Check a CAPA against ISO 13485 + 21 CFR 820 requirements',
     badges: ['ISO 13485', '21 CFR 820'],
     risk: 'high',
     href: '/app/builder?preset=capa',
   },
   {
-    title: 'Complaint Triage',
+    title: 'Complaint Review Assistant',
     description: 'Triage a complaint with regulatory timelines',
     badges: ['EU MDR', 'ISO 13485', '21 CFR 820'],
     risk: 'medium',
     href: '/app/builder?preset=complaint',
   },
   {
-    title: 'IMDRF Coding',
+    title: 'IMDRF Coding Assistant',
     description: 'Auto-code an adverse event with IMDRF annexes',
     badges: ['IMDRF'],
     risk: 'low',
@@ -225,7 +225,7 @@ export function CommandCenter() {
             letterSpacing: '-0.02em',
           }}
         >
-          Your regulatory graph is live
+          Your requirements engine is live
         </div>
 
         <div
@@ -237,8 +237,8 @@ export function CommandCenter() {
           }}
         >
           <StatBlock value={regCount} label="Regulations" />
-          <StatBlock value={obligationCount} label="Obligations" />
-          <StatBlock value={evidenceCount} label="Evidence Types" />
+          <StatBlock value={obligationCount} label="Requirements" />
+          <StatBlock value={evidenceCount} label="Required Data Types" />
         </div>
 
         <div
@@ -264,15 +264,15 @@ export function CommandCenter() {
           }}
         >
           <button className="btn btn-orange" onClick={() => navigate('/app/builder')}>
-            Build agent
+            Build QMS tool
           </button>
           <button className="btn btn-ghost" onClick={() => navigate('/app/sandbox')}>
             Run sandbox
           </button>
-          <button className="btn btn-ghost" onClick={() => navigate('/app/builder?step=guardrails')}>
-            Validate output
+          <button className="btn btn-ghost" onClick={() => navigate('/app/builder?step=review-controls')}>
+            Check output
           </button>
-          <button className="btn btn-ghost" onClick={() => navigate('/app/api-access')}>
+          <button className="btn btn-ghost" onClick={() => navigate('/app/connect')}>
             Connect MCP
           </button>
         </div>
@@ -339,7 +339,7 @@ export function CommandCenter() {
           className="eyebrow"
           style={{ display: 'block', marginBottom: 16, color: 'var(--ink-2)' }}
         >
-          GRAPH COVERAGE
+          REQUIREMENT COVERAGE
         </span>
         <div
           style={{
