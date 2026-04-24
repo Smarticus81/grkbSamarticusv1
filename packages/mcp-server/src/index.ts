@@ -24,11 +24,17 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import express from 'express';
+import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GraphClient } from './services/graph-client.js';
+import { DBClient } from './services/db-client.js';
+import { createMcpAuth, type McpAuthRequest } from './middleware/auth.js';
+import { TOOL_SCOPE_MAP, checkScope } from './auth/tool-scopes.js';
+import { RateLimiter } from './middleware/rate-limit.js';
+import { createUsageLogger } from './middleware/usage-logger.js';
 
 // ---- Config ----
 
@@ -502,10 +508,94 @@ async function runHTTP(): Promise<void> {
   const app = express();
   app.use(express.json());
 
-  // For stateless JSON mode, each request needs a fresh McpServer+transport pair
-  // since the McpServer can only connect to one transport
-  app.post('/mcp', async (req, res) => {
+  // ---- Enterprise infra (only when DATABASE_URL is set) ----
+
+  const databaseUrl = process.env.DATABASE_URL;
+  const enterpriseMode = !!databaseUrl;
+  let dbClient: DBClient | null = null;
+  let rateLimiter: RateLimiter | null = null;
+  let logUsage: ReturnType<typeof createUsageLogger> | null = null;
+
+  if (enterpriseMode) {
+    dbClient = new DBClient(databaseUrl);
+    rateLimiter = new RateLimiter();
+    logUsage = createUsageLogger(dbClient);
+    console.error('Enterprise mode: auth, rate limiting, and usage logging enabled');
+  } else {
+    console.error('Open mode: no auth (set DATABASE_URL to enable enterprise features)');
+  }
+
+  // Max response size (bytes) — configurable via env
+  const maxResponseBytes = parseInt(process.env.MCP_MAX_RESPONSE_BYTES || '0', 10);
+
+  // ---- Request ID + Trace ID middleware (all routes) ----
+
+  app.use((req, res, next) => {
+    const requestId = req.header('x-request-id') ?? randomUUID();
+    const traceId = req.header('x-trace-id') ?? randomUUID();
+    res.setHeader('x-request-id', requestId);
+    res.setHeader('x-trace-id', traceId);
+    next();
+  });
+
+  // ---- Auth middleware (enterprise only, /mcp route) ----
+
+  if (enterpriseMode && dbClient) {
+    const authMiddleware = createMcpAuth(dbClient);
+    app.post('/mcp', authMiddleware as express.RequestHandler);
+  }
+
+  // ---- Rate limiting middleware (enterprise only, /mcp route) ----
+
+  if (enterpriseMode && rateLimiter) {
+    const rl = rateLimiter;
+    app.post('/mcp', ((req: McpAuthRequest, res: express.Response, next: express.NextFunction) => {
+      if (!req.apiKey) return next();
+
+      const result = rl.check(req.apiKey.tenantId, req.apiKey.rateLimit);
+      res.setHeader('x-ratelimit-limit', String(req.apiKey.rateLimit));
+      res.setHeader('x-ratelimit-remaining', String(result.remaining));
+
+      if (!result.allowed) {
+        res.setHeader('retry-after', String(Math.ceil((result.retryAfterMs ?? 60000) / 1000)));
+        res.status(429).json({
+          error: 'Rate limit exceeded',
+          retryAfterMs: result.retryAfterMs,
+        });
+        return;
+      }
+
+      // Consume token now that we're proceeding
+      rl.consume(req.apiKey.tenantId, req.apiKey.rateLimit);
+      next();
+    }) as express.RequestHandler);
+  }
+
+  // ---- MCP handler ----
+
+  app.post('/mcp', async (req: express.Request, res: express.Response) => {
+    const mcpReq = req as McpAuthRequest;
+    const requestStart = Date.now();
+
     try {
+      // In enterprise mode, check scopes by inspecting the JSON-RPC body
+      if (enterpriseMode && mcpReq.apiKey) {
+        const body = req.body;
+        // MCP JSON-RPC: body.method === 'tools/call' and body.params.name is the tool name
+        if (body && body.method === 'tools/call' && body.params?.name) {
+          const toolName = body.params.name as string;
+          const requiredScope = TOOL_SCOPE_MAP[toolName];
+          if (requiredScope && !checkScope(requiredScope, mcpReq.apiKey.scopes)) {
+            res.status(403).json({
+              error: 'Insufficient scope',
+              required: requiredScope,
+              granted: mcpReq.apiKey.scopes,
+            });
+            return;
+          }
+        }
+      }
+
       const perRequestServer = createMcpServer();
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
@@ -513,20 +603,68 @@ async function runHTTP(): Promise<void> {
       });
       res.on('close', () => transport.close());
       await perRequestServer.connect(transport);
+
+      // If max response size is configured, intercept the response body
+      if (maxResponseBytes > 0) {
+        const originalJson = res.json.bind(res);
+        res.json = function (body: unknown) {
+          const serialized = JSON.stringify(body);
+          if (serialized && serialized.length > maxResponseBytes) {
+            return originalJson(JSON.parse(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                id: (body as Record<string, unknown>)?.id,
+                error: {
+                  code: -32000,
+                  message: 'Response truncated — exceeded MCP_MAX_RESPONSE_BYTES',
+                  data: { maxBytes: maxResponseBytes, actualBytes: serialized.length },
+                },
+              }),
+            ));
+          }
+          return originalJson(body);
+        };
+      }
+
       await transport.handleRequest(req, res, req.body);
+
+      // Log usage (enterprise, fire-and-forget)
+      if (logUsage && mcpReq.apiKey) {
+        const body = req.body;
+        const toolName =
+          body?.method === 'tools/call' ? (body.params?.name ?? 'unknown') : (body?.method ?? 'unknown');
+        const latencyMs = Date.now() - requestStart;
+        logUsage(mcpReq, toolName, latencyMs, 'ok').catch(() => {});
+      }
     } catch (error) {
       console.error('MCP request error:', error);
+
+      // Log usage failure (enterprise, fire-and-forget)
+      if (logUsage && mcpReq.apiKey) {
+        const body = req.body;
+        const toolName =
+          body?.method === 'tools/call' ? (body.params?.name ?? 'unknown') : (body?.method ?? 'unknown');
+        const latencyMs = Date.now() - requestStart;
+        logUsage(mcpReq, toolName, latencyMs, 'error').catch(() => {});
+      }
+
       if (!res.headersSent) {
         res.status(500).json({ error: 'Internal server error' });
       }
     }
   });
 
-  // Health check
+  // ---- Health check (no auth required) ----
+
   app.get('/health', async (_req, res) => {
     try {
       const stats = await graph.getStats();
-      res.json({ status: 'healthy', obligations: stats.obligationCount, jurisdictions: stats.jurisdictions });
+      res.json({
+        status: 'healthy',
+        mode: enterpriseMode ? 'enterprise' : 'open',
+        obligations: stats.obligationCount,
+        jurisdictions: stats.jurisdictions,
+      });
     } catch {
       res.status(503).json({ status: 'unhealthy', error: 'Cannot connect to Neo4j' });
     }
@@ -536,7 +674,15 @@ async function runHTTP(): Promise<void> {
   app.listen(port, () => {
     console.error(`Regulatory Ground MCP server running on http://localhost:${port}/mcp`);
     console.error(`Health check: http://localhost:${port}/health`);
+    console.error(`Mode: ${enterpriseMode ? 'enterprise (auth + rate limiting + usage logging)' : 'open (no auth)'}`);
   });
+
+  // Graceful shutdown for DB client
+  const shutdownDB = async () => {
+    if (dbClient) await dbClient.close();
+  };
+  process.on('SIGINT', shutdownDB);
+  process.on('SIGTERM', shutdownDB);
 }
 
 // ---- Main ----

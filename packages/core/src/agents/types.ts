@@ -1,6 +1,7 @@
 import type { ObligationNode, ConstraintNode } from '../graph/types.js';
 import type { TraceContext } from '../traceability/types.js';
 import type { QualificationResult, ComplianceResult } from '../guardrails/types.js';
+import type { ValidationReport } from '../guardrails/validators/types.js';
 import type { LLMResponse } from '../llm/types.js';
 
 export interface GroundedAgentConfig {
@@ -37,6 +38,7 @@ export interface GroundedAgentResult<TOutput> {
   confidence?: number;
   qualification?: QualificationResult;
   compliance?: ComplianceResult;
+  pipelineReport?: ValidationReport;
   metrics?: GroundedAgentMetricsSnapshot;
   traceId?: string;
   warnings?: string[];

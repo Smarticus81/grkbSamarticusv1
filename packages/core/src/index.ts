@@ -5,7 +5,8 @@ export const CORE_VERSION = '0.1.0';
 // db
 export * as schema from './db/schema.js';
 export { getDB, getNeo4j, closeAll, type RegGroundDB, type DBConfig } from './db/connection.js';
-export { eq, desc } from 'drizzle-orm';
+export { withTenant } from './db/tenant.js';
+export { eq, desc, and } from 'drizzle-orm';
 
 // graph
 export * from './graph/types.js';
@@ -30,6 +31,14 @@ export { BOUNDARY_POLICIES, getPolicy, listPolicies } from './guardrails/Boundar
 export { StrictGate } from './guardrails/StrictGate.js';
 export { QualificationGate } from './guardrails/QualificationGate.js';
 export { ComplianceValidator } from './guardrails/ComplianceValidator.js';
+export { CompliancePipeline } from './guardrails/CompliancePipeline.js';
+export type { Validator, ValidationFinding, ValidationReport } from './guardrails/validators/types.js';
+export { ValidationFindingSchema, ValidationReportSchema } from './guardrails/validators/types.js';
+export { ClaimCoverageValidator } from './guardrails/validators/ClaimCoverageValidator.js';
+export { EvidenceBackedComplianceValidator } from './guardrails/validators/EvidenceBackedComplianceValidator.js';
+export { ConstraintEvaluator } from './guardrails/validators/ConstraintEvaluator.js';
+export { CitationVerifier } from './guardrails/validators/CitationVerifier.js';
+export { RegulatoryContradictionDetector } from './guardrails/validators/RegulatoryContradictionDetector.js';
 
 // llm
 export * from './llm/types.js';
@@ -88,6 +97,9 @@ export { ProcessInstanceState } from './process/ProcessInstance.js';
 export { HITLGate } from './process/HITLGate.js';
 export { ProcessValidator } from './process/ProcessValidator.js';
 
+// auth
+export { VALID_SCOPES, ScopeSchema, type Scope } from './auth/scopes.js';
+
 // harness
 export * from './harness/types.js';
 export { TestHarness, InMemoryTraceService } from './harness/TestHarness.js';
@@ -96,3 +108,6 @@ export { MockLLM } from './harness/MockLLM.js';
 export { TraceAssertions } from './harness/TraceAssertions.js';
 export { ComplianceAssertions } from './harness/ComplianceAssertions.js';
 export { HarnessRunner, type ScenarioFile, type AgentLookup } from './harness/HarnessRunner.js';
+
+// observability
+export * from './observability/index.js';

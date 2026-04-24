@@ -20,7 +20,8 @@ export type TraceEventType =
   | 'HITL_GATE_APPROVED'
   | 'HITL_GATE_REJECTED'
   | 'COMPLIANCE_CHECK_PASSED'
-  | 'COMPLIANCE_CHECK_FAILED';
+  | 'COMPLIANCE_CHECK_FAILED'
+  | 'COMPLIANCE_PIPELINE_COMPLETED';
 
 export interface TraceContext {
   processInstanceId: string;

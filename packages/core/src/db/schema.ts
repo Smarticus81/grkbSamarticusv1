@@ -11,6 +11,7 @@ import {
   pgEnum,
   index,
   uniqueIndex,
+  primaryKey,
 } from 'drizzle-orm/pg-core';
 
 // === Enums ===
@@ -67,6 +68,65 @@ export const qualificationStatusEnum = pgEnum('qualification_status', [
   'BLOCKED',
 ]);
 
+export const tenantPlanEnum = pgEnum('tenant_plan', ['free', 'starter', 'professional', 'enterprise']);
+export const memberRoleEnum = pgEnum('member_role', ['owner', 'admin', 'member', 'viewer']);
+
+// === Tenant identity tables ===
+
+export const tenants = pgTable('tenants', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  clerkOrgId: varchar('clerk_org_id', { length: 128 }).unique(),
+  name: text('name').notNull(),
+  plan: tenantPlanEnum('plan').default('free').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
+});
+
+export const users = pgTable('users', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  clerkUserId: varchar('clerk_user_id', { length: 128 }).unique(),
+  email: varchar('email', { length: 256 }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const tenantMemberships = pgTable('tenant_memberships', {
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  userId: uuid('user_id').references(() => users.id).notNull(),
+  role: memberRoleEnum('role').default('member').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.tenantId, t.userId] }),
+}));
+
+export const usageEvents = pgTable('usage_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+  apiKeyId: uuid('api_key_id'),
+  toolName: varchar('tool_name', { length: 128 }).notNull(),
+  latencyMs: integer('latency_ms'),
+  status: varchar('status', { length: 32 }).notNull(),
+  tokenCountIn: integer('token_count_in'),
+  tokenCountOut: integer('token_count_out'),
+  costEstimate: varchar('cost_estimate', { length: 32 }),
+  requestId: varchar('request_id', { length: 128 }),
+  occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  tenantTimeIdx: index('usage_events_tenant_time_idx').on(t.tenantId, t.occurredAt),
+}));
+
+export const tenantQuotas = pgTable('tenant_quotas', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => tenants.id).notNull(),
+  monthlyRequestLimit: integer('monthly_request_limit').default(10000).notNull(),
+  monthlyTokenLimit: integer('monthly_token_limit').default(1000000).notNull(),
+  currentMonthRequests: integer('current_month_requests').default(0).notNull(),
+  currentMonthTokens: integer('current_month_tokens').default(0).notNull(),
+  periodStart: timestamp('period_start', { withTimezone: true }).notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  tenantPeriodIdx: uniqueIndex('tenant_quotas_tenant_period_idx').on(t.tenantId, t.periodStart),
+}));
+
 // === Tables ===
 export const workspaces = pgTable('workspaces', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -105,6 +165,7 @@ export const processInstances = pgTable(
     processDefinitionId: uuid('process_definition_id')
       .references(() => processDefinitions.id)
       .notNull(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
     status: processStatusEnum('status').default('pending').notNull(),
     currentStepId: varchar('current_step_id', { length: 128 }),
     input: jsonb('input').$type<Record<string, unknown>>().default({}).notNull(),
@@ -115,6 +176,7 @@ export const processInstances = pgTable(
   (t) => ({
     wsIdx: index('process_instances_ws_idx').on(t.workspaceId),
     statusIdx: index('process_instances_status_idx').on(t.status),
+    tenantStatusIdx: index('process_instances_tenant_status_idx').on(t.tenantId, t.status),
   }),
 );
 
@@ -150,6 +212,7 @@ export const decisionTraceEntries = pgTable(
     processInstanceId: uuid('process_instance_id')
       .references(() => processInstances.id)
       .notNull(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
     traceId: varchar('trace_id', { length: 128 }).notNull(),
     sequenceNumber: integer('sequence_number').notNull(),
     previousHash: varchar('previous_hash', { length: 128 }).notNull(),
@@ -180,6 +243,7 @@ export const decisionTraceEntries = pgTable(
   (t) => ({
     traceSeqIdx: uniqueIndex('decision_trace_seq_idx').on(t.traceId, t.sequenceNumber),
     instIdx: index('decision_trace_inst_idx').on(t.processInstanceId),
+    tenantTimeIdx: index('decision_trace_tenant_time_idx').on(t.tenantId, t.createdAt),
   }),
 );
 
@@ -188,6 +252,7 @@ export const contentTraces = pgTable('content_traces', {
   processInstanceId: uuid('process_instance_id')
     .references(() => processInstances.id)
     .notNull(),
+  tenantId: varchar('tenant_id', { length: 128 }).notNull(),
   stepId: varchar('step_id', { length: 128 }).notNull(),
   contentType: varchar('content_type', { length: 64 }).notNull(),
   contentId: varchar('content_id', { length: 128 }).notNull(),
@@ -215,6 +280,7 @@ export const evidenceAtoms = pgTable(
     workspaceId: uuid('workspace_id')
       .references(() => workspaces.id)
       .notNull(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
     evidenceType: varchar('evidence_type', { length: 64 }).notNull(),
     sourceSystem: varchar('source_system', { length: 128 }).notNull(),
     extractDate: timestamp('extract_date', { withTimezone: true }).notNull(),
@@ -236,6 +302,7 @@ export const evidenceAtoms = pgTable(
 
 export const agentRegistrations = pgTable('agent_registrations', {
   id: serial('id').primaryKey(),
+  tenantId: varchar('tenant_id', { length: 128 }),
   agentType: varchar('agent_type', { length: 128 }).notNull(),
   name: text('name').notNull(),
   description: text('description'),
@@ -251,6 +318,7 @@ export const hitlGates = pgTable('hitl_gates', {
   processInstanceId: uuid('process_instance_id')
     .references(() => processInstances.id)
     .notNull(),
+  tenantId: varchar('tenant_id', { length: 128 }).notNull(),
   stepId: varchar('step_id', { length: 128 }).notNull(),
   gateId: varchar('gate_id', { length: 128 }).notNull(),
   status: hitlStatusEnum('status').default('pending').notNull(),
@@ -267,6 +335,7 @@ export const qualificationReports = pgTable('qualification_reports', {
   processInstanceId: uuid('process_instance_id')
     .references(() => processInstances.id)
     .notNull(),
+  tenantId: varchar('tenant_id', { length: 128 }).notNull(),
   processDefinitionId: uuid('process_definition_id')
     .references(() => processDefinitions.id)
     .notNull(),
@@ -289,6 +358,7 @@ export const workspaceFiles = pgTable(
     workspaceId: uuid('workspace_id')
       .references(() => workspaces.id)
       .notNull(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
     fileId: varchar('file_id', { length: 128 }).notNull(),
     name: varchar('name', { length: 256 }).notNull(),
     mimeType: varchar('mime_type', { length: 128 }).notNull(),
@@ -310,6 +380,7 @@ export const skills = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: varchar('name', { length: 128 }).notNull(),
+    tenantId: varchar('tenant_id', { length: 128 }),
     description: text('description').notNull(),
     tags: jsonb('tags').$type<string[]>().default([]).notNull(),
     author: varchar('author', { length: 128 }).notNull(),
@@ -318,7 +389,7 @@ export const skills = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => ({
-    nameIdx: uniqueIndex('skills_name_idx').on(t.name),
+    nameTenantIdx: uniqueIndex('skills_name_tenant_idx').on(t.name, t.tenantId),
   }),
 );
 
@@ -329,6 +400,7 @@ export const skillVersions = pgTable(
     skillId: uuid('skill_id')
       .references(() => skills.id, { onDelete: 'cascade' })
       .notNull(),
+    tenantId: varchar('tenant_id', { length: 128 }),
     versionTag: varchar('version_tag', { length: 32 }).notNull(),
     definition: jsonb('definition')
       .$type<{ triggers: string[]; instructions: string; schema?: Record<string, unknown> }>()
@@ -348,6 +420,7 @@ export const agentConfigs = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: varchar('name', { length: 128 }).notNull(),
+    tenantId: varchar('tenant_id', { length: 128 }),
     description: text('description').notNull(),
     version: varchar('version', { length: 32 }).default('1.0.0').notNull(),
     task: varchar('task', { length: 128 }).notNull(),
@@ -374,6 +447,8 @@ export const apiKeys = pgTable(
   'api_keys',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+    createdBy: uuid('created_by'),
     name: varchar('name', { length: 128 }).notNull(),
     keyHash: varchar('key_hash', { length: 128 }).notNull(),
     keyPrefix: varchar('key_prefix', { length: 12 }).notNull(),
@@ -389,6 +464,8 @@ export const apiKeys = pgTable(
   (t) => ({
     keyHashIdx: uniqueIndex('api_keys_key_hash_idx').on(t.keyHash),
     prefixIdx: index('api_keys_prefix_idx').on(t.keyPrefix),
+    tenantActiveIdx: index('api_keys_tenant_active_idx').on(t.tenantId, t.active),
+    tenantNameIdx: uniqueIndex('api_keys_tenant_name_idx').on(t.tenantId, t.name),
   }),
 );
 
@@ -414,3 +491,13 @@ export type SkillVersionRow = typeof skillVersions.$inferSelect;
 export type NewSkillVersion = typeof skillVersions.$inferInsert;
 export type ApiKeyRow = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
+export type TenantRow = typeof tenants.$inferSelect;
+export type NewTenant = typeof tenants.$inferInsert;
+export type UserRow = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+export type TenantMembershipRow = typeof tenantMemberships.$inferSelect;
+export type NewTenantMembership = typeof tenantMemberships.$inferInsert;
+export type UsageEventRow = typeof usageEvents.$inferSelect;
+export type NewUsageEvent = typeof usageEvents.$inferInsert;
+export type TenantQuotaRow = typeof tenantQuotas.$inferSelect;
+export type NewTenantQuota = typeof tenantQuotas.$inferInsert;

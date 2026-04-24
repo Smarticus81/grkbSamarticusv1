@@ -8,13 +8,18 @@ export interface QualificationInput {
 }
 
 export interface QualificationResult {
-  status: 'QUALIFIED' | 'BLOCKED';
+  status: 'QUALIFIED' | 'QUALIFIED_WITH_WARNINGS' | 'NEEDS_HUMAN_REVIEW' | 'BLOCKED' | 'OUT_OF_SCOPE';
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  coverageScore: number; // 0..1
   mandatoryTotal: number;
   mandatoryCovered: number;
   missingObligations: string[];
   missingEvidence: string[];
+  unsatisfiedConstraints: string[];
   constraints: ConstraintNode[];
   blockingErrors: string[];
+  recommendedNextActions: string[];
+  canProceedWithHumanApproval: boolean;
 }
 
 export interface ComplianceContext {

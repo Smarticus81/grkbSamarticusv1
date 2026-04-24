@@ -1,24 +1,34 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation } from 'wouter';
+import { SignedIn, SignedOut, RedirectToSignIn, OrganizationSwitcher, UserButton } from '@clerk/clerk-react';
 import { queryClient } from './lib/queryClient.js';
 import { LandingPage } from './pages/LandingPage.js';
-import { Dashboard } from './pages/Dashboard.js';
 import { TraceExplorer } from './pages/TraceExplorer.js';
 import { RegulationManager } from './pages/RegulationManager.js';
 import { ApiAccess } from './pages/ApiAccess.js';
 import { Sandbox } from './pages/Sandbox.js';
+import { CommandCenter } from './pages/CommandCenter.js';
+import { Builder } from './pages/Builder.js';
+import { DemoCapa } from './pages/DemoCapa.js';
 import { ThemeToggle } from './components/ui/ThemeToggle.js';
 import { RegulatorCompactStrip } from './components/ui/RegulatorAssets.js';
 import { SmarticusWordmark } from './components/ui/logos.js';
 import { REG_COUNT, OBLIGATION_COUNT } from './lib/coverage.js';
 
 const NAV: { href: string; label: string; n: string }[] = [
-  { href: '/app',              label: 'Overview',     n: '01' },
-  { href: '/app/sandbox',      label: 'Sandbox',      n: '02' },
-  { href: '/app/regulations',  label: 'Regulations',  n: '03' },
-  { href: '/app/traces',       label: 'Traces',       n: '04' },
-  { href: '/app/api-access',   label: 'Connect',      n: '05' },
+  { href: '/app',              label: 'Command',    n: '01' },
+  { href: '/app/builder',     label: 'Builder',    n: '02' },
+  { href: '/app/sandbox',     label: 'Sandbox',    n: '03' },
+  { href: '/app/graph',       label: 'Graph',      n: '04' },
+  { href: '/app/traces',      label: 'Traces',     n: '05' },
+  { href: '/app/api-access',  label: 'Connect',    n: '06' },
 ];
+
+/**
+ * Detect whether Clerk is available (ClerkProvider is mounted).
+ * We check by trying to call useAuth — if it throws, Clerk is not present.
+ */
+const clerkAvailable = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 function NavLink({ href, label, n }: { href: string; label: string; n: string }) {
   const [location] = useLocation();
@@ -72,6 +82,80 @@ function NavLink({ href, label, n }: { href: string; label: string; n: string })
   );
 }
 
+function SidebarAuthControls() {
+  if (!clerkAvailable) return null;
+  return (
+    <div
+      style={{
+        padding: '12px 14px',
+        borderTop: '1px solid var(--rule)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+      }}
+    >
+      <OrganizationSwitcher
+        hidePersonal
+        appearance={{
+          elements: {
+            rootBox: { width: '100%' },
+            organizationSwitcherTrigger: {
+              width: '100%',
+              justifyContent: 'space-between',
+              fontSize: '12px',
+            },
+          },
+        }}
+      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <UserButton
+          appearance={{
+            elements: {
+              avatarBox: { width: 28, height: 28 },
+            },
+          }}
+        />
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
+          Account
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function TopbarAuthControls() {
+  if (!clerkAvailable) return null;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '8px 16px',
+        borderBottom: '1px solid var(--rule)',
+        justifyContent: 'flex-end',
+        background: 'var(--paper)',
+      }}
+    >
+      <OrganizationSwitcher
+        hidePersonal
+        appearance={{
+          elements: {
+            organizationSwitcherTrigger: { fontSize: '12px' },
+          },
+        }}
+      />
+      <UserButton
+        appearance={{
+          elements: {
+            avatarBox: { width: 28, height: 28 },
+          },
+        }}
+      />
+    </div>
+  );
+}
+
 function AppShell() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--paper)' }}>
@@ -111,6 +195,8 @@ function AppShell() {
 
         <div style={{ flex: 1 }} />
 
+        <SidebarAuthControls />
+
         <div
           style={{
             margin: '0 12px 12px',
@@ -142,18 +228,43 @@ function AppShell() {
         </div>
       </nav>
 
-      <main style={{ flex: 1, overflow: 'auto', background: 'var(--paper)', minHeight: '100vh' }}>
-        <Switch>
-          <Route path="/app/sandbox">{() => <Sandbox />}</Route>
-          <Route path="/app/sandbox/:taskId">{(params) => <Sandbox initialTaskId={params.taskId} />}</Route>
-          <Route path="/app/regulations" component={RegulationManager} />
-          <Route path="/app/traces/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
-          <Route path="/app/traces">{() => <TraceExplorer />}</Route>
-          <Route path="/app/api-access" component={ApiAccess} />
-          <Route><Dashboard /></Route>
-        </Switch>
-      </main>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <TopbarAuthControls />
+        <main style={{ flex: 1, overflow: 'auto', background: 'var(--paper)' }}>
+          <Switch>
+            <Route path="/app/builder" component={Builder} />
+            <Route path="/app/sandbox">{() => <Sandbox />}</Route>
+            <Route path="/app/sandbox/:taskId">{(params) => <Sandbox initialTaskId={params.taskId} />}</Route>
+            <Route path="/app/graph" component={RegulationManager} />
+            <Route path="/app/traces/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
+            <Route path="/app/traces">{() => <TraceExplorer />}</Route>
+            <Route path="/app/api-access" component={ApiAccess} />
+            <Route path="/app/demo/capa" component={DemoCapa} />
+            <Route><CommandCenter /></Route>
+          </Switch>
+        </main>
+      </div>
     </div>
+  );
+}
+
+/**
+ * Protected wrapper: when Clerk is configured, requires sign-in.
+ * When Clerk is not configured (dev without key), renders AppShell directly.
+ */
+function ProtectedAppShell() {
+  if (!clerkAvailable) {
+    return <AppShell />;
+  }
+  return (
+    <>
+      <SignedIn>
+        <AppShell />
+      </SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </>
   );
 }
 
@@ -162,8 +273,8 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <Switch>
         <Route path="/" component={LandingPage} />
-        <Route path="/app" component={AppShell} />
-        <Route path="/app/:rest*" component={AppShell} />
+        <Route path="/app" component={ProtectedAppShell} />
+        <Route path="/app/:rest*" component={ProtectedAppShell} />
       </Switch>
     </QueryClientProvider>
   );

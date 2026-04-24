@@ -1,0 +1,43 @@
+# syntax=docker/dockerfile:1.6
+# Regulatory Ground - API service
+# Build context: repo root
+
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+WORKDIR /app
+
+# ---- Install deps (workspace-aware) ----
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY packages/core/package.json packages/core/
+COPY packages/sandbox/package.json packages/sandbox/
+COPY packages/mcp-server/package.json packages/mcp-server/
+RUN pnpm install --frozen-lockfile
+
+# ---- Build ----
+FROM deps AS build
+COPY . .
+RUN pnpm --filter @regground/core build \
+ && pnpm --filter @regground/sandbox build \
+ && pnpm --filter @regground/api build
+
+# ---- Runtime (prod deps only) ----
+FROM base AS runtime
+ENV NODE_ENV=production
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json apps/api/
+COPY packages/core/package.json packages/core/
+COPY packages/sandbox/package.json packages/sandbox/
+RUN pnpm install --frozen-lockfile --prod \
+ --filter @regground/api... \
+ && pnpm store prune
+
+COPY --from=build /app/apps/api/dist ./apps/api/dist
+COPY --from=build /app/packages/core/dist ./packages/core/dist
+COPY --from=build /app/packages/sandbox/dist ./packages/sandbox/dist
+COPY --from=build /app/packages/core/regulations ./packages/core/regulations
+
+EXPOSE 4000
+CMD ["node", "apps/api/dist/index.js"]

@@ -12,6 +12,8 @@ const PRODUCTS: {
   bullets: string[];
   cta: { label: string; to: string };
   visual: 'psur' | 'complaints' | 'imdrf' | 'graph';
+  before: string;
+  after: string;
 }[] = [
   {
     eyebrow: 'Authoring',
@@ -25,6 +27,8 @@ const PRODUCTS: {
     ],
     cta: { label: 'Open in sandbox', to: '/app' },
     visual: 'psur',
+    before: 'A PSUR draft with unsupported claims and manual citation cleanup.',
+    after: 'A PSUR draft structured to MDCG 2022-21, checked against EU MDR Articles 83\u201386, with evidence coverage and traceable citations.',
   },
   {
     eyebrow: 'Vigilance',
@@ -33,11 +37,13 @@ const PRODUCTS: {
     bullets: [
       'EU MDR Article 87 reporting clocks',
       '21 CFR 803 MDR decisioning',
-      'ISO 13485 §8.2.2 evidence trail',
+      'ISO 13485 \u00a78.2.2 evidence trail',
       'Auto-coded with IMDRF Annex A through G',
     ],
     cta: { label: 'Open in sandbox', to: '/app' },
     visual: 'complaints',
+    before: 'A spreadsheet triage with deadlines tracked manually across three regulations.',
+    after: 'A single queue with SLA clocks mapped to EU MDR Art. 87, 21 CFR 803, and ISO 13485 \u00a78.2.2, with coded rationale.',
   },
   {
     eyebrow: 'Coding',
@@ -51,30 +57,24 @@ const PRODUCTS: {
     ],
     cta: { label: 'Open in sandbox', to: '/app' },
     visual: 'imdrf',
+    before: 'Manual IMDRF coding with inconsistent annex coverage and no confidence scores.',
+    after: 'Automated codes across Annexes A\u2013G with rationale, confidence, and version-locked terminology.',
   },
   {
     eyebrow: 'The knowledge graph',
     title: 'One graph. Eight regulations. Every relationship.',
-    body: 'Your agents query Smarticus instead of re-reading the regulation. The graph holds the obligations, the cross-references, the evidence types, and the constraints — versioned, citable, and replayable.',
+    body: 'Your agents query Smarticus instead of re-reading the regulation. The graph holds the obligations, the cross-references, the evidence types, and the constraints \u2014 versioned, citable, and replayable.',
     bullets: [
       `${OBLIGATION_COUNT} obligations across ${REG_COUNT} regulations and standards`,
-      'Walks chains like ISO 13485 §8.5.2 → 820.100 → EU MDR Annex IX',
+      'Walks chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
       'Versioned to the source date so an audit can be replayed',
       'Smarticus never sees your proprietary data',
     ],
     cta: { label: 'Browse the graph', to: '/app/regulations' },
     visual: 'graph',
+    before: 'Agents that parse PDF regulations at runtime with no cross-reference awareness.',
+    after: 'Agents that query a versioned graph of obligations, constraints, evidence types, and cross-references in milliseconds.',
   },
-];
-
-/* ── Other tools shown as a compact list under the showcase ── */
-const TOOLS_MORE: { name: string; one: string; reg: string }[] = [
-  { name: 'PMS Plan Builder',    one: 'Schedules PMS activity per Articles 83 to 86.',         reg: 'EU MDR' },
-  { name: 'CAPA Evaluator',      one: 'Checks a CAPA file against ISO 13485 and 820.100.',     reg: 'ISO 13485 / 21 CFR 820' },
-  { name: 'Risk File Watcher',   one: 'Re-scores a risk file when an input changes.',          reg: 'ISO 14971' },
-  { name: 'Internal Audit Pack', one: 'Generates audit plan, checklist, and report scaffold.', reg: 'ISO 13485' },
-  { name: 'External DB Search',  one: 'Searches MAUDE, EUDAMED, and recall databases.',        reg: 'Cross-jurisdiction' },
-  { name: 'Trending Engine',     one: 'Detects device trends against your reporting threshold.', reg: 'EU MDR / 21 CFR 820' },
 ];
 
 /* ── SVG visuals (paper-and-ink with orange accent) ── */
@@ -91,11 +91,11 @@ function VisualPSUR() {
       <rect x="56" y="216" width="80" height="36" rx="2" fill="var(--orange)" />
       <text x="96" y="239" textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="#fff" letterSpacing="0.1em">SECTION 7</text>
       <rect x="300" y="60" width="148" height="20" rx="2" stroke="var(--ink)" strokeWidth="1" />
-      <text x="312" y="74" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">MDCG 2022-21 §6.4</text>
+      <text x="312" y="74" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">MDCG 2022-21 \u00a76.4</text>
       <rect x="300" y="92" width="148" height="20" rx="2" stroke="var(--ink)" strokeWidth="1" />
       <text x="312" y="106" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">EU MDR ART. 86</text>
       <rect x="300" y="124" width="148" height="20" rx="2" fill="var(--orange)" />
-      <text x="312" y="138" fontFamily="var(--mono)" fontSize="9" fill="#fff" letterSpacing="0.12em">VALIDATED ✓</text>
+      <text x="312" y="138" fontFamily="var(--mono)" fontSize="9" fill="#fff" letterSpacing="0.12em">VALIDATED \u2713</text>
       <line x1="300" y1="180" x2="448" y2="180" stroke="var(--rule-strong)" />
       <text x="300" y="200" fontFamily="var(--mono)" fontSize="9.5" fill="var(--ink-2)" letterSpacing="0.08em">10 MIN TO DRAFT</text>
       <text x="300" y="220" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">28 sections</text>
@@ -113,7 +113,7 @@ function VisualComplaints() {
         { y: 50,  reg: 'EU MDR Art. 87', sla: '15 days', state: 'on track' },
         { y: 110, reg: '21 CFR 803.50',  sla: '30 days', state: 'on track' },
         { y: 170, reg: 'EU MDR Art. 87', sla: '2 days',  state: 'urgent', urgent: true },
-        { y: 230, reg: 'ISO 13485 §8.2.2', sla: '5 days', state: 'on track' },
+        { y: 230, reg: 'ISO 13485 \u00a78.2.2', sla: '5 days', state: 'on track' },
       ].map((row, i) => (
         <g key={i}>
           <rect x="40" y={row.y} width="400" height="44" rx="2" stroke={row.urgent ? 'var(--orange)' : 'var(--ink)'} strokeWidth="1.2" fill={row.urgent ? 'var(--orange)' : 'var(--paper)'} />
@@ -197,7 +197,7 @@ function VisualGraph() {
         </g>
       ))}
       <text x="240" y="298" textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-3)" letterSpacing="0.18em">
-        OBLIGATIONS · DEFINITIONS · EVIDENCE · CONSTRAINTS
+        OBLIGATIONS \u00b7 DEFINITIONS \u00b7 EVIDENCE \u00b7 CONSTRAINTS
       </text>
     </svg>
   );
@@ -242,6 +242,16 @@ function CheckOrange() {
   );
 }
 
+/* ── Pain card icon: red X ── */
+function PainIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <circle cx="14" cy="14" r="13" stroke="var(--err)" strokeWidth="1.2" />
+      <path d="M10 10l8 8M18 10l-8 8" stroke="var(--err)" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function LandingPage() {
   const [, navigate] = useLocation();
 
@@ -258,7 +268,7 @@ export function LandingPage() {
 
         .hero-display {
           font-family: var(--sans);
-          font-size: clamp(56px, 9vw, 132px);
+          font-size: clamp(48px, 8vw, 112px);
           font-weight: 500;
           letter-spacing: -0.045em;
           line-height: 0.96;
@@ -280,16 +290,32 @@ export function LandingPage() {
         .check-list { display: grid; gap: 12px; margin-top: 22px; padding: 0; list-style: none; }
         .check-list li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; color: var(--ink-2); line-height: 1.5; }
 
-        .more-tool {
-          display: grid; grid-template-columns: 1fr auto;
-          gap: 20px; align-items: baseline; padding: 16px 0;
-          border-top: 1px solid var(--rule);
+        .pain-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          margin-top: 32px;
+        }
+
+        .pain-card {
+          padding: 24px;
+          background: var(--paper);
+          border: 1px solid var(--rule);
+          border-radius: var(--r-2);
+        }
+
+        .mcp-tools-list {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 8px;
+          margin-top: 20px;
         }
 
         @media (max-width: 880px) {
           .product-row { grid-template-columns: 1fr; gap: 28px; padding: 40px 0; }
           .product-row.flip > .product-visual { order: 0; }
           .nav-mid { display: none !important; }
+          .pain-grid { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -304,20 +330,20 @@ export function LandingPage() {
         <div className="container" style={{ padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <SmarticusWordmark size={16} tagline={false} />
           <div className="nav-mid" style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
-            <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Tools</button>
+            <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Products</button>
             <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Knowledge graph</button>
-            <button className="nav-link" onClick={() => document.getElementById('coverage')?.scrollIntoView({ behavior: 'smooth' })}>Coverage</button>
-            <button className="nav-link" onClick={() => navigate('/app/api-access')}>For developers</button>
+            <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Builder</button>
+            <button className="nav-link" onClick={() => navigate('/app/api-access')}>Developers</button>
             <ThemeToggle />
-            <button className="btn btn-orange" onClick={() => navigate('/app')}>
-              Open the sandbox
+            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
+              Run a grounded agent
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
         </div>
       </nav>
 
-      {/* ── Hero ── */}
+      {/* ── Section 1: Hero ── */}
       <section style={{ position: 'relative', overflow: 'hidden' }}>
         <div
           aria-hidden="true"
@@ -332,30 +358,28 @@ export function LandingPage() {
         <div className="container" style={{ position: 'relative', padding: '92px 32px 48px' }}>
           <div className="eyebrow rise" style={{ marginBottom: 28 }}>
             <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
-            For medical device and pharma QARA teams
+            Regulatory infrastructure for AI agents
           </div>
 
           <h1 className="hero-display rise-1" style={{ maxWidth: 1100 }}>
-            Regulation. <span className="accent">In every agent.</span>
+            AI agents that know the <span className="accent">rules</span> before they act.
           </h1>
 
           <p
             className="rise-2"
             style={{
-              marginTop: 30, maxWidth: 720, fontSize: 18, lineHeight: 1.5,
+              marginTop: 30, maxWidth: 720, fontSize: 18, lineHeight: 1.55,
               color: 'var(--ink-2)',
             }}
           >
-            Smarticus is where medical device and pharma teams pick up AI tools
-            and agents that already know EU MDR, ISO 13485, ISO 14971, 21 CFR 820,
-            IMDRF, and MDCG 2022-21. PSUR drafts, complaint triage, IMDRF coding,
-            CAPA reviews, PMS plans. Test them in the sandbox. Connect them to
-            your QMS when you are ready.
+            Smarticus grounds medical device and pharma AI agents in EU MDR,
+            21 CFR 820, ISO 13485, ISO 14971, IMDRF, UK MDR, and MDCG guidance
+            &mdash; with evidence checks, citations, and audit-ready traces.
           </p>
 
           <div className="rise-3" style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button className="btn btn-orange" onClick={() => navigate('/app')}>
-              Open the sandbox
+            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
+              Run a grounded agent
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button className="btn btn-ghost" onClick={() => navigate('/app/api-access')}>
@@ -364,9 +388,8 @@ export function LandingPage() {
           </div>
 
           <div className="rise-4" style={{ marginTop: 18 }}>
-            <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 13.5 }}>
-              <span style={{ color: 'var(--ink)', fontWeight: 500 }}>Verifiable. Traceable. Auditable.</span>
-              {' '}Smarticus never sees your proprietary data.
+            <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 640 }}>
+              Your proprietary data stays in your tenant. Smarticus provides the regulatory graph, guardrails, and traceability layer.
             </p>
           </div>
         </div>
@@ -377,8 +400,46 @@ export function LandingPage() {
         <RegulatorHeroRail />
       </section>
 
-      {/* ── Product showcase rows ── */}
-      <section id="products" className="container" style={{ padding: '24px 32px 24px' }}>
+      {/* ── Section 2: Pain section ── */}
+      <section style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', padding: '64px 0' }}>
+        <div className="container">
+          <div className="eyebrow" style={{ marginBottom: 14 }}>The problem</div>
+          <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
+            Generic AI is fast. Regulated AI has to be <span style={{ color: 'var(--orange)' }}>right</span>.
+          </h2>
+
+          <div className="pain-grid">
+            <div className="pain-card">
+              <div style={{ marginBottom: 14 }}><PainIcon /></div>
+              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Hallucinated citations</h3>
+              <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
+                AI outputs that reference rules incorrectly or invent requirements.
+              </p>
+            </div>
+            <div className="pain-card">
+              <div style={{ marginBottom: 14 }}><PainIcon /></div>
+              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Missing evidence</h3>
+              <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
+                AI drafts that sound complete but skip required records.
+              </p>
+            </div>
+            <div className="pain-card">
+              <div style={{ marginBottom: 14 }}><PainIcon /></div>
+              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>No audit trail</h3>
+              <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
+                Decisions that cannot be replayed, defended, or verified.
+              </p>
+            </div>
+          </div>
+
+          <p style={{ marginTop: 32, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
+            Smarticus fixes this by grounding every agent action in <strong style={{ color: 'var(--ink)' }}>obligations</strong>, <strong style={{ color: 'var(--ink)' }}>evidence</strong>, and <strong style={{ color: 'var(--ink)' }}>traceability</strong>.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Section 3: Product proof rows ── */}
+      <section id="products" className="container" style={{ padding: '48px 32px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
           <h2 style={{ fontSize: 'clamp(28px, 3.4vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0 }}>
             Pre-built tools, bound to the rules.
@@ -407,6 +468,17 @@ export function LandingPage() {
                   </li>
                 ))}
               </ul>
+
+              {/* Before / After comparison */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 24 }}>
+                <div className="comparison-before">
+                  <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--ink-3)' }}>{p.before}</p>
+                </div>
+                <div className="comparison-after">
+                  <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)' }}>{p.after}</p>
+                </div>
+              </div>
+
               <div style={{ marginTop: 26 }}>
                 <button className="btn btn-orange" onClick={() => navigate(p.cta.to)}>
                   {p.cta.label}
@@ -421,100 +493,144 @@ export function LandingPage() {
         ))}
       </section>
 
-      {/* ── More tools ── */}
-      <section className="container" style={{ padding: '40px 32px 56px' }}>
-        <div className="eyebrow" style={{ marginBottom: 16 }}>And more in the catalog</div>
-        <div style={{ borderTop: '1px solid var(--rule-strong)', borderBottom: '1px solid var(--rule-strong)' }}>
-          {TOOLS_MORE.map((t) => (
-            <div key={t.name} className="more-tool" style={{ borderTop: 0 }}>
-              <div>
-                <div style={{ fontSize: 15, color: 'var(--ink)' }}>{t.name}</div>
-                <div style={{ fontSize: 13.5, color: 'var(--ink-3)', marginTop: 2 }}>{t.one}</div>
-              </div>
-              <span className="eyebrow" style={{ color: 'var(--ink-4)', whiteSpace: 'nowrap' }}>{t.reg}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ── Knowledge graph deep section (anchor) ── */}
-      <section id="graph" className="container" style={{ padding: '40px 32px 24px' }}>
-        <div className="eyebrow" style={{ marginBottom: 14 }}>Powered by the knowledge graph</div>
+      {/* ── Section 4: Graph section (emotional center) ── */}
+      <section id="graph" className="container" style={{ padding: '64px 32px 48px' }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>The ground</div>
         <h2 style={{ fontSize: 'clamp(34px, 4.6vw, 60px)', fontWeight: 500, letterSpacing: '-0.035em', margin: 0, lineHeight: 1.04, maxWidth: 980 }}>
-          Your agents inherit regulatory awareness.
+          The regulatory graph your agents can reason from.
         </h2>
         <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
           One graph holds <strong style={{ color: 'var(--ink)' }}>{REG_COUNT} regulations and standards</strong> with all
           the relationships between them. Agents query the graph at qualification
           (before they execute) and at validation (before output leaves the agent).
-          The graph is versioned, citable, and replayable on the date of an audit.
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 36, alignItems: 'center' }}>
-          <ProductVisual kind="graph" />
-          <ul className="check-list" style={{ marginTop: 0 }}>
-            {[
-              'Cross-references walk chains like ISO 13485 §8.5.2 → 820.100 → EU MDR Annex IX',
-              'Versioned to source — replay any audit on the date it was conducted',
-              'Queryable by process, jurisdiction, evidence type, or citation',
-              'Connects to QMS agents for charts, CAPAs, internal audits, risk profile changes, device trending, PATERs, PSURs',
-              'Smarticus never sees your proprietary data — agents query the graph; payloads stay in your tenant',
-            ].map((b) => (
-              <li key={b}><CheckOrange /><span>{b}</span></li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* ── Coverage band ── */}
-      <section id="coverage" style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', padding: '48px 0' }}>
-        <div className="container">
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 22 }}>
-            <h2 style={{ fontSize: 'clamp(24px, 2.6vw, 34px)', fontWeight: 500, letterSpacing: '-0.025em', margin: 0 }}>
-              Coverage today.
-            </h2>
-            <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 14 }}>
-              {REG_COUNT} regulations · {OBLIGATION_COUNT} obligations · growing
-            </p>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10 }}>
-            {REGULATIONS.map((r) => (
-              <div
-                key={r.name}
-                style={{
-                  padding: 16, background: 'var(--paper)',
-                  border: '1px solid var(--rule)', borderRadius: 'var(--r-2)',
-                }}
-              >
-                <div className="eyebrow" style={{ marginBottom: 8, fontSize: 10 }}>{r.name}</div>
-                <div style={{ fontFamily: 'var(--sans)', fontSize: 30, fontWeight: 400, letterSpacing: '-0.03em', color: 'var(--ink)', lineHeight: 1 }}>
-                  {r.count}
-                </div>
-                <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', marginTop: 4 }}>obligations</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── The contract ── */}
-      <section className="container" style={{ padding: '56px 32px' }}>
-        <div className="eyebrow" style={{ marginBottom: 18 }}>The contract</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: '1px solid var(--rule-strong)', borderBottom: '1px solid var(--rule-strong)' }}>
+        {/* Stats counters */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginTop: 36 }}>
           {[
-            { n: '01', t: 'Verifiable', b: 'Every output is checked against the obligation it must satisfy before it leaves the agent.' },
-            { n: '02', t: 'Traceable',  b: 'Every decision is written into a SHA-256 chain with actor, evidence, and obligation context.' },
-            { n: '03', t: 'Auditable',  b: 'Every regulation is versioned and replayable. Pull a complete audit pack for any process instance.' },
-          ].map((c, i) => (
-            <div key={c.n} style={{ padding: '22px 24px', borderLeft: i === 0 ? 0 : '1px solid var(--rule)' }}>
-              <div className="eyebrow" style={{ marginBottom: 12 }}>{c.n} / {c.t}</div>
-              <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>{c.b}</p>
+            { label: 'Obligations', value: OBLIGATION_COUNT },
+            { label: 'Constraints', value: 98 },
+            { label: 'Definitions', value: 55 },
+            { label: 'Evidence types', value: 347 },
+            { label: 'Cross-references', value: '1,200+' },
+            { label: 'Jurisdictions', value: REG_COUNT },
+          ].map((s) => (
+            <div key={s.label} style={{ padding: 16, background: 'var(--paper-deep)', border: '1px solid var(--rule)', borderRadius: 'var(--r-2)' }}>
+              <div style={{ fontFamily: 'var(--sans)', fontSize: 30, fontWeight: 400, letterSpacing: '-0.03em', color: 'var(--ink)', lineHeight: 1 }}>
+                {s.value}
+              </div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.label}</div>
             </div>
           ))}
         </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 36, alignItems: 'center' }}>
+          <ProductVisual kind="graph" />
+          <div>
+            <ul className="check-list" style={{ marginTop: 0 }}>
+              {[
+                'Cross-references walk chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
+                'Versioned to source \u2014 replay any audit on the date it was conducted',
+                'Queryable by process, jurisdiction, evidence type, or citation',
+                'Smarticus never sees your proprietary data \u2014 agents query the graph; payloads stay in your tenant',
+              ].map((b) => (
+                <li key={b}><CheckOrange /><span>{b}</span></li>
+              ))}
+            </ul>
+            <div style={{ marginTop: 26 }}>
+              <button className="btn btn-orange" onClick={() => navigate('/app/regulations')}>
+                Browse the graph
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
-      {/* ── Final CTA ── */}
+      {/* ── Section 5: Builder preview ── */}
+      <section id="builder" style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', padding: '64px 0' }}>
+        <div className="container">
+          <div className="eyebrow" style={{ marginBottom: 14 }}>Agent builder</div>
+          <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
+            Build by intent, not by prompt.
+          </h2>
+          <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
+            Choose a regulatory job. Smarticus assembles the agent, obligations, evidence, and validation path.
+          </p>
+
+          <div className="flow-steps" style={{ marginTop: 48, marginBottom: 48 }}>
+            {[
+              { step: '1', label: 'Choose process' },
+              { step: '2', label: 'Select scope' },
+              { step: '3', label: 'Attach evidence' },
+              { step: '4', label: 'Run sandbox' },
+              { step: '5', label: 'Export or connect' },
+            ].map((s) => (
+              <div key={s.step} className="flow-step">
+                <div className="flow-dot">{s.step}</div>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '0.02em', marginTop: 4 }}>{s.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <button className="btn btn-orange" onClick={() => navigate('/app/builder')}>
+              Open the builder
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Section 6: Developer / MCP section ── */}
+      <section className="container" style={{ padding: '64px 32px' }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>For developers</div>
+        <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
+          One connection. Regulatory guardrails everywhere.
+        </h2>
+        <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
+          Connect any MCP-compatible agent to the Smarticus knowledge graph. Eleven tools, one line to install.
+        </p>
+
+        <pre style={{ marginTop: 28, fontSize: 14, padding: '18px 22px', maxWidth: 480 }}>
+          <code style={{ background: 'transparent', padding: 0 }}>npx @smarticus/mcp</code>
+        </pre>
+
+        <div className="mcp-tools-list">
+          {[
+            'discover_obligations',
+            'check_qualification',
+            'validate_compliance',
+            'explain_obligation',
+            'find_obligation_path',
+          ].map((tool) => (
+            <div
+              key={tool}
+              style={{
+                padding: '10px 14px',
+                background: 'var(--paper-deep)',
+                border: '1px solid var(--rule)',
+                borderRadius: 'var(--r-2)',
+                fontFamily: 'var(--mono)',
+                fontSize: 12,
+                color: 'var(--ink-2)',
+                letterSpacing: '0.02em',
+              }}
+            >
+              {tool}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 28 }}>
+          <button className="btn btn-ghost" onClick={() => navigate('/app/api-access')}>
+            View developer docs
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+      </section>
+
+      {/* ── Section 7: Final CTA ── */}
       <section style={{ background: 'var(--ink)', color: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
         <div
           aria-hidden="true"
@@ -535,28 +651,30 @@ export function LandingPage() {
               color: 'var(--paper)', maxWidth: 1100, margin: 0,
             }}
           >
-            Pick a tool. Run it in the sandbox.<br />
-            <span style={{ color: 'var(--orange)' }}>Connect it to your QMS.</span>
+            Give your agents a <span style={{ color: 'var(--orange)' }}>regulatory conscience</span>.
           </h2>
-          <p style={{ marginTop: 18, color: 'var(--ink-4)', fontSize: 15, maxWidth: 640 }}>
-            Verifiable. Traceable. Auditable. Without giving us your proprietary data.
-          </p>
-          <div style={{ marginTop: 26, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button className="btn btn-orange" onClick={() => navigate('/app')}>
+
+          <div style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
               Open the sandbox
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button
               className="btn btn-ghost"
               style={{ color: 'var(--paper)', borderColor: 'var(--ink-3)' }}
-              onClick={() => navigate('/app/api-access')}
+              onClick={() => window.location.href = 'mailto:hello@thinkertons.com'}
             >
-              Connect via MCP
+              Talk to us
             </button>
           </div>
+
+          <p style={{ marginTop: 24, color: 'var(--ink-4)', fontSize: 14, maxWidth: 560 }}>
+            This is not a chatbot. This is regulatory infrastructure for AI agents.
+          </p>
         </div>
       </section>
 
+      {/* ── Section 8: Footer ── */}
       <footer
         className="container"
         style={{
@@ -575,9 +693,9 @@ export function LandingPage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <SmarticusMark size={14} />
-            <span>Smarticus · Regulatory ground</span>
+            <span>Smarticus \u00b7 Regulatory ground</span>
           </div>
-          <span>2026 · Built by Thinkertons</span>
+          <span>2026 \u00b7 Built by Thinkertons</span>
         </div>
       </footer>
     </div>

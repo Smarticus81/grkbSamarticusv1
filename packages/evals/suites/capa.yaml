@@ -1,0 +1,112 @@
+name: capa
+description: >
+  Evaluates the system's ability to correctly discover, explain, and
+  validate CAPA (Corrective and Preventive Action) obligations under
+  ISO 13485 and 21 CFR 820.
+
+prompts:
+  - id: capa-discover-iso13485
+    prompt: "What obligations apply to a CAPA process under ISO 13485?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.001
+        - ISO13485.8.5.2.OBL.002
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 2
+    tags: [discovery, iso-13485, capa]
+
+  - id: capa-corrective-action-procedure
+    prompt: "What does ISO 13485 require for a corrective action procedure?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.002
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 1
+    tags: [explain, iso-13485, capa]
+
+  - id: capa-preventive-action
+    prompt: "List all preventive action obligations under ISO 13485"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.001
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 1
+    tags: [discovery, iso-13485, preventive]
+
+  - id: capa-evidence-requirements
+    prompt: "What evidence types are needed for CAPA under ISO 13485?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.001
+        - ISO13485.8.5.2.OBL.002
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 1
+    tags: [evidence, iso-13485, capa]
+
+  - id: capa-nonconformance-link
+    prompt: "How does CAPA relate to nonconformance records in ISO 13485?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.001
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 1
+    tags: [cross-reference, iso-13485, capa]
+
+  - id: capa-investigation-record
+    prompt: "What investigation records must be maintained for CAPA?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.002
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 1
+    tags: [evidence, iso-13485, capa]
+
+  - id: capa-effectiveness-review
+    prompt: "Is effectiveness review required for corrective actions under ISO 13485?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.001
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 1
+    tags: [explain, iso-13485, effectiveness]
+
+  - id: capa-complaint-trigger
+    prompt: "When should a complaint trigger a CAPA in a medical device QMS?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.001
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 1
+    tags: [discovery, iso-13485, complaints]
+
+  - id: capa-mandatory-check
+    prompt: "Are CAPA obligations mandatory under ISO 13485?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.001
+        - ISO13485.8.5.2.OBL.002
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      should_not_contain:
+        - "optional"
+        - "not required"
+      min_citations: 1
+    tags: [validation, iso-13485, mandatory]
+
+  - id: capa-audit-finding
+    prompt: "How should audit findings be handled in the CAPA process?"
+    expected:
+      should_contain_obligations:
+        - ISO13485.8.5.2.OBL.001
+      expected_process_type: CAPA
+      expected_jurisdiction: GLOBAL
+      min_citations: 1
+    tags: [explain, iso-13485, audit]

@@ -5,6 +5,8 @@ import { DecisionTraceService } from '../traceability/DecisionTraceService.js';
 import { QualificationGate } from '../guardrails/QualificationGate.js';
 import { ComplianceValidator } from '../guardrails/ComplianceValidator.js';
 import { StrictGate } from '../guardrails/StrictGate.js';
+import type { CompliancePipeline } from '../guardrails/CompliancePipeline.js';
+import type { ValidationReport } from '../guardrails/validators/types.js';
 import type { LLMAbstraction } from '../llm/LLMAbstraction.js';
 import type { LLMRequest } from '../llm/types.js';
 import { PromptComposer, type FileContext, type SkillContext } from './PromptComposer.js';
@@ -24,6 +26,8 @@ export interface BaseGroundedAgentDeps {
   strictGate: StrictGate;
   promptComposer: PromptComposer;
   llm: LLMAbstraction;
+  /** Optional compliance pipeline for Phase 1G multi-validator checks. */
+  compliancePipeline?: CompliancePipeline;
 }
 
 /**
@@ -53,6 +57,7 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
   protected readonly strictGate: StrictGate;
   protected readonly promptComposer: PromptComposer;
   protected readonly llm: LLMAbstraction;
+  protected readonly compliancePipeline?: CompliancePipeline;
 
   constructor(config: GroundedAgentConfig, deps: BaseGroundedAgentDeps) {
     this.agentId = `${config.name}@${config.version}`;
@@ -64,6 +69,7 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
     this.strictGate = deps.strictGate;
     this.promptComposer = deps.promptComposer;
     this.llm = deps.llm;
+    this.compliancePipeline = deps.compliancePipeline;
   }
 
   // *** SEALED — do not override ***
@@ -81,27 +87,58 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
       requiredObligations: this.getRequiredObligations(),
     });
 
-    if (qualification.status === 'BLOCKED') {
+    // Gate on qualification status: only QUALIFIED and QUALIFIED_WITH_WARNINGS proceed.
+    if (qualification.status === 'BLOCKED' || qualification.status === 'OUT_OF_SCOPE') {
       await this.traceService.logEvent(context.traceCtx, {
         eventType: 'QUALIFICATION_BLOCKED',
         actor: this.agentId,
         reasons: qualification.blockingErrors,
-        humanSummary: `Qualification blocked for ${this.config.name}`,
+        humanSummary: `Qualification ${qualification.status.toLowerCase()} for ${this.config.name} (risk: ${qualification.riskLevel})`,
       });
       return {
         success: false,
-        error: 'Qualification blocked',
+        error: `Qualification ${qualification.status.toLowerCase()}: ${qualification.blockingErrors.join('; ') || 'no applicable obligations'}`,
         qualification,
         traceId: context.traceCtx.traceId,
         metrics: this.metrics.snapshot(),
       };
     }
 
-    await this.traceService.logEvent(context.traceCtx, {
-      eventType: 'QUALIFICATION_PASSED',
-      actor: this.agentId,
-      humanSummary: `Qualification passed (${qualification.mandatoryCovered}/${qualification.mandatoryTotal})`,
-    });
+    if (qualification.status === 'NEEDS_HUMAN_REVIEW') {
+      await this.traceService.logEvent(context.traceCtx, {
+        eventType: 'QUALIFICATION_BLOCKED',
+        actor: this.agentId,
+        reasons: qualification.blockingErrors,
+        humanSummary: `Qualification requires human review for ${this.config.name} — coverage ${(qualification.coverageScore * 100).toFixed(0)}% (risk: ${qualification.riskLevel})`,
+      });
+      return {
+        success: false,
+        error: `Qualification requires human review: coverage is ${(qualification.coverageScore * 100).toFixed(0)}%, canProceedWithHumanApproval=${qualification.canProceedWithHumanApproval}`,
+        qualification,
+        traceId: context.traceCtx.traceId,
+        metrics: this.metrics.snapshot(),
+        warnings: qualification.recommendedNextActions,
+      };
+    }
+
+    // QUALIFIED_WITH_WARNINGS — proceed but log warnings.
+    if (qualification.status === 'QUALIFIED_WITH_WARNINGS') {
+      for (const action of qualification.recommendedNextActions) {
+        this.metrics.warn(action);
+      }
+      await this.traceService.logEvent(context.traceCtx, {
+        eventType: 'QUALIFICATION_PASSED',
+        actor: this.agentId,
+        humanSummary: `Qualification passed with warnings (${qualification.mandatoryCovered}/${qualification.mandatoryTotal}, risk: ${qualification.riskLevel})`,
+      });
+    } else {
+      // QUALIFIED
+      await this.traceService.logEvent(context.traceCtx, {
+        eventType: 'QUALIFICATION_PASSED',
+        actor: this.agentId,
+        humanSummary: `Qualification passed (${qualification.mandatoryCovered}/${qualification.mandatoryTotal})`,
+      });
+    }
 
     // 2. LOAD OBLIGATIONS + CONSTRAINTS
     const obligations = await this.graph.getObligationsForProcess(
@@ -131,13 +168,31 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
         throw new Error(`Output validation failed: ${validation.errors.join(', ')}`);
       }
 
-      // 7. COMPLIANCE
-      const compliance = this.complianceValidator.validate(output, obligations, {
+      // 7. COMPLIANCE (legacy validator — always runs for backward compatibility)
+      const complianceCtx = {
         processType: context.processType,
         jurisdiction: context.jurisdiction,
         processInstanceId: context.processInstanceId,
         agentId: this.agentId,
-      });
+      };
+      const compliance = this.complianceValidator.validate(output, obligations, complianceCtx);
+
+      // 7b. COMPLIANCE PIPELINE (if configured)
+      let pipelineReport: ValidationReport | undefined;
+      if (this.compliancePipeline) {
+        pipelineReport = await this.compliancePipeline.validate(output, obligations, complianceCtx);
+
+        await this.traceService.logEvent(context.traceCtx, {
+          eventType: 'COMPLIANCE_PIPELINE_COMPLETED',
+          actor: this.agentId,
+          outputData: {
+            pipelineStatus: pipelineReport.status,
+            findingCount: pipelineReport.findings.length,
+            severityCounts: pipelineReport.severityCounts,
+            passedHardChecks: pipelineReport.passedHardChecks,
+          },
+        });
+      }
 
       // 8. AGENT_COMPLETED
       await this.traceService.logEvent(context.traceCtx, {
@@ -153,6 +208,7 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
         confidence: this.calculateConfidence(output, compliance),
         compliance,
         qualification,
+        pipelineReport,
         metrics: this.metrics.snapshot(),
         traceId: context.traceCtx.traceId,
         warnings: this.metrics.snapshot().warnings,

@@ -276,7 +276,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                       color: mode === m ? 'var(--paper)' : 'var(--ink-2)',
                       border: 0, cursor: 'pointer', borderRight: '1px solid var(--rule)',
                     }}
-                  >{m.replace('-', ' ')}</button>
+                  >{m === 'with-graph' ? 'Smarticus-grounded' : m === 'without-graph' ? 'Ungrounded AI' : 'Compare'}</button>
                 ))}
               </div>
 
@@ -308,15 +308,36 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                 </div>
               </div>
 
+              {/* Grounded run summary card */}
+              {result?.withGraph && (
+                <div style={{
+                  background: 'var(--paper-deep)',
+                  border: '1px solid var(--rule)',
+                  padding: 16,
+                  borderRadius: 'var(--r-2)',
+                  fontSize: 14,
+                  marginBottom: 18,
+                  color: 'var(--ink-2)',
+                  lineHeight: 1.55,
+                }}>
+                  Grounded run consulted <strong style={{ color: 'var(--ink)' }}>{result.withGraph.score.obligationsConsulted}</strong> obligations,
+                  attached <strong style={{ color: 'var(--ink)' }}>{result.withGraph.citations.length}</strong> citations,{' '}
+                  <strong style={{ color: result.withGraph.score.strictGatePass ? 'var(--ok)' : 'var(--err)' }}>
+                    {result.withGraph.score.strictGatePass ? 'passed' : 'failed'} StrictGate
+                  </strong>,
+                  and generated trace <strong style={{ color: 'var(--ink)', fontFamily: 'var(--mono)' }}>#{result.runId}</strong>.
+                </div>
+              )}
+
               {/* Console: single or split */}
               {mode === 'compare' ? (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                  <ConsolePanel title="With graph"    lane="with-graph"    events={withEvents}    result={result?.withGraph} />
-                  <ConsolePanel title="Without graph" lane="without-graph" events={withoutEvents} result={result?.withoutGraph} />
+                  <ConsolePanel title="Smarticus-grounded AI"    lane="with-graph"    events={withEvents}    result={result?.withGraph} />
+                  <ConsolePanel title="Ungrounded AI" lane="without-graph" events={withoutEvents} result={result?.withoutGraph} />
                 </div>
               ) : (
                 <ConsolePanel
-                  title={mode === 'with-graph' ? 'With graph' : 'Without graph'}
+                  title={mode === 'with-graph' ? 'Smarticus-grounded AI' : 'Ungrounded AI'}
                   lane={mode}
                   events={mode === 'with-graph' ? withEvents : withoutEvents}
                   result={mode === 'with-graph' ? result?.withGraph : result?.withoutGraph}
@@ -423,7 +444,7 @@ function GraphTicker({ events }: { events: LaneEvent[] }) {
     <div style={{ fontSize: 12, lineHeight: 1.55 }}>
       {events.slice(-30).map((e, i) => (
         <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid var(--rule)' }}>
-          <div style={{ color: 'var(--ink-4)', fontSize: 10, letterSpacing: '0.08em', marginBottom: 2 }}>{e.lane}</div>
+          <div style={{ color: 'var(--ink-4)', fontSize: 10, letterSpacing: '0.08em', marginBottom: 2 }}>{e.lane === 'with-graph' ? 'Smarticus-grounded AI' : 'Ungrounded AI'}</div>
           {e.type === 'graph.query' && (
             <>
               <div style={{ color: 'var(--ink-2)' }}>{e.message}</div>
@@ -448,7 +469,7 @@ function EvalCard({ result, judging, onJudge }: { result: RunResult; judging: bo
   return (
     <div style={{ marginTop: 18, background: '#fff', border: '1px solid var(--rule)', padding: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div className="eyebrow">Eval — with vs without graph</div>
+        <div className="eyebrow">Eval — Smarticus-grounded AI vs Ungrounded AI</div>
         <button onClick={onJudge} disabled={judging} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-2)', padding: '6px 12px', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
           {judging ? 'Scoring…' : 'Score with LLM judge'}
         </button>
@@ -464,8 +485,8 @@ function EvalCard({ result, judging, onJudge }: { result: RunResult; judging: bo
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--rule)' }}>
           <div className="eyebrow" style={{ marginBottom: 10 }}>LLM judge</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <JudgePanel title="With graph"    judge={result.withGraph?.judge} />
-            <JudgePanel title="Without graph" judge={result.withoutGraph?.judge} />
+            <JudgePanel title="Smarticus-grounded AI"    judge={result.withGraph?.judge} />
+            <JudgePanel title="Ungrounded AI" judge={result.withoutGraph?.judge} />
           </div>
         </div>
       )}
@@ -479,7 +500,7 @@ function Metric({ label, withVal, withoutVal, bar }: { label: string; withVal: s
       <div className="eyebrow" style={{ marginBottom: 8 }}>{label}</div>
       <div style={{ marginBottom: 6 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>
-          <span>With graph</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withVal}</span>
+          <span>Smarticus-grounded AI</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withVal}</span>
         </div>
         <div style={{ height: 6, background: 'var(--paper-2, #E8E4DA)', borderRadius: 3, overflow: 'hidden' }}>
           <div style={{ width: `${Math.round(bar.withN * 100)}%`, height: '100%', background: 'var(--orange)' }} />
@@ -487,7 +508,7 @@ function Metric({ label, withVal, withoutVal, bar }: { label: string; withVal: s
       </div>
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>
-          <span>Without graph</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withoutVal}</span>
+          <span>Ungrounded AI</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withoutVal}</span>
         </div>
         <div style={{ height: 6, background: 'var(--paper-2, #E8E4DA)', borderRadius: 3, overflow: 'hidden' }}>
           <div style={{ width: `${Math.round(bar.withoutN * 100)}%`, height: '100%', background: 'var(--ink-4)' }} />

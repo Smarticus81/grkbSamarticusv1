@@ -307,6 +307,185 @@ button { font-family: var(--sans); }
   animation: pulse-orange 1.6s var(--ease) infinite;
 }
 
+/* Ground System — regulatory cartography */
+.ground-card {
+  padding: 20px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2);
+  transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.ground-card:hover {
+  border-color: var(--rule-strong);
+  box-shadow: var(--shadow-1);
+}
+.ground-card.active {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px var(--signal-soft);
+}
+
+/* Status badges */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+.badge-ok { color: var(--ok); border-color: var(--ok); background: #0E6B3A0A; }
+.badge-warn { color: var(--warn); border-color: var(--warn); background: #B073000A; }
+.badge-err { color: var(--err); border-color: var(--err); background: #B5241B0A; }
+.badge-signal { color: var(--orange); border-color: var(--orange); background: var(--signal-soft); }
+.badge-ink { color: var(--ink-3); border-color: var(--rule-strong); background: transparent; }
+
+/* Stepper for builder flow */
+.stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.stepper-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 0;
+  position: relative;
+}
+.stepper-step::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 36px;
+  bottom: 0;
+  width: 1px;
+  background: var(--rule);
+}
+.stepper-step:last-child::before { display: none; }
+.stepper-dot {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--rule-strong);
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-4);
+  transition: all var(--t-fast) var(--ease);
+}
+.stepper-dot.active {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: #fff;
+}
+.stepper-dot.completed {
+  border-color: var(--ok);
+  background: var(--ok);
+  color: #fff;
+}
+
+/* Risk level indicators */
+.risk-low { color: var(--ok); }
+.risk-medium { color: var(--warn); }
+.risk-high { color: var(--orange); }
+.risk-critical { color: var(--err); }
+
+/* Obligation chain animation */
+@keyframes chain-draw {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+.chain-line {
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: chain-draw 0.8s var(--ease-out) forwards;
+}
+.chain-line-1 { animation-delay: 0.2s; }
+.chain-line-2 { animation-delay: 0.4s; }
+.chain-line-3 { animation-delay: 0.6s; }
+.chain-line-4 { animation-delay: 0.8s; }
+
+/* Before/After comparison */
+.comparison-before {
+  background: var(--paper-deep);
+  border: 1px dashed var(--rule-strong);
+  border-radius: var(--r-2);
+  padding: 16px;
+  position: relative;
+}
+.comparison-before::after {
+  content: 'BEFORE';
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--ink-4);
+  background: var(--paper-deep);
+  padding: 0 6px;
+}
+.comparison-after {
+  background: var(--paper);
+  border: 1px solid var(--ok);
+  border-radius: var(--r-2);
+  padding: 16px;
+  position: relative;
+}
+.comparison-after::after {
+  content: 'WITH SMARTICUS';
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--ok);
+  background: var(--paper);
+  padding: 0 6px;
+}
+
+/* Horizontal flow for landing builder preview */
+.flow-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+.flow-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 16px;
+  left: calc(50% + 20px);
+  width: calc(100% - 40px);
+  height: 1px;
+  background: var(--rule-strong);
+}
+.flow-dot {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink);
+  position: relative;
+  z-index: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

@@ -1,0 +1,35 @@
+# syntax=docker/dockerfile:1.6
+# Regulatory Ground - Web (Vite static build, served via `serve`)
+# Build context: repo root
+#
+# At build time, set VITE_API_URL via Railway build args / env so the
+# bundled JS points at your deployed API service.
+
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
+WORKDIR /app
+
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/api/package.json apps/api/
+COPY apps/web/package.json apps/web/
+COPY packages/core/package.json packages/core/
+COPY packages/sandbox/package.json packages/sandbox/
+COPY packages/mcp-server/package.json packages/mcp-server/
+RUN pnpm install --frozen-lockfile
+
+FROM deps AS build
+ARG VITE_API_URL
+ENV VITE_API_URL=${VITE_API_URL}
+COPY . .
+RUN pnpm --filter @regground/web build
+
+FROM node:20-alpine AS runtime
+ENV NODE_ENV=production
+WORKDIR /app
+RUN npm install -g serve@14
+COPY --from=build /app/apps/web/dist ./dist
+
+EXPOSE 8080
+# Railway injects $PORT; `serve` reads it via -l ${PORT:-8080}
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-8080}"]

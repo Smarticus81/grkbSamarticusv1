@@ -69,6 +69,26 @@ pnpm --filter @regground/core check
 Vitest is configured with `globals: true` and `environment: 'node'`. Test files
 live in `src/**/*.test.ts` and `__tests__/**/*.test.ts`.
 
+## TypeScript & module setup
+
+- **ESM throughout** — `"type": "module"` in root `package.json`. Use `import`/`export`, not `require`.
+- **Target:** ES2022, **Module:** ESNext, **Module resolution:** Bundler.
+- **Strict mode** with `noImplicitAny`, `strictNullChecks`, `noUncheckedIndexedAccess`, `noImplicitOverride`.
+- **Path aliases** in `tsconfig.base.json`: `@regground/core` → `packages/core/src`,
+  `@regground/sandbox` → `packages/sandbox/src`. All workspace packages extend this base config.
+- **Node ≥ 20** required (`engines` field in root `package.json`).
+- **pnpm 9** is the package manager (`packageManager` field). Use `pnpm` for all install/run commands.
+
+## Deployment
+
+Three Dockerfiles at the repo root (`Dockerfile.api`, `Dockerfile.mcp`, `Dockerfile.web`)
+deploy to Railway. See `RAILWAY.md` for full setup. Key points:
+
+- Build context is the repo root so pnpm workspace resolution works.
+- Neo4j is external (Aura, `neo4j+s://` scheme). Postgres can be Railway-provisioned.
+- The API binds to Railway's injected `PORT`. The MCP server uses `MCP_TRANSPORT=http`.
+- Seed the graph (`pnpm seed:graph`) locally or as a one-off job against the production Neo4j.
+
 ## Architecture
 
 ```
