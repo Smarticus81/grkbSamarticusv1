@@ -79,7 +79,7 @@ export class TestHarness {
       availableEvidenceTypes:
         context.availableEvidenceTypes ?? this.mockAtoms.map((a) => a.evidenceType),
       traceCtx:
-        context.traceCtx ?? (await this.inMemoryTrace.startTrace('pi-test')),
+        context.traceCtx ?? (await this.inMemoryTrace.startTrace('pi-test', 'tenant-test')),
       metadata: context.metadata,
     };
 
@@ -138,12 +138,12 @@ export class InMemoryTraceService {
   private byTraceId = new Map<string, any[]>();
   private seqByTrace = new Map<string, number>();
 
-  async startTrace(processInstanceId: string) {
+  async startTrace(processInstanceId: string, tenantId: string = 'tenant-test') {
     const traceId = `trace-${processInstanceId}-${Math.random().toString(36).slice(2, 8)}`;
     this.chains.set(processInstanceId, []);
     this.byTraceId.set(traceId, []);
     this.seqByTrace.set(traceId, 0);
-    const ctx = { processInstanceId, traceId };
+    const ctx = { processInstanceId, traceId, tenantId };
     await this.logEvent(ctx, { eventType: 'PROCESS_STARTED', actor: 'system' });
     return ctx;
   }

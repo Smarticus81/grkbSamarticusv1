@@ -53,6 +53,7 @@ export const traceEventTypeEnum = pgEnum('trace_event_type', [
   'HITL_GATE_REJECTED',
   'COMPLIANCE_CHECK_PASSED',
   'COMPLIANCE_CHECK_FAILED',
+  'COMPLIANCE_PIPELINE_COMPLETED',
 ]);
 
 export const evidenceStatusEnum = pgEnum('evidence_status', [

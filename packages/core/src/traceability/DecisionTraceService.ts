@@ -34,9 +34,9 @@ export class DecisionTraceService {
     return this._db;
   }
 
-  async startTrace(processInstanceId: string, workspaceId?: string): Promise<TraceContext> {
+  async startTrace(processInstanceId: string, tenantId: string, workspaceId?: string): Promise<TraceContext> {
     const traceId = randomUUID();
-    const ctx: TraceContext = { processInstanceId, traceId, workspaceId };
+    const ctx: TraceContext = { processInstanceId, traceId, tenantId, workspaceId };
     await this.logEvent(ctx, {
       eventType: 'PROCESS_STARTED',
       actor: 'system',
@@ -80,6 +80,7 @@ export class DecisionTraceService {
       .insert(decisionTraceEntries)
       .values({
         processInstanceId: ctx.processInstanceId,
+        tenantId: ctx.tenantId,
         traceId: ctx.traceId,
         sequenceNumber,
         previousHash,

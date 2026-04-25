@@ -39,84 +39,6 @@ function friendlyEvent(eventType: string): { label: string; color: string } {
   return { label: eventType, color: 'var(--text-tertiary)' };
 }
 
-/* ─── Demo trace data ─── */
-const DEMO_TRACE: TraceEntry[] = [
-  {
-    id: 'demo-1', sequenceNumber: 1, eventType: 'PROCESS_INITIATED',
-    actor: 'psur-generation-agent', currentHash: 'a1b2c3d4e5f6...', previousHash: '0000000000...',
-    timestamp: '2026-04-10T09:14:22Z',
-    payload: { process: 'psur-generation', device: 'CardioSense Pro', markets: ['EU'], regulation: 'MDCG 2022-21' },
-  },
-  {
-    id: 'demo-2', sequenceNumber: 2, eventType: 'QUALIFICATION_GATE',
-    actor: 'smarticus-api', currentHash: 'b2c3d4e5f6a1...', previousHash: 'a1b2c3d4e5f6...',
-    timestamp: '2026-04-10T09:14:23Z',
-    payload: {
-      result: 'QUALIFIED', requirements_found: 23,
-      prerequisites_checked: ['complaint_database', 'pms_report_2025', 'prior_psur_2025_h1'],
-      prerequisites_status: 'all_present',
-    },
-  },
-  {
-    id: 'demo-3', sequenceNumber: 3, eventType: 'COMPLIANCE_VALIDATION',
-    actor: 'smarticus-api', currentHash: 'c3d4e5f6a1b2...', previousHash: 'b2c3d4e5f6a1...',
-    timestamp: '2026-04-10T09:15:47Z',
-    payload: {
-      section: 'Section 4: Complaint Trend Analysis',
-      result: 'FAILED', checked_requirements: 5,
-      passed: ['MDCG2022-21.4.1', 'MDCG2022-21.4.2', 'MDCG2022-21.4.3', 'MDCG2022-21.4.4'],
-      failed: ['MDCG2022-21.4.5'],
-      reason: 'Missing: statistical trend comparison to prior reporting period',
-    },
-  },
-  {
-    id: 'demo-4', sequenceNumber: 4, eventType: 'CORRECTION_APPLIED',
-    actor: 'psur-generation-agent', currentHash: 'd4e5f6a1b2c3...', previousHash: 'c3d4e5f6a1b2...',
-    timestamp: '2026-04-10T09:16:12Z',
-    payload: {
-      section: 'Section 4: Complaint Trend Analysis',
-      correction: 'Added 3-period statistical comparison with confidence intervals',
-      triggered_by: 'MDCG2022-21.4.5 validation failure',
-    },
-  },
-  {
-    id: 'demo-5', sequenceNumber: 5, eventType: 'COMPLIANCE_VALIDATION',
-    actor: 'smarticus-api', currentHash: 'e5f6a1b2c3d4...', previousHash: 'd4e5f6a1b2c3...',
-    timestamp: '2026-04-10T09:16:14Z',
-    payload: {
-      section: 'Section 4: Complaint Trend Analysis',
-      result: 'PASSED', checked_requirements: 5,
-      passed: ['MDCG2022-21.4.1', 'MDCG2022-21.4.2', 'MDCG2022-21.4.3', 'MDCG2022-21.4.4', 'MDCG2022-21.4.5'],
-    },
-  },
-  {
-    id: 'demo-6', sequenceNumber: 6, eventType: 'DECISION_TRACED',
-    actor: 'psur-generation-agent', currentHash: 'f6a1b2c3d4e5...', previousHash: 'e5f6a1b2c3d4...',
-    timestamp: '2026-04-10T09:16:15Z',
-    payload: {
-      decision: 'Complaint trend classified as stable',
-      reasoning: 'Complaint rates across 3 reporting periods (2.1/10k, 2.3/10k, 2.0/10k) are within the ±15% threshold defined in the PMS plan. No statistical anomaly detected.',
-      regulatory_basis: ['MDCG 2022-21 §4.5', 'EU MDR Annex VII §4.8'],
-      evidence: 'Complaint rates: H1-2025 2.1/10k, H2-2025 2.3/10k, H1-2026 2.0/10k',
-    },
-  },
-  {
-    id: 'demo-7', sequenceNumber: 7, eventType: 'PROCESS_COMPLETED',
-    actor: 'psur-generation-agent', currentHash: 'a7b8c9d0e1f2...', previousHash: 'f6a1b2c3d4e5...',
-    timestamp: '2026-04-10T09:22:41Z',
-    payload: {
-      result: 'COMPLIANT', total_requirements_checked: 23, all_passed: true,
-      sections_validated: 8, decisions_traced: 12,
-      ready_for: 'Human review',
-    },
-  },
-];
-
-const DEMO_VERIFICATION: Verification = {
-  valid: true, verifiedEntries: 7, totalEntries: 7,
-  signatureHash: 'a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8',
-};
-
 /* ─── Animated floating nodes for empty state ─── */
 function FloatingNodes() {
   return (
@@ -154,13 +76,13 @@ export function TraceExplorer({ initialId }: Props) {
   const [verification, setVerification] = useState<Verification | null>(null);
   const [loading, setLoading] = useState(false);
   const [expandedEntry, setExpandedEntry] = useState<string | null>(null);
-  const [showDemo, setShowDemo] = useState(false);
   const [popoverNode, setPopoverNode] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function load() {
     if (!pid.trim()) return;
     setLoading(true);
-    setShowDemo(false);
+    setError(null);
     try {
       const [traceData, verifyData] = await Promise.all([
         api<TraceEntry[]>(`/api/traces/${pid}`),
@@ -168,28 +90,25 @@ export function TraceExplorer({ initialId }: Props) {
       ]);
       setChain(traceData);
       setVerification(verifyData);
-    } catch {
+      if (traceData.length === 0) {
+        setError(`No trail found for "${pid}". Run a process in the Sandbox to generate one.`);
+      }
+    } catch (err) {
       setChain([]);
       setVerification(null);
+      setError(err instanceof Error ? err.message : 'Failed to load trail');
     } finally {
       setLoading(false);
     }
-  }
-
-  function loadDemo() {
-    setShowDemo(true);
-    setChain(DEMO_TRACE);
-    setVerification(DEMO_VERIFICATION);
-    setPid('demo-psur-2026-q1-cardiosense');
   }
 
   function clearTrace() {
     setChain([]);
     setVerification(null);
     setPid('');
-    setShowDemo(false);
     setExpandedEntry(null);
     setPopoverNode(null);
+    setError(null);
   }
 
   useEffect(() => {
@@ -220,8 +139,8 @@ export function TraceExplorer({ initialId }: Props) {
         <div style={{ flex: 1 }}>
           <input
             placeholder="Enter a document or process ID..."
-            value={showDemo ? 'demo-psur-2026-q1-cardiosense' : pid}
-            onChange={(e) => { setPid(e.target.value); setShowDemo(false); }}
+            value={pid}
+            onChange={(e) => { setPid(e.target.value); setError(null); }}
             onKeyDown={(e) => e.key === 'Enter' && load()}
             style={{
               width: '100%',
@@ -292,16 +211,16 @@ export function TraceExplorer({ initialId }: Props) {
         )}
       </div>
 
-      {/* Demo banner */}
-      {showDemo && (
+      {/* Error banner */}
+      {error && (
         <div style={{
           padding: '12px 16px', borderRadius: 'var(--radius-md)', marginBottom: 24,
-          background: 'var(--accent-muted)', border: '1px solid var(--accent)' + '50',
-          fontSize: 12, color: 'var(--accent-bright)',
+          background: 'rgba(249,103,70,0.08)', border: '1px solid var(--danger)',
+          fontSize: 12, color: 'var(--danger)',
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-bright)', boxShadow: '0 0 8px rgba(14,140,194,0.5)' }} />
-          Example — This is the decision trail from an AI-generated PSUR for a Class IIb cardiac device.
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--danger)' }} />
+          {error}
         </div>
       )}
 
@@ -547,7 +466,7 @@ export function TraceExplorer({ initialId }: Props) {
       )}
 
       {/* Empty state */}
-      {!loading && activeChain.length === 0 && !showDemo && (
+      {!loading && activeChain.length === 0 && (
         <div style={{
           textAlign: 'center',
           padding: '72px 48px',
@@ -557,55 +476,26 @@ export function TraceExplorer({ initialId }: Props) {
           maxWidth: '520px',
           margin: '0 auto',
         }}>
-          {/* Animated graph nodes */}
           <FloatingNodes />
 
           <div style={{ fontSize: 18, color: 'var(--text-primary)', marginBottom: 8, fontWeight: 700, marginTop: 16 }}>
-            {pid && verification === null ? 'No decision trail found' : 'No decision trail loaded'}
+            No decision trail loaded
           </div>
           <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 28, lineHeight: 1.6 }}>
-            Enter a document ID above to load its audit trail, or view an example to see what Smarticus records.
+            Every process run in the Sandbox produces a hash-chained decision trail. Run a process, then paste its instance ID above — or use the link from the Sandbox results panel.
           </div>
-          <button
-            onClick={loadDemo}
+          <a
+            href="/app/sandbox"
             style={{
+              display: 'inline-block',
               padding: '11px 24px', fontSize: 13, borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-default)', background: 'transparent',
-              color: 'var(--text-secondary)', cursor: 'pointer', fontWeight: 600,
+              color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: 600,
               transition: 'all 0.2s', fontFamily: 'var(--font-sans)',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-surface)';
-              e.currentTarget.style.borderColor = 'var(--text-secondary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.borderColor = 'var(--border-default)';
-            }}
           >
-            View example decision trail
-          </button>
-        </div>
-      )}
-
-      {/* "Your traces will appear here" section */}
-      {activeChain.length > 0 && showDemo && (
-        <div style={{
-          marginTop: 48, paddingTop: 28, borderTop: '1px solid var(--border-subtle)',
-        }}>
-          <div style={{
-            textAlign: 'center', padding: '56px 48px',
-            background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            maxWidth: '520px', margin: '0 auto',
-          }}>
-            <div style={{ fontSize: 16, color: 'var(--text-secondary)', marginBottom: 12, fontWeight: 600 }}>
-              Your audit trails will appear here
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
-              Once Smarticus is connected to your workflow, every AI-generated document will have a full audit trail here — ready for your next inspection.
-            </div>
-          </div>
+            Open Sandbox →
+          </a>
         </div>
       )}
     </div>

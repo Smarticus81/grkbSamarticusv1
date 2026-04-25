@@ -317,18 +317,32 @@ router.get('/stats', async (_req, res) => {
   const driver = (ctx.graph as any).driver;
   const database = (ctx.graph as any).database ?? 'neo4j';
   const session = driver.session({ database });
+  const toNum = (v: any) => v?.toNumber?.() ?? v ?? 0;
   try {
-    const countRes = await session.run(
+    const obligationRes = await session.run(
       `MATCH (o:Obligation) RETURN count(o) AS total`,
     );
-    const total = countRes.records[0]?.get('total')?.toNumber?.() ?? countRes.records[0]?.get('total') ?? 0;
+    const obligations = toNum(obligationRes.records[0]?.get('total'));
+
+    const regulationRes = await session.run(
+      `MATCH (o:Obligation)
+       WITH coalesce(o.regulation, o.artifactType, o.jurisdiction) AS reg
+       WHERE reg IS NOT NULL
+       RETURN count(DISTINCT reg) AS total`,
+    );
+    const regulations = toNum(regulationRes.records[0]?.get('total'));
+
+    const evidenceRes = await session.run(
+      `MATCH (e:EvidenceType) RETURN count(e) AS total`,
+    );
+    const evidenceTypes = toNum(evidenceRes.records[0]?.get('total'));
 
     const jurisdictionRes = await session.run(
       `MATCH (o:Obligation) RETURN o.jurisdiction AS jurisdiction, count(o) AS count ORDER BY count DESC`,
     );
     const jurisdictions = jurisdictionRes.records.map((r: any) => ({
       jurisdiction: r.get('jurisdiction'),
-      count: r.get('count')?.toNumber?.() ?? r.get('count'),
+      count: toNum(r.get('count')),
     }));
 
     const processRes = await session.run(
@@ -336,10 +350,18 @@ router.get('/stats', async (_req, res) => {
     );
     const processTypes = processRes.records.map((r: any) => ({
       processType: r.get('processType'),
-      count: r.get('count')?.toNumber?.() ?? r.get('count'),
+      count: toNum(r.get('count')),
     }));
 
-    res.json({ total, jurisdictions, processTypes });
+    res.json({
+      regulations,
+      obligations,
+      evidenceTypes,
+      // legacy aliases
+      total: obligations,
+      jurisdictions,
+      processTypes,
+    });
   } finally {
     await session.close();
   }

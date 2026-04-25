@@ -26,6 +26,7 @@ export type TraceEventType =
 export interface TraceContext {
   processInstanceId: string;
   traceId: string;
+  tenantId: string;
   workspaceId?: string;
 }
 
@@ -91,6 +92,7 @@ export interface VerificationReport {
 }
 
 export interface ContentTraceInput {
+  tenantId: string;
   processInstanceId: string;
   stepId: string;
   contentType: string;

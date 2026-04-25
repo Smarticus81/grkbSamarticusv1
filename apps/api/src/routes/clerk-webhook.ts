@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import type { Request, Response } from 'express';
+import { getDB, schema, eq, and } from '@regground/core';
 
 // ---------------------------------------------------------------------------
 // Clerk Webhook Handler
@@ -18,7 +19,7 @@ import type { Request, Response } from 'express';
 //   CLERK_WEBHOOK_SIGNING_SECRET — the Svix signing secret from the Clerk dashboard
 // ---------------------------------------------------------------------------
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 /** Svix header names used for webhook signature verification. */
 const SVIX_ID_HEADER = 'svix-id';
@@ -48,6 +49,7 @@ async function verifyWebhookSignature(
   // Dynamic import so the app still boots if svix is not yet installed.
   let Webhook: any;
   try {
+    // @ts-expect-error - svix is an optional runtime dependency
     const svix = await import('svix');
     Webhook = svix.Webhook;
   } catch {
@@ -72,44 +74,154 @@ async function verifyWebhookSignature(
 }
 
 // ---------------------------------------------------------------------------
-// Event handlers
+// Event handlers — idempotent upserts into Postgres.
 // ---------------------------------------------------------------------------
 
-function handleOrganizationCreated(data: Record<string, unknown>): void {
-  const orgId = data.id as string | undefined;
-  const orgName = data.name as string | undefined;
-  const orgSlug = data.slug as string | undefined;
+type TenantPlan = 'free' | 'starter' | 'professional' | 'enterprise';
 
-  console.log('[clerk-webhook] organization.created', { orgId, orgName, orgSlug });
-
-  // Phase 2 TODO: insert tenant row into the tenants table.
-  // For now we log so the event is observable in server output.
-  //
-  // Example future implementation:
-  // await db.insert(tenants).values({
-  //   id: orgId,
-  //   name: orgName,
-  //   slug: orgSlug,
-  //   plan: 'free',
-  //   createdAt: new Date(),
-  // });
+function normalizePlan(raw: unknown): TenantPlan {
+  if (typeof raw === 'string' && ['free', 'starter', 'professional', 'enterprise'].includes(raw)) {
+    return raw as TenantPlan;
+  }
+  return 'free';
 }
 
-function handleUserCreated(data: Record<string, unknown>): void {
-  const userId = data.id as string | undefined;
+async function handleOrganizationCreated(data: Record<string, unknown>): Promise<void> {
+  const clerkOrgId = data.id as string | undefined;
+  const orgName = (data.name as string | undefined) ?? (data.slug as string | undefined) ?? 'Unnamed organization';
+  const plan = normalizePlan((data.public_metadata as Record<string, unknown> | undefined)?.plan);
+
+  if (!clerkOrgId) {
+    console.warn('[clerk-webhook] organization.created missing id', data);
+    return;
+  }
+
+  const db = getDB();
+  await db
+    .insert(schema.tenants)
+    .values({ clerkOrgId, name: orgName, plan })
+    .onConflictDoUpdate({
+      target: schema.tenants.clerkOrgId,
+      set: { name: orgName, plan },
+    });
+  console.log('[clerk-webhook] organization upserted', { clerkOrgId, orgName, plan });
+}
+
+async function handleOrganizationUpdated(data: Record<string, unknown>): Promise<void> {
+  await handleOrganizationCreated(data);
+}
+
+async function handleOrganizationDeleted(data: Record<string, unknown>): Promise<void> {
+  const clerkOrgId = data.id as string | undefined;
+  if (!clerkOrgId) return;
+  const db = getDB();
+  await db
+    .update(schema.tenants)
+    .set({ deletedAt: new Date() })
+    .where(eq(schema.tenants.clerkOrgId, clerkOrgId));
+  console.log('[clerk-webhook] organization soft-deleted', { clerkOrgId });
+}
+
+async function handleUserCreated(data: Record<string, unknown>): Promise<void> {
+  const clerkUserId = data.id as string | undefined;
   const email =
     ((data.email_addresses as Array<Record<string, unknown>> | undefined)?.[0]
-      ?.email_address as string | undefined) ?? 'unknown';
+      ?.email_address as string | undefined) ?? 'unknown@unknown.local';
 
-  console.log('[clerk-webhook] user.created', { userId, email });
+  if (!clerkUserId) {
+    console.warn('[clerk-webhook] user.created missing id', data);
+    return;
+  }
+
+  const db = getDB();
+  await db
+    .insert(schema.users)
+    .values({ clerkUserId, email })
+    .onConflictDoUpdate({
+      target: schema.users.clerkUserId,
+      set: { email },
+    });
+  console.log('[clerk-webhook] user upserted', { clerkUserId, email });
 }
 
-function handleOrganizationMembershipCreated(data: Record<string, unknown>): void {
-  const orgId = (data.organization as Record<string, unknown> | undefined)?.id as string | undefined;
-  const userId = (data.public_user_data as Record<string, unknown> | undefined)?.user_id as string | undefined;
-  const role = data.role as string | undefined;
+async function handleOrganizationMembershipCreated(data: Record<string, unknown>): Promise<void> {
+  const clerkOrgId = (data.organization as Record<string, unknown> | undefined)?.id as string | undefined;
+  const clerkUserId = (data.public_user_data as Record<string, unknown> | undefined)?.user_id as string | undefined;
+  const rawRole = data.role as string | undefined;
 
-  console.log('[clerk-webhook] organizationMembership.created', { orgId, userId, role });
+  if (!clerkOrgId || !clerkUserId) {
+    console.warn('[clerk-webhook] membership.created missing ids', data);
+    return;
+  }
+
+  const role: 'owner' | 'admin' | 'member' | 'viewer' =
+    rawRole === 'org:admin' ? 'admin' :
+    rawRole === 'org:owner' ? 'owner' :
+    rawRole === 'org:viewer' ? 'viewer' :
+    'member';
+
+  const db = getDB();
+
+  const tenant = await db
+    .select({ id: schema.tenants.id })
+    .from(schema.tenants)
+    .where(eq(schema.tenants.clerkOrgId, clerkOrgId))
+    .limit(1);
+  const user = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.clerkUserId, clerkUserId))
+    .limit(1);
+
+  const tenantId = tenant[0]?.id;
+  const userId = user[0]?.id;
+  if (!tenantId || !userId) {
+    console.warn('[clerk-webhook] membership.created — tenant or user not yet persisted', {
+      clerkOrgId,
+      clerkUserId,
+    });
+    return;
+  }
+
+  await db
+    .insert(schema.tenantMemberships)
+    .values({ tenantId, userId, role })
+    .onConflictDoUpdate({
+      target: [schema.tenantMemberships.tenantId, schema.tenantMemberships.userId],
+      set: { role },
+    });
+  console.log('[clerk-webhook] membership upserted', { tenantId, userId, role });
+}
+
+async function handleOrganizationMembershipDeleted(data: Record<string, unknown>): Promise<void> {
+  const clerkOrgId = (data.organization as Record<string, unknown> | undefined)?.id as string | undefined;
+  const clerkUserId = (data.public_user_data as Record<string, unknown> | undefined)?.user_id as string | undefined;
+  if (!clerkOrgId || !clerkUserId) return;
+
+  const db = getDB();
+  const tenant = await db
+    .select({ id: schema.tenants.id })
+    .from(schema.tenants)
+    .where(eq(schema.tenants.clerkOrgId, clerkOrgId))
+    .limit(1);
+  const user = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.clerkUserId, clerkUserId))
+    .limit(1);
+  const tenantId = tenant[0]?.id;
+  const userId = user[0]?.id;
+  if (!tenantId || !userId) return;
+
+  await db
+    .delete(schema.tenantMemberships)
+    .where(
+      and(
+        eq(schema.tenantMemberships.tenantId, tenantId),
+        eq(schema.tenantMemberships.userId, userId),
+      ),
+    );
+  console.log('[clerk-webhook] membership removed', { tenantId, userId });
 }
 
 // ---------------------------------------------------------------------------
@@ -142,15 +254,29 @@ router.post('/', async (req: Request, res: Response) => {
 
     switch (eventType) {
       case 'organization.created':
-        handleOrganizationCreated(eventData);
+        await handleOrganizationCreated(eventData);
+        break;
+
+      case 'organization.updated':
+        await handleOrganizationUpdated(eventData);
+        break;
+
+      case 'organization.deleted':
+        await handleOrganizationDeleted(eventData);
         break;
 
       case 'user.created':
-        handleUserCreated(eventData);
+      case 'user.updated':
+        await handleUserCreated(eventData);
         break;
 
       case 'organizationMembership.created':
-        handleOrganizationMembershipCreated(eventData);
+      case 'organizationMembership.updated':
+        await handleOrganizationMembershipCreated(eventData);
+        break;
+
+      case 'organizationMembership.deleted':
+        await handleOrganizationMembershipDeleted(eventData);
         break;
 
       default:

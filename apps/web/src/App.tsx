@@ -1,7 +1,7 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider, useQuery } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import { SignedIn, SignedOut, RedirectToSignIn, OrganizationSwitcher, UserButton } from '@clerk/clerk-react';
-import { queryClient } from './lib/queryClient.js';
+import { queryClient, api } from './lib/queryClient.js';
 import { LandingPage } from './pages/LandingPage.js';
 import { TraceExplorer } from './pages/TraceExplorer.js';
 import { RegulationManager } from './pages/RegulationManager.js';
@@ -9,7 +9,6 @@ import { ApiAccess } from './pages/ApiAccess.js';
 import { Sandbox } from './pages/Sandbox.js';
 import { CommandCenter } from './pages/CommandCenter.js';
 import { Builder } from './pages/Builder.js';
-import { DemoCapa } from './pages/DemoCapa.js';
 import { ThemeToggle } from './components/ui/ThemeToggle.js';
 import { RegulatorCompactStrip } from './components/ui/RegulatorAssets.js';
 import { SmarticusWordmark } from './components/ui/logos.js';
@@ -157,6 +156,17 @@ function TopbarAuthControls() {
 }
 
 function AppShell() {
+  const { data: stats } = useQuery({
+    queryKey: ['graph-stats'],
+    queryFn: () =>
+      api<{ regulations: number; obligations: number; evidenceTypes: number }>(
+        '/api/graph/stats',
+      ),
+    retry: false,
+    staleTime: 60_000,
+  });
+  const regCount = stats?.regulations ?? REG_COUNT;
+  const obligationCount = stats?.obligations ?? OBLIGATION_COUNT;
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--paper)' }}>
       <nav
@@ -214,8 +224,8 @@ function AppShell() {
             </span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ink-3)' }}>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{REG_COUNT} regulations</span>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{OBLIGATION_COUNT} requirements</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{regCount} regulations</span>
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{obligationCount} requirements</span>
           </div>
           <RegulatorCompactStrip />
         </div>
@@ -239,7 +249,6 @@ function AppShell() {
             <Route path="/app/trails/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
             <Route path="/app/trails">{() => <TraceExplorer />}</Route>
             <Route path="/app/connect" component={ApiAccess} />
-            <Route path="/app/demo/capa" component={DemoCapa} />
             <Route><CommandCenter /></Route>
           </Switch>
         </main>

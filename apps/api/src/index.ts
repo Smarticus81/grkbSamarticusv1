@@ -95,6 +95,13 @@ app.use(
   }),
 );
 
+// --- Clerk webhook (MUST be before express.json so raw body is preserved) -
+app.use(
+  '/api/clerk-webhook',
+  express.raw({ type: 'application/json' }),
+  clerkWebhook,
+);
+
 // --- Body parsing --------------------------------------------------------
 app.use(express.json({ limit: '10mb' }));
 
@@ -136,9 +143,6 @@ app.use('/api/traces', traces);
 app.use('/api/api-keys', apiKeysLimiter, apiKeysRoute);
 app.use('/api/sandbox', sandbox);
 app.use('/api/validate-draft', validateDraft);
-
-// Clerk webhook — raw body needed for signature verification, mounted before global JSON parser
-app.use('/api/clerk-webhook', clerkWebhook);
 
 // ---------------------------------------------------------------------------
 // Start

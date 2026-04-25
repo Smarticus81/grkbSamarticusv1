@@ -1,11 +1,11 @@
 import { sql } from 'drizzle-orm';
 import type { RegGroundDB } from './connection.js';
 import type { ExtractTablesWithRelations } from 'drizzle-orm';
-import type { PgTransaction, PgQueryResultHKT } from 'drizzle-orm/pg-core';
+import type { PgTransaction, QueryResultHKT } from 'drizzle-orm/pg-core';
 import type * as schema from './schema.js';
 
 type DrizzleTransaction = PgTransaction<
-  PgQueryResultHKT,
+  QueryResultHKT,
   typeof schema,
   ExtractTablesWithRelations<typeof schema>
 >;

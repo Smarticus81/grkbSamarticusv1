@@ -251,13 +251,6 @@ const DEPLOY_OPTIONS: DeployOption[] = [
   -H "Content-Type: application/json" \\
   -d '{"agentId": "{{AGENT_ID}}", "input": {...}}'`,
   },
-  {
-    id: 'qms-connection',
-    title: 'QMS Agent Connection',
-    description: 'Connect directly to your QMS system',
-    cta: 'Coming soon',
-    comingSoon: true,
-  },
 ];
 
 const GUARDRAILS: GuardrailDef[] = [
@@ -549,7 +542,7 @@ export function Builder() {
               margin: '0 0 24px',
             }}
           >
-            {STEPS[step].question}
+            {STEPS[step]?.question}
           </h2>
 
           {/* ── Step 1: Job ── */}

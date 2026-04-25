@@ -5,7 +5,7 @@ import { InMemoryTraceService } from '../src/harness/TestHarness.js';
 describe('hash-chained traceability', () => {
   it('builds and verifies a valid chain', async () => {
     const svc = new InMemoryTraceService();
-    const ctx = await svc.startTrace('pi-1');
+    const ctx = await svc.startTrace('pi-1', 'tenant-test');
     await svc.logEvent(ctx, { eventType: 'AGENT_SPAWNED', actor: 'agent-a' });
     await svc.logEvent(ctx, { eventType: 'AGENT_COMPLETED', actor: 'agent-a' });
     const chain = await svc.getTraceChain('pi-1');
@@ -18,7 +18,7 @@ describe('hash-chained traceability', () => {
 
   it('detects tampered entries', async () => {
     const svc = new InMemoryTraceService();
-    const ctx = await svc.startTrace('pi-2');
+    const ctx = await svc.startTrace('pi-2', 'tenant-test');
     await svc.logEvent(ctx, { eventType: 'AGENT_SPAWNED', actor: 'agent-b' });
     const chain = await svc.getTraceChain('pi-2');
     chain[1].outputData = { tampered: true };

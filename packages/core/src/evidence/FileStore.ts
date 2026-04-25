@@ -7,6 +7,7 @@ import { workspaceFiles, type WorkspaceFileRow } from '../db/schema.js';
 
 export interface FileUploadInput {
   workspaceId: string;
+  tenantId: string;
   name: string;
   mimeType: string;
   data: Buffer;
@@ -51,6 +52,7 @@ export class FileStore {
       .insert(workspaceFiles)
       .values({
         workspaceId: input.workspaceId,
+        tenantId: input.tenantId,
         fileId,
         name: input.name,
         mimeType: input.mimeType,

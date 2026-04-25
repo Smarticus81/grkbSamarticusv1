@@ -2,6 +2,7 @@ import type { GroundedAgentResult, ProcessDefinition } from '@regground/core';
 
 export interface SandboxRunInput {
   workspaceId: string;
+  tenantId: string;
   jurisdiction: string;
   definition: ProcessDefinition;
   input: Record<string, unknown>;

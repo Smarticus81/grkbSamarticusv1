@@ -14,6 +14,7 @@ export class ContentTraceService {
   async log(input: ContentTraceInput & { content: string }): Promise<void> {
     const contentHash = createHash('sha256').update(input.content).digest('hex');
     await this.db.insert(contentTraces).values({
+      tenantId: input.tenantId,
       processInstanceId: input.processInstanceId,
       stepId: input.stepId,
       contentType: input.contentType,

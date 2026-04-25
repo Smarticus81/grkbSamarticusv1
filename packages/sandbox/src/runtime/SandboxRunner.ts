@@ -25,7 +25,7 @@ export class SandboxRunner {
     const processInstanceId = randomUUID();
     this.stream.publish({ type: 'process.started', processInstanceId });
 
-    const traceCtx = await this.deps.traceService.startTrace(processInstanceId);
+    const traceCtx = await this.deps.traceService.startTrace(processInstanceId, input.tenantId, input.workspaceId);
     const baseContext: GroundedAgentContext = {
       processInstanceId,
       workspaceId: input.workspaceId,
