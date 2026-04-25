@@ -26,6 +26,9 @@ interface StoredRun {
   result: RunResult<unknown>;
   events: TaskEvent[];
   taskId: string;
+  taskName: string;
+  tenantId: string;
+  mode: 'with-graph' | 'without-graph' | 'compare';
   createdAtIso: string;
 }
 const RUNS = new Map<string, StoredRun>();
@@ -37,6 +40,17 @@ function rememberRun(runId: string, run: StoredRun) {
     const oldestKey = RUNS.keys().next().value;
     if (oldestKey) RUNS.delete(oldestKey);
   }
+}
+
+function laneSummary(lane: LaneResult | undefined): { satisfied: number; missed: number; passed: boolean } | undefined {
+  if (!lane) return undefined;
+  const total = lane.obligationsConsulted?.length ?? 0;
+  const missed = lane.score?.violations?.length ?? 0;
+  return {
+    satisfied: Math.max(0, total - missed),
+    missed,
+    passed: lane.score?.strictGatePass ?? false,
+  };
 }
 
 /* ── GET /api/sandbox/tasks ─────────────────────────────────────────── */
@@ -73,8 +87,10 @@ const RunBodySchema = z.object({
   paceMs: z.number().int().min(0).max(2000).optional(),
 });
 
-router.post('/tasks/:id/run', async (req, res) => {
-  const def = getTask(req.params.id);
+router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
+  const taskId = req.params.id;
+  if (!taskId) return res.status(400).json({ error: 'task id required' });
+  const def = getTask(taskId);
   if (!def) return res.status(404).json({ error: 'task not found' });
 
   const parsed = RunBodySchema.safeParse(req.body ?? {});
@@ -105,6 +121,9 @@ router.post('/tasks/:id/run', async (req, res) => {
       result: runResult,
       events: [...events],
       taskId: def.id,
+      taskName: def.name,
+      tenantId: req.tenantId ?? req.user?.tenantId ?? 'dev',
+      mode,
       createdAtIso: new Date().toISOString(),
     });
     res.status(202).json({ runId: runResult.runId, taskId: def.id, mode });
@@ -150,6 +169,37 @@ router.get('/runs/:runId/stream', (req, res: Response) => {
     res.end();
   };
   void replay();
+});
+
+/* ── GET /api/sandbox/runs/recent ──────────────────────────────────── */
+router.get('/runs/recent', (req: AuthedRequest, res) => {
+  const tenantId = req.tenantId ?? req.user?.tenantId ?? 'dev';
+  const limit = Math.min(Number(req.query.limit ?? 10), 50);
+  const out: Array<{
+    runId: string;
+    taskId: string;
+    taskName: string;
+    mode: string;
+    createdAtIso: string;
+    withGraph?: ReturnType<typeof laneSummary>;
+    withoutGraph?: ReturnType<typeof laneSummary>;
+  }> = [];
+  // RUNS is insertion-ordered; reverse-iterate for newest-first.
+  const all = Array.from(RUNS.entries()).reverse();
+  for (const [runId, run] of all) {
+    if (run.tenantId !== tenantId) continue;
+    out.push({
+      runId,
+      taskId: run.taskId,
+      taskName: run.taskName,
+      mode: run.mode,
+      createdAtIso: run.createdAtIso,
+      withGraph: laneSummary(run.result.withGraph),
+      withoutGraph: laneSummary(run.result.withoutGraph),
+    });
+    if (out.length >= limit) break;
+  }
+  res.json({ runs: out });
 });
 
 /* ── GET /api/sandbox/runs/:runId/result ────────────────────────────── */

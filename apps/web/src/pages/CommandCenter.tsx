@@ -178,9 +178,107 @@ function QuickActionCard({ action }: { action: QuickAction }) {
   );
 }
 
-/* ── Main page ── */
-export function CommandCenter() {
+/* ── Recent Activity ── */
+interface RecentRun {
+  runId: string;
+  taskId: string;
+  taskName: string;
+  mode: string;
+  createdAtIso: string;
+  withGraph?: { satisfied: number; missed: number; passed: boolean };
+  withoutGraph?: { satisfied: number; missed: number; passed: boolean };
+}
+
+function timeAgo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 60_000) return 'just now';
+  const m = Math.floor(ms / 60_000);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+function RecentActivity() {
   const [, navigate] = useLocation();
+  const { data, isLoading } = useQuery({
+    queryKey: ['sandbox-recent-runs'],
+    queryFn: () => api<{ runs: RecentRun[] }>('/api/sandbox/runs/recent?limit=8'),
+    retry: false,
+    refetchInterval: 15_000,
+    staleTime: 10_000,
+  });
+  const runs = data?.runs ?? [];
+
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <span
+        className="eyebrow"
+        style={{ display: 'block', marginBottom: 16, color: 'var(--ink-2)' }}
+      >
+        RECENT ACTIVITY
+      </span>
+      {isLoading || runs.length === 0 ? (
+        <div className="ground-card" style={{ padding: '8px 0' }}>
+          <EmptyState
+            title="You haven\u2019t run anything yet."
+            body="The Sandbox lets you run any QMS process in seconds and watch the requirements get satisfied \u2014 or not \u2014 in real time."
+            primaryAction={{ label: 'Run your first process', href: '/app/sandbox' }}
+            secondaryAction={{ label: 'Build a tool first', href: '/app/builder' }}
+          />
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 8 }}>
+          {runs.map((r) => {
+            const lane = r.withGraph ?? r.withoutGraph;
+            const passed = lane?.passed ?? false;
+            return (
+              <button
+                key={r.runId}
+                onClick={() => navigate(`/app/trails/${r.runId}`)}
+                className="ground-card lift"
+                style={{
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  display: 'grid',
+                  gridTemplateColumns: '1fr auto auto auto',
+                  alignItems: 'center',
+                  gap: 16,
+                  padding: '14px 18px',
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {r.taskName}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginTop: 2, fontFamily: 'var(--mono)', letterSpacing: '0.04em' }}>
+                    {r.taskId} \u00b7 {r.mode}
+                  </div>
+                </div>
+                {lane && (
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', whiteSpace: 'nowrap' }}>
+                    <span style={{ color: 'var(--ok)' }}>{lane.satisfied}\u2713</span>
+                    <span style={{ margin: '0 6px', color: 'var(--ink-4)' }}>\u00b7</span>
+                    <span style={{ color: lane.missed > 0 ? 'var(--err)' : 'var(--ink-4)' }}>{lane.missed}\u2717</span>
+                  </div>
+                )}
+                <span className={`badge ${passed ? 'badge-ok' : 'badge-err'}`} style={{ fontSize: 9 }}>
+                  {passed ? 'PASSED' : 'FAILED'}
+                </span>
+                <div style={{ fontSize: 11.5, color: 'var(--ink-4)', fontFamily: 'var(--mono)', minWidth: 70, textAlign: 'right' }}>
+                  {timeAgo(r.createdAtIso)}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Main page ── */
+export function CommandCenter() {  const [, navigate] = useLocation();
 
   /* Optional: try to fetch live stats from the API; fall back to static constants */
   const { data: liveStats } = useQuery({
@@ -307,22 +405,8 @@ export function CommandCenter() {
       </div>
 
       {/* ── Recent activity ── */}
-      <div style={{ marginBottom: 40 }}>
-        <span
-          className="eyebrow"
-          style={{ display: 'block', marginBottom: 16, color: 'var(--ink-2)' }}
-        >
-          RECENT ACTIVITY
-        </span>
-        <div className="ground-card" style={{ padding: '8px 0' }}>
-          <EmptyState
-            title="You haven’t run anything yet."
-            body="The Sandbox lets you run any QMS process in seconds and watch the requirements get satisfied — or not — in real time."
-            primaryAction={{ label: 'Run your first process', href: '/app/sandbox' }}
-            secondaryAction={{ label: 'Build a tool first', href: '/app/builder' }}
-          />
-        </div>
-      </div>
+      <RecentActivity />
+
 
       {/* ── Graph coverage ── */}
       <div>

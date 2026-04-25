@@ -491,7 +491,10 @@ function EvalCard({ result, judging, onJudge }: { result: RunResult; judging: bo
 
       {(result.withGraph?.judge || result.withoutGraph?.judge) && (
         <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--rule)' }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Quality review</div>
+          <div className="eyebrow" style={{ marginBottom: 4 }}>Quality review</div>
+          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)', letterSpacing: '0.04em', marginBottom: 10 }}>
+            Rule-based judge · live LLM scoring coming soon
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <JudgePanel title="Smarticus-guided AI"    judge={result.withGraph?.judge} />
             <JudgePanel title="Generic AI" judge={result.withoutGraph?.judge} />

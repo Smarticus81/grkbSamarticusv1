@@ -3,10 +3,11 @@
  *
  * 6-step flow: QMS Job > Requirements > Required Data > Review Controls > Output Package > Connect
  * Left sidebar stepper, center canvas, right sidebar regulatory inspector.
- * Client-side only — no API calls. State management via React hooks.
+ * State is persisted to /api/builder/agents — the configuration survives reloads.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { api } from '../lib/queryClient.js';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -43,7 +44,6 @@ type DeployOption = {
   description: string;
   cta: string;
   snippet?: string;
-  comingSoon?: boolean;
 };
 
 type GuardrailDef = {
@@ -51,6 +51,21 @@ type GuardrailDef = {
   title: string;
   description: string;
   defaultOn: boolean;
+};
+
+type SavedAgent = {
+  id: string;
+  name: string;
+  jobId: string;
+  jobTitle: string;
+  regulations: string[];
+  evidenceStatus: Record<string, string>;
+  guardrails: Record<string, boolean>;
+  outputFormat: string | null;
+  deployTarget: string | null;
+  riskBand: 'low' | 'medium' | 'high';
+  description: string | null;
+  updatedAt: string;
 };
 
 /* ── Data ──────────────────────────────────────────────────────────── */
@@ -231,11 +246,12 @@ const DEPLOY_OPTIONS: DeployOption[] = [
     cta: 'Copy config',
     snippet: `{
   "mcpServers": {
-    "regground": {
+    "smarticus": {
       "command": "npx",
       "args": ["-y", "@regground/mcp-server"],
       "env": {
-        "NEO4J_URI": "bolt://localhost:7687"
+        "SMARTICUS_API_BASE": "https://api.smarticus.ai",
+        "SMARTICUS_API_KEY": "sm_live_<paste-from-Connect>"
       }
     }
   }
@@ -244,12 +260,17 @@ const DEPLOY_OPTIONS: DeployOption[] = [
   {
     id: 'api-endpoint',
     title: 'API Endpoint',
-    description: 'REST API endpoint for programmatic access',
+    description: 'REST endpoint for programmatic runs (returns the same SSE stream the sandbox uses).',
     cta: 'Copy curl',
-    snippet: `curl -X POST https://api.smarticus.ai/v1/agents/run \\
-  -H "Authorization: Bearer sk-reg-..." \\
+    snippet: `# 1. start a run — returns { runId }
+curl -X POST "$SMARTICUS_API_BASE/api/sandbox/tasks/{{TASK_ID}}/run" \\
+  -H "Authorization: Bearer $SMARTICUS_API_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"agentId": "{{AGENT_ID}}", "input": {...}}'`,
+  -d '{"mode":"with-graph","input":{...}}'
+
+# 2. fetch the result
+curl "$SMARTICUS_API_BASE/api/sandbox/runs/<runId>/result" \\
+  -H "Authorization: Bearer $SMARTICUS_API_KEY"`,
   },
 ];
 
@@ -313,6 +334,70 @@ export function Builder() {
   const [selectedOutput, setSelectedOutput] = useState<string | null>(null);
   const [selectedDeploy, setSelectedDeploy] = useState<string | null>(null);
   const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+
+  /* ── Persistence ─────────────────────────────────────────────────── */
+  const [savedAgents, setSavedAgents] = useState<SavedAgent[]>([]);
+  const [savingState, setSavingState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [agentName, setAgentName] = useState<string>('');
+
+  const loadSavedAgents = async () => {
+    try {
+      const list = await api<SavedAgent[]>('/api/builder/agents');
+      setSavedAgents(Array.isArray(list) ? list : []);
+    } catch {
+      setSavedAgents([]);
+    }
+  };
+
+  useEffect(() => { void loadSavedAgents(); }, []);
+
+  function loadAgent(agent: SavedAgent) {
+    const job = JOBS.find((j) => j.id === agent.jobId);
+    if (!job) return;
+    setSelectedJob(job);
+    setScope(agent.regulations);
+    setGuardrailState(() => {
+      const next: Record<string, boolean> = {};
+      GUARDRAILS.forEach((g) => { next[g.id] = agent.guardrails[g.id] ?? g.defaultOn; });
+      return next;
+    });
+    setSelectedOutput(agent.outputFormat);
+    setSelectedDeploy(agent.deployTarget);
+    setAgentName(agent.name);
+    setStep(5);
+  }
+
+  async function handleSave() {
+    if (!selectedJob) return;
+    const name = (agentName.trim() || `${selectedJob.title} \u2014 ${new Date().toLocaleDateString()}`).slice(0, 200);
+    setSavingState('saving');
+    try {
+      const evidenceStatus: Record<string, string> = {};
+      selectedJob.evidenceRows.forEach((r) => { evidenceStatus[r.label] = r.status; });
+      await api('/api/builder/agents', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          jobId: selectedJob.id,
+          jobTitle: selectedJob.title,
+          regulations: scope,
+          evidenceStatus,
+          guardrails: guardrailState,
+          outputFormat: selectedOutput,
+          deployTarget: selectedDeploy,
+          riskBand: selectedJob.risk === 'LOW' ? 'low' : selectedJob.risk === 'MEDIUM' ? 'medium' : 'high',
+          description: selectedJob.description,
+        }),
+      });
+      setSavingState('saved');
+      setAgentName(name);
+      void loadSavedAgents();
+      setTimeout(() => setSavingState('idle'), 2000);
+    } catch {
+      setSavingState('error');
+      setTimeout(() => setSavingState('idle'), 3000);
+    }
+  }
 
   /* Derived inspector data */
   const inspector = useMemo(() => {
@@ -405,6 +490,24 @@ export function Builder() {
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {selectedJob && (
+            <button
+              className="btn btn-ghost"
+              onClick={handleSave}
+              disabled={savingState === 'saving'}
+              style={{ fontSize: 13 }}
+            >
+              {savingState === 'saving'
+                ? 'Saving…'
+                : savingState === 'saved'
+                ? '✓ Saved'
+                : savingState === 'error'
+                ? 'Save failed — retry'
+                : agentName
+                ? 'Save changes'
+                : 'Save agent'}
+            </button>
+          )}
           {step > 0 && (
             <button className="btn btn-ghost" onClick={goBack} style={{ fontSize: 13 }}>
               Back
@@ -550,13 +653,43 @@ export function Builder() {
 
           {/* ── Step 1: Job ── */}
           {step === 0 && (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: 14,
-              }}
-            >
+            <>
+              {savedAgents.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <div className="eyebrow" style={{ marginBottom: 10, fontSize: 10 }}>
+                    Continue editing · {savedAgents.length} saved
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
+                    {savedAgents.slice(0, 6).map((a) => (
+                      <button
+                        key={a.id}
+                        onClick={() => loadAgent(a)}
+                        className="ground-card lift"
+                        style={{ cursor: 'pointer', textAlign: 'left', padding: '12px 14px' }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                          <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {a.name}
+                          </div>
+                          <span className={`badge ${a.riskBand === 'high' ? 'badge-signal' : a.riskBand === 'medium' ? 'badge-warn' : 'badge-ok'}`} style={{ fontSize: 9 }}>
+                            {a.riskBand.toUpperCase()}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--mono)', letterSpacing: '0.04em' }}>
+                          {a.jobTitle} · updated {new Date(a.updatedAt).toLocaleDateString()}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: 14,
+                }}
+              >
               {JOBS.map((job) => {
                 const active = selectedJob?.id === job.id;
                 return (
@@ -619,6 +752,7 @@ export function Builder() {
                 );
               })}
             </div>
+            </>
           )}
 
           {/* ── Step 2: Scope ── */}
@@ -879,13 +1013,8 @@ export function Builder() {
                   <div
                     key={opt.id}
                     className={`ground-card ${active ? 'active' : ''}`}
-                    style={{
-                      cursor: opt.comingSoon ? 'default' : 'pointer',
-                      opacity: opt.comingSoon ? 0.55 : 1,
-                    }}
-                    onClick={() => {
-                      if (!opt.comingSoon) setSelectedDeploy(opt.id);
-                    }}
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => setSelectedDeploy(opt.id)}
                   >
                     <div
                       style={{
@@ -896,11 +1025,6 @@ export function Builder() {
                       }}
                     >
                       <h3 style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{opt.title}</h3>
-                      {opt.comingSoon && (
-                        <span className="badge badge-ink" style={{ fontSize: 9 }}>
-                          COMING SOON
-                        </span>
-                      )}
                     </div>
                     <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 12 }}>
                       {opt.description}
@@ -924,21 +1048,25 @@ export function Builder() {
                       </pre>
                     )}
 
-                    {!opt.comingSoon && (
-                      <button
-                        className={active ? 'btn btn-orange' : 'btn btn-ghost'}
-                        style={{ fontSize: 12, padding: '8px 14px' }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (opt.snippet) {
-                            handleCopySnippet(opt.snippet, opt.id);
-                          }
-                          setSelectedDeploy(opt.id);
-                        }}
-                      >
-                        {copiedSnippet === opt.id ? 'Copied!' : opt.cta}
-                      </button>
+                    {!active && opt.snippet && (
+                      <div style={{ fontSize: 11, color: 'var(--ink-4)', marginBottom: 12, fontFamily: 'var(--mono)', letterSpacing: '0.04em' }}>
+                        Click to reveal snippet
+                      </div>
                     )}
+
+                    <button
+                      className={active ? 'btn btn-orange' : 'btn btn-ghost'}
+                      style={{ fontSize: 12, padding: '8px 14px' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (opt.snippet) {
+                          handleCopySnippet(opt.snippet, opt.id);
+                        }
+                        setSelectedDeploy(opt.id);
+                      }}
+                    >
+                      {copiedSnippet === opt.id ? 'Copied!' : opt.cta}
+                    </button>
                   </div>
                 );
               })}

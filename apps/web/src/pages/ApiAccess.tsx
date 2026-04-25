@@ -22,15 +22,22 @@ interface ApiKey {
   keyPrefix: string;
   scopes: string[];
   rateLimit: number;
-  status: 'active' | 'revoked' | 'expired';
+  active: boolean;
   expiresAt?: string | null;
   lastUsedAt?: string | null;
   createdAt: string;
 }
 
+// Backend POST /api/api-keys returns the row plus the raw key under `key`.
 interface CreateKeyResponse {
-  apiKey: ApiKey;
-  fullKey: string;
+  id: string;
+  name: string;
+  key: string;
+  keyPrefix: string;
+  scopes: string[];
+  rateLimit: number;
+  expiresAt?: string | null;
+  createdAt: string;
 }
 
 const AVAILABLE_SCOPES = [
@@ -150,6 +157,9 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
   const [expiryDays, setExpiryDays] = useState(90);
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isPreviewKey, setIsPreviewKey] = useState(false);
+  const [pageLoadedAt] = useState<number>(() => Date.now());
+  const [latestRunId, setLatestRunId] = useState<string | null>(null);
 
   const loadKeys = useCallback(async () => {
     setLoading(true);
@@ -169,6 +179,34 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
 
   const hasKey = keys.length > 0 || newKey !== null;
   const activeKeyValue = newKey ?? (keys[0] ? `${keys[0].keyPrefix}…` : 'sm_live_xxxxxxxxxxxx');
+
+  // Poll for first-call detection while the user is on the setup guide and
+  // has at least one key. Stops once we detect any key with a lastUsedAt
+  // newer than the page-load timestamp.
+  const firstCallDetected = keys.some(
+    (k) => k.lastUsedAt && new Date(k.lastUsedAt).getTime() > pageLoadedAt,
+  );
+  useEffect(() => {
+    if (view !== 'guide' || !hasKey || firstCallDetected) return;
+    const handle = window.setInterval(() => {
+      void loadKeys();
+    }, 4000);
+    return () => window.clearInterval(handle);
+  }, [view, hasKey, firstCallDetected, loadKeys]);
+
+  // Once we detect a first call, fetch the latest run id so the CTA can deep
+  // link straight into Decision Trails for that run.
+  useEffect(() => {
+    if (!firstCallDetected) return;
+    let cancelled = false;
+    api<{ runs: Array<{ runId: string }> }>('/api/sandbox/runs/recent?limit=1')
+      .then((r) => {
+        if (cancelled) return;
+        setLatestRunId(r.runs?.[0]?.runId ?? null);
+      })
+      .catch(() => { /* ignore */ });
+    return () => { cancelled = true; };
+  }, [firstCallDetected]);
 
   function resetForm() {
     setKeyName('');
@@ -190,14 +228,17 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
           expiresInDays: expiryDays,
         }),
       });
-      setNewKey(res.fullKey);
+      setNewKey(res.key);
+      setIsPreviewKey(false);
       setShowForm(false);
       resetForm();
       await loadKeys();
     } catch {
-      // Offline / unauthenticated preview — show a fake key so the flow works.
-      const preview = `sm_live_${Math.random().toString(36).slice(2, 10)}_${Math.random().toString(36).slice(2, 10)}`;
+      // Offline / unauthenticated preview — surface a clearly tagged sample
+      // so the flow stays explorable without pretending it's a real key.
+      const preview = `sm_preview_${Math.random().toString(36).slice(2, 10)}_${Math.random().toString(36).slice(2, 10)}`;
       setNewKey(preview);
+      setIsPreviewKey(true);
       setShowForm(false);
       resetForm();
     } finally {
@@ -207,7 +248,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
 
   async function handleRevoke(id: string) {
     try {
-      await api(`/api/api-keys/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'revoked' }) });
+      await api(`/api/api-keys/${id}/revoke`, { method: 'PATCH' });
       await loadKeys();
     } catch {
       /* ignore */
@@ -216,7 +257,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
 
   async function handleActivate(id: string) {
     try {
-      await api(`/api/api-keys/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'active' }) });
+      await api(`/api/api-keys/${id}/activate`, { method: 'PATCH' });
       await loadKeys();
     } catch {
       /* ignore */
@@ -285,9 +326,16 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
             }}
           >
             <div style={{ flex: '1 1 280px', minWidth: 260 }}>
-              <div className="eyebrow" style={{ marginBottom: 4 }}>Save this key</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <div className="eyebrow">{isPreviewKey ? 'Preview key — offline mode' : 'Save this key'}</div>
+                {isPreviewKey && (
+                  <span className="badge badge-warn" style={{ fontSize: 9 }}>NOT AUTHENTICATED</span>
+                )}
+              </div>
               <div style={{ fontSize: 14, color: 'var(--ink-2)', marginBottom: 10, lineHeight: 1.5 }}>
-                This is the only time we'll show the full key. Paste it into the snippet below or your password manager now.
+                {isPreviewKey
+                  ? "This is a sample value so you can see the snippet flow. It won't authenticate against the API — sign in to mint a real key."
+                  : "This is the only time we'll show the full key. Paste it into the snippet below or your password manager now."}
               </div>
               <div
                 style={{
@@ -445,6 +493,36 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                       )}
                     </div>
                   </Step>
+
+                  <Step n={4} done={firstCallDetected} title="Verify the connection" body={firstCallDetected ? undefined : "After you paste the prompt into your tool and ask its agent something, we'll detect the first call here."}>
+                    {firstCallDetected ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                        <span className="badge badge-ok" style={{ fontSize: 10 }}>FIRST CALL DETECTED</span>
+                        <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                          Your tool just hit the ground. Every call from here on is hash-chained.
+                        </span>
+                        <Link href={latestRunId ? `/app/trails/${latestRunId}` : '/app/trails'} className="btn btn-orange" style={{ fontSize: 12 }}>
+                          {latestRunId ? 'View this trail →' : 'View decision trails →'}
+                        </Link>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--ink-3)' }}>
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: hasKey ? 'var(--orange)' : 'var(--ink-4)',
+                            opacity: hasKey ? 1 : 0.4,
+                            animation: hasKey ? 'pulse 1.6s ease-in-out infinite' : undefined,
+                          }}
+                          aria-hidden
+                        />
+                        {hasKey ? 'Listening for your first call…' : 'Create a key in Step 1 to start listening.'}
+                      </div>
+                    )}
+                  </Step>
                 </div>
               </section>
             )}
@@ -536,9 +614,9 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                         </div>
                       </div>
                       <span
-                        className={`badge ${k.status === 'active' ? 'badge-ok' : k.status === 'revoked' ? 'badge-err' : 'badge-warn'}`}
+                        className={`badge ${k.active ? 'badge-ok' : 'badge-err'}`}
                       >
-                        {k.status}
+                        {k.active ? 'active' : 'revoked'}
                       </span>
                     </div>
                     <div style={{ fontSize: 11.5, color: 'var(--ink-3)', display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -548,7 +626,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: 6, marginTop: 'auto', paddingTop: 6 }}>
-                      {k.status === 'active' ? (
+                      {k.active ? (
                         <button className="btn btn-ghost" onClick={() => handleRevoke(k.id)} style={{ fontSize: 12 }}>
                           Revoke
                         </button>

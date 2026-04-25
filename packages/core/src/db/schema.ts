@@ -443,6 +443,36 @@ export const agentConfigs = pgTable(
   }),
 );
 
+// === Builder Agents — saved low-code agent configurations ===
+// Each row is one agent a user composed in the Builder. The agent is not
+// independently executable — it is a saved configuration of (job + scope +
+// evidence + guardrails + output + deploy) that the user can later download
+// as an MCP-compatible bundle, run in the sandbox, or expose via API.
+export const builderAgents = pgTable(
+  'builder_agents',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+    createdBy: uuid('created_by'),
+    name: varchar('name', { length: 200 }).notNull(),
+    jobId: varchar('job_id', { length: 64 }).notNull(),
+    jobTitle: varchar('job_title', { length: 200 }).notNull(),
+    regulations: jsonb('regulations').$type<string[]>().default([]).notNull(),
+    evidenceStatus: jsonb('evidence_status').$type<Record<string, string>>().default({}).notNull(),
+    guardrails: jsonb('guardrails').$type<Record<string, boolean>>().default({}).notNull(),
+    outputFormat: varchar('output_format', { length: 64 }),
+    deployTarget: varchar('deploy_target', { length: 64 }),
+    riskBand: varchar('risk_band', { length: 16 }).notNull().default('medium'),
+    description: text('description'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    tenantCreatedIdx: index('builder_agents_tenant_created_idx').on(t.tenantId, t.createdAt),
+    tenantNameIdx: uniqueIndex('builder_agents_tenant_name_idx').on(t.tenantId, t.name),
+  }),
+);
+
 // === API Keys — external agent graph access ===
 export const apiKeys = pgTable(
   'api_keys',
@@ -492,6 +522,8 @@ export type SkillVersionRow = typeof skillVersions.$inferSelect;
 export type NewSkillVersion = typeof skillVersions.$inferInsert;
 export type ApiKeyRow = typeof apiKeys.$inferSelect;
 export type NewApiKey = typeof apiKeys.$inferInsert;
+export type BuilderAgentRow = typeof builderAgents.$inferSelect;
+export type NewBuilderAgent = typeof builderAgents.$inferInsert;
 export type TenantRow = typeof tenants.$inferSelect;
 export type NewTenant = typeof tenants.$inferInsert;
 export type UserRow = typeof users.$inferSelect;
