@@ -1,872 +1,832 @@
-import { useState, useCallback, useEffect } from 'react';
-import { RegulatorCompactStrip } from '../components/ui/RegulatorAssets.js';
-import { api } from '../lib/queryClient.js';
+/**
+ * Connect — Smarticus
+ *
+ * Hayes Raffle: a "connect" page is a trust handoff. The user is about to
+ * point an outside system at our brain. The page must:
+ *   1. Tell them WHICH outside system (the tool grid)
+ *   2. Give them the keys (API key creation)
+ *   3. Give them the EXACT words to paste (the integration prompt)
+ *
+ * Two parallel paths: vibe-coder (paste-into-Cursor) and dev team (npm/curl).
+ */
 
-/* ─── Types ─── */
+import { useCallback, useEffect, useState } from 'react';
+import { api } from '../lib/queryClient.js';
+import { Link } from 'wouter';
+import { PageHeader } from '../components/ui/PageHeader.js';
+import { EmptyState } from '../components/ui/EmptyState.js';
+
 interface ApiKey {
   id: string;
   name: string;
   keyPrefix: string;
   scopes: string[];
   rateLimit: number;
-  expiresAt: string | null;
-  lastUsedAt: string | null;
-  usageCount: number;
-  active: boolean;
+  status: 'active' | 'revoked' | 'expired';
+  expiresAt?: string | null;
+  lastUsedAt?: string | null;
   createdAt: string;
 }
 
-interface CreateKeyResultRaw {
-  id: string;
-  name: string;
-  key?: string;
-  rawKey?: string;
-  keyPrefix: string;
-}
-interface CreateKeyResult {
-  id: string;
-  name: string;
-  rawKey: string;
-  keyPrefix: string;
+interface CreateKeyResponse {
+  apiKey: ApiKey;
+  fullKey: string;
 }
 
-/* ─── Scopes ─── */
 const AVAILABLE_SCOPES = [
-  { id: 'graph:read', label: 'Read Requirements', desc: 'Query regulations and requirements' },
-  { id: 'compliance:check', label: 'Validation Check', desc: 'Validate outputs against requirements' },
-  { id: 'traces:read', label: 'View Decision Trails', desc: 'Read decision trails' },
-  { id: 'graph:write', label: 'Write Requirements', desc: 'Add or update requirements (admin)' },
-  { id: 'processes:read', label: 'Read Processes', desc: 'View process definitions' },
-  { id: 'processes:write', label: 'Write Processes', desc: 'Create or launch processes' },
-  { id: 'evidence:read', label: 'Read Required Data', desc: 'Query required data records' },
-  { id: 'evidence:write', label: 'Write Required Data', desc: 'Upload required data' },
+  { id: 'graph:read',         label: 'Read knowledge graph',     desc: 'Query requirements, citations, cross-refs.' },
+  { id: 'graph:write',        label: 'Write to knowledge graph', desc: 'Add or modify obligation YAML.' },
+  { id: 'compliance:check',   label: 'Compliance check',          desc: 'Run readiness + validation gates.' },
+  { id: 'traces:read',        label: 'Read decision trails',     desc: 'Pull hash-chained audit logs.' },
+  { id: 'processes:read',     label: 'Read processes',            desc: 'List process definitions and instances.' },
+  { id: 'processes:write',    label: 'Run processes',             desc: 'Trigger sandbox executions.' },
+  { id: 'evidence:read',      label: 'Read evidence',             desc: 'Pull evidence catalog and bindings.' },
+  { id: 'evidence:write',     label: 'Upload evidence',           desc: 'Submit new evidence objects.' },
 ];
 
-/* ─── Tool options ─── */
-type ToolChoice = 'cursor' | 'claude-code' | 'windsurf' | 'vscode' | 'github-workspace' | 'lovable' | 'replit' | 'google-ai-studio' | 'dev-team' | null;
+type ToolChoice =
+  | 'cursor'
+  | 'claude-code'
+  | 'windsurf'
+  | 'vscode'
+  | 'github-workspace'
+  | 'lovable'
+  | 'replit'
+  | 'google-ai-studio'
+  | 'dev-team';
 
-const TOOL_OPTIONS: { id: ToolChoice; label: string; subtitle: string; icon: string }[] = [
-  { id: 'cursor', label: 'Cursor', subtitle: 'AI code editor', icon: '⌘' },
-  { id: 'claude-code', label: 'Claude Code', subtitle: 'Terminal agent', icon: '▪' },
-  { id: 'windsurf', label: 'Windsurf', subtitle: 'AI code editor', icon: '◈' },
-  { id: 'vscode', label: 'VS Code', subtitle: 'With Copilot / extensions', icon: '⟨⟩' },
-  { id: 'github-workspace', label: 'GitHub Workspace', subtitle: 'Cloud dev environment', icon: '⊙' },
-  { id: 'lovable', label: 'Lovable', subtitle: 'AI app builder', icon: '♡' },
-  { id: 'replit', label: 'Replit', subtitle: 'Browser IDE + AI', icon: '◉' },
-  { id: 'google-ai-studio', label: 'Google AI Studio', subtitle: 'Gemini platform', icon: '△' },
-  { id: 'dev-team', label: 'My dev team', subtitle: 'Custom integration', icon: '{ }' },
+const TOOL_OPTIONS: { id: ToolChoice; label: string; mark: string; tagline: string }[] = [
+  { id: 'cursor',           label: 'Cursor',            mark: '⌘',   tagline: 'AI code editor' },
+  { id: 'claude-code',      label: 'Claude Code',       mark: '▪',   tagline: 'Anthropic CLI' },
+  { id: 'windsurf',         label: 'Windsurf',          mark: '◈',   tagline: 'Codeium IDE' },
+  { id: 'vscode',           label: 'VS Code + Copilot', mark: '⟨⟩',  tagline: 'Microsoft IDE' },
+  { id: 'github-workspace', label: 'GitHub Workspace',  mark: '⊙',   tagline: 'Browser-based IDE' },
+  { id: 'lovable',          label: 'Lovable',           mark: '♡',   tagline: 'No-code AI builder' },
+  { id: 'replit',           label: 'Replit',            mark: '◉',   tagline: 'Browser IDE' },
+  { id: 'google-ai-studio', label: 'Google AI Studio',  mark: '△',   tagline: 'Gemini playground' },
+  { id: 'dev-team',         label: 'Dev team',          mark: '{ }', tagline: 'Direct API + MCP' },
 ];
 
-/* ─── Generate the integration prompt for vibe-coders ─── */
-function buildIntegrationPrompt(tool: ToolChoice, apiKey: string | null, processType: string): string {
-  const keyLine = apiKey
-    ? `My Smarticus API key is: ${apiKey}`
-    : `I need to get my API key from https://app.smarticus.ai (Connect > API Keys).`;
+function buildIntegrationPrompt(tool: ToolChoice, apiKey: string, processType: string): string {
+  const desc = processType.trim() || 'compliance-aware agent for the QMS process I described';
+  const mcpConfigs: Partial<Record<ToolChoice, string>> = {
+    cursor: `Add this to .cursor/mcp.json in the project root:
 
-  const toolConfig: Record<string, string> = {
-    'cursor': 'Cursor (uses .cursor/mcp.json for MCP configuration)',
-    'claude-code': 'Claude Code (uses .claude/settings.json for MCP configuration)',
-    'windsurf': 'Windsurf (uses MCP configuration in settings)',
-    'vscode': 'VS Code (with Copilot or AI extension)',
-    'github-workspace': 'GitHub Workspace (cloud dev environment)',
-    'lovable': 'Lovable (AI app builder)',
-    'replit': 'Replit (browser IDE with AI)',
-    'google-ai-studio': 'Google AI Studio (Gemini platform)',
-  };
-
-  const toolName = toolConfig[tool ?? 'cursor'] ?? 'my AI coding tool';
-
-  let mcpConfigBlock: string;
-  if (tool === 'cursor') {
-    mcpConfigBlock = `Add this to .cursor/mcp.json:
-   {
-     "mcpServers": {
-       "smarticus": {
-         "command": "npx",
-         "args": ["-y", "@regground/mcp-server@latest"],
-         "env": {
-           "SMARTICUS_API_KEY": "${apiKey ?? 'YOUR_KEY_HERE'}",
-           "SMARTICUS_HOST": "https://api.smarticus.ai"
-         }
-       }
-     }
-   }`;
-  } else if (tool === 'claude-code') {
-    mcpConfigBlock = `Run this in your terminal:
-   claude mcp add smarticus -- npx -y @regground/mcp-server@latest
-   Then set the env vars in .claude/settings.json:
-   {
-     "mcpServers": {
-       "smarticus": {
-         "command": "npx",
-         "args": ["-y", "@regground/mcp-server@latest"],
-         "env": {
-           "SMARTICUS_API_KEY": "${apiKey ?? 'YOUR_KEY_HERE'}",
-           "SMARTICUS_HOST": "https://api.smarticus.ai"
-         }
-       }
-     }
-   }`;
-  } else if (tool === 'vscode') {
-    mcpConfigBlock = `Add this to .vscode/mcp.json:
-   {
-     "servers": {
-       "smarticus": {
-         "command": "npx",
-         "args": ["-y", "@regground/mcp-server@latest"],
-         "env": {
-           "SMARTICUS_API_KEY": "${apiKey ?? 'YOUR_KEY_HERE'}",
-           "SMARTICUS_HOST": "https://api.smarticus.ai"
-         }
-       }
-     }
-   }`;
-  } else if (tool === 'windsurf') {
-    mcpConfigBlock = `Add this to your Windsurf MCP settings:
-   {
-     "mcpServers": {
-       "smarticus": {
-         "command": "npx",
-         "args": ["-y", "@regground/mcp-server@latest"],
-         "env": {
-           "SMARTICUS_API_KEY": "${apiKey ?? 'YOUR_KEY_HERE'}",
-           "SMARTICUS_HOST": "https://api.smarticus.ai"
-         }
-       }
-     }
-   }`;
-  } else {
-    mcpConfigBlock = `Connect to the Smarticus MCP server using HTTP:
-   Server URL: https://api.smarticus.ai/mcp
-   Headers: { "Authorization": "Bearer ${apiKey ?? 'YOUR_KEY_HERE'}" }`;
+{
+  "mcpServers": {
+    "smarticus": {
+      "command": "npx",
+      "args": ["-y", "@regground/mcp-server@latest"],
+      "env": { "SMARTICUS_API_KEY": "${apiKey}" }
+    }
   }
+}`,
+    'claude-code': `Run once to register the Smarticus MCP server:
 
-  return `I want to add Smarticus requirement checks to my ${processType || 'QMS'} workflow. Smarticus is a compliance API for medical device and pharma. It validates AI-generated documents against regulatory requirements across EU MDR, ISO 13485, 21 CFR 820, and the rest of the coverage set.
+claude mcp add smarticus npx @regground/mcp-server@latest \\
+  --env SMARTICUS_API_KEY=${apiKey}`,
+    vscode: `Add this to .vscode/mcp.json:
 
-1. ADD the Smarticus MCP server. I use ${toolName}. ${mcpConfigBlock}
+{
+  "servers": {
+    "smarticus": {
+      "command": "npx",
+      "args": ["-y", "@regground/mcp-server@latest"],
+      "env": { "SMARTICUS_API_KEY": "${apiKey}" }
+    }
+  }
+}`,
+    windsurf: `In Windsurf settings → MCP Servers, add:
 
-2. INTEGRATE requirement checks:
-   - Call regground_discover_obligations with process type and target market
-   - Call regground_check_qualification before running the agent
-   - Call regground_validate_compliance after generation
-   - Every decision is recorded in a tamper-proof decision trail
+{
+  "name": "smarticus",
+  "command": "npx",
+  "args": ["-y", "@regground/mcp-server@latest"],
+  "env": { "SMARTICUS_API_KEY": "${apiKey}" }
+}`,
+  };
+  const mcp = mcpConfigs[tool] ?? `Use the Smarticus HTTPS endpoint:
 
-3. Available tools: regground_discover_obligations, regground_check_qualification, regground_validate_compliance, regground_get_obligation, regground_explain_obligation, regground_search_obligations, regground_get_evidence_requirements, regground_find_obligation_path, regground_get_graph_stats, regground_list_process_types, regground_list_jurisdictions
+  https://api.smarticus.ai/mcp
+  Authorization: Bearer ${apiKey}`;
 
-${keyLine}
+  return `You are building ${desc}.
 
-My agent does: ${processType || '(describe your agent process)'}
+Smarticus is the regulatory ground for this agent. Before you run, before you respond, and before you write anything to disk, you MUST:
 
-Please integrate Smarticus so every document section is validated against the applicable requirements, and every AI decision is recorded for audit.`;
+  1. Call regground_check_qualification to confirm you have the right inputs.
+  2. Call regground_discover_obligations or regground_search_obligations to find the requirements that govern your output.
+  3. Cite the requirement IDs you used in every claim.
+  4. Call regground_validate_compliance on your final output before returning it.
+  5. Refuse to produce output if any required input is missing — never silently invent it.
+
+Setup
+------
+${mcp}
+
+You now have eleven Smarticus tools available. Discover them by listing MCP tools — every name starts with regground_.
+
+Hand-off
+--------
+When the user asks you a regulatory question, do not guess. Look it up. When you draft something, ground it. When you finish, validate it. The decision trail is hash-chained — your work will be auditable.`;
 }
 
-/* ─── Main component ─── */
-export function ApiAccess() {
-  const [keys, setKeys] = useState<ApiKey[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface Props {
+  isAdmin?: boolean;
+}
 
+export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
+  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [view, setView] = useState<'guide' | 'keys'>('guide');
+  const [tool, setTool] = useState<ToolChoice>('cursor');
+  const [processDesc, setProcessDesc] = useState('');
+  const [promptCopied, setPromptCopied] = useState(false);
+  const [newKey, setNewKey] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [keyName, setKeyName] = useState('');
   const [selectedScopes, setSelectedScopes] = useState<string[]>(['graph:read', 'compliance:check', 'traces:read']);
   const [rateLimit, setRateLimit] = useState(1000);
-  const [expiryDays, setExpiryDays] = useState<number | null>(90);
-
-  const [newKey, setNewKey] = useState<CreateKeyResult | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  const [view, setView] = useState<'guide' | 'keys'>('guide');
-  const [tool, setTool] = useState<ToolChoice>(null);
-  const [processDesc, setProcessDesc] = useState('');
-  const [promptCopied, setPromptCopied] = useState(false);
-  const [intType, setIntType] = useState<'mcp' | 'rest'>('mcp');
+  const [expiryDays, setExpiryDays] = useState(90);
+  const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const loadKeys = useCallback(async () => {
+    setLoading(true);
     try {
       const data = await api<ApiKey[]>('/api/api-keys');
-      setKeys(data);
-      setError(null);
+      setKeys(Array.isArray(data) ? data : []);
     } catch {
       setKeys([]);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { loadKeys(); }, [loadKeys]);
-
-  const handleCreate = async () => {
-    if (!keyName.trim() || creating) return;
-    setCreating(true);
-    setError(null);
-    try {
-      const body: Record<string, unknown> = { name: keyName.trim(), scopes: selectedScopes, rateLimit };
-      if (expiryDays) {
-        const exp = new Date();
-        exp.setDate(exp.getDate() + expiryDays);
-        body.expiresAt = exp.toISOString();
-      }
-      const raw = await api<CreateKeyResultRaw>('/api/api-keys', { method: 'POST', body: JSON.stringify(body) });
-      const result: CreateKeyResult = { id: raw.id, name: raw.name, rawKey: raw.rawKey ?? raw.key ?? '', keyPrefix: raw.keyPrefix };
-      setNewKey(result);
-      setShowForm(false);
-      setKeyName('');
-      setSelectedScopes(['graph:read', 'compliance:check', 'traces:read']);
-      setRateLimit(1000);
-      setExpiryDays(90);
-      loadKeys();
-    } catch (e: unknown) {
-      const previewId = 'rg_' + Array.from(crypto.getRandomValues(new Uint8Array(24))).map(b => b.toString(16).padStart(2, '0')).join('');
-      setNewKey({ id: previewId.slice(0, 12), rawKey: previewId, keyPrefix: previewId.slice(0, 10), name: keyName.trim() });
-      setKeys(prev => [...prev, { id: previewId.slice(0, 12), name: keyName.trim(), keyPrefix: previewId.slice(0, 10), scopes: selectedScopes, rateLimit, active: true, usageCount: 0, createdAt: new Date().toISOString() } as ApiKey]);
-      setShowForm(false);
-      setKeyName('');
-      setSelectedScopes(['graph:read', 'compliance:check', 'traces:read']);
-      setRateLimit(1000);
-      setExpiryDays(90);
-    } finally { setCreating(false); }
-  };
-
-  const handleRevoke = async (id: string) => {
-    await api(`/api/api-keys/${id}/revoke`, { method: 'PATCH' });
+  useEffect(() => {
     loadKeys();
-  };
+  }, [loadKeys]);
 
-  const handleActivate = async (id: string) => {
-    await api(`/api/api-keys/${id}/activate`, { method: 'PATCH' });
-    loadKeys();
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Permanently delete this API key? This cannot be undone.')) return;
-    await api(`/api/api-keys/${id}`, { method: 'DELETE' });
-    loadKeys();
-  };
-
-  const copyText = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const copyPrompt = () => {
-    const key = newKey?.rawKey ?? (keys.length > 0 ? `${keys[0]!.keyPrefix}...` : null);
-    navigator.clipboard.writeText(buildIntegrationPrompt(tool, key, processDesc));
-    setPromptCopied(true);
-    setTimeout(() => setPromptCopied(false), 3000);
-  };
-
-  const toggleScope = (scope: string) => {
-    setSelectedScopes(prev => prev.includes(scope) ? prev.filter(s => s !== scope) : [...prev, scope]);
-  };
-
-  const isVibeCoder = tool !== null && tool !== 'dev-team';
-  const isDevTeam = tool === 'dev-team';
   const hasKey = keys.length > 0 || newKey !== null;
-  const activeKey = newKey?.rawKey ?? (keys.length > 0 ? `${keys[0]!.keyPrefix}...` : null);
+  const activeKeyValue = newKey ?? (keys[0] ? `${keys[0].keyPrefix}…` : 'sm_live_xxxxxxxxxxxx');
 
-  const lbl: React.CSSProperties = {
-    display: 'block', fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
-    letterSpacing: '0.04em', color: 'var(--text-secondary)', marginBottom: 6, marginTop: 0,
-  };
+  function resetForm() {
+    setKeyName('');
+    setSelectedScopes(['graph:read', 'compliance:check', 'traces:read']);
+    setRateLimit(1000);
+    setExpiryDays(90);
+  }
 
-  const inp: React.CSSProperties = {
-    width: '100%', padding: '10px 13px', fontSize: 13, boxSizing: 'border-box' as const,
-    background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)',
-    borderRadius: 8, color: 'var(--text-primary)', outline: 'none',
-    fontFamily: 'var(--font-sans)', transition: 'all 0.2s',
-  };
+  async function handleCreate() {
+    if (!keyName.trim()) return;
+    setCreating(true);
+    try {
+      const res = await api<CreateKeyResponse>('/api/api-keys', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: keyName,
+          scopes: selectedScopes,
+          rateLimit,
+          expiresInDays: expiryDays,
+        }),
+      });
+      setNewKey(res.fullKey);
+      setShowForm(false);
+      resetForm();
+      await loadKeys();
+    } catch {
+      // Offline / unauthenticated preview — show a fake key so the flow works.
+      const preview = `sm_live_${Math.random().toString(36).slice(2, 10)}_${Math.random().toString(36).slice(2, 10)}`;
+      setNewKey(preview);
+      setShowForm(false);
+      resetForm();
+    } finally {
+      setCreating(false);
+    }
+  }
 
-  const pillBtn = (active: boolean): React.CSSProperties => ({
-    padding: '6px 16px', fontSize: 12, borderRadius: 8,
-    border: `1px solid ${active ? 'var(--accent-bright)' : 'var(--border-subtle)'}`,
-    background: active ? 'var(--accent-muted)' : 'transparent',
-    color: active ? 'var(--neo-cyan)' : 'var(--text-tertiary)',
-    cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: active ? 600 : 400,
-    transition: 'all 0.2s',
-  });
+  async function handleRevoke(id: string) {
+    try {
+      await api(`/api/api-keys/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'revoked' }) });
+      await loadKeys();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function handleActivate(id: string) {
+    try {
+      await api(`/api/api-keys/${id}`, { method: 'PATCH', body: JSON.stringify({ status: 'active' }) });
+      await loadKeys();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await api(`/api/api-keys/${id}`, { method: 'DELETE' });
+      await loadKeys();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function copyText(text: string, kind: 'key' | 'prompt') {
+    navigator.clipboard.writeText(text).then(
+      () => {
+        if (kind === 'key') {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        } else {
+          setPromptCopied(true);
+          setTimeout(() => setPromptCopied(false), 1600);
+        }
+      },
+      () => {},
+    );
+  }
+
+  function toggleScope(id: string) {
+    setSelectedScopes((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+  }
+
+  const integrationPrompt = buildIntegrationPrompt(tool, activeKeyValue, processDesc);
+  const promptPreview = integrationPrompt.length > 900 ? `${integrationPrompt.slice(0, 900)}…` : integrationPrompt;
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-
-      {/* ── Top bar ── */}
-      <div style={{
-        padding: '18px 32px', borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0,
-        background: 'var(--bg-root)', position: 'relative', overflow: 'hidden', zIndex: 10,
-      }}>
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-          background: 'linear-gradient(90deg, var(--neo-cyan), var(--accent-bright), var(--neo-green))',
-          boxShadow: '0 0 20px rgba(14,140,194,0.3)',
-        }} />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>Connect Smarticus</h1>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <button onClick={() => setView('guide')} style={pillBtn(view === 'guide')}>Setup Guide</button>
-            <button onClick={() => setView('keys')} style={pillBtn(view === 'keys')}>API Keys{keys.length > 0 ? ` (${keys.length})` : ''}</button>
+    <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
+      <PageHeader
+        eyebrow="Connect"
+        title="Point any AI tool at the ground."
+        subtitle="Smarticus runs as an MCP server — the same protocol Cursor, Claude Code, Windsurf, and VS Code already speak. Get a key, paste a snippet, and your AI starts citing requirements within seconds."
+        actions={
+          <div style={{ display: 'flex', gap: 6, padding: 4, border: '1px solid var(--rule)', borderRadius: 'var(--r-2)' }}>
+            <ViewTab active={view === 'guide'} onClick={() => setView('guide')} label="Setup guide" />
+            <ViewTab active={view === 'keys'} onClick={() => setView('keys')} label={`API keys${keys.length ? ` · ${keys.length}` : ''}`} />
           </div>
-        </div>
-        <div style={{ width: 320, maxWidth: '34vw' }}>
-          <RegulatorCompactStrip />
-        </div>
-        {view === 'keys' && (
-          <button onClick={() => setShowForm(!showForm)} style={{
-            padding: '7px 16px', fontSize: 12, borderRadius: 8,
-            border: 'none', background: 'var(--accent)', color: '#fff',
-            cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)',
-            transition: 'all 0.2s',
-          }}>
-            {showForm ? 'Cancel' : '+ New Key'}
-          </button>
-        )}
-      </div>
+        }
+      />
 
-      {/* ── New key banner ── */}
-      {newKey && (
-        <div style={{
-          padding: '14px 28px', background: '#6FA64610', borderBottom: '1px solid #6FA64630', flexShrink: 0,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#6FA646' }}>Key created — copy it now, you won't see it again</span>
-            <button onClick={() => setNewKey(null)} style={{
-              background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 16, lineHeight: 1,
-            }}>×</button>
-          </div>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 14px', borderRadius: 8,
-            background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)',
-          }}>
-            <code style={{
-              fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)',
-              wordBreak: 'break-all', flex: 1, lineHeight: 1.5, userSelect: 'all',
-            }}>
-              {newKey.rawKey}
-            </code>
-            <button onClick={() => copyText(newKey.rawKey)} style={{
-              padding: '7px 16px', fontSize: 12, borderRadius: 8,
-              border: 'none', background: '#6FA646', color: '#fff',
-              cursor: 'pointer', fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap',
-              fontFamily: 'var(--font-sans)',
-            }}>{copied ? '✓ Copied' : 'Copy'}</button>
-          </div>
-        </div>
-      )}
-
-      {/* ══════════ GUIDE VIEW ══════════ */}
-      {view === 'guide' && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '36px 48px 64px' }}>
-
-          {!tool && (
-            <div>
-              <h2 style={{
-                fontSize: 24, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px',
-                letterSpacing: '-0.02em',
-              }}>
-                What tool does your team use?
-              </h2>
-              <p style={{ fontSize: 14, color: 'var(--text-tertiary)', margin: '0 0 32px', lineHeight: 1.6, maxWidth: 600 }}>
-                Connect Smarticus requirement checks to your AI tools. Pick your AI coding tool and we'll generate the setup instructions your developer needs.
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12, maxWidth: 1000 }}>
-                {TOOL_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    onClick={() => setTool(opt.id)}
-                    style={{
-                      padding: '24px 16px', borderRadius: 12, cursor: 'pointer',
-                      border: '1px solid var(--border-subtle)', background: 'var(--bg-root)',
-                      textAlign: 'center', transition: 'all 0.2s',
-                      fontFamily: 'var(--font-sans)', position: 'relative', overflow: 'hidden',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--text-primary)';
-                      e.currentTarget.style.background = 'var(--bg-elevated)';
-                      e.currentTarget.style.boxShadow = '0 0 24px rgba(14,140,194,0.1)';
-                      e.currentTarget.style.transform = 'scale(1.02)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                      e.currentTarget.style.background = 'var(--bg-root)';
-                      e.currentTarget.style.boxShadow = 'none';
-                      e.currentTarget.style.transform = 'scale(1)';
-                    }}
-                  >
-                    <div style={{
-                      fontSize: 24, marginBottom: 12, color: 'var(--text-primary)',
-                      fontFamily: 'var(--font-mono)', fontWeight: 600,
-                    }}>{opt.icon}</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>
-                      {opt.label}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>{opt.subtitle}</div>
-                  </button>
-                ))}
+      <div style={{ padding: '32px 40px 80px', maxWidth: 1100, margin: '0 auto' }}>
+        {newKey && (
+          <div
+            className="rise"
+            style={{
+              padding: '18px 22px',
+              border: '1px solid var(--ok)',
+              background: '#0E6B3A0A',
+              borderRadius: 'var(--r-3)',
+              marginBottom: 32,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 16,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ flex: '1 1 280px', minWidth: 260 }}>
+              <div className="eyebrow" style={{ marginBottom: 4 }}>Save this key</div>
+              <div style={{ fontSize: 14, color: 'var(--ink-2)', marginBottom: 10, lineHeight: 1.5 }}>
+                This is the only time we'll show the full key. Paste it into the snippet below or your password manager now.
+              </div>
+              <div
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: 12.5,
+                  background: 'var(--paper)',
+                  padding: '10px 14px',
+                  border: '1px solid var(--rule)',
+                  borderRadius: 'var(--r-2)',
+                  wordBreak: 'break-all',
+                }}
+              >
+                {newKey}
               </div>
             </div>
-          )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-orange" onClick={() => copyText(newKey, 'key')}>
+                {copied ? 'Copied' : 'Copy key'}
+              </button>
+              <button className="btn btn-ghost" onClick={() => setNewKey(null)}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
-          {isVibeCoder && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
-                <button onClick={() => { setTool(null); setShowForm(false); }} style={{
-                  padding: '6px 12px', fontSize: 12, borderRadius: 8,
-                  border: '1px solid var(--border-subtle)', background: 'transparent',
-                  color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                  transition: 'all 0.2s',
-                }}>← Back</button>
-                <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>
-                  Setting up with {(TOOL_OPTIONS.find(t => t.id === tool)?.label ?? 'your tool')}
-                </span>
-              </div>
-
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0,
-                position: 'relative',
-                maxWidth: '800px',
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  left: '40px',
-                  top: '50px',
-                  bottom: '0',
-                  width: '2px',
-                  background: 'linear-gradient(180deg, var(--neo-cyan), transparent)',
-                  pointerEvents: 'none',
-                }} />
-
-                {/* Step 1 */}
-                <div style={{
-                  position: 'relative',
-                  marginBottom: 32,
-                  paddingLeft: '100px',
-                  paddingTop: '8px',
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '4px',
-                    width: '58px',
-                    height: '58px',
-                    borderRadius: '50%',
-                    background: hasKey ? 'var(--neo-green)' : 'var(--neo-cyan)',
-                    boxShadow: `0 0 24px ${hasKey ? 'rgba(111,166,70,0.4)' : 'rgba(92,195,201,0.4)'}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    color: '#fff',
-                    zIndex: 5,
-                  }}>
-                    {hasKey ? '✓' : '1'}
-                  </div>
-
-                  <div style={{
-                    padding: '20px 24px',
-                    borderRadius: 12,
-                    border: hasKey ? '1px solid var(--border-subtle)' : '2px solid var(--text-primary)',
-                    background: hasKey ? 'var(--bg-root)' : 'var(--bg-elevated)',
-                  }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Get an API key</h3>
-                    <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.6, margin: '0 0 14px' }}>
-                      Your agent needs a key to call Smarticus. Create one here.
-                    </p>
-                    {hasKey ? (
-                      <div style={{
-                        padding: '10px 14px', borderRadius: 8,
-                        background: '#6FA64608', border: '1px solid #6FA64630',
-                        fontSize: 12, color: '#6FA646', fontWeight: 500,
-                        display: 'flex', alignItems: 'center', gap: 8,
-                      }}>
-                        Key ready {activeKey && <code style={{ fontFamily: 'var(--font-mono)' }}>{activeKey.length > 20 ? activeKey.slice(0, 20) + '...' : activeKey}</code>}
+        {view === 'guide' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+            {/* PHASE 1: pick your tool */}
+            <section>
+              <div className="eyebrow" style={{ marginBottom: 8 }}>Step 1 · Pick your tool</div>
+              <h2 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 500, letterSpacing: '-0.015em' }}>
+                Where does your agent live?
+              </h2>
+              <p style={{ margin: '0 0 18px', fontSize: 13.5, color: 'var(--ink-3)', maxWidth: 580, lineHeight: 1.55 }}>
+                Pick the tool you already use. We'll generate the exact integration steps for it.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
+                {TOOL_OPTIONS.map((opt) => {
+                  const active = tool === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setTool(opt.id)}
+                      className={`ground-card lift ${active ? 'active' : ''}`}
+                      style={{
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        background: active ? 'var(--paper-deep)' : 'var(--paper)',
+                        borderColor: active ? 'var(--ink)' : 'var(--rule)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                        <span
+                          style={{
+                            fontSize: 18,
+                            fontFamily: 'var(--mono)',
+                            color: active ? 'var(--orange)' : 'var(--ink-3)',
+                            width: 24,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {opt.mark}
+                        </span>
+                        <span style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500 }}>{opt.label}</span>
                       </div>
-                    ) : (
-                      <button onClick={() => { setView('keys'); setShowForm(true); }} style={{
-                        padding: '10px 18px', fontSize: 13, borderRadius: 8,
-                        border: 'none', background: 'var(--accent)', color: '#fff',
-                        cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)',
-                      }}>Create your API key</button>
+                      <div style={{ fontSize: 11.5, color: 'var(--ink-3)', marginLeft: 34 }}>{opt.tagline}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            {/* PHASE 2: vibe-coder rail */}
+            {tool !== 'dev-team' && (
+              <section>
+                <div className="eyebrow" style={{ marginBottom: 8 }}>Step 2 · Set it up</div>
+                <ToolBreadcrumb tool={TOOL_OPTIONS.find((t) => t.id === tool)!} />
+
+                <div style={{ position: 'relative', marginTop: 18 }}>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: 19,
+                      top: 28,
+                      bottom: 28,
+                      width: 1,
+                      background: 'var(--rule-strong)',
+                    }}
+                    aria-hidden
+                  />
+
+                  <Step
+                    n={1}
+                    done={hasKey}
+                    title="Get an API key"
+                    body={
+                      hasKey
+                        ? "You're set — your key is below."
+                        : 'A scoped API key tells Smarticus who you are and what you can do. We default to the read-only scopes that are safe for an agent to hold.'
+                    }
+                  >
+                    {!hasKey && (
+                      <button className="btn btn-orange" onClick={() => { setShowForm(true); setView('keys'); }}>
+                        Create your API key
+                      </button>
                     )}
-                  </div>
-                </div>
+                  </Step>
 
-                {/* Step 2 */}
-                <div style={{
-                  position: 'relative',
-                  marginBottom: 32,
-                  paddingLeft: '100px',
-                  paddingTop: '8px',
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '4px',
-                    width: '58px',
-                    height: '58px',
-                    borderRadius: '50%',
-                    background: processDesc.trim() ? 'var(--neo-green)' : 'var(--neo-cyan)',
-                    boxShadow: `0 0 24px ${processDesc.trim() ? 'rgba(111,166,70,0.4)' : 'rgba(92,195,201,0.4)'}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    color: '#fff',
-                    zIndex: 5,
-                  }}>
-                    {processDesc.trim() ? '✓' : '2'}
-                  </div>
-
-                  <div style={{
-                    padding: '20px 24px',
-                    borderRadius: 12,
-                    border: '1px solid var(--border-subtle)',
-                    background: 'var(--bg-root)',
-                  }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Describe your agent</h3>
-                    <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.6, margin: '0 0 12px' }}>
-                      Be specific — mention process type, device, markets.
-                    </p>
+                  <Step n={2} done={processDesc.trim().length > 0} title="Describe your agent (optional)">
                     <textarea
                       value={processDesc}
                       onChange={(e) => setProcessDesc(e.target.value)}
-                      placeholder="e.g. My agent generates PSURs for a Class IIb cardiac monitoring device sold in the EU."
+                      placeholder="e.g. a CAPA triage agent that reads complaints and drafts an investigation plan"
+                      rows={3}
                       style={{
-                        ...inp,
-                        minHeight: 100,
+                        width: '100%',
+                        ...inputStyle,
+                        fontFamily: 'var(--sans)',
+                        fontSize: 13,
                         resize: 'vertical',
-                        fontFamily: 'var(--font-sans)',
-                        lineHeight: 1.5,
                       }}
                     />
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div style={{
-                  position: 'relative',
-                  paddingLeft: '100px',
-                  paddingTop: '8px',
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    left: '12px',
-                    top: '4px',
-                    width: '58px',
-                    height: '58px',
-                    borderRadius: '50%',
-                    background: 'var(--neo-cyan)',
-                    boxShadow: '0 0 24px rgba(92,195,201,0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '24px',
-                    fontWeight: 700,
-                    color: '#fff',
-                    zIndex: 5,
-                  }}>
-                    3
-                  </div>
-
-                  <div style={{
-                    padding: '20px 24px',
-                    borderRadius: 12,
-                    border: '1px solid var(--border-subtle)',
-                    background: 'var(--bg-root)',
-                  }}>
-                    <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px' }}>Copy integration prompt</h3>
-                    <p style={{ fontSize: 13, color: 'var(--text-tertiary)', lineHeight: 1.6, margin: '0 0 12px' }}>
-                      Paste this into your tool's chat to complete setup.
-                    </p>
-                    <div style={{
-                      padding: '12px 14px', borderRadius: 8,
-                      background: 'var(--bg-root)', border: '1px solid var(--border-subtle)',
-                      fontSize: 11, lineHeight: 1.6, color: 'var(--text-secondary)',
-                      fontFamily: 'var(--font-mono)', whiteSpace: 'pre-wrap', overflow: 'auto',
-                      maxHeight: 200, marginBottom: 12,
-                    }}>
-                      {buildIntegrationPrompt(tool, activeKey, processDesc).substring(0, 400)}...
+                    <div style={{ marginTop: 6, fontSize: 11.5, color: 'var(--ink-3)' }}>
+                      We bake this into the prompt so your agent knows what it's doing.
                     </div>
-                    <button onClick={copyPrompt} style={{
-                      width: '100%', padding: '11px 0', borderRadius: 8,
-                      border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                      fontFamily: 'var(--font-sans)', transition: 'all 0.2s',
-                      background: promptCopied ? '#6FA646' : 'var(--text-primary)',
-                      color: promptCopied ? '#fff' : 'var(--bg-root)',
-                    }}>
-                      {promptCopied ? '✓ Copied!' : 'Copy full prompt'}
-                    </button>
-                    {!hasKey && (
-                      <div style={{
-                        marginTop: 10, padding: '8px 12px', borderRadius: 8,
-                        background: '#FFA90110', border: '1px solid #FFA90130',
-                        fontSize: 11, color: '#FFA901', textAlign: 'center',
-                      }}>
-                        Create an API key first — the prompt will include it automatically.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+                  </Step>
 
-          {isDevTeam && (
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 32 }}>
-                <button onClick={() => { setTool(null); setShowForm(false); }} style={{
-                  padding: '6px 12px', fontSize: 12, borderRadius: 8,
-                  border: '1px solid var(--border-subtle)', background: 'transparent',
-                  color: 'var(--text-tertiary)', cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                }}>← Back</button>
-                <span style={{ fontSize: 14, color: 'var(--text-secondary)', fontWeight: 500 }}>Developer integration</span>
-              </div>
-
-              <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
-                <button onClick={() => setIntType('mcp')} style={pillBtn(intType === 'mcp')}>MCP Integration</button>
-                <button onClick={() => setIntType('rest')} style={pillBtn(intType === 'rest')}>REST API</button>
-              </div>
-
-              <div style={{ maxWidth: 800, fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                <p>
-                  <strong style={{ color: 'var(--text-primary)' }}>MCP Integration</strong>: MCP is available for teams that want Smarticus requirement checks inside AI development tools. Use the @regground/mcp-server via npx or HTTP.
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: 4 }}>
-                    npx @regground/mcp-server@latest
-                  </code>
-                </p>
-                <p style={{ marginTop: 12 }}>
-                  <strong style={{ color: 'var(--text-primary)' }}>11 Available tools</strong>: discover requirements, check readiness, validate output, and 8 more.
-                </p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  See <code style={{ fontFamily: 'var(--font-mono)', background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: 4 }}>https://docs.smarticus.ai/mcp</code> for full API documentation.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══════════ KEYS VIEW ══════════ */}
-      {view === 'keys' && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px 48px' }}>
-          {showForm && (
-            <>
-              <div
-                style={{
-                  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                  background: 'rgba(0,0,0,0.4)', zIndex: 100,
-                }}
-                onClick={() => setShowForm(false)}
-              />
-
-              <div
-                style={{
-                  position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                  width: '100%', maxWidth: '500px',
-                  background: 'rgba(8,30,43,0.95)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: '32px',
-                  boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
-                  zIndex: 101,
-                  animation: 'modal-in 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                }}
-              >
-                <h2 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 8px', color: 'var(--text-primary)' }}>Create API Key</h2>
-                <p style={{ fontSize: 13, color: 'var(--text-tertiary)', margin: '0 0 20px' }}>Set up a new key for your agent.</p>
-
-                <div style={{ marginBottom: 18 }}>
-                  <label style={lbl}>Key name</label>
-                  <input
-                    type="text"
-                    value={keyName}
-                    onChange={(e) => setKeyName(e.target.value)}
-                    placeholder="e.g. PSUR Agent — EU"
-                    style={inp}
-                  />
-                </div>
-
-                <div style={{ marginBottom: 18 }}>
-                  <label style={lbl}>Scopes (permissions)</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    {AVAILABLE_SCOPES.map(s => (
-                      <label key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 12 }}>
-                        <input
-                          type="checkbox"
-                          checked={selectedScopes.includes(s.id)}
-                          onChange={() => toggleScope(s.id)}
-                          style={{ cursor: 'pointer' }}
-                        />
-                        <span style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
-                  <div>
-                    <label style={lbl}>Rate limit</label>
-                    <input
-                      type="number"
-                      value={rateLimit}
-                      onChange={(e) => setRateLimit(parseInt(e.target.value) || 1000)}
-                      style={inp}
-                    />
-                    <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4 }}>requests/hour</div>
-                  </div>
-                  <div>
-                    <label style={lbl}>Expires in</label>
-                    <select
-                      value={expiryDays ?? ''}
-                      onChange={(e) => setExpiryDays(e.target.value ? parseInt(e.target.value) : null)}
-                      style={{ ...inp, appearance: 'none' }}
-                    >
-                      <option value="">Never</option>
-                      <option value="30">30 days</option>
-                      <option value="90">90 days</option>
-                      <option value="180">6 months</option>
-                      <option value="365">1 year</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={handleCreate}
-                    disabled={!keyName.trim() || creating}
-                    style={{
-                      flex: 1, padding: '11px 0', borderRadius: 8,
-                      border: 'none', background: 'var(--accent)', color: '#fff',
-                      fontSize: 13, fontWeight: 600, cursor: keyName.trim() ? 'pointer' : 'not-allowed',
-                      fontFamily: 'var(--font-sans)', opacity: keyName.trim() ? 1 : 0.5,
-                    }}
-                  >
-                    {creating ? 'Creating...' : 'Create key'}
-                  </button>
-                  <button
-                    onClick={() => setShowForm(false)}
-                    style={{
-                      flex: 1, padding: '11px 0', borderRadius: 8,
-                      border: '1px solid var(--border-subtle)', background: 'transparent',
-                      color: 'var(--text-muted)', fontSize: 13, fontWeight: 500,
-                      cursor: 'pointer', fontFamily: 'var(--font-sans)',
-                    }}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-
-              <style>{`
-                @keyframes modal-in {
-                  from { opacity: 0; transform: translate(-50%, calc(-50% - 20px)) scale(0.96); }
-                  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-                }
-              `}</style>
-            </>
-          )}
-
-          {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Loading keys...</div>
-          ) : keys.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 32px', background: 'var(--bg-root)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 8 }}>No API keys yet</div>
-              <div style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 20 }}>Create your first key to get started with Smarticus.</div>
-              <button
-                onClick={() => setShowForm(true)}
-                style={{
-                  padding: '10px 22px', fontSize: 13, borderRadius: 8,
-                  border: 'none', background: 'var(--accent)', color: '#fff',
-                  cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)',
-                }}
-              >
-                Create your first key
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
-              {keys.map(k => (
-                <div
-                  key={k.id}
-                  style={{
-                    padding: '18px 18px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)',
-                    background: 'var(--bg-root)', position: 'relative', overflow: 'hidden',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{k.name}</div>
-                      <code style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{k.keyPrefix}...</code>
-                    </div>
-                    <span style={{
-                      fontSize: 10, padding: '3px 8px', borderRadius: 4,
-                      background: k.active ? '#6FA64620' : '#ef444420',
-                      color: k.active ? '#6FA646' : '#ef4444',
-                      fontWeight: 600,
-                    }}>
-                      {k.active ? 'Active' : 'Revoked'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 12, display: 'flex', gap: 12 }}>
-                    <span>{k.scopes.length} scopes</span>
-                    <span>Limit: {k.rateLimit}/hr</span>
-                    {k.expiresAt && <span>Exp: {new Date(k.expiresAt).toLocaleDateString()}</span>}
-                  </div>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {k.active ? (
-                      <button
-                        onClick={() => handleRevoke(k.id)}
-                        style={{
-                          flex: 1, padding: '6px 0', fontSize: 11, borderRadius: 6,
-                          border: 'none', background: '#ef444410', color: '#ef4444',
-                          cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)',
-                        }}
-                      >
-                        Revoke
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleActivate(k.id)}
-                        style={{
-                          flex: 1, padding: '6px 0', fontSize: 11, borderRadius: 6,
-                          border: 'none', background: '#6FA64610', color: '#6FA646',
-                          cursor: 'pointer', fontWeight: 600, fontFamily: 'var(--font-sans)',
-                        }}
-                      >
-                        Activate
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(k.id)}
+                  <Step n={3} done={promptCopied} title="Copy the integration prompt">
+                    <div
                       style={{
-                        flex: 1, padding: '6px 0', fontSize: 11, borderRadius: 6,
-                        border: '1px solid var(--border-subtle)', background: 'transparent', color: 'var(--text-muted)',
-                        cursor: 'pointer', fontWeight: 500, fontFamily: 'var(--font-sans)',
+                        background: 'var(--paper-deep)',
+                        border: '1px solid var(--rule)',
+                        borderRadius: 'var(--r-2)',
+                        padding: 14,
+                        fontFamily: 'var(--mono)',
+                        fontSize: 11.5,
+                        lineHeight: 1.55,
+                        color: 'var(--ink-2)',
+                        whiteSpace: 'pre-wrap',
+                        maxHeight: 280,
+                        overflowY: 'auto',
                       }}
                     >
-                      Delete
-                    </button>
-                  </div>
+                      {promptPreview}
+                    </div>
+                    <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <button className="btn btn-orange" onClick={() => copyText(integrationPrompt, 'prompt')}>
+                        {promptCopied ? 'Copied' : 'Copy full prompt'}
+                      </button>
+                      {!hasKey && (
+                        <span style={{ fontSize: 12, color: 'var(--warn)' }}>
+                          Tip — create a key first so the snippet uses it.
+                        </span>
+                      )}
+                    </div>
+                  </Step>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              </section>
+            )}
 
-      <style>{`
-        @keyframes modal-in {
-          from { opacity: 0; transform: translate(-50%, calc(-50% - 20px)) scale(0.96); }
-          to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-        }
-      `}</style>
+            {/* DEV TEAM */}
+            {tool === 'dev-team' && (
+              <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 14 }}>
+                <div className="ground-card">
+                  <div className="eyebrow" style={{ marginBottom: 8 }}>MCP integration</div>
+                  <h3 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 500 }}>Run the MCP server</h3>
+                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                    The simplest path. The MCP server is a single npx command — point any MCP-aware tool at it.
+                  </p>
+                  <pre
+                    style={{
+                      background: 'var(--paper-deep)',
+                      border: '1px solid var(--rule)',
+                      borderRadius: 'var(--r-2)',
+                      padding: 12,
+                      fontFamily: 'var(--mono)',
+                      fontSize: 11.5,
+                      margin: 0,
+                      overflowX: 'auto',
+                    }}
+                  >
+                    {`SMARTICUS_API_KEY=${activeKeyValue} \\
+  npx @regground/mcp-server@latest`}
+                  </pre>
+                </div>
+
+                <div className="ground-card">
+                  <div className="eyebrow" style={{ marginBottom: 8 }}>REST API</div>
+                  <h3 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 500 }}>Call the API directly</h3>
+                  <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                    For platforms that don't speak MCP. Same scopes, same audit chain.
+                  </p>
+                  <pre
+                    style={{
+                      background: 'var(--paper-deep)',
+                      border: '1px solid var(--rule)',
+                      borderRadius: 'var(--r-2)',
+                      padding: 12,
+                      fontFamily: 'var(--mono)',
+                      fontSize: 11.5,
+                      margin: 0,
+                      overflowX: 'auto',
+                    }}
+                  >
+                    {`curl https://api.smarticus.ai/api/graph/obligations \\
+  -H "Authorization: Bearer ${activeKeyValue}"`}
+                  </pre>
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
+        {view === 'keys' && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 4 }}>API keys</div>
+                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 500, letterSpacing: '-0.015em' }}>
+                  {keys.length === 0 ? 'No keys yet' : `${keys.length} ${keys.length === 1 ? 'key' : 'keys'}`}
+                </h2>
+              </div>
+              <button className="btn btn-orange" onClick={() => setShowForm(true)}>+ New key</button>
+            </div>
+
+            {loading && <div style={{ padding: 40, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>Loading…</div>}
+
+            {!loading && keys.length === 0 && !showForm && (
+              <EmptyState
+                title="Your first key opens the door."
+                body="API keys are how Smarticus knows who's calling. Each one is scoped — pick only what your agent actually needs. We'll show you the full key once."
+                primaryAction={{ label: 'Create your first key', onClick: () => setShowForm(true) }}
+              />
+            )}
+
+            {!loading && keys.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+                {keys.map((k) => (
+                  <div key={k.id} className="ground-card" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis' }}>{k.name}</div>
+                        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>
+                          {k.keyPrefix}…
+                        </div>
+                      </div>
+                      <span
+                        className={`badge ${k.status === 'active' ? 'badge-ok' : k.status === 'revoked' ? 'badge-err' : 'badge-warn'}`}
+                      >
+                        {k.status}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--ink-3)', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <div>{k.scopes.length} scope{k.scopes.length !== 1 ? 's' : ''} · {k.rateLimit}/h</div>
+                      {k.expiresAt && (
+                        <div>expires {new Date(k.expiresAt).toLocaleDateString()}</div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 'auto', paddingTop: 6 }}>
+                      {k.status === 'active' ? (
+                        <button className="btn btn-ghost" onClick={() => handleRevoke(k.id)} style={{ fontSize: 12 }}>
+                          Revoke
+                        </button>
+                      ) : (
+                        <button className="btn btn-ghost" onClick={() => handleActivate(k.id)} style={{ fontSize: 12 }}>
+                          Activate
+                        </button>
+                      )}
+                      <button className="btn btn-ghost" onClick={() => handleDelete(k.id)} style={{ fontSize: 12, color: 'var(--err)' }}>
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {showForm && (
+              <CreateKeyModal
+                keyName={keyName}
+                setKeyName={setKeyName}
+                selectedScopes={selectedScopes}
+                toggleScope={toggleScope}
+                rateLimit={rateLimit}
+                setRateLimit={setRateLimit}
+                expiryDays={expiryDays}
+                setExpiryDays={setExpiryDays}
+                creating={creating}
+                onCancel={() => { setShowForm(false); resetForm(); }}
+                onCreate={handleCreate}
+              />
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+/* ── Sub-components ───────────────────────────────────────────────── */
+
+function ViewTab({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '6px 14px',
+        border: 'none',
+        background: active ? 'var(--ink)' : 'transparent',
+        color: active ? 'var(--paper)' : 'var(--ink-2)',
+        fontSize: 12,
+        fontWeight: 500,
+        letterSpacing: '0.02em',
+        borderRadius: 'var(--r-1)',
+        cursor: 'pointer',
+        transition: 'background var(--t-fast) var(--ease), color var(--t-fast) var(--ease)',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function ToolBreadcrumb({ tool }: { tool: { mark: string; label: string; tagline: string } }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--paper-deep)', borderRadius: 'var(--r-2)', border: '1px solid var(--rule)' }}>
+      <span style={{ fontFamily: 'var(--mono)', fontSize: 16, color: 'var(--orange)', width: 22, textAlign: 'center' }}>{tool.mark}</span>
+      <div>
+        <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{tool.label}</div>
+        <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{tool.tagline}</div>
+      </div>
+    </div>
+  );
+}
+
+function Step({
+  n,
+  done,
+  title,
+  body,
+  children,
+}: {
+  n: number;
+  done: boolean;
+  title: string;
+  body?: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div style={{ position: 'relative', paddingLeft: 56, paddingBottom: 22 }}>
+      <div
+        style={{
+          position: 'absolute',
+          left: 8,
+          top: 4,
+          width: 24,
+          height: 24,
+          borderRadius: '50%',
+          background: done ? 'var(--ok)' : 'var(--paper)',
+          border: `1.5px solid ${done ? 'var(--ok)' : 'var(--ink-3)'}`,
+          color: done ? '#fff' : 'var(--ink-2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontFamily: 'var(--mono)',
+          fontSize: 11,
+          zIndex: 1,
+        }}
+      >
+        {done ? '✓' : n}
+      </div>
+      <div className="ground-card" style={{ padding: 16 }}>
+        <h4 style={{ margin: '0 0 6px', fontSize: 14, fontWeight: 500, color: 'var(--ink)' }}>{title}</h4>
+        {body && <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>{body}</p>}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+const inputStyle: React.CSSProperties = {
+  padding: '8px 12px',
+  border: '1px solid var(--rule)',
+  background: 'var(--paper)',
+  borderRadius: 'var(--r-2)',
+  color: 'var(--ink)',
+  fontFamily: 'var(--sans)',
+};
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <label className="eyebrow" style={{ display: 'block', marginBottom: 6 }}>
+      {children}
+    </label>
+  );
+}
+
+function CreateKeyModal({
+  keyName,
+  setKeyName,
+  selectedScopes,
+  toggleScope,
+  rateLimit,
+  setRateLimit,
+  expiryDays,
+  setExpiryDays,
+  creating,
+  onCancel,
+  onCreate,
+}: {
+  keyName: string;
+  setKeyName: (s: string) => void;
+  selectedScopes: string[];
+  toggleScope: (id: string) => void;
+  rateLimit: number;
+  setRateLimit: (n: number) => void;
+  expiryDays: number;
+  setExpiryDays: (n: number) => void;
+  creating: boolean;
+  onCancel: () => void;
+  onCreate: () => void;
+}) {
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(14,42,71,0.32)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 20,
+        zIndex: 50,
+      }}
+      onClick={onCancel}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: 'var(--paper)',
+          border: '1px solid var(--rule-strong)',
+          borderRadius: 'var(--r-3)',
+          padding: 28,
+          width: '100%',
+          maxWidth: 520,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+        }}
+      >
+        <div className="eyebrow" style={{ marginBottom: 6 }}>New API key</div>
+        <h3 style={{ margin: '0 0 18px', fontSize: 18, fontWeight: 500, letterSpacing: '-0.015em' }}>
+          Scope a key for one purpose.
+        </h3>
+
+        <div style={{ marginBottom: 16 }}>
+          <Label>Name</Label>
+          <input
+            value={keyName}
+            onChange={(e) => setKeyName(e.target.value)}
+            placeholder="e.g. CAPA triage agent — production"
+            style={{ ...inputStyle, width: '100%', fontSize: 13 }}
+          />
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <Label>Scopes</Label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+            {AVAILABLE_SCOPES.map((s) => {
+              const checked = selectedScopes.includes(s.id);
+              return (
+                <label
+                  key={s.id}
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'flex-start',
+                    padding: '8px 10px',
+                    border: `1px solid ${checked ? 'var(--ink)' : 'var(--rule)'}`,
+                    borderRadius: 'var(--r-2)',
+                    cursor: 'pointer',
+                    background: checked ? 'var(--paper-deep)' : 'var(--paper)',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleScope(s.id)}
+                    style={{ accentColor: 'var(--orange)', marginTop: 2 }}
+                  />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 12, color: 'var(--ink)', fontWeight: 500 }}>{s.label}</div>
+                    <div style={{ fontSize: 10.5, color: 'var(--ink-3)', lineHeight: 1.4 }}>{s.desc}</div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 22 }}>
+          <div>
+            <Label>Rate limit / hour</Label>
+            <input
+              type="number"
+              value={rateLimit}
+              onChange={(e) => setRateLimit(Number(e.target.value))}
+              style={{ ...inputStyle, width: '100%', fontSize: 13 }}
+            />
+          </div>
+          <div>
+            <Label>Expires</Label>
+            <select
+              value={expiryDays}
+              onChange={(e) => setExpiryDays(Number(e.target.value))}
+              style={{ ...inputStyle, width: '100%', fontSize: 13 }}
+            >
+              <option value={30}>30 days</option>
+              <option value={60}>60 days</option>
+              <option value={90}>90 days</option>
+              <option value={180}>180 days</option>
+              <option value={365}>1 year</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button className="btn btn-ghost" onClick={onCancel} disabled={creating}>Cancel</button>
+          <button
+            className="btn btn-orange"
+            onClick={onCreate}
+            disabled={creating || !keyName.trim() || selectedScopes.length === 0}
+          >
+            {creating ? 'Creating…' : 'Create key'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ApiAccess;

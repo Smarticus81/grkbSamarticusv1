@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { api } from '../lib/queryClient.js';
 import { REGULATIONS, REG_COUNT, OBLIGATION_COUNT } from '../lib/coverage.js';
+import { EmptyState } from '../components/ui/EmptyState.js';
 
 /* ── Constants ── */
 const EVIDENCE_COUNT = 347;
@@ -218,14 +219,17 @@ export function CommandCenter() {
 
         <div
           style={{
-            fontSize: 20,
-            fontWeight: 600,
+            fontSize: 22,
+            fontWeight: 500,
             color: 'var(--ink)',
-            marginBottom: 8,
-            letterSpacing: '-0.02em',
+            marginBottom: 6,
+            letterSpacing: '-0.025em',
           }}
         >
-          Your requirements engine is live
+          The ground is live. What will you build today?
+        </div>
+        <div style={{ fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.55, maxWidth: 540, margin: '0 auto' }}>
+          Every regulation below is loaded into your private knowledge graph — ready to ground any agent, anywhere.
         </div>
 
         <div
@@ -282,10 +286,13 @@ export function CommandCenter() {
       <div style={{ marginBottom: 40 }}>
         <span
           className="eyebrow"
-          style={{ display: 'block', marginBottom: 16, color: 'var(--ink-2)' }}
+          style={{ display: 'block', marginBottom: 6, color: 'var(--ink-2)' }}
         >
-          QUICK ACTIONS
+          START FROM A TEMPLATE
         </span>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--ink-3)' }}>
+          Each template scopes the right requirements, the right evidence, and a working sandbox run — in one click.
+        </p>
         <div
           style={{
             display: 'grid',
@@ -307,29 +314,13 @@ export function CommandCenter() {
         >
           RECENT ACTIVITY
         </span>
-        <div
-          className="ground-card"
-          style={{
-            padding: 32,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 16,
-          }}
-        >
-          <div
-            style={{
-              fontFamily: 'var(--mono)',
-              fontSize: 12,
-              color: 'var(--ink-3)',
-              letterSpacing: '0.04em',
-            }}
-          >
-            No recent runs
-          </div>
-          <button className="btn btn-ghost" onClick={() => navigate('/app/sandbox')}>
-            Run your first process
-          </button>
+        <div className="ground-card" style={{ padding: '8px 0' }}>
+          <EmptyState
+            title="You haven’t run anything yet."
+            body="The Sandbox lets you run any QMS process in seconds and watch the requirements get satisfied — or not — in real time."
+            primaryAction={{ label: 'Run your first process', href: '/app/sandbox' }}
+            secondaryAction={{ label: 'Build a tool first', href: '/app/builder' }}
+          />
         </div>
       </div>
 
@@ -337,10 +328,13 @@ export function CommandCenter() {
       <div>
         <span
           className="eyebrow"
-          style={{ display: 'block', marginBottom: 16, color: 'var(--ink-2)' }}
+          style={{ display: 'block', marginBottom: 6, color: 'var(--ink-2)' }}
         >
           REQUIREMENT COVERAGE
         </span>
+        <p style={{ margin: '0 0 16px', fontSize: 13, color: 'var(--ink-3)' }}>
+          Eight regulations. Every requirement, available to every grounded agent.
+        </p>
         <div
           style={{
             display: 'grid',

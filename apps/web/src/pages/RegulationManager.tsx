@@ -337,18 +337,17 @@ export function RegulationManager() {
         <main style={{ overflowY: 'auto', padding: '24px 28px 32px' }}>
           {!selectedReg && (
             <div style={{ maxWidth: 620 }}>
-              <div className="eyebrow" style={{ marginBottom: 10 }}>How to use this</div>
-              <h2 style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-                Pick a regulation on the left to browse its requirements.
+              <div className="eyebrow" style={{ marginBottom: 10 }}>Start with intent</div>
+              <h2 style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.025em', margin: 0, lineHeight: 1.15 }}>
+                What process are you building for?
               </h2>
               <p style={{ marginTop: 12, color: 'var(--ink-3)', fontSize: 14, lineHeight: 1.6 }}>
-                Each requirement in the map is bound to its source citation,
-                jurisdiction, required data types, and any cross-references to other
-                regulations. Agents query this map at readiness check time
-                (before they execute) and at validation time (before output
-                leaves the agent).
+                Pick a <strong style={{ color: 'var(--ink-2)' }}>process tile</strong> to see only the requirements that
+                apply, or open any <strong style={{ color: 'var(--ink-2)' }}>regulation</strong> to browse it whole.
+                Every requirement here is bound to its source citation, jurisdiction, required-data list, and
+                cross-references — exactly what your agents query at run time.
               </p>
-              <div style={{ marginTop: 20, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+              <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                 {[
                   { k: 'Citation-bound',  v: 'Each requirement points to its exact paragraph in the source text.' },
                   { k: 'Versioned',       v: 'Older versions stay queryable so you can replay an audit on its date.' },

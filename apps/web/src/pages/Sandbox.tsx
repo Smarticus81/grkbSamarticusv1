@@ -246,7 +246,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
 
         {/* Run console */}
         <section style={{ padding: '24px 32px', overflow: 'auto' }}>
-          {!detail && <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-3)' }}>Select an agent to load its sample data.</div>}
+          {!detail && <div style={{ padding: 60, textAlign: 'center', color: 'var(--ink-3)', fontSize: 14, lineHeight: 1.6 }}>Pick a task on the left to load its sample data —<br />then run it grounded vs ungrounded to see the difference.</div>}
           {detail && (
             <>
               {/* Header */}
@@ -278,6 +278,13 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                     }}
                   >{m === 'with-graph' ? 'Smarticus-guided' : m === 'without-graph' ? 'Generic AI' : 'Compare'}</button>
                 ))}
+              </div>
+              <div style={{ fontSize: 12.5, color: 'var(--ink-3)', marginBottom: 16, lineHeight: 1.55, maxWidth: 640 }}>
+                {mode === 'compare'
+                  ? 'Run both side-by-side. Watch citations, coverage, and validation pass/fail diverge in real time.'
+                  : mode === 'with-graph'
+                    ? 'The agent is grounded in the Smarticus knowledge graph \u2014 it cites requirements, qualifies inputs, and gates outputs.'
+                    : 'A vanilla LLM call \u2014 no requirements, no citations, no validation. This is the baseline you\u2019re replacing.'}
               </div>
 
               {/* Sample input + Run */}
@@ -389,7 +396,7 @@ function ConsolePanel({ title, lane, events, result }: { title: string; lane: La
         )}
       </div>
       <div style={{ background: 'var(--ink)', color: 'var(--paper)', padding: 14, fontFamily: 'ui-monospace, monospace', fontSize: 11.5, lineHeight: 1.55, minHeight: 200, maxHeight: 360, overflow: 'auto' }}>
-        {events.length === 0 && <div style={{ color: 'var(--ink-3)' }}>Idle.</div>}
+        {events.length === 0 && <div style={{ color: 'var(--ink-3)' }}>Waiting for run…</div>}
         {events.map((e, i) => <EventLine key={i} event={e} />)}
         {result?.score?.strictGatePass === true && (
           <div style={{ marginTop: 8, padding: '4px 8px', background: 'rgba(255,255,255,0.06)', display: 'inline-block' }}>

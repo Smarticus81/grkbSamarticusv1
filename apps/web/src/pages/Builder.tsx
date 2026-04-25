@@ -56,12 +56,12 @@ type GuardrailDef = {
 /* ── Data ──────────────────────────────────────────────────────────── */
 
 const STEPS = [
-  { key: 'job',        label: 'QMS Job',        question: 'What QMS job should this tool perform?' },
-  { key: 'scope',      label: 'Requirements',    question: 'Which requirements should govern this tool?' },
-  { key: 'evidence',   label: 'Required Data',   question: 'What required data can the tool use?' },
-  { key: 'guardrails', label: 'Review Controls', question: 'What review controls apply?' },
-  { key: 'output',     label: 'Output Package',  question: 'What should this tool produce?' },
-  { key: 'deploy',     label: 'Connect',         question: 'How should this tool connect?' },
+  { key: 'job',        label: 'QMS Job',         question: 'What QMS job should this tool perform?',     subtitle: 'Pick the closest match. We use this to pre-scope the right requirements and required data — you can fine-tune everything later.' },
+  { key: 'scope',      label: 'Requirements',     question: 'Which requirements should govern this tool?', subtitle: 'These are the obligations Smarticus will enforce on every run. Adding more = more rigor, but also more evidence to gather.' },
+  { key: 'evidence',   label: 'Required Data',    question: 'What required data can the tool use?',        subtitle: 'Connect or stub the data the agent needs to satisfy each requirement. Missing inputs are flagged — they don’t silently fail.' },
+  { key: 'guardrails', label: 'Review Controls',  question: 'What review controls apply?',                 subtitle: 'Choose the gates that run before, during, and after the tool. These are what make the tool defensible at audit.' },
+  { key: 'output',     label: 'Output Package',   question: 'What should this tool produce?',              subtitle: 'Pick a deliverable shape — a draft document, a coverage matrix, an API response, or a full audit pack.' },
+  { key: 'deploy',     label: 'Connect',          question: 'How should this tool connect?',               subtitle: 'Pick where this tool runs. Each option includes a copy-paste snippet your dev or AI tool can use immediately.' },
 ] as const;
 
 const REGULATIONS_ALL = [
@@ -536,14 +536,17 @@ export function Builder() {
           </div>
           <h2
             style={{
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: 500,
-              letterSpacing: '-0.015em',
-              margin: '0 0 24px',
+              letterSpacing: '-0.02em',
+              margin: '0 0 8px',
             }}
           >
             {STEPS[step]?.question}
           </h2>
+          <p style={{ margin: '0 0 24px', fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.6, maxWidth: 640 }}>
+            {STEPS[step]?.subtitle}
+          </p>
 
           {/* ── Step 1: Job ── */}
           {step === 0 && (

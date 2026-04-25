@@ -248,7 +248,7 @@ function AppShell() {
             <Route path="/app/requirements" component={RegulationManager} />
             <Route path="/app/trails/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
             <Route path="/app/trails">{() => <TraceExplorer />}</Route>
-            <Route path="/app/connect" component={ApiAccess} />
+            <Route path="/app/connect">{() => <ApiAccess />}</Route>
             <Route><CommandCenter /></Route>
           </Switch>
         </main>
