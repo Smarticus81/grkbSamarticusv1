@@ -119,7 +119,17 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     api<TaskDetail>(`/api/sandbox/tasks/${selectedId}`)
       .then((d) => {
         setDetail(d);
-        setInputDraft(JSON.stringify(d.sampleData, null, 2));
+        // Pick up pre-filled input from Builder's "Run in sandbox" if present.
+        let prefilled: string | null = null;
+        try {
+          const cached = sessionStorage.getItem(`builder:input:${selectedId}`);
+          if (cached) {
+            prefilled = JSON.stringify(JSON.parse(cached), null, 2);
+            sessionStorage.removeItem(`builder:input:${selectedId}`);
+            setEditing(true);
+          }
+        } catch { /* ignore */ }
+        setInputDraft(prefilled ?? JSON.stringify(d.sampleData, null, 2));
       })
       .catch((e) => setError(String(e?.message ?? e)));
   }, [selectedId]);

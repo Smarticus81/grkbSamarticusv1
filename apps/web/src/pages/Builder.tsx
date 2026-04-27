@@ -1,56 +1,36 @@
 /**
- * Smarticus Builder — low-code regulatory intent experience.
+ * Builder — minimalist single-agent canvas.
  *
- * 6-step flow: QMS Job > Requirements > Required Data > Review Controls > Output Package > Connect
- * Left sidebar stepper, center canvas, right sidebar regulatory inspector.
- * State is persisted to /api/builder/agents — the configuration survives reloads.
+ * - Left rail (240px): "My agents" list + "+ New agent".
+ * - Center canvas (max-w 760px): one agent at a time.
+ *     Job picker → Required data slots (attach text/JSON) → Controls → Run in Sandbox.
+ *
+ * No wizard, no stepper. Save persists to /api/builder/agents.
+ * Attachments persist via PATCH /api/builder/agents/:id/attach (text/JSON only,
+ * 2MB cap). Run in Sandbox calls POST /:id/launch and navigates to the sandbox
+ * task page where the resolved input is pre-filled.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation } from 'wouter';
 import { api } from '../lib/queryClient.js';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
-type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+
+type EvidenceRow = { label: string; required: boolean };
 
 type Job = {
   id: string;
+  /** Sandbox task id this job runs against. null = no runner yet. */
+  taskId: string | null;
   title: string;
-  description: string;
+  blurb: string;
   regulations: string[];
   risk: RiskLevel;
-  outputType: string;
-  timeEstimate: string;
-  obligationIds: string[];
-  recommendedScope: string[];
-  scopeDetail: string;
+  obligationCount: number;
   evidenceRows: EvidenceRow[];
-};
-
-type EvidenceRow = {
-  label: string;
-  status: 'connected' | 'missing' | 'optional';
-};
-
-type OutputFormat = {
-  id: string;
-  title: string;
-  description: string;
-};
-
-type DeployOption = {
-  id: string;
-  title: string;
-  description: string;
-  cta: string;
-  snippet?: string;
-};
-
-type GuardrailDef = {
-  id: string;
-  title: string;
-  description: string;
-  defaultOn: boolean;
 };
 
 type SavedAgent = {
@@ -58,8 +38,10 @@ type SavedAgent = {
   name: string;
   jobId: string;
   jobTitle: string;
+  taskId: string | null;
   regulations: string[];
   evidenceStatus: Record<string, string>;
+  attachedData: Record<string, AttachedFile>;
   guardrails: Record<string, boolean>;
   outputFormat: string | null;
   deployTarget: string | null;
@@ -68,1261 +50,933 @@ type SavedAgent = {
   updatedAt: string;
 };
 
-/* ── Data ──────────────────────────────────────────────────────────── */
+type AttachedFile = {
+  filename: string;
+  sizeBytes: number;
+  content: string;
+  contentType: string;
+  attachedAt: string;
+};
 
-const STEPS = [
-  { key: 'job',        label: 'QMS Job',         question: 'What QMS job should this tool perform?',     subtitle: 'Pick the closest match. We use this to pre-scope the right requirements and required data — you can fine-tune everything later.' },
-  { key: 'scope',      label: 'Requirements',     question: 'Which requirements should govern this tool?', subtitle: 'These are the obligations Smarticus will enforce on every run. Adding more = more rigor, but also more evidence to gather.' },
-  { key: 'evidence',   label: 'Required Data',    question: 'What required data can the tool use?',        subtitle: 'Connect or stub the data the agent needs to satisfy each requirement. Missing inputs are flagged — they don’t silently fail.' },
-  { key: 'guardrails', label: 'Review Controls',  question: 'What review controls apply?',                 subtitle: 'Choose the gates that run before, during, and after the tool. These are what make the tool defensible at audit.' },
-  { key: 'output',     label: 'Output Package',   question: 'What should this tool produce?',              subtitle: 'Pick a deliverable shape — a draft document, a coverage matrix, an API response, or a full audit pack.' },
-  { key: 'deploy',     label: 'Connect',          question: 'How should this tool connect?',               subtitle: 'Pick where this tool runs. Each option includes a copy-paste snippet your dev or AI tool can use immediately.' },
-] as const;
-
-const REGULATIONS_ALL = [
-  'EU MDR',
-  '21 CFR 820',
-  'ISO 13485',
-  'ISO 14971',
-  'IMDRF',
-  'UK MDR',
-  'MDCG 2022-21',
-];
+/* ── Job catalog ───────────────────────────────────────────────────── */
 
 const JOBS: Job[] = [
   {
     id: 'psur-compiler',
+    taskId: 'psur-section-drafter',
     title: 'PSUR Draft Package',
-    description: 'Creates a PSUR draft with citations and required data coverage.',
+    blurb: 'Draft a PSUR with citations and required-data coverage.',
     regulations: ['EU MDR', 'MDCG 2022-21'],
     risk: 'HIGH',
-    outputType: 'Draft document + coverage matrix',
-    timeEstimate: '~10 min',
-    obligationIds: ['EU-MDR-ART85', 'EU-MDR-ART86', 'MDCG-2022-21-S6', 'MDCG-2022-21-S7', 'MDCG-2022-21-S8'],
-    recommendedScope: ['EU MDR', 'MDCG 2022-21'],
-    scopeDetail: 'EU MDR Articles 85-86 (PSUR content and submission), MDCG 2022-21 Sections 6-8 (structure, clinical data, benefit-risk)',
+    obligationCount: 5,
     evidenceRows: [
-      { label: 'Post-market surveillance data', status: 'connected' },
-      { label: 'Clinical evaluation references', status: 'connected' },
-      { label: 'Complaint trend data', status: 'missing' },
-      { label: 'Sales/distribution data', status: 'optional' },
-      { label: 'CAPA history', status: 'optional' },
+      { label: 'Post-market surveillance data', required: true },
+      { label: 'Clinical evaluation references', required: true },
+      { label: 'Complaint trend data', required: true },
+      { label: 'Sales/distribution data', required: false },
+      { label: 'CAPA history', required: false },
     ],
   },
   {
     id: 'complaint-triage',
+    taskId: 'complaint-coder',
     title: 'Complaint Review Assistant',
-    description: 'Triage incoming complaints against regulatory timelines.',
+    blurb: 'Triage complaints against EU MDR / 21 CFR 803 timelines.',
     regulations: ['EU MDR', '21 CFR 820', 'ISO 13485'],
     risk: 'HIGH',
-    outputType: 'Triage report + timeline',
-    timeEstimate: '~5 min',
-    obligationIds: ['EU-MDR-ART87', 'CFR820-803', 'ISO13485-8.2.2', 'ISO13485-8.5.1', 'EU-MDR-ART89'],
-    recommendedScope: ['EU MDR', '21 CFR 820', 'ISO 13485'],
-    scopeDetail: 'EU MDR Article 87 (reporting timelines), 21 CFR 803 (MDR decisioning), ISO 13485 Section 8.2.2 (customer feedback)',
+    obligationCount: 5,
     evidenceRows: [
-      { label: 'Complaint trend data', status: 'connected' },
-      { label: 'Sales/distribution data', status: 'connected' },
-      { label: 'Risk management file', status: 'missing' },
-      { label: 'CAPA history', status: 'missing' },
-      { label: 'Clinical evaluation references', status: 'optional' },
+      { label: 'Complaint record', required: true },
+      { label: 'Sales/distribution data', required: true },
+      { label: 'Risk management file', required: false },
+      { label: 'CAPA history', required: false },
     ],
   },
   {
     id: 'imdrf-coder',
+    taskId: 'ae-reportability',
     title: 'IMDRF Coding Assistant',
-    description: 'Code adverse events with IMDRF Annexes A through G.',
+    blurb: 'Code adverse events with IMDRF Annexes A–G.',
     regulations: ['IMDRF'],
     risk: 'MEDIUM',
-    outputType: 'Coded event + rationale',
-    timeEstimate: '~3 min',
-    obligationIds: ['IMDRF-ANNEX-A', 'IMDRF-ANNEX-B', 'IMDRF-ANNEX-C', 'IMDRF-ANNEX-D', 'IMDRF-ANNEX-E'],
-    recommendedScope: ['IMDRF'],
-    scopeDetail: 'IMDRF Annexes A through G (adverse event terminology, investigation type, health impact, device problem, component)',
+    obligationCount: 5,
     evidenceRows: [
-      { label: 'Complaint trend data', status: 'connected' },
-      { label: 'Risk management file', status: 'optional' },
-      { label: 'Sales/distribution data', status: 'optional' },
-      { label: 'CAPA history', status: 'optional' },
-      { label: 'Clinical evaluation references', status: 'optional' },
+      { label: 'Adverse event narrative', required: true },
+      { label: 'Device problem code', required: false },
+      { label: 'Patient outcome', required: false },
     ],
   },
   {
     id: 'capa-evaluator',
+    taskId: 'template-compliance-evaluator',
     title: 'CAPA File Evaluator',
-    description: 'Evaluate a CAPA against ISO 13485 and 21 CFR 820.',
+    blurb: 'Evaluate a CAPA against ISO 13485 / 21 CFR 820.100.',
     regulations: ['ISO 13485', '21 CFR 820'],
     risk: 'HIGH',
-    outputType: 'Gap analysis + recommendations',
-    timeEstimate: '~8 min',
-    obligationIds: ['ISO13485-8.5.2', 'ISO13485-8.5.3', 'CFR820-100-A', 'CFR820-100-B', 'CFR820-198'],
-    recommendedScope: ['ISO 13485', '21 CFR 820'],
-    scopeDetail: 'ISO 13485 Sections 8.5.2-8.5.3 (corrective/preventive action), 21 CFR 820.100 (CAPA procedures)',
+    obligationCount: 5,
     evidenceRows: [
-      { label: 'CAPA history', status: 'connected' },
-      { label: 'Risk management file', status: 'connected' },
-      { label: 'Complaint trend data', status: 'missing' },
-      { label: 'Sales/distribution data', status: 'optional' },
-      { label: 'Clinical evaluation references', status: 'optional' },
+      { label: 'CAPA record', required: true },
+      { label: 'Root cause analysis', required: true },
+      { label: 'Effectiveness check', required: false },
+    ],
+  },
+  {
+    id: 'risk-trend-watcher',
+    taskId: 'trend-determination',
+    title: 'Trend Determination',
+    blurb: 'Spot trend signals across complaint or NC data.',
+    regulations: ['ISO 14971', 'EU MDR'],
+    risk: 'MEDIUM',
+    obligationCount: 4,
+    evidenceRows: [
+      { label: 'Complaint trend data', required: true },
+      { label: 'Risk management file', required: false },
     ],
   },
   {
     id: 'pms-plan-builder',
+    taskId: null,
     title: 'PMS Plan Builder',
-    description: 'Generate a PMS plan per EU MDR Articles 83-86.',
+    blurb: 'Generate a PMS plan per EU MDR Articles 83–86. (Sandbox runner coming soon.)',
     regulations: ['EU MDR'],
     risk: 'MEDIUM',
-    outputType: 'PMS plan document',
-    timeEstimate: '~12 min',
-    obligationIds: ['EU-MDR-ART83', 'EU-MDR-ART84', 'EU-MDR-ART85', 'EU-MDR-ART86', 'EU-MDR-ANNIX-III'],
-    recommendedScope: ['EU MDR'],
-    scopeDetail: 'EU MDR Articles 83-86 (PMS system, plan, report, PSUR) and Annex III (technical documentation requirements)',
+    obligationCount: 5,
     evidenceRows: [
-      { label: 'Post-market surveillance data', status: 'connected' },
-      { label: 'Risk management file', status: 'connected' },
-      { label: 'Clinical evaluation references', status: 'missing' },
-      { label: 'Complaint trend data', status: 'optional' },
-      { label: 'Sales/distribution data', status: 'optional' },
-    ],
-  },
-  {
-    id: 'risk-file-watcher',
-    title: 'Risk File Watcher',
-    description: 'Re-score a risk file when an input changes.',
-    regulations: ['ISO 14971'],
-    risk: 'MEDIUM',
-    outputType: 'Risk delta report',
-    timeEstimate: '~5 min',
-    obligationIds: ['ISO14971-4.1', 'ISO14971-4.2', 'ISO14971-5.1', 'ISO14971-6.1', 'ISO14971-7.1'],
-    recommendedScope: ['ISO 14971'],
-    scopeDetail: 'ISO 14971 Sections 4-7 (risk analysis, evaluation, control, residual risk evaluation)',
-    evidenceRows: [
-      { label: 'Risk management file', status: 'connected' },
-      { label: 'Clinical evaluation references', status: 'connected' },
-      { label: 'Complaint trend data', status: 'optional' },
-      { label: 'CAPA history', status: 'optional' },
-      { label: 'Sales/distribution data', status: 'optional' },
+      { label: 'Post-market surveillance data', required: true },
+      { label: 'Risk management file', required: true },
+      { label: 'Clinical evaluation references', required: true },
     ],
   },
   {
     id: 'internal-audit-pack',
+    taskId: null,
     title: 'Internal Audit Pack',
-    description: 'Generate audit plan, checklist, and report scaffold.',
+    blurb: 'Generate audit plan, checklist, and report scaffold. (Sandbox runner coming soon.)',
     regulations: ['ISO 13485'],
     risk: 'LOW',
-    outputType: 'Audit package',
-    timeEstimate: '~8 min',
-    obligationIds: ['ISO13485-8.2.4', 'ISO13485-8.2.4-A', 'ISO13485-8.2.4-B', 'ISO13485-4.2.5', 'ISO13485-5.6.1'],
-    recommendedScope: ['ISO 13485'],
-    scopeDetail: 'ISO 13485 Section 8.2.4 (internal audit), Sections 4.2.5 and 5.6.1 (document control and management review)',
+    obligationCount: 5,
     evidenceRows: [
-      { label: 'CAPA history', status: 'connected' },
-      { label: 'Risk management file', status: 'connected' },
-      { label: 'Complaint trend data', status: 'connected' },
-      { label: 'Sales/distribution data', status: 'optional' },
-      { label: 'Clinical evaluation references', status: 'optional' },
+      { label: 'CAPA history', required: true },
+      { label: 'Risk management file', required: false },
+      { label: 'Complaint trend data', required: false },
     ],
   },
 ];
 
-const OUTPUT_FORMATS: OutputFormat[] = [
-  { id: 'draft-doc',       title: 'Draft Document',       description: 'Structured document with sections, citations, and required data refs' },
-  { id: 'coverage-matrix', title: 'Coverage Matrix',      description: 'Requirement x required data coverage grid' },
-  { id: 'json-api',        title: 'JSON API Response',    description: 'Structured JSON for downstream systems' },
-  { id: 'audit-pack',      title: 'Audit Pack',           description: 'Complete audit-ready package with decision trails' },
-];
+const GUARDRAILS = [
+  { id: 'qualification', label: 'Readiness check', detail: 'Block runs that lack required evidence.' },
+  { id: 'compliance',    label: 'Compliance check', detail: 'Validate output against bound obligations.' },
+  { id: 'review-gate',   label: 'Human review gate', detail: 'Pause for sign-off before output is released.' },
+  { id: 'strict-schema', label: 'Strict output schema', detail: 'Reject malformed agent output.' },
+] as const;
 
-const DEPLOY_OPTIONS: DeployOption[] = [
-  {
-    id: 'sandbox',
-    title: 'Sandbox Only',
-    description: 'Test in the sandbox before connecting',
-    cta: 'Run in sandbox',
-  },
-  {
-    id: 'mcp-tool',
-    title: 'MCP Tool',
-    description: 'Expose as an MCP tool for Claude/Cursor/agents',
-    cta: 'Copy config',
-    snippet: `{
-  "mcpServers": {
-    "smarticus": {
-      "command": "npx",
-      "args": ["-y", "@regground/mcp-server"],
-      "env": {
-        "SMARTICUS_API_BASE": "https://api.smarticus.ai",
-        "SMARTICUS_API_KEY": "sm_live_<paste-from-Connect>"
-      }
-    }
-  }
-}`,
-  },
-  {
-    id: 'api-endpoint',
-    title: 'API Endpoint',
-    description: 'REST endpoint for programmatic runs (returns the same SSE stream the sandbox uses).',
-    cta: 'Copy curl',
-    snippet: `# 1. start a run — returns { runId }
-curl -X POST "$SMARTICUS_API_BASE/api/sandbox/tasks/{{TASK_ID}}/run" \\
-  -H "Authorization: Bearer $SMARTICUS_API_KEY" \\
-  -H "Content-Type: application/json" \\
-  -d '{"mode":"with-graph","input":{...}}'
+const OUTPUT_FORMATS = [
+  { id: 'draft-doc',       label: 'Draft document' },
+  { id: 'coverage-matrix', label: 'Coverage matrix' },
+  { id: 'json-api',        label: 'JSON response' },
+  { id: 'audit-pack',      label: 'Audit pack' },
+] as const;
 
-# 2. fetch the result
-curl "$SMARTICUS_API_BASE/api/sandbox/runs/<runId>/result" \\
-  -H "Authorization: Bearer $SMARTICUS_API_KEY"`,
-  },
-];
+/* ── Tokens ────────────────────────────────────────────────────────── */
 
-const GUARDRAILS: GuardrailDef[] = [
-  {
-    id: 'qualification-gate',
-    title: 'Readiness Check',
-    description: 'Blocks execution if mandatory requirements lack required data',
-    defaultOn: true,
-  },
-  {
-    id: 'strict-output-schema',
-    title: 'Output Check',
-    description: 'Validates output structure before release',
-    defaultOn: true,
-  },
-  {
-    id: 'human-review-gate',
-    title: 'Review Gate',
-    description: 'Requires human approval before output is final',
-    defaultOn: true,
-  },
-  {
-    id: 'compliance-validator',
-    title: 'Validation Check',
-    description: '5-validator pipeline checks output against requirements',
-    defaultOn: true,
-  },
-];
+const PILL: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  height: 22,
+  padding: '0 8px',
+  fontFamily: 'var(--mono)',
+  fontSize: 10,
+  letterSpacing: '0.06em',
+  textTransform: 'uppercase',
+  color: 'var(--ink-2)',
+  border: '1px solid var(--rule-strong)',
+  borderRadius: 11,
+  background: 'transparent',
+};
 
-/* ── Helpers ──────────────────────────────────────────────────────── */
+const RISK_COLOR: Record<RiskLevel, string> = {
+  HIGH: 'var(--orange)',
+  MEDIUM: 'var(--ink-2)',
+  LOW: 'var(--ink-3)',
+};
 
-function riskBadgeClass(risk: RiskLevel): string {
-  switch (risk) {
-    case 'LOW':      return 'badge-ok';
-    case 'MEDIUM':   return 'badge-warn';
-    case 'HIGH':     return 'badge-signal';
-    case 'CRITICAL': return 'badge-err';
-  }
-}
-
-function evidenceBadgeClass(status: EvidenceRow['status']): string {
-  switch (status) {
-    case 'connected': return 'badge-ok';
-    case 'missing':   return 'badge-err';
-    case 'optional':  return 'badge-ink';
-  }
-}
-
-/* ── Component ────────────────────────────────────────────────────── */
+/* ── Component ─────────────────────────────────────────────────────── */
 
 export function Builder() {
-  const [step, setStep] = useState(0);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [scope, setScope] = useState<string[]>([]);
-  const [guardrailState, setGuardrailState] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {};
-    GUARDRAILS.forEach((g) => { init[g.id] = g.defaultOn; });
-    return init;
+  const [, navigate] = useLocation();
+
+  const [agents, setAgents] = useState<SavedAgent[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Working draft (not yet saved). When activeId is set, this mirrors the saved agent.
+  const [name, setName] = useState('Untitled agent');
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [evidenceStatus, setEvidenceStatus] = useState<Record<string, string>>({});
+  const [attachedData, setAttachedData] = useState<Record<string, AttachedFile>>({});
+  const [guardrails, setGuardrails] = useState<Record<string, boolean>>({
+    qualification: true,
+    compliance: true,
+    'review-gate': false,
+    'strict-schema': true,
   });
-  const [selectedOutput, setSelectedOutput] = useState<string | null>(null);
-  const [selectedDeploy, setSelectedDeploy] = useState<string | null>(null);
-  const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+  const [outputFormat, setOutputFormat] = useState<string | null>('draft-doc');
 
-  /* ── Persistence ─────────────────────────────────────────────────── */
-  const [savedAgents, setSavedAgents] = useState<SavedAgent[]>([]);
-  const [savingState, setSavingState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [agentName, setAgentName] = useState<string>('');
+  const [busy, setBusy] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  const loadSavedAgents = async () => {
+  const job = useMemo(() => JOBS.find((j) => j.id === jobId) ?? null, [jobId]);
+
+  /* ── load saved ── */
+  const refresh = async () => {
     try {
-      const list = await api<SavedAgent[]>('/api/builder/agents');
-      setSavedAgents(Array.isArray(list) ? list : []);
+      const rows = await api<SavedAgent[]>('/api/builder/agents');
+      setAgents(rows);
     } catch {
-      setSavedAgents([]);
+      setAgents([]);
     }
   };
 
-  useEffect(() => { void loadSavedAgents(); }, []);
+  useEffect(() => {
+    void refresh();
+  }, []);
 
-  function loadAgent(agent: SavedAgent) {
-    const job = JOBS.find((j) => j.id === agent.jobId);
-    if (!job) return;
-    setSelectedJob(job);
-    setScope(agent.regulations);
-    setGuardrailState(() => {
-      const next: Record<string, boolean> = {};
-      GUARDRAILS.forEach((g) => { next[g.id] = agent.guardrails[g.id] ?? g.defaultOn; });
-      return next;
+  function loadAgent(a: SavedAgent) {
+    setActiveId(a.id);
+    setName(a.name);
+    setJobId(a.jobId);
+    setEvidenceStatus(a.evidenceStatus ?? {});
+    setAttachedData(a.attachedData ?? {});
+    setGuardrails({
+      qualification: a.guardrails?.qualification ?? true,
+      compliance: a.guardrails?.compliance ?? true,
+      'review-gate': a.guardrails?.['review-gate'] ?? false,
+      'strict-schema': a.guardrails?.['strict-schema'] ?? true,
     });
-    setSelectedOutput(agent.outputFormat);
-    setSelectedDeploy(agent.deployTarget);
-    setAgentName(agent.name);
-    setStep(5);
+    setOutputFormat(a.outputFormat ?? 'draft-doc');
   }
 
-  async function handleSave() {
-    if (!selectedJob) return;
-    const name = (agentName.trim() || `${selectedJob.title} \u2014 ${new Date().toLocaleDateString()}`).slice(0, 200);
-    setSavingState('saving');
+  function newAgent() {
+    setActiveId(null);
+    setName('Untitled agent');
+    setJobId(null);
+    setEvidenceStatus({});
+    setAttachedData({});
+    setGuardrails({
+      qualification: true,
+      compliance: true,
+      'review-gate': false,
+      'strict-schema': true,
+    });
+    setOutputFormat('draft-doc');
+  }
+
+  /* ── save ── */
+  async function save() {
+    if (!job) {
+      setToast('Pick a job first.');
+      return;
+    }
+    setBusy('save');
     try {
-      const evidenceStatus: Record<string, string> = {};
-      selectedJob.evidenceRows.forEach((r) => { evidenceStatus[r.label] = r.status; });
-      await api('/api/builder/agents', {
+      const riskBand: 'low' | 'medium' | 'high' =
+        job.risk === 'HIGH' ? 'high' : job.risk === 'LOW' ? 'low' : 'medium';
+      const payload = {
+        name: name.trim() || 'Untitled agent',
+        jobId: job.id,
+        jobTitle: job.title,
+        taskId: job.taskId,
+        regulations: job.regulations,
+        evidenceStatus,
+        guardrails,
+        outputFormat,
+        deployTarget: 'sandbox',
+        riskBand,
+        description: job.blurb,
+      };
+      const saved = await api<SavedAgent>('/api/builder/agents', {
         method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      setActiveId(saved.id);
+      // Pull canonical row so attachedData is in sync
+      const fresh = await api<SavedAgent>(`/api/builder/agents/${saved.id}`);
+      setAttachedData(fresh.attachedData ?? {});
+      await refresh();
+      setToast('Saved.');
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : 'Save failed.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /* ── attach data ── */
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  async function ensureAgentId(): Promise<string | null> {
+    if (activeId) return activeId;
+    // Auto-save first so we have an id to attach against.
+    await save();
+    return activeId; // Set by save()
+  }
+
+  async function attach(slot: string, file: File) {
+    if (file.size > 2_000_000) {
+      setToast('File too large (2 MB cap).');
+      return;
+    }
+    const id = activeId ?? (await new Promise<string | null>((r) => {
+      // Two-phase: save then resolve via state propagation.
+      void save().then(() => r(null));
+    }));
+    void id;
+    // Refetch the latest activeId after save
+    const currentId = activeId;
+    if (!currentId) {
+      setToast('Save the agent first, then attach data.');
+      return;
+    }
+    setBusy(`attach:${slot}`);
+    try {
+      const text = await file.text();
+      const updated = await api<SavedAgent>(`/api/builder/agents/${currentId}/attach`, {
+        method: 'PATCH',
         body: JSON.stringify({
-          name,
-          jobId: selectedJob.id,
-          jobTitle: selectedJob.title,
-          regulations: scope,
-          evidenceStatus,
-          guardrails: guardrailState,
-          outputFormat: selectedOutput,
-          deployTarget: selectedDeploy,
-          riskBand: selectedJob.risk === 'LOW' ? 'low' : selectedJob.risk === 'MEDIUM' ? 'medium' : 'high',
-          description: selectedJob.description,
+          slot,
+          filename: file.name,
+          content: text,
+          contentType: file.type || (file.name.endsWith('.json') ? 'application/json' : 'text/plain'),
         }),
       });
-      setSavingState('saved');
-      setAgentName(name);
-      void loadSavedAgents();
-      setTimeout(() => setSavingState('idle'), 2000);
-    } catch {
-      setSavingState('error');
-      setTimeout(() => setSavingState('idle'), 3000);
+      setAttachedData(updated.attachedData ?? {});
+      setEvidenceStatus(updated.evidenceStatus ?? {});
+      setToast(`Attached ${file.name}.`);
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : 'Attach failed.');
+    } finally {
+      setBusy(null);
     }
   }
 
-  /* Derived inspector data */
-  const inspector = useMemo(() => {
-    const obligationCount = selectedJob ? selectedJob.obligationIds.length : 0;
-    const obligations = selectedJob ? selectedJob.obligationIds : [];
-    const missingEvidence = selectedJob
-      ? selectedJob.evidenceRows.filter((r) => r.status === 'missing')
-      : [];
-    const risk = selectedJob?.risk ?? null;
-    const activeGates = GUARDRAILS.filter((g) => guardrailState[g.id]);
-    const traceConfigured = guardrailState['compliance-validator'] || guardrailState['qualification-gate'];
-    return { obligationCount, obligations, missingEvidence, risk, activeGates, traceConfigured };
-  }, [selectedJob, guardrailState]);
-
-  function isStepCompleted(idx: number): boolean {
-    switch (idx) {
-      case 0: return selectedJob !== null;
-      case 1: return scope.length > 0;
-      case 2: return selectedJob !== null;
-      case 3: return true;
-      case 4: return selectedOutput !== null;
-      case 5: return selectedDeploy !== null;
-      default: return false;
+  async function detach(slot: string) {
+    if (!activeId) return;
+    setBusy(`detach:${slot}`);
+    try {
+      const updated = await api<SavedAgent>(
+        `/api/builder/agents/${activeId}/attach/${encodeURIComponent(slot)}`,
+        { method: 'DELETE' },
+      );
+      setAttachedData(updated.attachedData ?? {});
+      setEvidenceStatus(updated.evidenceStatus ?? {});
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : 'Remove failed.');
+    } finally {
+      setBusy(null);
     }
   }
 
-  function canAdvance(): boolean {
-    return isStepCompleted(step);
+  /* ── delete saved agent ── */
+  async function remove(id: string) {
+    if (!confirm('Delete this agent?')) return;
+    setBusy(`del:${id}`);
+    try {
+      await api<void>(`/api/builder/agents/${id}`, { method: 'DELETE' });
+      if (activeId === id) newAgent();
+      await refresh();
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : 'Delete failed.');
+    } finally {
+      setBusy(null);
+    }
   }
 
-  function handleSelectJob(job: Job) {
-    setSelectedJob(job);
-    setScope(job.recommendedScope);
-    if (job.id === 'internal-audit-pack') setSelectedOutput('audit-pack');
-    else if (job.id === 'psur-compiler' || job.id === 'pms-plan-builder') setSelectedOutput('draft-doc');
-    else setSelectedOutput('json-api');
+  /* ── launch ── */
+  const missingRequired = useMemo(() => {
+    if (!job) return [];
+    return job.evidenceRows.filter((r) => r.required && !attachedData[r.label]);
+  }, [job, attachedData]);
+
+  async function runInSandbox() {
+    if (!job) return;
+    if (!job.taskId) {
+      setToast('No sandbox runner for this job yet.');
+      return;
+    }
+    if (missingRequired.length > 0) {
+      setToast(`Attach required data first: ${missingRequired.map((r) => r.label).join(', ')}`);
+      return;
+    }
+    if (!activeId) {
+      await save();
+    }
+    const id = activeId;
+    if (!id) return;
+    setBusy('launch');
+    try {
+      const launch = await api<{ taskId: string; input: unknown }>(
+        `/api/builder/agents/${id}/launch`,
+        { method: 'POST' },
+      );
+      // Cache the merged input for Sandbox to pick up.
+      try {
+        sessionStorage.setItem(
+          `builder:input:${launch.taskId}`,
+          JSON.stringify(launch.input ?? {}),
+        );
+      } catch { /* sessionStorage may be blocked */ }
+      navigate(`/app/sandbox/${launch.taskId}`);
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : 'Launch failed.');
+    } finally {
+      setBusy(null);
+    }
   }
 
-  function toggleScope(reg: string) {
-    setScope((prev) =>
-      prev.includes(reg) ? prev.filter((r) => r !== reg) : [...prev, reg]
-    );
-  }
-
-  function recommendScope() {
-    if (selectedJob) setScope(selectedJob.recommendedScope);
-  }
-
-  function toggleGuardrail(id: string) {
-    setGuardrailState((prev) => ({ ...prev, [id]: !prev[id] }));
-  }
-
-  function handleCopySnippet(snippet: string, id: string) {
-    navigator.clipboard.writeText(snippet).catch(() => {});
-    setCopiedSnippet(id);
-    setTimeout(() => setCopiedSnippet(null), 2000);
-  }
-
-  function goNext() {
-    if (step < STEPS.length - 1) setStep(step + 1);
-  }
-
-  function goBack() {
-    if (step > 0) setStep(step - 1);
-  }
-
-  /* ── Render ──────────────────────────────────────────────────────── */
+  /* ── UI ──────────────────────────────────────────────────────────── */
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
-      {/* Header */}
-      <header
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '240px 1fr',
+        minHeight: 'calc(100vh - 64px)',
+        background: 'var(--paper)',
+      }}
+    >
+      {/* ── Left rail: My agents ── */}
+      <aside
         style={{
-          padding: '28px 32px 20px',
-          borderBottom: '1px solid var(--rule)',
+          borderRight: '1px solid var(--rule)',
+          padding: '24px 16px',
+          background: 'var(--paper-deep)',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 16,
+          flexDirection: 'column',
+          gap: 8,
         }}
       >
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>Agent builder</div>
-          <h1 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.025em', margin: 0 }}>
-            Build a QMS tool.
-          </h1>
-          <p style={{ marginTop: 6, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 600, margin: '6px 0 0' }}>
-            Define what the tool does, which requirements govern it, and how it connects.
-            Smarticus grounds every step in the requirements engine.
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {selectedJob && (
-            <button
-              className="btn btn-ghost"
-              onClick={handleSave}
-              disabled={savingState === 'saving'}
-              style={{ fontSize: 13 }}
-            >
-              {savingState === 'saving'
-                ? 'Saving…'
-                : savingState === 'saved'
-                ? '✓ Saved'
-                : savingState === 'error'
-                ? 'Save failed — retry'
-                : agentName
-                ? 'Save changes'
-                : 'Save agent'}
-            </button>
-          )}
-          {step > 0 && (
-            <button className="btn btn-ghost" onClick={goBack} style={{ fontSize: 13 }}>
-              Back
-            </button>
-          )}
-          {step < STEPS.length - 1 && (
-            <button
-              className="btn btn-orange"
-              onClick={goNext}
-              disabled={!canAdvance()}
-              style={{ fontSize: 13, opacity: canAdvance() ? 1 : 0.5 }}
-            >
-              Next: {STEPS[step + 1]?.label}
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                <path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          )}
-        </div>
-      </header>
-
-      {/* 3-column layout */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '220px 1fr 300px',
-          minHeight: 'calc(100vh - 120px)',
-        }}
-      >
-        {/* ── Left sidebar: Stepper ── */}
-        <aside
+        <div
           style={{
-            borderRight: '1px solid var(--rule)',
-            padding: '24px 20px',
-            background: 'var(--paper)',
+            fontFamily: 'var(--mono)',
+            fontSize: 11,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-3)',
+            padding: '0 8px 12px',
           }}
         >
-          <div className="eyebrow" style={{ marginBottom: 16, fontSize: 10 }}>Steps</div>
-          <div className="stepper">
-            {STEPS.map((s, i) => {
-              const completedPrior = i < step && isStepCompleted(i);
-              const active = i === step;
-              return (
-                <button
-                  key={s.key}
-                  className="stepper-step"
-                  onClick={() => {
-                    if (i <= step) setStep(i);
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 0,
-                    cursor: i <= step ? 'pointer' : 'default',
-                    textAlign: 'left',
-                    width: '100%',
-                    opacity: i > step ? 0.4 : 1,
-                  }}
-                >
-                  <div
-                    className={`stepper-dot ${active ? 'active' : completedPrior ? 'completed' : ''}`}
-                  >
-                    {completedPrior ? (
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5.4l2.1 2L8 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    ) : (
-                      i + 1
-                    )}
-                  </div>
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: active ? 600 : 400,
-                        color: active ? 'var(--ink)' : completedPrior ? 'var(--ink-2)' : 'var(--ink-3)',
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {s.label}
-                    </div>
-                    {active && (
-                      <div style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 2, lineHeight: 1.4 }}>
-                        {s.question}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+          My agents
+        </div>
 
-          {/* Progress bar */}
-          <div
-            style={{
-              marginTop: 32,
-              padding: '14px 0',
-              borderTop: '1px solid var(--rule)',
-            }}
-          >
-            <div className="eyebrow" style={{ fontSize: 9, marginBottom: 8 }}>Progress</div>
+        <button
+          onClick={newAgent}
+          style={{
+            textAlign: 'left',
+            padding: '10px 12px',
+            background: activeId === null ? 'var(--ink)' : 'transparent',
+            color: activeId === null ? 'var(--paper)' : 'var(--ink-2)',
+            border: '1px solid var(--rule-strong)',
+            borderRadius: 8,
+            fontFamily: 'var(--sans)',
+            fontSize: 13,
+            cursor: 'pointer',
+          }}
+        >
+          + New agent
+        </button>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            marginTop: 8,
+            overflowY: 'auto',
+          }}
+        >
+          {agents.length === 0 && (
             <div
               style={{
-                height: 4,
-                background: 'var(--paper-edge)',
-                borderRadius: 2,
-                overflow: 'hidden',
+                fontFamily: 'var(--mono)',
+                fontSize: 11,
+                color: 'var(--ink-4)',
+                padding: '12px 8px',
+                lineHeight: 1.5,
               }}
             >
-              <div
-                style={{
-                  width: `${Math.round(((step + (canAdvance() ? 1 : 0)) / STEPS.length) * 100)}%`,
-                  height: '100%',
-                  background: 'var(--orange)',
-                  transition: 'width 0.3s var(--ease)',
-                }}
-              />
+              No saved agents yet.
             </div>
-            <div style={{ fontSize: 11, color: 'var(--ink-4)', marginTop: 6 }}>
-              {step + 1} of {STEPS.length}
-              {selectedJob && <span> &middot; {selectedJob.title}</span>}
-            </div>
-          </div>
-        </aside>
-
-        {/* ── Center: Work canvas ── */}
-        <section style={{ padding: '28px 36px', overflow: 'auto' }}>
-          <div className="eyebrow" style={{ marginBottom: 6, fontSize: 10 }}>
-            Step {step + 1} / {STEPS.length}
-          </div>
-          <h2
-            style={{
-              fontSize: 22,
-              fontWeight: 500,
-              letterSpacing: '-0.02em',
-              margin: '0 0 8px',
-            }}
-          >
-            {STEPS[step]?.question}
-          </h2>
-          <p style={{ margin: '0 0 24px', fontSize: 13.5, color: 'var(--ink-3)', lineHeight: 1.6, maxWidth: 640 }}>
-            {STEPS[step]?.subtitle}
-          </p>
-
-          {/* ── Step 1: Job ── */}
-          {step === 0 && (
-            <>
-              {savedAgents.length > 0 && (
-                <div style={{ marginBottom: 24 }}>
-                  <div className="eyebrow" style={{ marginBottom: 10, fontSize: 10 }}>
-                    Continue editing · {savedAgents.length} saved
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 10 }}>
-                    {savedAgents.slice(0, 6).map((a) => (
-                      <button
-                        key={a.id}
-                        onClick={() => loadAgent(a)}
-                        className="ground-card lift"
-                        style={{ cursor: 'pointer', textAlign: 'left', padding: '12px 14px' }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-                          <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {a.name}
-                          </div>
-                          <span className={`badge ${a.riskBand === 'high' ? 'badge-signal' : a.riskBand === 'medium' ? 'badge-warn' : 'badge-ok'}`} style={{ fontSize: 9 }}>
-                            {a.riskBand.toUpperCase()}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: 11.5, color: 'var(--ink-3)', fontFamily: 'var(--mono)', letterSpacing: '0.04em' }}>
-                          {a.jobTitle} · updated {new Date(a.updatedAt).toLocaleDateString()}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: 14,
-                }}
-              >
-              {JOBS.map((job) => {
-                const active = selectedJob?.id === job.id;
-                return (
-                  <div
-                    key={job.id}
-                    className={`ground-card ${active ? 'active' : ''} lift`}
-                    style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10 }}
-                    onClick={() => handleSelectJob(job)}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-                      <h3 style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{job.title}</h3>
-                      <span className={`badge ${riskBadgeClass(job.risk)}`}>{job.risk}</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-                      {job.description}
-                    </p>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {job.regulations.map((reg) => (
-                        <span key={reg} className="badge badge-ink" style={{ fontSize: 9 }}>
-                          {reg}
-                        </span>
-                      ))}
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        borderTop: '1px solid var(--rule)',
-                        paddingTop: 10,
-                        marginTop: 2,
-                      }}
-                    >
-                      <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>
-                        <span style={{ fontFamily: 'var(--mono)', letterSpacing: '0.06em' }}>OUTPUT</span>{' '}
-                        {job.outputType}
-                      </div>
-                      <div
-                        style={{
-                          fontFamily: 'var(--mono)',
-                          fontSize: 11,
-                          color: 'var(--ink-4)',
-                          letterSpacing: '0.06em',
-                        }}
-                      >
-                        {job.timeEstimate}
-                      </div>
-                    </div>
-                    <button
-                      className={active ? 'btn btn-orange' : 'btn btn-ghost'}
-                      style={{ fontSize: 12, padding: '8px 14px', width: '100%', justifyContent: 'center' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectJob(job);
-                      }}
-                    >
-                      {active ? 'Selected' : 'Select'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-            </>
           )}
-
-          {/* ── Step 2: Scope ── */}
-          {step === 1 && (
-            <div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-                {REGULATIONS_ALL.map((reg) => {
-                  const active = scope.includes(reg);
-                  return (
-                    <button
-                      key={reg}
-                      onClick={() => toggleScope(reg)}
-                      style={{
-                        padding: '10px 18px',
-                        borderRadius: 999,
-                        border: `1.5px solid ${active ? 'var(--orange)' : 'var(--rule-strong)'}`,
-                        background: active ? 'var(--signal-soft)' : 'var(--paper)',
-                        color: active ? 'var(--orange)' : 'var(--ink-2)',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--mono)',
-                        fontSize: 12,
-                        fontWeight: 500,
-                        letterSpacing: '0.06em',
-                        transition: 'all var(--t-fast) var(--ease)',
-                      }}
-                    >
-                      {active && (
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ marginRight: 6, verticalAlign: -1 }}>
-                          <path d="M2 5.4l2.1 2L8 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                      {reg}
-                    </button>
-                  );
-                })}
-              </div>
-
+          {agents.map((a) => (
+            <div
+              key={a.id}
+              style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 4,
+                background: activeId === a.id ? 'var(--paper)' : 'transparent',
+                border: '1px solid',
+                borderColor: activeId === a.id ? 'var(--ink)' : 'transparent',
+                borderRadius: 8,
+              }}
+            >
               <button
-                className="btn btn-ghost"
-                onClick={recommendScope}
-                style={{ fontSize: 12, marginBottom: 24 }}
+                onClick={() => loadAgent(a)}
+                title={a.name}
+                style={{
+                  flex: 1,
+                  textAlign: 'left',
+                  padding: '8px 10px',
+                  background: 'transparent',
+                  color: 'var(--ink)',
+                  border: 'none',
+                  fontFamily: 'var(--sans)',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                Recommend scope
-              </button>
-
-              {selectedJob && (
+                <div style={{ fontWeight: 500 }}>{a.name}</div>
                 <div
-                  className="ground-card"
-                  style={{ marginTop: 8, background: 'var(--paper-deep)' }}
+                  style={{
+                    fontFamily: 'var(--mono)',
+                    fontSize: 10,
+                    color: 'var(--ink-3)',
+                    marginTop: 2,
+                  }}
                 >
-                  <div className="eyebrow" style={{ marginBottom: 8, fontSize: 10 }}>
-                    Scope recommendation
-                  </div>
-                  <p style={{ margin: 0, fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.6 }}>
-                    For <strong style={{ color: 'var(--ink)' }}>{selectedJob.title}</strong>, Smarticus recommends:{' '}
-                    <span style={{ color: 'var(--ink)' }}>{selectedJob.scopeDetail}</span>
-                  </p>
+                  {a.jobTitle}
                 </div>
-              )}
+              </button>
+              <button
+                onClick={() => remove(a.id)}
+                disabled={busy === `del:${a.id}`}
+                title="Delete"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--ink-4)',
+                  cursor: 'pointer',
+                  padding: '6px 8px',
+                  fontSize: 14,
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      </aside>
 
-              {!selectedJob && (
-                <div style={{ padding: 24, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-                  Select a job in Step 1 to see scope recommendations.
+      {/* ── Center canvas ── */}
+      <main
+        style={{
+          padding: '40px 48px 80px',
+          maxWidth: 760,
+          width: '100%',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 24,
+        }}
+      >
+        {/* Header */}
+        <header
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 16,
+          }}
+        >
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Agent name"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              padding: '6px 0',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: '1px dashed var(--rule-strong)',
+              color: 'var(--ink)',
+              fontFamily: 'var(--sans)',
+              fontSize: 22,
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              outline: 'none',
+            }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={save}
+              disabled={busy === 'save' || !job}
+              style={{
+                padding: '8px 14px',
+                background: 'transparent',
+                border: '1px solid var(--ink)',
+                color: 'var(--ink)',
+                borderRadius: 6,
+                fontFamily: 'var(--sans)',
+                fontSize: 13,
+                cursor: job ? 'pointer' : 'not-allowed',
+                opacity: !job ? 0.4 : 1,
+              }}
+            >
+              {busy === 'save' ? 'Saving…' : activeId ? 'Save' : 'Save as new'}
+            </button>
+            <button
+              onClick={runInSandbox}
+              disabled={!job?.taskId || busy === 'launch' || missingRequired.length > 0}
+              style={{
+                padding: '8px 16px',
+                background: !job?.taskId || missingRequired.length > 0 ? 'var(--paper-deep)' : 'var(--ink)',
+                border: '1px solid var(--ink)',
+                color: !job?.taskId || missingRequired.length > 0 ? 'var(--ink-3)' : 'var(--paper)',
+                borderRadius: 6,
+                fontFamily: 'var(--sans)',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: !job?.taskId || missingRequired.length > 0 ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {busy === 'launch' ? 'Launching…' : 'Run in sandbox →'}
+            </button>
+          </div>
+        </header>
+
+        {toast && (
+          <div
+            style={{
+              padding: '8px 12px',
+              background: 'var(--paper-deep)',
+              border: '1px solid var(--rule-strong)',
+              borderRadius: 6,
+              fontFamily: 'var(--mono)',
+              fontSize: 11,
+              color: 'var(--ink-2)',
+            }}
+            onClick={() => setToast(null)}
+          >
+            {toast}
+          </div>
+        )}
+
+        {/* Section: Job */}
+        <Section
+          label="Job"
+          subtitle={job ? job.blurb : 'Pick the job this agent performs.'}
+        >
+          {!job ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+              {JOBS.map((j) => (
+                <button
+                  key={j.id}
+                  onClick={() => setJobId(j.id)}
+                  style={{
+                    textAlign: 'left',
+                    padding: 14,
+                    background: 'var(--paper)',
+                    border: '1px solid var(--rule-strong)',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{j.title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.4 }}>{j.blurb}</div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
+                    <span style={{ ...PILL, color: RISK_COLOR[j.risk], borderColor: RISK_COLOR[j.risk] }}>
+                      {j.risk}
+                    </span>
+                    {!j.taskId && <span style={PILL}>no runner</span>}
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: 14,
+                border: '1px solid var(--rule-strong)',
+                borderRadius: 8,
+                background: 'var(--paper-deep)',
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{job.title}</div>
+                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                  <span style={{ ...PILL, color: RISK_COLOR[job.risk], borderColor: RISK_COLOR[job.risk] }}>
+                    {job.risk}
+                  </span>
+                  {job.regulations.map((r) => (
+                    <span key={r} style={PILL}>{r}</span>
+                  ))}
+                  <span style={PILL}>{job.obligationCount} obligations</span>
+                  {!job.taskId && <span style={{ ...PILL, color: 'var(--orange)', borderColor: 'var(--orange)' }}>no runner</span>}
                 </div>
-              )}
+              </div>
+              <button
+                onClick={() => setJobId(null)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--rule-strong)',
+                  borderRadius: 6,
+                  color: 'var(--ink-3)',
+                  fontFamily: 'var(--sans)',
+                  fontSize: 12,
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                }}
+              >
+                Change
+              </button>
             </div>
           )}
+        </Section>
 
-          {/* ── Step 3: Evidence ── */}
-          {step === 2 && (
-            <div>
-              {selectedJob ? (
-                <>
-                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr>
-                        <th>Required Data</th>
-                        <th style={{ textAlign: 'right' }}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {selectedJob.evidenceRows.map((row) => (
-                        <tr key={row.label}>
-                          <td style={{ fontSize: 14, color: 'var(--ink)' }}>{row.label}</td>
-                          <td style={{ textAlign: 'right' }}>
-                            <span className={`badge ${evidenceBadgeClass(row.status)}`}>
-                              {row.status === 'connected' && (
-                                <svg width="8" height="8" viewBox="0 0 10 10" fill="none" style={{ verticalAlign: -1 }}>
-                                  <path d="M2 5.4l2.1 2L8 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              )}
-                              {row.status === 'missing' && (
-                                <svg width="8" height="8" viewBox="0 0 10 10" fill="none" style={{ verticalAlign: -1 }}>
-                                  <path d="M3 3l4 4M7 3l-4 4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                                </svg>
-                              )}
-                              {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  <div
-                    className="ground-card"
-                    style={{
-                      marginTop: 24,
-                      background: 'var(--paper-deep)',
-                      borderLeft: '3px solid var(--orange)',
-                    }}
-                  >
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 13.5,
-                        color: 'var(--ink-2)',
-                        lineHeight: 1.6,
-                        fontStyle: 'italic',
-                      }}
-                    >
-                      Smarticus will not fabricate required data it does not have.
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div style={{ padding: 24, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-                  Select a job in Step 1 to see required data.
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Step 4: Guardrails ── */}
-          {step === 3 && (
-            <div style={{ display: 'grid', gap: 14 }}>
-              {GUARDRAILS.map((g) => {
-                const on = guardrailState[g.id];
+        {/* Section: Required data */}
+        {job && (
+          <Section
+            label="Required data"
+            subtitle="Attach the inputs the agent needs. Required slots block runs until filled."
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {job.evidenceRows.map((row) => {
+                const attached = attachedData[row.label];
+                const status = attached ? 'connected' : row.required ? 'missing' : 'optional';
+                const statusColor =
+                  status === 'connected' ? 'var(--ink)' :
+                  status === 'missing'   ? 'var(--orange)' :
+                                           'var(--ink-4)';
                 return (
                   <div
-                    key={g.id}
-                    className={`ground-card ${on ? 'active' : ''}`}
+                    key={row.label}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      gap: 16,
-                      cursor: 'pointer',
+                      padding: '10px 14px',
+                      border: '1px solid var(--rule-strong)',
+                      borderRadius: 8,
+                      gap: 12,
                     }}
-                    onClick={() => toggleGuardrail(g.id)}
                   >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                        <h3 style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{g.title}</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span
-                          className={`badge ${on ? 'badge-ok' : 'badge-ink'}`}
-                          style={{ fontSize: 9 }}
-                        >
-                          {on ? 'ACTIVE' : 'OFF'}
-                        </span>
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: statusColor,
+                            display: 'inline-block',
+                          }}
+                        />
+                        <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{row.label}</span>
+                        {row.required && (
+                          <span
+                            style={{
+                              fontFamily: 'var(--mono)',
+                              fontSize: 9,
+                              color: 'var(--ink-4)',
+                              letterSpacing: '0.08em',
+                              textTransform: 'uppercase',
+                            }}
+                          >
+                            required
+                          </span>
+                        )}
                       </div>
-                      <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                        {g.description}
-                      </p>
-                    </div>
-
-                    {/* Toggle switch */}
-                    <div
-                      style={{
-                        width: 44,
-                        height: 24,
-                        borderRadius: 12,
-                        background: on ? 'var(--orange)' : 'var(--paper-edge)',
-                        position: 'relative',
-                        flexShrink: 0,
-                        transition: 'background var(--t-fast) var(--ease)',
-                        cursor: 'pointer',
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleGuardrail(g.id);
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: '50%',
-                          background: '#fff',
-                          position: 'absolute',
-                          top: 3,
-                          left: on ? 23 : 3,
-                          transition: 'left var(--t-fast) var(--ease)',
-                          boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ── Step 5: Output ── */}
-          {step === 4 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14 }}>
-              {OUTPUT_FORMATS.map((fmt) => {
-                const active = selectedOutput === fmt.id;
-                return (
-                  <div
-                    key={fmt.id}
-                    className={`ground-card ${active ? 'active' : ''} lift`}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setSelectedOutput(fmt.id)}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: 8,
-                      }}
-                    >
-                      <h3 style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{fmt.title}</h3>
-                      {active && (
+                      {attached && (
                         <div
                           style={{
-                            width: 20,
-                            height: 20,
-                            borderRadius: '50%',
-                            background: 'var(--orange)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            fontFamily: 'var(--mono)',
+                            fontSize: 10,
+                            color: 'var(--ink-3)',
+                            paddingLeft: 16,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                           }}
                         >
-                          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                            <path d="M2 5.4l2.1 2L8 3" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
+                          {attached.filename} · {(attached.sizeBytes / 1024).toFixed(1)} KB
                         </div>
                       )}
                     </div>
-                    <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                      {fmt.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ── Step 6: Deploy ── */}
-          {step === 5 && (
-            <div style={{ display: 'grid', gap: 14 }}>
-              {DEPLOY_OPTIONS.map((opt) => {
-                const active = selectedDeploy === opt.id;
-                return (
-                  <div
-                    key={opt.id}
-                    className={`ground-card ${active ? 'active' : ''}`}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => setSelectedDeploy(opt.id)}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: 6,
-                      }}
-                    >
-                      <h3 style={{ fontSize: 15, fontWeight: 500, margin: 0 }}>{opt.title}</h3>
-                    </div>
-                    <p style={{ margin: 0, fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 12 }}>
-                      {opt.description}
-                    </p>
-
-                    {opt.snippet && active && (
-                      <pre
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                      <input
+                        ref={(el) => { fileRefs.current[row.label] = el; }}
+                        type="file"
+                        accept=".json,.txt,.md,.csv,application/json,text/plain,text/markdown,text/csv"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void attach(row.label, f);
+                          e.target.value = '';
+                        }}
+                      />
+                      <button
+                        onClick={() => fileRefs.current[row.label]?.click()}
+                        disabled={busy === `attach:${row.label}` || !activeId && !job}
+                        title={!activeId ? 'Save the agent first to enable attachments.' : ''}
                         style={{
-                          margin: '0 0 12px',
-                          padding: 14,
-                          fontSize: 11.5,
-                          lineHeight: 1.55,
-                          background: 'var(--paper-deep)',
-                          border: '1px solid var(--rule)',
-                          borderRadius: 'var(--r-2)',
-                          overflow: 'auto',
-                          maxHeight: 200,
+                          padding: '5px 10px',
+                          background: 'transparent',
+                          border: '1px solid var(--rule-strong)',
+                          borderRadius: 5,
+                          fontFamily: 'var(--sans)',
+                          fontSize: 12,
+                          color: 'var(--ink-2)',
+                          cursor: 'pointer',
                         }}
                       >
-                        {opt.snippet}
-                      </pre>
-                    )}
-
-                    {!active && opt.snippet && (
-                      <div style={{ fontSize: 11, color: 'var(--ink-4)', marginBottom: 12, fontFamily: 'var(--mono)', letterSpacing: '0.04em' }}>
-                        Click to reveal snippet
-                      </div>
-                    )}
-
-                    <button
-                      className={active ? 'btn btn-orange' : 'btn btn-ghost'}
-                      style={{ fontSize: 12, padding: '8px 14px' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (opt.snippet) {
-                          handleCopySnippet(opt.snippet, opt.id);
-                        }
-                        setSelectedDeploy(opt.id);
-                      }}
-                    >
-                      {copiedSnippet === opt.id ? 'Copied!' : opt.cta}
-                    </button>
+                        {busy === `attach:${row.label}` ? '…' : attached ? 'Replace' : 'Attach'}
+                      </button>
+                      {attached && (
+                        <button
+                          onClick={() => detach(row.label)}
+                          style={{
+                            padding: '5px 8px',
+                            background: 'transparent',
+                            border: '1px solid var(--rule-strong)',
+                            borderRadius: 5,
+                            fontFamily: 'var(--sans)',
+                            fontSize: 12,
+                            color: 'var(--ink-3)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               })}
-
-              {/* Agent summary */}
-              {selectedJob && (
+              {!activeId && (
                 <div
-                  className="ground-card"
                   style={{
-                    marginTop: 12,
-                    background: 'var(--paper-deep)',
-                    borderLeft: '3px solid var(--orange)',
+                    fontFamily: 'var(--mono)',
+                    fontSize: 10,
+                    color: 'var(--ink-3)',
+                    padding: '4px 2px',
                   }}
                 >
-                  <div className="eyebrow" style={{ marginBottom: 10, fontSize: 10 }}>
-                    Agent summary
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: 13 }}>
-                    <div>
-                      <div style={{ color: 'var(--ink-4)', fontSize: 11, fontFamily: 'var(--mono)', letterSpacing: '0.1em', marginBottom: 2 }}>
-                        JOB
-                      </div>
-                      <div style={{ color: 'var(--ink)' }}>{selectedJob.title}</div>
-                    </div>
-                    <div>
-                      <div style={{ color: 'var(--ink-4)', fontSize: 11, fontFamily: 'var(--mono)', letterSpacing: '0.1em', marginBottom: 2 }}>
-                        SCOPE
-                      </div>
-                      <div style={{ color: 'var(--ink)' }}>{scope.join(', ') || 'None'}</div>
-                    </div>
-                    <div>
-                      <div style={{ color: 'var(--ink-4)', fontSize: 11, fontFamily: 'var(--mono)', letterSpacing: '0.1em', marginBottom: 2 }}>
-                        OUTPUT
-                      </div>
-                      <div style={{ color: 'var(--ink)' }}>
-                        {OUTPUT_FORMATS.find((f) => f.id === selectedOutput)?.title ?? 'Not selected'}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ color: 'var(--ink-4)', fontSize: 11, fontFamily: 'var(--mono)', letterSpacing: '0.1em', marginBottom: 2 }}>
-                        REVIEW CONTROLS
-                      </div>
-                      <div style={{ color: 'var(--ink)' }}>
-                        {GUARDRAILS.filter((g) => guardrailState[g.id]).length} of {GUARDRAILS.length} active
-                      </div>
-                    </div>
-                  </div>
+                  Save the agent first — attachments are persisted against the saved record.
                 </div>
               )}
+              <p style={{ fontSize: 11, color: 'var(--ink-4)', margin: '4px 2px 0', lineHeight: 1.5 }}>
+                Plain text, JSON, CSV, or Markdown · 2 MB cap per slot.
+              </p>
             </div>
-          )}
-        </section>
+          </Section>
+        )}
 
-        {/* ── Right sidebar: Regulatory Inspector ── */}
-        <aside
+        {/* Section: Controls */}
+        {job && (
+          <Section label="Review controls" subtitle="Gates the runtime applies on every run.">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {GUARDRAILS.map((g) => (
+                <label
+                  key={g.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    padding: '10px 14px',
+                    border: '1px solid var(--rule-strong)',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={!!guardrails[g.id]}
+                    onChange={(e) =>
+                      setGuardrails((s) => ({ ...s, [g.id]: e.target.checked }))
+                    }
+                    style={{ accentColor: 'var(--ink)' }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{g.label}</div>
+                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{g.detail}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Section: Output format */}
+        {job && (
+          <Section label="Output" subtitle="Shape of the deliverable.">
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {OUTPUT_FORMATS.map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setOutputFormat(f.id)}
+                  style={{
+                    padding: '8px 14px',
+                    background: outputFormat === f.id ? 'var(--ink)' : 'transparent',
+                    color: outputFormat === f.id ? 'var(--paper)' : 'var(--ink-2)',
+                    border: '1px solid',
+                    borderColor: outputFormat === f.id ? 'var(--ink)' : 'var(--rule-strong)',
+                    borderRadius: 6,
+                    fontFamily: 'var(--sans)',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </Section>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function Section({
+  label,
+  subtitle,
+  children,
+}: {
+  label: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div>
+        <div
           style={{
-            borderLeft: '1px solid var(--rule)',
-            background: 'var(--paper-deep)',
-            padding: '24px 20px',
-            position: 'sticky',
-            top: 0,
-            height: '100vh',
-            overflow: 'auto',
+            fontFamily: 'var(--mono)',
+            fontSize: 10,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: 'var(--ink-3)',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
-            <span className="pulse-orange" />
-            <span className="eyebrow" style={{ color: 'var(--ink-2)', fontSize: 10 }}>
-              QMS Inspector
-            </span>
+          {label}
+        </div>
+        {subtitle && (
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.5 }}>
+            {subtitle}
           </div>
-
-          {/* Risk Level */}
-          <div style={{ marginBottom: 20 }}>
-            <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 6 }}>
-              Risk level
-            </div>
-            {inspector.risk ? (
-              <span className={`badge ${riskBadgeClass(inspector.risk)}`} style={{ fontSize: 11 }}>
-                {inspector.risk}
-              </span>
-            ) : (
-              <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>No job selected</span>
-            )}
-          </div>
-
-          {/* Applicable Obligations */}
-          <div style={{ marginBottom: 20 }}>
-            <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-              Applicable Requirements
-            </div>
-            {inspector.obligationCount > 0 ? (
-              <>
-                <div
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 400,
-                    letterSpacing: '-0.03em',
-                    color: 'var(--ink)',
-                    lineHeight: 1,
-                    marginBottom: 10,
-                  }}
-                >
-                  {inspector.obligationCount}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {inspector.obligations.slice(0, 5).map((id) => (
-                    <div
-                      key={id}
-                      style={{
-                        padding: '8px 10px',
-                        borderLeft: '2px solid var(--orange)',
-                        background: 'var(--paper)',
-                        fontSize: 11,
-                        fontFamily: 'var(--mono)',
-                        letterSpacing: '0.04em',
-                        color: 'var(--ink-2)',
-                      }}
-                    >
-                      {id}
-                    </div>
-                  ))}
-                  {inspector.obligationCount > 5 && (
-                    <div style={{ fontSize: 11, color: 'var(--ink-4)', paddingLeft: 12 }}>
-                      +{inspector.obligationCount - 5} more
-                    </div>
-                  )}
-                </div>
-              </>
-            ) : (
-              <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>Select a job to view</span>
-            )}
-          </div>
-
-          <hr className="rule" style={{ margin: '0 0 20px' }} />
-
-          {/* Missing Evidence */}
-          <div style={{ marginBottom: 20 }}>
-            <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-              Missing Required Data
-            </div>
-            {inspector.missingEvidence.length > 0 ? (
-              <>
-                <div
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 400,
-                    letterSpacing: '-0.03em',
-                    color: 'var(--err)',
-                    lineHeight: 1,
-                    marginBottom: 10,
-                  }}
-                >
-                  {inspector.missingEvidence.length}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {inspector.missingEvidence.map((e) => (
-                    <div
-                      key={e.label}
-                      style={{
-                        padding: '6px 10px',
-                        borderLeft: '2px solid var(--err)',
-                        background: 'var(--paper)',
-                        fontSize: 12,
-                        color: 'var(--ink-2)',
-                      }}
-                    >
-                      {e.label}
-                    </div>
-                  ))}
-                </div>
-              </>
-            ) : selectedJob ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="dot-ok" />
-                <span style={{ fontSize: 12, color: 'var(--ok)' }}>All required data connected</span>
-              </div>
-            ) : (
-              <span style={{ fontSize: 12, color: 'var(--ink-4)' }}>Select a job to view</span>
-            )}
-          </div>
-
-          <hr className="rule" style={{ margin: '0 0 20px' }} />
-
-          {/* Review Gates */}
-          <div style={{ marginBottom: 20 }}>
-            <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-              Review Controls
-            </div>
-            {inspector.activeGates.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                {inspector.activeGates.map((g) => (
-                  <div
-                    key={g.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      fontSize: 12,
-                      color: 'var(--ink-2)',
-                    }}
-                  >
-                    <span className="dot-ok" />
-                    {g.title}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span className="dot-warn" />
-                <span style={{ fontSize: 12, color: 'var(--warn)' }}>No review controls active</span>
-              </div>
-            )}
-          </div>
-
-          <hr className="rule" style={{ margin: '0 0 20px' }} />
-
-          {/* Trace Status */}
-          <div>
-            <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-              Decision Trail Status
-            </div>
-            {inspector.traceConfigured ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                <span className="dot-ok" />
-                <span style={{ color: 'var(--ok)' }}>Decision trail will be generated</span>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
-                <span className="dot-warn" />
-                <span style={{ color: 'var(--warn)' }}>No decision trail configured</span>
-              </div>
-            )}
-          </div>
-
-          {/* Active scope */}
-          {scope.length > 0 && (
-            <>
-              <hr className="rule" style={{ margin: '20px 0' }} />
-              <div>
-                <div className="eyebrow" style={{ fontSize: 9, color: 'var(--ink-4)', marginBottom: 8 }}>
-                  Active scope
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {scope.map((reg) => (
-                    <span key={reg} className="badge badge-ink" style={{ fontSize: 9 }}>
-                      {reg}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </aside>
+        )}
       </div>
-    </div>
+      {children}
+    </section>
   );
 }
 

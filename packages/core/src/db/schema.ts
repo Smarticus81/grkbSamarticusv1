@@ -457,8 +457,15 @@ export const builderAgents = pgTable(
     name: varchar('name', { length: 200 }).notNull(),
     jobId: varchar('job_id', { length: 64 }).notNull(),
     jobTitle: varchar('job_title', { length: 200 }).notNull(),
+    /** Sandbox task agent id this builder agent runs against (optional). */
+    taskId: varchar('task_id', { length: 64 }),
     regulations: jsonb('regulations').$type<string[]>().default([]).notNull(),
     evidenceStatus: jsonb('evidence_status').$type<Record<string, string>>().default({}).notNull(),
+    /** Per-slot attached data: { [slotLabel]: { filename, sizeBytes, content, contentType, attachedAt } } */
+    attachedData: jsonb('attached_data')
+      .$type<Record<string, { filename: string; sizeBytes: number; content: string; contentType: string; attachedAt: string }>>()
+      .default({})
+      .notNull(),
     guardrails: jsonb('guardrails').$type<Record<string, boolean>>().default({}).notNull(),
     outputFormat: varchar('output_format', { length: 64 }),
     deployTarget: varchar('deploy_target', { length: 64 }),

@@ -18,6 +18,7 @@ import traces from './routes/traces.js';
 import apiKeysRoute from './routes/api-keys.js';
 import sandbox from './routes/sandbox.js';
 import builder from './routes/builder.js';
+import usage from './routes/usage.js';
 import validateDraft from './routes/validate-draft.js';
 import clerkWebhook from './routes/clerk-webhook.js';
 
@@ -144,6 +145,7 @@ app.use('/api/traces', traces);
 app.use('/api/api-keys', apiKeysLimiter, apiKeysRoute);
 app.use('/api/sandbox', sandbox);
 app.use('/api/builder', builder);
+app.use('/api/usage', usage);
 app.use('/api/validate-draft', validateDraft);
 
 // ---------------------------------------------------------------------------
@@ -154,5 +156,5 @@ const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 const host = process.env.API_HOST ?? '0.0.0.0';
 app.listen(port, host, () => {
   console.log(`Regulatory Ground API listening on http://${host}:${port}`);
-  console.log('Routes: /api/graph, /api/traces, /api/api-keys, /api/sandbox, /api/builder, /health');
+  console.log('Routes: /api/graph, /api/traces, /api/api-keys, /api/sandbox, /api/builder, /api/usage, /health');
 });

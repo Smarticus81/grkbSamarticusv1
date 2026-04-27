@@ -6,7 +6,7 @@ export const CORE_VERSION = '0.1.0';
 export * as schema from './db/schema.js';
 export { getDB, getNeo4j, closeAll, type RegGroundDB, type DBConfig } from './db/connection.js';
 export { withTenant } from './db/tenant.js';
-export { eq, desc, and } from 'drizzle-orm';
+export { eq, desc, and, gte, sql, count, asc } from 'drizzle-orm';
 
 // graph
 export * from './graph/types.js';
