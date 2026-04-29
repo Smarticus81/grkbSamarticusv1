@@ -13,6 +13,7 @@ import type {
   CoverageMap,
 } from './types.js';
 import { ObligationNodeSchema, ConstraintNodeSchema, DefinitionNodeSchema } from './types.js';
+import { ProcessNodeSchema, type ProcessNode } from './ProcessNode.js';
 
 /**
  * Neo4j-backed obligation knowledge graph. Source of truth for obligations,
@@ -46,6 +47,9 @@ export class ObligationGraph {
       );
       await session.run(
         `CREATE CONSTRAINT evidence_type IF NOT EXISTS FOR (e:EvidenceType) REQUIRE e.evidenceType IS UNIQUE`,
+      );
+      await session.run(
+        `CREATE CONSTRAINT process_id IF NOT EXISTS FOR (p:Process) REQUIRE p.processId IS UNIQUE`,
       );
     } finally {
       await session.close();
@@ -430,6 +434,160 @@ export class ObligationGraph {
       }
       for (const id of aMap.keys()) if (!bMap.has(id)) removed.push(id);
       return { added, removed, changed };
+    } finally {
+      await session.close();
+    }
+  }
+
+  // === Process bundles (process-first scope tether) ===
+
+  /**
+   * Upsert a process node. Idempotent.
+   */
+  async upsertProcess(node: ProcessNode): Promise<void> {
+    const validated = ProcessNodeSchema.parse(node);
+    const session = this.session();
+    try {
+      await session.run(
+        `MERGE (p:Process { processId: $processId })
+         SET p += $props`,
+        {
+          processId: validated.processId,
+          props: {
+            ...validated,
+            jurisdictions: validated.jurisdictions,
+          },
+        },
+      );
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Bind a process to a set of obligation IDs via [:GOVERNED_BY] edges.
+   * Returns the IDs that did NOT resolve to existing obligations — caller
+   * must treat these as a hard error so we never silently bind a process
+   * to a phantom obligation.
+   */
+  async bindProcessObligations(
+    processId: string,
+    obligationIds: string[],
+  ): Promise<{ bound: string[]; missing: string[] }> {
+    if (obligationIds.length === 0) return { bound: [], missing: [] };
+    const session = this.session();
+    try {
+      // Find which IDs actually exist.
+      const existing = await session.run(
+        `MATCH (o:Obligation) WHERE o.obligationId IN $ids RETURN o.obligationId AS id`,
+        { ids: obligationIds },
+      );
+      const found = new Set<string>(existing.records.map((r) => r.get('id') as string));
+      const missing = obligationIds.filter((id) => !found.has(id));
+      const bound = obligationIds.filter((id) => found.has(id));
+      if (bound.length > 0) {
+        await session.run(
+          `MATCH (p:Process { processId: $processId })
+           MATCH (o:Obligation) WHERE o.obligationId IN $bound
+           MERGE (p)-[:GOVERNED_BY]->(o)`,
+          { processId, bound },
+        );
+      }
+      return { bound, missing };
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Replace the [:GOVERNED_BY] set for a process. Removes edges to any
+   * obligation not in the new set. Used by the seeder so deletes propagate.
+   */
+  async replaceProcessObligations(
+    processId: string,
+    obligationIds: string[],
+  ): Promise<{ bound: string[]; missing: string[] }> {
+    const session = this.session();
+    try {
+      await session.run(
+        `MATCH (p:Process { processId: $processId })-[r:GOVERNED_BY]->() DELETE r`,
+        { processId },
+      );
+    } finally {
+      await session.close();
+    }
+    return this.bindProcessObligations(processId, obligationIds);
+  }
+
+  /**
+   * Real Cypher query — return only obligations [:GOVERNED_BY] this process,
+   * filtered to the IDs the caller is claiming. The intersection IS the
+   * scope tether: any claimed ID outside the process bundle won't come back.
+   */
+  async getProcessObligations(
+    processId: string,
+    claimedObligationIds?: string[],
+  ): Promise<ObligationNode[]> {
+    const session = this.session();
+    try {
+      const cypher = claimedObligationIds && claimedObligationIds.length > 0
+        ? `MATCH (p:Process { processId: $processId })-[:GOVERNED_BY]->(o:Obligation)
+           WHERE o.obligationId IN $ids
+           RETURN o ORDER BY o.obligationId`
+        : `MATCH (p:Process { processId: $processId })-[:GOVERNED_BY]->(o:Obligation)
+           RETURN o ORDER BY o.obligationId`;
+      const result = await session.run(cypher, {
+        processId,
+        ids: claimedObligationIds ?? [],
+      });
+      return result.records.map((r) => this.recordToObligation(r.get('o').properties));
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * List all seeded processes (catalog).
+   */
+  async listProcesses(): Promise<ProcessNode[]> {
+    const session = this.session();
+    try {
+      const result = await session.run(
+        `MATCH (p:Process) RETURN p ORDER BY p.processId`,
+      );
+      return result.records.map((r) => {
+        const x = r.get('p').properties;
+        return {
+          processId: x.processId,
+          name: x.name,
+          description: x.description,
+          category: x.category,
+          jurisdictions: Array.isArray(x.jurisdictions) ? x.jurisdictions : [],
+          version: x.version ?? '1.0.0',
+        } satisfies ProcessNode;
+      });
+    } finally {
+      await session.close();
+    }
+  }
+
+  async getProcess(processId: string): Promise<ProcessNode | null> {
+    const session = this.session();
+    try {
+      const result = await session.run(
+        `MATCH (p:Process { processId: $processId }) RETURN p`,
+        { processId },
+      );
+      if (result.records.length === 0) return null;
+      const x = result.records[0]!.get('p').properties;
+      return {
+        processId: x.processId,
+        name: x.name,
+        description: x.description,
+        category: x.category,
+        jurisdictions: Array.isArray(x.jurisdictions) ? x.jurisdictions : [],
+        version: x.version ?? '1.0.0',
+      };
     } finally {
       await session.close();
     }

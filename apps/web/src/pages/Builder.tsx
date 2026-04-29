@@ -62,19 +62,18 @@ type AttachedFile = {
 
 const JOBS: Job[] = [
   {
-    id: 'psur-compiler',
-    taskId: 'psur-section-drafter',
-    title: 'PSUR Draft Package',
-    blurb: 'Draft a PSUR with citations and required-data coverage.',
+    id: 'psur-audit',
+    taskId: 'template-compliance-evaluator',
+    title: 'PSUR Structural Audit',
+    blurb: 'Audit a PSUR draft against MDCG 2022-21 / EU MDR Art. 86.',
     regulations: ['EU MDR', 'MDCG 2022-21'],
     risk: 'HIGH',
-    obligationCount: 5,
+    obligationCount: 9,
     evidenceRows: [
+      { label: 'PSUR draft outline', required: true },
       { label: 'Post-market surveillance data', required: true },
       { label: 'Clinical evaluation references', required: true },
-      { label: 'Complaint trend data', required: true },
       { label: 'Sales/distribution data', required: false },
-      { label: 'CAPA history', required: false },
     ],
   },
   {
@@ -104,20 +103,6 @@ const JOBS: Job[] = [
       { label: 'Adverse event narrative', required: true },
       { label: 'Device problem code', required: false },
       { label: 'Patient outcome', required: false },
-    ],
-  },
-  {
-    id: 'capa-evaluator',
-    taskId: 'template-compliance-evaluator',
-    title: 'CAPA File Evaluator',
-    blurb: 'Evaluate a CAPA against ISO 13485 / 21 CFR 820.100.',
-    regulations: ['ISO 13485', '21 CFR 820'],
-    risk: 'HIGH',
-    obligationCount: 5,
-    evidenceRows: [
-      { label: 'CAPA record', required: true },
-      { label: 'Root cause analysis', required: true },
-      { label: 'Effectiveness check', required: false },
     ],
   },
   {

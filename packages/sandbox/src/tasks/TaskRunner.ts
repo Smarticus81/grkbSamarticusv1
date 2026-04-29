@@ -1,244 +1,60 @@
-/**
- * TaskRunner — runs a task agent in one lane (with-graph or without-graph)
- * or both lanes in compare mode. Streams plain-language `TaskEvent`s through
- * an SSEStream so the sandbox UI can show what the agent is doing.
+﻿/**
+ * TaskRunner — executes a task agent in either lane (with-graph or
+ * without-graph), streams the run as a TaskEvent vocabulary, and emits a
+ * deterministic scorecard per lane.
+ *
+ * The with-graph lane is the source of truth: it queries the live
+ * (:Process)-[:GOVERNED_BY]->(:Obligation) tether, never invents
+ * citations, and fails the StrictGate if the agent claims an obligation
+ * that the graph does not bind to its process.
  */
 
-import { SSEStream } from '../runtime/SSEStream.js';
-import {
-  type DeterministicScore,
-  type LaneResult,
-  type RunResult,
-  type TaskAgentDefinition,
-  type TaskEvent,
-  type TaskLane,
-  type TaskObligation,
-  newRunId,
-  nowIso,
+import type { ObligationGraph, ObligationNode } from '@regground/core';
+import type {
+  DeterministicScore,
+  LaneResult,
+  ObligationCheck,
+  RunResult,
+  TaskAgentDefinition,
+  TaskEvent,
+  TaskLane,
 } from './types.js';
+import { newRunId, nowIso } from './types.js';
 
-/** SSE multiplexer typed for `TaskEvent`. */
+/* ── Public stream (in-process pub/sub) ──────────────────────────────── */
+
+type Listener = (e: TaskEvent) => void;
+
 export class TaskEventStream {
-  private listeners = new Set<(e: TaskEvent) => void>();
+  private readonly listeners = new Set<Listener>();
   publish(e: TaskEvent): void {
-    for (const l of this.listeners) l(e);
+    for (const l of this.listeners) {
+      try { l(e); } catch { /* listener errors must never break the run */ }
+    }
   }
-  subscribe(): AsyncIterable<TaskEvent> & { close: () => void } {
-    const queue: TaskEvent[] = [];
-    let resolve: ((v: IteratorResult<TaskEvent>) => void) | null = null;
-    let closed = false;
-    const listener = (e: TaskEvent) => {
-      if (resolve) {
-        const r = resolve;
-        resolve = null;
-        r({ value: e, done: false });
-      } else {
-        queue.push(e);
-      }
-    };
-    this.listeners.add(listener);
-    return {
-      [Symbol.asyncIterator]() {
-        return {
-          next: () => {
-            if (closed) return Promise.resolve({ value: undefined as never, done: true });
-            if (queue.length > 0) return Promise.resolve({ value: queue.shift()!, done: false });
-            return new Promise<IteratorResult<TaskEvent>>((r) => (resolve = r));
-          },
-          return: () => {
-            closed = true;
-            return Promise.resolve({ value: undefined as never, done: true });
-          },
-        };
-      },
-      close() {
-        closed = true;
-      },
-    };
+  subscribe(l: Listener): () => void {
+    this.listeners.add(l);
+    return () => this.listeners.delete(l);
   }
 }
 
-export function taskEventToSSE(event: TaskEvent): string {
-  return `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
+export function taskEventToSSE(e: TaskEvent): string {
+  return `event: ${e.type}\ndata: ${JSON.stringify(e)}\n\n`;
 }
 
-/** Reuse the existing SSEStream-shaped contract for the API layer. */
-export type AnyStream = SSEStream | TaskEventStream;
+/* ── Runner ──────────────────────────────────────────────────────────── */
+
+const DEFAULT_PACE_MS = 0;
 
 export interface RunOptions {
   mode: 'with-graph' | 'without-graph' | 'compare';
-  stream: TaskEventStream;
-  /** Slow the narration down so the UI can render each step. ms between graph steps. */
+  stream?: TaskEventStream;
   paceMs?: number;
 }
 
-const DEFAULT_PACE_MS = 280;
-
-function sleep(ms: number) {
-  return new Promise<void>((r) => setTimeout(r, ms));
-}
-
-function score(
-  output: unknown,
-  obligations: TaskObligation[],
-  citationsConsulted: string[],
-): DeterministicScore {
-  const violations: string[] = [];
-  let satisfied = 0;
-  for (const ob of obligations) {
-    try {
-      if (ob.satisfiedBy(output)) {
-        satisfied += 1;
-      } else {
-        violations.push(ob.obligationId);
-      }
-    } catch {
-      violations.push(ob.obligationId);
-    }
-  }
-  const total = obligations.length;
-  return {
-    coverage: total === 0 ? 0 : satisfied / total,
-    citations: citationsConsulted.length,
-    strictGatePass: violations.length === 0,
-    violations,
-    obligationsConsulted: new Set(citationsConsulted).size,
-  };
-}
-
-async function runLane<TInput, TOutput>(
-  def: TaskAgentDefinition<TInput, TOutput>,
-  input: TInput,
-  lane: TaskLane,
-  runId: string,
-  stream: TaskEventStream,
-  paceMs: number,
-): Promise<LaneResult<TOutput>> {
-  const startedAt = Date.now();
-  const startedIso = nowIso();
-  stream.publish({ type: 'run.started', runId, taskId: def.id, lane, atIso: startedIso });
-
-  const citations: string[] = [];
-  const obligationsConsulted = new Set<string>();
-  let output: TOutput | null = null;
-  let error: string | undefined;
-
-  try {
-    if (lane === 'with-graph') {
-      stream.publish({
-        type: 'agent.thinking',
-        lane,
-        atIso: nowIso(),
-        message: `Loading the obligation set for ${def.name.toLowerCase()}…`,
-      });
-      await sleep(paceMs);
-
-      // Walk the curated graph script — these are the queries a real
-      // GroundedAgent would issue against ObligationGraph during qualify().
-      for (const step of def.graphScript) {
-        stream.publish({
-          type: 'graph.query',
-          lane,
-          atIso: nowIso(),
-          method: step.method,
-          args: step.args ?? {},
-          resultCount: step.resultCount,
-          message: step.message,
-        });
-        await sleep(paceMs);
-        for (const id of step.citeObligationIds ?? []) {
-          const ob = def.obligations.find((o) => o.obligationId === id);
-          if (!ob) continue;
-          citations.push(ob.citation);
-          obligationsConsulted.add(ob.obligationId);
-          stream.publish({
-            type: 'graph.cite',
-            lane,
-            atIso: nowIso(),
-            obligationId: ob.obligationId,
-            citation: ob.citation,
-            regulation: ob.regulation,
-            summary: ob.summary,
-          });
-          await sleep(Math.round(paceMs * 0.6));
-        }
-      }
-
-      stream.publish({
-        type: 'agent.thinking',
-        lane,
-        atIso: nowIso(),
-        message: `Composing output with ${citations.length} citations…`,
-      });
-      await sleep(paceMs);
-
-      output = await def.runWithGraph(input);
-    } else {
-      stream.publish({
-        type: 'agent.thinking',
-        lane,
-        atIso: nowIso(),
-        message: 'Running without the obligation graph. No citations will be attached.',
-      });
-      await sleep(paceMs);
-      output = await def.runWithoutGraph(input);
-    }
-
-    // Per-obligation satisfaction events
-    for (const ob of def.obligations) {
-      const ok = (() => {
-        try {
-          return ob.satisfiedBy(output);
-        } catch {
-          return false;
-        }
-      })();
-      stream.publish({
-        type: ok ? 'obligation.satisfied' : 'obligation.missed',
-        lane,
-        atIso: nowIso(),
-        obligationId: ob.obligationId,
-        reason: ok ? `${ob.citation} satisfied.` : `${ob.citation} not addressed in output.`,
-      });
-      await sleep(Math.round(paceMs * 0.4));
-    }
-
-    const det = score(output, def.obligations, citations);
-    stream.publish({
-      type: 'output.gated',
-      lane,
-      atIso: nowIso(),
-      passed: det.strictGatePass,
-      violations: det.violations,
-    });
-
-    const durationMs = Date.now() - startedAt;
-    stream.publish({ type: 'run.completed', lane, runId, atIso: nowIso(), durationMs });
-
-    return {
-      lane,
-      output,
-      durationMs,
-      citations,
-      obligationsConsulted: Array.from(obligationsConsulted),
-      score: det,
-    };
-  } catch (e) {
-    error = e instanceof Error ? e.message : String(e);
-    stream.publish({ type: 'run.error', lane, runId, atIso: nowIso(), message: error });
-    return {
-      lane,
-      output,
-      durationMs: Date.now() - startedAt,
-      citations,
-      obligationsConsulted: Array.from(obligationsConsulted),
-      score: score(output, def.obligations, citations),
-      error,
-    };
-  }
-}
-
 export class TaskRunner {
+  constructor(private readonly graph: ObligationGraph) {}
+
   async run<TInput, TOutput>(
     def: TaskAgentDefinition<TInput, TOutput>,
     input: TInput,
@@ -246,24 +62,236 @@ export class TaskRunner {
   ): Promise<RunResult<TOutput>> {
     const runId = newRunId();
     const startedAtIso = nowIso();
+    const startMs = Date.now();
     const paceMs = opts.paceMs ?? DEFAULT_PACE_MS;
-    let withGraph: LaneResult<TOutput> | undefined;
-    let withoutGraph: LaneResult<TOutput> | undefined;
+    const stream = opts.stream;
 
-    if (opts.mode === 'with-graph' || opts.mode === 'compare') {
-      withGraph = await runLane(def, input, 'with-graph', runId, opts.stream, paceMs);
-    }
-    if (opts.mode === 'without-graph' || opts.mode === 'compare') {
-      withoutGraph = await runLane(def, input, 'without-graph', runId, opts.stream, paceMs);
-    }
-
-    return {
+    const result: RunResult<TOutput> = {
       runId,
       taskId: def.id,
       startedAtIso,
-      finishedAtIso: nowIso(),
-      withGraph,
-      withoutGraph,
+      finishedAtIso: startedAtIso,
+    };
+
+    if (opts.mode === 'with-graph' || opts.mode === 'compare') {
+      result.withGraph = await this.runLane(def, input, 'with-graph', runId, stream, paceMs);
+    }
+    if (opts.mode === 'without-graph' || opts.mode === 'compare') {
+      result.withoutGraph = await this.runLane(def, input, 'without-graph', runId, stream, paceMs);
+    }
+
+    result.finishedAtIso = nowIso();
+    void startMs;
+    return result;
+  }
+
+  private async runLane<TInput, TOutput>(
+    def: TaskAgentDefinition<TInput, TOutput>,
+    input: TInput,
+    lane: TaskLane,
+    runId: string,
+    stream: TaskEventStream | undefined,
+    paceMs: number,
+  ): Promise<LaneResult<TOutput>> {
+    const laneStartMs = Date.now();
+    const emit = (e: TaskEvent) => stream?.publish(e);
+    const pace = () => (paceMs > 0 ? new Promise<void>((r) => setTimeout(r, paceMs)) : Promise.resolve());
+
+    emit({ type: 'run.started', runId, taskId: def.id, lane, atIso: nowIso() });
+    await pace();
+
+    const preGateViolations: string[] = [];
+    let fetched: ObligationNode[] = [];
+    const obligationsById = new Map<string, ObligationNode>();
+
+    if (lane === 'with-graph') {
+      emit({
+        type: 'agent.thinking',
+        lane,
+        atIso: nowIso(),
+        message: `Loading the ${def.claimedObligationIds.length} obligations the agent claims, scoped to process '${def.processId}'.`,
+      });
+      await pace();
+
+      try {
+        fetched = await this.graph.getProcessObligations(def.processId, def.claimedObligationIds);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        emit({ type: 'run.error', lane, runId, atIso: nowIso(), message: `Graph query failed: ${message}` });
+        return errorLane<TOutput>(lane, laneStartMs, message);
+      }
+
+      emit({
+        type: 'graph.query',
+        lane,
+        atIso: nowIso(),
+        method: 'getProcessObligations',
+        args: { processId: def.processId, claimedObligationIds: def.claimedObligationIds },
+        resultCount: fetched.length,
+        message: `Graph returned ${fetched.length} obligation(s) bound to process '${def.processId}'.`,
+      });
+      await pace();
+
+      for (const ob of fetched) {
+        obligationsById.set(ob.obligationId, ob);
+      }
+
+      // Surface any claimed ID NOT bound to this process in the graph.
+      const fetchedIds = new Set(fetched.map((o) => o.obligationId));
+      for (const claimed of def.claimedObligationIds) {
+        if (!fetchedIds.has(claimed)) {
+          const reason = `Claimed by agent but not bound to process '${def.processId}' in the graph.`;
+          preGateViolations.push(claimed);
+          emit({ type: 'obligation.missed', lane, atIso: nowIso(), obligationId: claimed, reason });
+          await pace();
+        }
+      }
+
+      for (const ob of fetched) {
+        emit({
+          type: 'graph.cite',
+          lane,
+          atIso: nowIso(),
+          obligationId: ob.obligationId,
+          citation: ob.sourceCitation,
+          regulation: ob.jurisdiction ?? '',
+          summary: ob.title ?? '',
+        });
+        await pace();
+      }
+    } else {
+      emit({
+        type: 'agent.thinking',
+        lane,
+        atIso: nowIso(),
+        message: 'Running without the graph — no obligations loaded, no citations available.',
+      });
+      await pace();
+    }
+
+    let output: TOutput | null = null;
+    let runErr: string | undefined;
+    try {
+      output = lane === 'with-graph'
+        ? await def.runWithGraph(input, { obligations: fetched })
+        : await def.runWithoutGraph(input);
+    } catch (err) {
+      runErr = err instanceof Error ? err.message : String(err);
+      emit({ type: 'run.error', lane, runId, atIso: nowIso(), message: runErr });
+      return errorLane<TOutput>(lane, laneStartMs, runErr);
+    }
+
+    // Output validation against the agent's Zod schema.
+    const outputParsed = def.outputSchema.safeParse(output);
+    const zodViolations: string[] = [];
+    if (!outputParsed.success) {
+      for (const issue of outputParsed.error.issues) {
+        zodViolations.push(`output.${issue.path.join('.') || '(root)'}: ${issue.message}`);
+      }
+    }
+
+    // Per-obligation checks (only for with-graph; without-graph has no obligations).
+    const satisfiedIds: string[] = [];
+    const unsatisfiedIds: string[] = [...preGateViolations];
+
+    if (lane === 'with-graph') {
+      for (const check of def.obligationChecks) {
+        const ob = obligationsById.get(check.obligationId);
+        if (!ob) {
+          // Already accounted for in preGateViolations.
+          continue;
+        }
+        let ok = false;
+        try { ok = check.satisfiedBy(output, ob); } catch { ok = false; }
+        if (ok) {
+          satisfiedIds.push(check.obligationId);
+          emit({ type: 'obligation.satisfied', lane, atIso: nowIso(), obligationId: check.obligationId, reason: ob.title ?? ob.sourceCitation });
+        } else {
+          unsatisfiedIds.push(check.obligationId);
+          emit({ type: 'obligation.missed', lane, atIso: nowIso(), obligationId: check.obligationId, reason: 'Output did not satisfy obligation check.' });
+        }
+        await pace();
+      }
+    }
+
+    const citations = extractCitations(output);
+
+    const score = scoreLane({
+      lane,
+      claimedObligationIds: def.claimedObligationIds,
+      satisfiedIds,
+      unsatisfiedIds,
+      zodViolations,
+      citations,
+    });
+
+    emit({
+      type: 'output.gated',
+      lane,
+      atIso: nowIso(),
+      passed: score.strictGatePass,
+      violations: score.violations,
+    });
+    await pace();
+
+    const durationMs = Date.now() - laneStartMs;
+    emit({ type: 'run.completed', lane, runId, atIso: nowIso(), durationMs });
+
+    return {
+      lane,
+      output,
+      durationMs,
+      citations,
+      obligationsConsulted: lane === 'with-graph' ? fetched.map((o) => o.obligationId) : [],
+      score,
+      error: runErr,
     };
   }
 }
+
+/* ── Scoring ─────────────────────────────────────────────────────────── */
+
+interface ScoreInput {
+  lane: TaskLane;
+  claimedObligationIds: string[];
+  satisfiedIds: string[];
+  unsatisfiedIds: string[];
+  zodViolations: string[];
+  citations: string[];
+}
+
+function scoreLane(s: ScoreInput): DeterministicScore {
+  const total = s.claimedObligationIds.length;
+  const coverage = total === 0 ? 0 : s.satisfiedIds.length / total;
+  const violations = [...s.zodViolations, ...s.unsatisfiedIds.map((id) => `obligation:${id}`)];
+  const strictGatePass = violations.length === 0 && (s.lane === 'without-graph' ? true : s.satisfiedIds.length === total);
+  return {
+    coverage,
+    citations: s.citations.length,
+    strictGatePass,
+    violations,
+    obligationsConsulted: new Set(s.satisfiedIds.concat(s.unsatisfiedIds)).size,
+  };
+}
+
+function extractCitations(output: unknown): string[] {
+  if (!output || typeof output !== 'object') return [];
+  const c = (output as { citations?: unknown }).citations;
+  if (!Array.isArray(c)) return [];
+  return c.filter((x): x is string => typeof x === 'string' && x.length > 0);
+}
+
+function errorLane<TOutput>(lane: TaskLane, startMs: number, message: string): LaneResult<TOutput> {
+  return {
+    lane,
+    output: null,
+    durationMs: Date.now() - startMs,
+    citations: [],
+    obligationsConsulted: [],
+    score: { coverage: 0, citations: 0, strictGatePass: false, violations: [`run.error: ${message}`], obligationsConsulted: 0 },
+    error: message,
+  };
+}
+
+// Reference for tooling that may scan unused exports.
+export type { ObligationCheck };

@@ -18,6 +18,7 @@ import {
 } from '@regground/sandbox';
 import { buildAgentBundle } from '../services/AgentBundler.js';
 import type { AuthedRequest } from '../middleware/auth.js';
+import { getContext } from '../context.js';
 
 const router: Router = express.Router();
 
@@ -71,12 +72,9 @@ router.get('/tasks/:id', (req, res) => {
     regulation: def.regulation,
     jurisdiction: def.jurisdiction,
     sampleData: def.sampleData,
-    obligations: def.obligations.map((o) => ({
-      obligationId: o.obligationId,
-      regulation: o.regulation,
-      citation: o.citation,
-      summary: o.summary,
-    })),
+    processId: def.processId,
+    claimedObligationIds: def.claimedObligationIds,
+    obligations: def.claimedObligationIds.map((id) => ({ obligationId: id })),
   });
 });
 
@@ -114,7 +112,7 @@ router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
   };
 
   try {
-    const runner = new TaskRunner();
+    const runner = new TaskRunner(getContext().graph);
     // Use a fast pace by default for HTTP runs — the SSE replay re-paces.
     const runResult = await runner.run(def, inputParsed.data, { mode, stream, paceMs: paceMs ?? 0 });
     rememberRun(runResult.runId, {

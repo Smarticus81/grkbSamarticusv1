@@ -1,0 +1,28 @@
+processId: trend-determination
+name: Trend Determination
+description: |
+  Detect statistically significant trends in complaint or NC data and
+  decide whether a trend report and/or a CAPA is required. Anchored on
+  EU MDR Art. 88-style analysis (no Art. 88 obligation has been seeded
+  yet; the process is bound to ISO 13485 §8.4 data analysis and
+  §8.5.2 corrective action obligations that drive the same logic).
+category: post-market
+jurisdictions: [EU, GLOBAL]
+version: "1.0.0"
+
+governedBy:
+  # ISO 13485 §8.4 — data analysis
+  - ISO13485.8.4.OBL.001
+  - ISO13485.8.4.OBL.002
+  # ISO 13485 §8.2.1 — feedback as input to risk management / trending
+  - ISO13485.8.2.1.OBL.002
+  - ISO13485.8.2.1.OBL.003
+  # ISO 13485 §8.5.2 — corrective action when nonconformities recur
+  - ISO13485.8.5.2.OBL.001
+  - ISO13485.8.5.3.OBL.001
+  # MDCG 2022-21 §2.4 — analysis of incidents and FSCAs (trend element)
+  - MDCG2022-21.2.OBL.007
+  # EU MDR Art. 83-85 — PMS planning, system, and Class I PMS report
+  - EUMDR.83.OBL.001
+  - EUMDR.84.OBL.001
+  - EUMDR.85.OBL.001

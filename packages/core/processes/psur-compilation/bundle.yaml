@@ -1,0 +1,28 @@
+processId: psur-compilation
+name: PSUR Compilation
+description: |
+  Compile the Periodic Safety Update Report per EU MDR Art. 86 and
+  MDCG 2022-21 §1–4. Includes structural compliance evaluation and
+  the required content: complaints, vigilance, literature, registries,
+  sales/population, and benefit-risk.
+category: post-market
+jurisdictions: [EU]
+version: "1.0.0"
+
+governedBy:
+  # EU MDR Art. 86 — PSUR contents and submission
+  - EUMDR.86.OBL.001
+  - EUMDR.86.PSUR.OBL.001
+  - EUMDR.86.PSUR.OBL.002
+  # MDCG 2022-21 §1 — scope, purpose, identification
+  - MDCG2022-21.1.OBL.001
+  - MDCG2022-21.1.OBL.002
+  - MDCG2022-21.1.OBL.003
+  # MDCG 2022-21 §2 — required content
+  - MDCG2022-21.2.OBL.001    # complaints summary
+  - MDCG2022-21.2.OBL.002    # vigilance summary
+  - MDCG2022-21.2.OBL.003    # literature review
+  - MDCG2022-21.2.OBL.004    # registries / PMCF
+  - MDCG2022-21.2.OBL.005    # sales volume
+  - MDCG2022-21.2.OBL.006    # population estimate
+  - MDCG2022-21.2.OBL.007    # incident & FSCA analysis

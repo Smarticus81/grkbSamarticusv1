@@ -1,0 +1,18 @@
+processId: internal-audit
+name: Internal Audit
+description: |
+  Plan, conduct, and follow up on internal QMS audits per
+  ISO 13485 §8.2.4. Includes audit programme, finding records,
+  auditor independence, and corrective actions on findings.
+category: qms-core
+jurisdictions: [GLOBAL]
+version: "1.0.0"
+
+governedBy:
+  # ISO 13485 §8.2.4 — internal audit (from internal-audit.yaml)
+  - ISO13485.8.2.4.OBL.001   # conduct at planned intervals
+  - ISO13485.8.2.4.OBL.002   # document findings
+  - ISO13485.8.2.4.OBL.003   # auditor independence
+  # ISO 13485 §8.2.4 — programme + follow-up (from monitoring-measurement.yaml)
+  - ISO13485.8.2.4.OBL.004   # audit programme
+  - ISO13485.8.2.4.OBL.005   # timely corrective actions on findings

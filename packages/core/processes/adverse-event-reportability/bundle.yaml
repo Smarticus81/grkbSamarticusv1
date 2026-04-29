@@ -1,0 +1,21 @@
+processId: adverse-event-reportability
+name: Adverse Event Reportability
+description: |
+  Determine whether an adverse event is reportable in EU, US, and UK,
+  and emit the applicable reporting clock per jurisdiction. Walks
+  EU MDR Art. 87, 21 CFR 803, and UK MDR vigilance interpretation.
+category: post-market
+jurisdictions: [EU, US, UK]
+version: "1.0.0"
+
+governedBy:
+  # EU MDR Art. 87 — vigilance, clocks, FSCA reporting
+  - EUMDR.87.OBL.001         # serious incident
+  - EUMDR.87.OBL.002         # FSCA
+  - EUMDR.87.OBL.003         # 15d / 10d / 2d clocks
+  # 21 CFR §820.198 — MDR reportability
+  - CFR820.198.OBL.002
+  # UK MDR — interpretation of serious incident / FSCA
+  - UKMDR.2.OBL.001          # definitions including 'serious incident'
+  # ISO 13485 — reportability is part of complaint handling
+  - ISO13485.8.2.2.OBL.004

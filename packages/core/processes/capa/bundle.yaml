@@ -1,0 +1,21 @@
+processId: capa
+name: Corrective and Preventive Action (CAPA)
+description: |
+  Lifecycle of corrective and preventive actions per ISO 13485 §8.5.2 /
+  §8.5.3 and FDA 21 CFR §820.100. Covers identification, investigation,
+  action, verification of effectiveness, and documentation.
+category: qms-core
+jurisdictions: [GLOBAL, US, EU]
+version: "1.0.0"
+
+governedBy:
+  # ISO 13485 §8.5.2 — corrective action
+  - ISO13485.8.5.2.OBL.001
+  - ISO13485.8.5.2.OBL.002
+  - ISO13485.8.5.2.OBL.003
+  # ISO 13485 §8.5.3 — preventive action
+  - ISO13485.8.5.3.OBL.001
+  # 21 CFR §820.100 — CAPA procedures
+  - CFR820.100.OBL.001
+  - CFR820.100.OBL.002
+  - CFR820.100.OBL.003

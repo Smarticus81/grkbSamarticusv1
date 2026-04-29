@@ -30,7 +30,8 @@ export interface BundleManifest {
   oneLiner: string;
   regulation: string;
   jurisdiction: string;
-  obligations: Array<{ obligationId: string; citation: string; regulation: string; summary: string }>;
+  processId: string;
+  claimedObligationIds: string[];
   sampleData: unknown;
   apiBaseUrl: string;
   apiKey: string;
@@ -69,12 +70,8 @@ export async function buildAgentBundle(input: BundleInput): Promise<BundleOutput
     oneLiner: def.oneLiner,
     regulation: def.regulation,
     jurisdiction: def.jurisdiction,
-    obligations: def.obligations.map((o) => ({
-      obligationId: o.obligationId,
-      citation: o.citation,
-      regulation: o.regulation,
-      summary: o.summary,
-    })),
+    processId: def.processId,
+    claimedObligationIds: [...def.claimedObligationIds],
     sampleData: def.sampleData,
     apiBaseUrl: baseUrl,
     apiKey,

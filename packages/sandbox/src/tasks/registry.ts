@@ -1,5 +1,9 @@
-/**
+﻿/**
  * Task agent registry. Single source of truth for the sandbox catalog.
+ *
+ * The PSUR Section Drafter has been retired in favor of the Template
+ * Compliance Evaluator, which is tethered to the `psur-compilation`
+ * process bundle in the graph.
  */
 
 import type { TaskAgentDefinition } from './types.js';
@@ -7,14 +11,12 @@ import { ComplaintCoderTask } from './agents/complaint-coder.js';
 import { AeReportabilityTask } from './agents/ae-reportability.js';
 import { TrendDeterminationTask } from './agents/trend-determination.js';
 import { TemplateComplianceEvaluatorTask } from './agents/template-compliance-evaluator.js';
-import { PsurSectionDrafterTask } from './agents/psur-section-drafter.js';
 
 export const TASK_AGENTS: ReadonlyArray<TaskAgentDefinition<any, any>> = [
   ComplaintCoderTask,
   AeReportabilityTask,
   TrendDeterminationTask,
   TemplateComplianceEvaluatorTask,
-  PsurSectionDrafterTask,
 ];
 
 export interface TaskCatalogEntry {
@@ -23,6 +25,7 @@ export interface TaskCatalogEntry {
   oneLiner: string;
   regulation: string;
   jurisdiction: string;
+  processId: string;
   obligationCount: number;
 }
 
@@ -33,7 +36,8 @@ export function listTasks(): TaskCatalogEntry[] {
     oneLiner: t.oneLiner,
     regulation: t.regulation,
     jurisdiction: t.jurisdiction,
-    obligationCount: t.obligations.length,
+    processId: t.processId,
+    obligationCount: t.claimedObligationIds.length,
   }));
 }
 

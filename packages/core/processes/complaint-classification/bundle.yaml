@@ -1,0 +1,21 @@
+processId: complaint-classification
+name: Complaint Classification (IMDRF Coding)
+description: |
+  Code adverse-event narratives into IMDRF Annex A–G terminology and
+  determine reportability against EU MDR Art. 87 / FDA 21 CFR 803.
+  Sub-process of complaint handling — focused on coding + reportability.
+category: post-market
+jurisdictions: [EU, US, UK, GLOBAL]
+version: "1.0.0"
+
+governedBy:
+  # IMDRF AET — Annex A–G coding terminology
+  - IMDRF.AET.OBL.001
+  # ISO 13485 — complaint handling underpins all coding/reportability
+  - ISO13485.8.2.2.OBL.003   # evaluate need to investigate
+  - ISO13485.8.2.2.OBL.004   # determine reportability
+  # EU MDR Art. 87 — vigilance / serious incident reporting
+  - EUMDR.87.OBL.001         # report serious incidents
+  - EUMDR.87.OBL.003         # reporting timelines
+  # 21 CFR §820.198 — MDR reportability
+  - CFR820.198.OBL.002

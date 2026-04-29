@@ -1,0 +1,25 @@
+processId: complaint-handling
+name: Complaint Handling
+description: |
+  Receive, log, triage, and investigate customer complaints under
+  ISO 13485 §8.2.2, FDA QSR §820.198, and EU MDR vigilance Article 87.
+  Bound obligations cover the full complaint-handling lifecycle from
+  receipt through reportability assessment.
+category: post-market
+jurisdictions: [EU, US, UK, GLOBAL]
+version: "1.0.0"
+
+# Every ID below MUST exist in the obligation graph or seeding fails loud.
+governedBy:
+  # ISO 13485:2016 §8.2.2 — complaint handling
+  - ISO13485.8.2.2.OBL.001
+  - ISO13485.8.2.2.OBL.002
+  - ISO13485.8.2.2.OBL.003
+  - ISO13485.8.2.2.OBL.004
+  # 21 CFR §820.198 — complaint files
+  - CFR820.198.OBL.001
+  - CFR820.198.OBL.002
+  # EU MDR Art. 87 — vigilance reporting (complaints feed reportability)
+  - EUMDR.87.OBL.001
+  - EUMDR.87.OBL.002
+  - EUMDR.87.OBL.003

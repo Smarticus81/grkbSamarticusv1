@@ -16,6 +16,14 @@ export { GraphQuerier } from './graph/GraphQuerier.js';
 export { GraphVersioning } from './graph/GraphVersioning.js';
 export { ObligationDiscovery, type DiscoveredScope } from './graph/ObligationDiscovery.js';
 export { ALL_RELATION_TYPES, isValidRelationType } from './graph/relationships.js';
+export {
+  ProcessNodeSchema,
+  ProcessBundleSchema,
+  type ProcessNode,
+  type ProcessBundle,
+  type ProcessSeedResult,
+} from './graph/ProcessNode.js';
+export { ProcessSeeder } from './graph/ProcessSeeder.js';
 
 // traceability
 export * from './traceability/types.js';

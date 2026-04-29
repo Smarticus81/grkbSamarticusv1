@@ -2,12 +2,27 @@
  * Task agent type system.
  *
  * A task agent is a single-step, input-in/output-out agent that runs against
- * the Smarticus knowledge graph. Distinct from the multi-step processes in
- * `packages/sandbox/src/processes/`, task agents are designed to demo the
+ * the live obligation graph. Distinct from the multi-step processes in
+ * `packages/sandbox/src/processes/`, task agents demonstrate the
  * with-graph vs without-graph delta in the sandbox.
+ *
+ * PROCESS-FIRST CONTRACT
+ * ----------------------
+ * Every task agent declares:
+ *   - `processId`               — a (:Process) node already seeded in the graph.
+ *   - `claimedObligationIds[]`  — obligation IDs the agent claims to honor.
+ *
+ * At runtime the TaskRunner queries the graph for
+ *   (:Process {processId})-[:GOVERNED_BY]->(:Obligation)
+ *   WHERE o.obligationId IN $claimedObligationIds
+ * Any claimed ID NOT returned is flagged as `obligation.missed` ("not in
+ * graph for this process") and the StrictGate fails. This is the runtime
+ * tether: an agent can never claim coverage for an obligation outside its
+ * process bundle, and can never invent a citation.
  */
 
 import { z } from 'zod';
+import type { ObligationNode } from '@regground/core';
 
 /* ── Public event vocabulary streamed during a run ───────────────────── */
 
@@ -83,18 +98,28 @@ export type TaskEvent =
 
 export type TaskLane = 'with-graph' | 'without-graph';
 
-/* ── Per-task obligation snapshot ─────────────────────────────────────── */
+/* ── Per-task obligation check (graph-resolved at run time) ──────────── */
 
-export interface TaskObligation {
+export interface ObligationCheck {
+  /** Obligation ID — MUST be in the bound process bundle. */
   obligationId: string;
-  regulation: string;
-  citation: string;
-  summary: string;
-  /** What the output must include for this obligation to be satisfied. */
-  satisfiedBy: (output: unknown) => boolean;
+  /**
+   * Output validator. Receives the agent output and the live ObligationNode
+   * fetched from the graph. Returns true if the output satisfies the
+   * obligation. Implementations should be pure and deterministic.
+   */
+  satisfiedBy: (output: unknown, obligation: ObligationNode) => boolean;
 }
 
-/* ── Task agent definition ────────────────────────────────────────────── */
+/* ── Run context the agent receives in the with-graph lane ───────────── */
+
+export interface WithGraphContext {
+  /** Obligations fetched from the graph for this process+claimed IDs.
+   *  ALL citations the agent emits MUST come from this set. */
+  obligations: ObligationNode[];
+}
+
+/* ── Task agent definition (process-tethered) ────────────────────────── */
 
 export interface TaskAgentDefinition<TInput = unknown, TOutput = unknown> {
   id: string;
@@ -103,25 +128,23 @@ export interface TaskAgentDefinition<TInput = unknown, TOutput = unknown> {
   /** Headline regulation tag — shown on the catalog card. */
   regulation: string;
   jurisdiction: string;
+  /** Process bundle ID this agent is bound to. The runner will query
+   *  (:Process {processId})-[:GOVERNED_BY]->(:Obligation) and constrain
+   *  the agent's view of the world to that set. */
+  processId: string;
+  /** Obligation IDs the agent claims to address. Each MUST be in the
+   *  process bundle or the run fails StrictGate at the load step. */
+  claimedObligationIds: string[];
+  /** Per-obligation output checks evaluated against live graph nodes. */
+  obligationChecks: ObligationCheck[];
   inputSchema: z.ZodType<TInput>;
   outputSchema: z.ZodType<TOutput>;
   /** Pre-loaded sample data the user can run immediately. */
   sampleData: TInput;
-  /** Curated obligation set the agent is graded against. */
-  obligations: TaskObligation[];
-  /** Run the agent with the graph (full obligation injection + citations). */
-  runWithGraph: (input: TInput) => Promise<TOutput>;
+  /** Run the agent with the graph (graph-fetched obligations injected). */
+  runWithGraph: (input: TInput, ctx: WithGraphContext) => Promise<TOutput>;
   /** Run the agent without the graph (no obligations, no citations). */
   runWithoutGraph: (input: TInput) => Promise<TOutput>;
-  /** Layman script of "graph queries" the with-graph lane will narrate. */
-  graphScript: Array<{
-    after?: 'start' | 'load-obligations';
-    method: string;
-    args?: Record<string, unknown>;
-    message: string;
-    resultCount: number;
-    citeObligationIds?: string[];
-  }>;
 }
 
 /* ── Run result + eval scorecard ──────────────────────────────────────── */

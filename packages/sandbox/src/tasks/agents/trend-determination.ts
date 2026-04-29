@@ -1,11 +1,13 @@
-/**
- * Trend Determination — given a window of complaint counts, decide whether
- * a statistical trend has been established under EU MDR Art. 88 / ISO 13485
- * §8.4. Demonstrates an analytical agent grounded in regulatory thresholds.
+﻿/**
+ * Trend Determination — given a window of complaint counts, decide
+ * whether a statistical trend has been established and whether a CAPA /
+ * trend report is required. Citations resolved from the live graph for
+ * the `trend-determination` process.
  */
 
 import { z } from 'zod';
-import type { TaskAgentDefinition } from '../types.js';
+import type { ObligationNode } from '@regground/core';
+import type { TaskAgentDefinition, WithGraphContext } from '../types.js';
 
 const InputSchema = z.object({
   deviceFamily: z.string(),
@@ -41,32 +43,34 @@ const SAMPLE: Input = {
   failureMode: 'Insulation breach at proximal coil',
 };
 
-async function runWithGraph(input: Input): Promise<Output> {
+async function runWithGraph(input: Input, ctx: WithGraphContext): Promise<Output> {
   const observedRate = (input.observedCount / input.unitsInField) * 1000;
   const ratio = observedRate / input.baselineRatePerKUnits;
   const trend = ratio >= 2.0;
-  const trendReport = trend; // EU MDR Art. 88 threshold met
-  const capa = ratio >= 1.5;  // ISO 13485 §8.4 / 8.5 trigger
+  const capa = ratio >= 1.5;
+
+  const trendCitation = ctx.obligations.find((o) => /85|88|trend|MDCG/i.test(o.title) || /85|88/.test(o.sourceCitation));
+  const capaCitation = ctx.obligations.find((o) => /8\.5\.2|corrective/i.test(o.title) || /8\.5\.2/.test(o.sourceCitation));
+
   return {
     deviceFamily: input.deviceFamily,
     observedRatePerKUnits: Number(observedRate.toFixed(3)),
     baselineRatePerKUnits: input.baselineRatePerKUnits,
     ratio: Number(ratio.toFixed(2)),
     trendEstablished: trend,
-    trendReportRequired: trendReport,
+    trendReportRequired: trend,
     capaTriggered: capa,
     rationale: trend
-      ? `Observed rate ${observedRate.toFixed(2)}/kU is ${ratio.toFixed(2)}× the baseline of ${input.baselineRatePerKUnits}/kU over a ${input.windowDays}-day window — exceeds the EU MDR Art. 88 trend threshold (≥2× baseline).`
+      ? `Observed rate ${observedRate.toFixed(2)}/kU is ${ratio.toFixed(2)}× the baseline of ${input.baselineRatePerKUnits}/kU over a ${input.windowDays}-day window — exceeds the 2× trend threshold.`
       : `Observed ratio ${ratio.toFixed(2)}× baseline does not exceed the trend-report threshold; continued monitoring recommended.`,
-    citations: [
-      'EU MDR Art. 88(1)',
-      'ISO 13485:2016 §8.4 — analysis of data',
-      'ISO 13485:2016 §8.5.2 — corrective action',
-      'MDCG 2023-3 — trend reporting Q&A',
-    ],
+    citations: ctx.obligations.map((o) => o.sourceCitation),
     recommendedActions: [
-      trendReport ? 'Submit MIR trend report to EUDAMED within 15 days.' : 'Continue monitoring — re-evaluate next reporting cycle.',
-      capa ? 'Open a CAPA per ISO 13485 §8.5.2 with root-cause focus on the proximal-coil insulation.' : 'Document analysis in the QMS without opening a CAPA.',
+      trend
+        ? `Submit trend report per ${trendCitation?.sourceCitation ?? 'applicable PMS regulation'} within the regulatory clock.`
+        : 'Continue monitoring — re-evaluate next reporting cycle.',
+      capa
+        ? `Open a CAPA per ${capaCitation?.sourceCitation ?? 'applicable corrective-action obligation'} with root-cause focus on ${input.failureMode}.`
+        : 'Document analysis in the QMS without opening a CAPA.',
       'Notify the Notified Body if the field rate continues to rise.',
     ],
   };
@@ -79,7 +83,7 @@ async function runWithoutGraph(input: Input): Promise<Output> {
     observedRatePerKUnits: Number(observedRate.toFixed(3)),
     baselineRatePerKUnits: input.baselineRatePerKUnits,
     ratio: Number((observedRate / input.baselineRatePerKUnits).toFixed(2)),
-    trendEstablished: false, // Without the threshold, the agent guesses no
+    trendEstablished: false,
     trendReportRequired: false,
     capaTriggered: false,
     rationale: `Observed ${observedRate.toFixed(2)}/kU vs baseline ${input.baselineRatePerKUnits}/kU. Difference noted but no clear trend threshold available.`,
@@ -88,50 +92,50 @@ async function runWithoutGraph(input: Input): Promise<Output> {
   };
 }
 
+function citesObligation(o: unknown, ob: ObligationNode): boolean {
+  const parsed = OutputSchema.safeParse(o);
+  return parsed.success && parsed.data.citations.includes(ob.sourceCitation);
+}
+
 export const TrendDeterminationTask: TaskAgentDefinition<Input, Output> = {
   id: 'trend-determination',
   name: 'Trend Determination',
-  oneLiner: 'Decides whether a complaint frequency constitutes a reportable trend under EU MDR Art. 88.',
-  regulation: 'EU MDR · ISO 13485 · MDCG 2023-3',
+  oneLiner: 'Decides whether a complaint frequency constitutes a reportable trend — citations resolved from the live graph.',
+  regulation: 'EU MDR · ISO 13485 · MDCG 2022-21',
   jurisdiction: 'EU',
+  processId: 'trend-determination',
+  claimedObligationIds: [
+    'ISO13485.8.4.OBL.001',
+    'ISO13485.8.4.OBL.002',
+    'ISO13485.8.5.2.OBL.001',
+    'ISO13485.8.5.3.OBL.001',
+    'EUMDR.83.OBL.001',
+    'EUMDR.85.OBL.001',
+    'MDCG2022-21.2.OBL.007',
+  ],
   inputSchema: InputSchema,
   outputSchema: OutputSchema,
   sampleData: SAMPLE,
-  obligations: [
+  obligationChecks: [
+    { obligationId: 'ISO13485.8.4.OBL.001', satisfiedBy: (o, ob) => citesObligation(o, ob) },
+    { obligationId: 'ISO13485.8.4.OBL.002', satisfiedBy: (o, ob) => citesObligation(o, ob) },
     {
-      obligationId: 'EU-MDR-88-1',
-      regulation: 'EU MDR',
-      citation: 'EU MDR Art. 88(1)',
-      summary: 'Submit a trend report when a statistically significant increase is observed.',
-      satisfiedBy: (o) => OutputSchema.safeParse(o).success && typeof (o as Output).trendReportRequired === 'boolean' && (o as Output).citations.some((c) => c.includes('Art. 88')),
+      obligationId: 'ISO13485.8.5.2.OBL.001',
+      satisfiedBy: (o, ob) => {
+        const parsed = OutputSchema.safeParse(o);
+        return parsed.success && typeof parsed.data.capaTriggered === 'boolean' && citesObligation(o, ob);
+      },
     },
+    { obligationId: 'ISO13485.8.5.3.OBL.001', satisfiedBy: (o, ob) => citesObligation(o, ob) },
+    { obligationId: 'EUMDR.83.OBL.001',       satisfiedBy: (o, ob) => citesObligation(o, ob) },
     {
-      obligationId: 'ISO-13485-8-4',
-      regulation: 'ISO 13485',
-      citation: 'ISO 13485:2016 §8.4',
-      summary: 'Analyze data from monitoring to demonstrate QMS effectiveness.',
-      satisfiedBy: (o) => OutputSchema.safeParse(o).success && (o as Output).citations.some((c) => c.includes('§8.4')),
+      obligationId: 'EUMDR.85.OBL.001',
+      satisfiedBy: (o, ob) => {
+        const parsed = OutputSchema.safeParse(o);
+        return parsed.success && typeof parsed.data.trendReportRequired === 'boolean' && citesObligation(o, ob);
+      },
     },
-    {
-      obligationId: 'ISO-13485-8-5-2',
-      regulation: 'ISO 13485',
-      citation: 'ISO 13485:2016 §8.5.2',
-      summary: 'Open a CAPA when nonconformities trend upward.',
-      satisfiedBy: (o) => OutputSchema.safeParse(o).success && typeof (o as Output).capaTriggered === 'boolean' && (o as Output).citations.some((c) => c.includes('§8.5.2')),
-    },
-    {
-      obligationId: 'MDCG-2023-3',
-      regulation: 'MDCG',
-      citation: 'MDCG 2023-3',
-      summary: 'Apply MDCG trend-reporting Q&A guidance for thresholds.',
-      satisfiedBy: (o) => OutputSchema.safeParse(o).success && (o as Output).citations.some((c) => c.includes('MDCG 2023-3')),
-    },
-  ],
-  graphScript: [
-    { method: 'getObligationsForProcess', args: { processType: 'trend-reporting', jurisdiction: 'EU' }, message: 'Looking up trend-reporting obligations under EU MDR…', resultCount: 6, citeObligationIds: ['EU-MDR-88-1', 'MDCG-2023-3'] },
-    { method: 'explainObligation',         args: { obligationId: 'EU-MDR-88-1' },                       message: 'Loading the EU MDR Art. 88 trend-threshold criteria…',     resultCount: 1 },
-    { method: 'getObligationsForProcess', args: { processType: 'capa', jurisdiction: 'EU' },           message: 'Cross-walking to CAPA obligations under ISO 13485…',       resultCount: 4, citeObligationIds: ['ISO-13485-8-4', 'ISO-13485-8-5-2'] },
-    { method: 'findPath',                  args: { fromId: 'EU-MDR-88-1', toId: 'ISO-13485-8-5-2' },     message: 'Walking the cross-reference from MDR Art. 88 to ISO §8.5.2…', resultCount: 2 },
+    { obligationId: 'MDCG2022-21.2.OBL.007', satisfiedBy: (o, ob) => citesObligation(o, ob) },
   ],
   runWithGraph,
   runWithoutGraph,
