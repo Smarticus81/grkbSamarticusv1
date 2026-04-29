@@ -1,0 +1,14 @@
+processId: nonconformance-handling
+name: Nonconformance Handling
+description: |
+  Identify, document, evaluate, investigate, and disposition nonconforming
+  product under ISO 13485 §8.3. Covers segregation/control, evaluation,
+  disposition authorization, and required records.
+category: qms-core
+jurisdictions: [GLOBAL]
+version: "1.0.0"
+
+governedBy:
+  - ISO13485.8.3.OBL.001
+  - ISO13485.8.3.OBL.002
+  - ISO13485.8.3.OBL.003

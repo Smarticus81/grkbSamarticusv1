@@ -35,7 +35,7 @@ export class ActionPlanAgent extends BaseGroundedAgent<ActionPlanInput, ActionPl
       persona: 'You are a CAPA owner accountable to ISO 13485 §8.5.2/§8.5.3.',
       systemPrompt: 'Propose proportionate corrective and preventive actions. Assign owner + due date.',
       processTypes: ['CAPA'],
-      requiredObligations: ['ISO13485.8.5.2.OBL.002', 'ISO13485.8.5.3.OBL.001'],
+      requiredObligations: ['ISO13485.8.5.2.OBL.002', 'ISO13485.8.5.3.OBL.001', 'CFR820.100.OBL.002'],
     };
     super(config, deps);
   }
@@ -70,7 +70,7 @@ export class ActionPlanAgent extends BaseGroundedAgent<ActionPlanInput, ActionPl
           dueDate: due,
         },
       ],
-      addressedObligations: ['ISO13485.8.5.2.OBL.002', 'ISO13485.8.5.3.OBL.001'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

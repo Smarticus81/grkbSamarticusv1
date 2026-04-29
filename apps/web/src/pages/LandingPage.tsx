@@ -2,7 +2,7 @@ import { useLocation } from 'wouter';
 import { RegulatorHeroRail } from '../components/ui/RegulatorAssets.js';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
 import { SmarticusWordmark, SmarticusMark, SmarticusByThinkertonsLockup } from '../components/ui/logos.js';
-import { REGULATIONS, REG_COUNT, OBLIGATION_COUNT } from '../lib/coverage.js';
+import { REG_COUNT, OBLIGATION_COUNT } from '../lib/coverage.js';
 
 /* ── Featured product rows (Mistral-style alternating showcase) ── */
 const PRODUCTS: {

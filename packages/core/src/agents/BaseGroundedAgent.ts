@@ -81,6 +81,7 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
 
     // 1. QUALIFICATION
     const qualification = await this.qualificationGate.check({
+      processId: context.processId,
       processType: context.processType,
       jurisdiction: context.jurisdiction,
       availableEvidence: context.availableEvidenceTypes,
@@ -141,10 +142,10 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
     }
 
     // 2. LOAD OBLIGATIONS + CONSTRAINTS
-    const obligations = await this.graph.getObligationsForProcess(
-      context.processType,
-      context.jurisdiction,
-    );
+    const requiredObligations = this.getRequiredObligations();
+    const obligations = context.processId
+      ? await this.graph.getProcessObligations(context.processId, requiredObligations)
+      : await this.graph.getObligationsForProcess(context.processType, context.jurisdiction);
     const constraints = await this.loadConstraints(obligations);
 
     // 3. AGENT_SPAWNED
@@ -170,6 +171,7 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
 
       // 7. COMPLIANCE (legacy validator — always runs for backward compatibility)
       const complianceCtx = {
+        processId: context.processId,
         processType: context.processType,
         jurisdiction: context.jurisdiction,
         processInstanceId: context.processInstanceId,

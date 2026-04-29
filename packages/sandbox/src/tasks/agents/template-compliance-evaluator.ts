@@ -130,6 +130,11 @@ function findingFor(o: unknown, citation: string) {
   return parsed.data.findings.find((f) => f.citation === citation) ?? null;
 }
 
+function citesOutput(o: unknown, citation: string): boolean {
+  const parsed = OutputSchema.safeParse(o);
+  return parsed.success && parsed.data.citations.includes(citation);
+}
+
 export const TemplateComplianceEvaluatorTask: TaskAgentDefinition<Input, Output> = {
   id: 'template-compliance-evaluator',
   name: 'PSUR Structural Audit',
@@ -138,47 +143,43 @@ export const TemplateComplianceEvaluatorTask: TaskAgentDefinition<Input, Output>
   jurisdiction: 'EU',
   processId: 'psur-compilation',
   claimedObligationIds: [
+    'EUMDR.86.OBL.001',
+    'EUMDR.86.PSUR.OBL.001',
+    'EUMDR.86.PSUR.OBL.002',
     'MDCG2022-21.1.OBL.001',
     'MDCG2022-21.1.OBL.002',
+    'MDCG2022-21.1.OBL.003',
     'MDCG2022-21.2.OBL.001',
+    'MDCG2022-21.2.OBL.002',
     'MDCG2022-21.2.OBL.003',
     'MDCG2022-21.2.OBL.004',
     'MDCG2022-21.2.OBL.005',
+    'MDCG2022-21.2.OBL.006',
     'MDCG2022-21.2.OBL.007',
-    'EUMDR.86.OBL.001',
-    'EUMDR.86.PSUR.OBL.001',
   ],
   inputSchema: InputSchema,
   outputSchema: OutputSchema,
   sampleData: SAMPLE,
   obligationChecks: [
+    { obligationId: 'EUMDR.86.OBL.001', satisfiedBy: (o, ob) => findingFor(o, ob.sourceCitation) !== null || citesOutput(o, ob.sourceCitation) },
+    { obligationId: 'EUMDR.86.PSUR.OBL.001', satisfiedBy: (o, ob) => findingFor(o, ob.sourceCitation) !== null || citesOutput(o, ob.sourceCitation) },
+    { obligationId: 'EUMDR.86.PSUR.OBL.002', satisfiedBy: (o, ob) => findingFor(o, ob.sourceCitation) !== null || citesOutput(o, ob.sourceCitation) },
     {
       obligationId: 'MDCG2022-21.1.OBL.001',
       satisfiedBy: (o, ob) => !!findingFor(o, ob.sourceCitation),
     },
     { obligationId: 'MDCG2022-21.1.OBL.002', satisfiedBy: (o, ob) => !!findingFor(o, ob.sourceCitation) },
+    { obligationId: 'MDCG2022-21.1.OBL.003', satisfiedBy: (o, ob) => citesOutput(o, ob.sourceCitation) },
     {
       obligationId: 'MDCG2022-21.2.OBL.001',
       satisfiedBy: (o, ob) => !!findingFor(o, ob.sourceCitation),
     },
+    { obligationId: 'MDCG2022-21.2.OBL.002', satisfiedBy: (o, ob) => citesOutput(o, ob.sourceCitation) },
     { obligationId: 'MDCG2022-21.2.OBL.003', satisfiedBy: (o, ob) => !!findingFor(o, ob.sourceCitation) },
     { obligationId: 'MDCG2022-21.2.OBL.004', satisfiedBy: (o, ob) => !!findingFor(o, ob.sourceCitation) },
     { obligationId: 'MDCG2022-21.2.OBL.005', satisfiedBy: (o, ob) => !!findingFor(o, ob.sourceCitation) },
+    { obligationId: 'MDCG2022-21.2.OBL.006', satisfiedBy: (o, ob) => citesOutput(o, ob.sourceCitation) },
     { obligationId: 'MDCG2022-21.2.OBL.007', satisfiedBy: (o, ob) => !!findingFor(o, ob.sourceCitation) },
-    {
-      obligationId: 'EUMDR.86.OBL.001',
-      satisfiedBy: (o, ob) => {
-        const parsed = OutputSchema.safeParse(o);
-        return parsed.success && parsed.data.citations.includes(ob.sourceCitation);
-      },
-    },
-    {
-      obligationId: 'EUMDR.86.PSUR.OBL.001',
-      satisfiedBy: (o, ob) => {
-        const parsed = OutputSchema.safeParse(o);
-        return parsed.success && parsed.data.citations.includes(ob.sourceCitation);
-      },
-    },
   ],
   runWithGraph,
   runWithoutGraph,

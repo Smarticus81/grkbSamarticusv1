@@ -39,7 +39,7 @@ export class TrendDetectionAgent extends BaseGroundedAgent<TrendInput, TrendOutp
         persona: 'You are a statistical quality engineer.',
         systemPrompt: 'Compute UCL/LCL and identify signals.',
         processTypes: ['COMPLAINT', 'TREND'],
-        requiredObligations: ['EUMDR.83.OBL.001'],
+        requiredObligations: ['EUMDR.87.OBL.001', 'EUMDR.87.OBL.002', 'EUMDR.87.OBL.003'],
       },
       deps,
     );
@@ -72,7 +72,7 @@ export class TrendDetectionAgent extends BaseGroundedAgent<TrendInput, TrendOutp
       signalReason: signal
         ? `Latest value ${latest} breached ${latest > ucl ? 'UCL' : 'LCL'}`
         : 'Within control limits',
-      addressedObligations: ['EUMDR.83.OBL.001'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

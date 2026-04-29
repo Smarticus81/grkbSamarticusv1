@@ -18,10 +18,9 @@ export class QualificationGate {
   constructor(private readonly graph: ObligationGraph) {}
 
   async check(input: QualificationInput): Promise<QualificationResult> {
-    const obligations = await this.graph.getObligationsForProcess(
-      input.processType,
-      input.jurisdiction,
-    );
+    const obligations = input.processId
+      ? await this.graph.getProcessObligations(input.processId, input.requiredObligations)
+      : await this.graph.getObligationsForProcess(input.processType, input.jurisdiction);
     const mandatory = obligations.filter((o) => o.mandatory);
 
     // If no obligations apply at all, this process is out of scope.

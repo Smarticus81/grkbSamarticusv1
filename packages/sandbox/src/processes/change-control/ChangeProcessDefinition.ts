@@ -4,6 +4,7 @@ import { VerifyInputSchema, VerifyOutputSchema } from './agents/ChangeVerificati
 
 export const CHANGE_PROCESS: ProcessDefinition = {
   id: 'change-iso13485-v1',
+  processId: 'change-control',
   name: 'Change Control',
   description: 'Design and process change control per ISO 13485 §7.3.9.',
   version: '1.0.0',

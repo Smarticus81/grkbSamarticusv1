@@ -38,7 +38,7 @@ export class CAPAInitiationAgent extends BaseGroundedAgent<
       systemPrompt:
         'Classify the incoming trigger and decide whether to open a CAPA. Cite the obligation that requires it.',
       processTypes: ['CAPA'],
-      requiredObligations: ['ISO13485.8.5.2.OBL.001'],
+      requiredObligations: ['ISO13485.8.5.2.OBL.001', 'CFR820.100.OBL.001'],
     };
     super(config, deps);
   }
@@ -62,7 +62,7 @@ export class CAPAInitiationAgent extends BaseGroundedAgent<
       rationale: capaRequired
         ? `Severity ${input.severity} from ${input.triggerType} requires CAPA per ISO 13485 §8.5.2(a)`
         : `Severity ${input.severity} does not require CAPA; routine correction sufficient`,
-      addressedObligations: ['ISO13485.8.5.2.OBL.001'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

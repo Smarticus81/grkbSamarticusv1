@@ -34,7 +34,7 @@ export class ComplaintInvestigationAgent extends BaseGroundedAgent<
         persona: 'You are a quality investigator.',
         systemPrompt: 'Investigate the complaint and document findings.',
         processTypes: ['COMPLAINT'],
-        requiredObligations: ['ISO13485.8.2.2.OBL.003'],
+        requiredObligations: ['ISO13485.8.2.2.OBL.003', 'EUMDR.87.OBL.001'],
       },
       deps,
     );
@@ -54,7 +54,7 @@ export class ComplaintInvestigationAgent extends BaseGroundedAgent<
       complaintId: input.complaintId,
       findings: [`Severity ${input.severity} investigation completed`],
       needsCAPA: input.severity === 'critical' || input.severity === 'high',
-      addressedObligations: ['ISO13485.8.2.2.OBL.003'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

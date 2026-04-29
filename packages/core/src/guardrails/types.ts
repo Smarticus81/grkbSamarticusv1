@@ -1,6 +1,7 @@
 import type { ObligationNode, ConstraintNode } from '../graph/types.js';
 
 export interface QualificationInput {
+  processId?: string;
   processType: string;
   jurisdiction: string;
   availableEvidence: string[];
@@ -23,6 +24,7 @@ export interface QualificationResult {
 }
 
 export interface ComplianceContext {
+  processId?: string;
   processType: string;
   jurisdiction: string;
   processInstanceId: string;

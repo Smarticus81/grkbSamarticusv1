@@ -14,6 +14,7 @@ import { ClosureInputSchema, ClosureOutputSchema } from './agents/CAPAClosureAge
 
 export const CAPA_PROCESS: ProcessDefinition = {
   id: 'capa-iso13485-v1',
+  processId: 'capa',
   name: 'CAPA Process',
   description: 'Corrective and Preventive Action lifecycle per ISO 13485 §8.5.2/§8.5.3.',
   version: '1.0.0',
@@ -27,6 +28,9 @@ export const CAPA_PROCESS: ProcessDefinition = {
     'ISO13485.8.5.2.OBL.002',
     'ISO13485.8.5.2.OBL.003',
     'ISO13485.8.5.3.OBL.001',
+    'CFR820.100.OBL.001',
+    'CFR820.100.OBL.002',
+    'CFR820.100.OBL.003',
   ],
   requiredEvidenceTypes: [
     'nonconformance_record',
@@ -58,7 +62,7 @@ export const CAPA_PROCESS: ProcessDefinition = {
       agentType: 'CAPAInitiationAgent',
       inputSchema: CAPAInitiationInputSchema,
       outputSchema: CAPAInitiationOutputSchema,
-      obligationIds: ['ISO13485.8.5.2.OBL.001'],
+      obligationIds: ['ISO13485.8.5.2.OBL.001', 'CFR820.100.OBL.001'],
       dependsOn: [],
       timeoutMs: 60_000,
       retryPolicy: { maxRetries: 2, backoffMs: 5_000 },
@@ -82,7 +86,7 @@ export const CAPA_PROCESS: ProcessDefinition = {
       agentType: 'ActionPlanAgent',
       inputSchema: ActionPlanInputSchema,
       outputSchema: ActionPlanOutputSchema,
-      obligationIds: ['ISO13485.8.5.2.OBL.002', 'ISO13485.8.5.3.OBL.001'],
+      obligationIds: ['ISO13485.8.5.2.OBL.002', 'ISO13485.8.5.3.OBL.001', 'CFR820.100.OBL.002'],
       dependsOn: ['root-cause'],
       hitlGate: {
         gateId: 'capa-action-plan-approval',
@@ -99,7 +103,7 @@ export const CAPA_PROCESS: ProcessDefinition = {
       agentType: 'EffectivenessCheckAgent',
       inputSchema: EffectivenessInputSchema,
       outputSchema: EffectivenessOutputSchema,
-      obligationIds: ['ISO13485.8.5.2.OBL.003'],
+      obligationIds: ['ISO13485.8.5.2.OBL.003', 'CFR820.100.OBL.003'],
       dependsOn: ['action-plan'],
       timeoutMs: 90_000,
       retryPolicy: { maxRetries: 1, backoffMs: 5_000 },
@@ -111,7 +115,7 @@ export const CAPA_PROCESS: ProcessDefinition = {
       agentType: 'CAPAClosureAgent',
       inputSchema: ClosureInputSchema,
       outputSchema: ClosureOutputSchema,
-      obligationIds: ['ISO13485.8.5.2.OBL.003'],
+      obligationIds: ['ISO13485.8.5.2.OBL.003', 'CFR820.100.OBL.003'],
       dependsOn: ['effectiveness-check'],
       timeoutMs: 30_000,
       retryPolicy: { maxRetries: 0, backoffMs: 0 },

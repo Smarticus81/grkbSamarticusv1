@@ -28,6 +28,8 @@ export interface StepDefinition<TInput = unknown, TOutput = unknown> {
 
 export interface ProcessDefinition {
   id: string;
+  /** Runtime graph process ID: (:Process {processId}) used to scope obligations. */
+  processId: string;
   name: string;
   description: string;
   version: string;

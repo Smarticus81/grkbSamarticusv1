@@ -32,7 +32,7 @@ export class CAPAClosureAgent extends BaseGroundedAgent<ClosureInput, ClosureOut
       persona: 'You are a CAPA records owner.',
       systemPrompt: 'Generate a closure report summarising the CAPA lifecycle and outcome.',
       processTypes: ['CAPA'],
-      requiredObligations: ['ISO13485.8.5.2.OBL.003'],
+      requiredObligations: ['ISO13485.8.5.2.OBL.003', 'CFR820.100.OBL.003'],
     };
     super(config, deps);
   }
@@ -55,7 +55,7 @@ export class CAPAClosureAgent extends BaseGroundedAgent<ClosureInput, ClosureOut
       capaId: input.capaId,
       closedAt: new Date().toISOString(),
       closureReport: `CAPA ${input.capaId} closed by ${input.approver}. Effectiveness verified.`,
-      addressedObligations: ['ISO13485.8.5.2.OBL.003'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

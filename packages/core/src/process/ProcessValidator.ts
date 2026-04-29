@@ -8,10 +8,30 @@ export class ProcessValidator {
     const errors: string[] = [];
     const warnings: string[] = [];
 
+    const processNode = await this.graph.getProcess(def.processId);
+    if (!processNode) errors.push(`Process not in graph: ${def.processId}`);
+
+    const bound = await this.graph.getProcessObligations(def.processId);
+    const boundIds = new Set(bound.map((o) => o.obligationId));
+
     // 1. All obligationIds must exist
     for (const id of def.obligationIds) {
       const o = await this.graph.getObligation(id);
       if (!o) errors.push(`Obligation not in graph: ${id}`);
+      if (processNode && !boundIds.has(id)) {
+        errors.push(`Obligation ${id} is not bound to process ${def.processId}`);
+      }
+    }
+
+    for (const step of def.steps) {
+      for (const id of step.obligationIds) {
+        if (!def.obligationIds.includes(id)) {
+          errors.push(`Step ${step.id} references obligation ${id} outside process definition ${def.id}`);
+        }
+        if (processNode && !boundIds.has(id)) {
+          errors.push(`Step ${step.id} references obligation ${id} not bound to process ${def.processId}`);
+        }
+      }
     }
 
     // 2. DAG must be acyclic & every dependency must exist

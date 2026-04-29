@@ -32,7 +32,7 @@ export class AuditPlanningAgent extends BaseGroundedAgent<PlanInput, PlanOutput>
         persona: 'You are an internal audit lead.',
         systemPrompt: 'Plan the audit with a defined scope and independent auditor.',
         processTypes: ['AUDIT'],
-        requiredObligations: ['ISO13485.8.2.4.OBL.001', 'ISO13485.8.2.4.OBL.003'],
+        requiredObligations: ['ISO13485.8.2.4.OBL.001', 'ISO13485.8.2.4.OBL.003', 'ISO13485.8.2.4.OBL.004'],
       },
       deps,
     );
@@ -53,7 +53,7 @@ export class AuditPlanningAgent extends BaseGroundedAgent<PlanInput, PlanOutput>
       scope: input.scope,
       auditor: input.auditor,
       schedule: new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10),
-      addressedObligations: ['ISO13485.8.2.4.OBL.001', 'ISO13485.8.2.4.OBL.003'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

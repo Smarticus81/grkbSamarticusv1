@@ -31,7 +31,7 @@ export class TrendNarrativeAgent extends BaseGroundedAgent<NarrativeInput, Narra
         persona: 'You are a regulatory writer.',
         systemPrompt: 'Summarize the trend analysis for a regulatory report.',
         processTypes: ['TREND'],
-        requiredObligations: ['EUMDR.86.PSUR.OBL.001'],
+        requiredObligations: ['EUMDR.85.OBL.001', 'MDCG2022-21.2.OBL.007'],
       },
       deps,
     );
@@ -50,7 +50,7 @@ export class TrendNarrativeAgent extends BaseGroundedAgent<NarrativeInput, Narra
     const status = input.signal ? 'A signal was detected' : 'No signal detected';
     return {
       narrative: `Trend analysis for ${input.metric} using ${input.method}: ${status}. Details: ${JSON.stringify(input.details)}.`,
-      addressedObligations: ['EUMDR.86.PSUR.OBL.001'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

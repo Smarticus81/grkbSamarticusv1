@@ -30,7 +30,7 @@ export class AuditReportAgent extends BaseGroundedAgent<ReportInput, ReportOutpu
         persona: 'You are an audit reporter.',
         systemPrompt: 'Summarize the audit results.',
         processTypes: ['AUDIT'],
-        requiredObligations: ['ISO13485.8.2.4.OBL.002'],
+        requiredObligations: ['ISO13485.8.2.4.OBL.002', 'ISO13485.8.2.4.OBL.005'],
       },
       deps,
     );
@@ -49,7 +49,7 @@ export class AuditReportAgent extends BaseGroundedAgent<ReportInput, ReportOutpu
     return {
       auditId: input.auditId,
       report: `Audit ${input.auditId} completed with ${input.findingsCount} findings.`,
-      addressedObligations: ['ISO13485.8.2.4.OBL.002'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

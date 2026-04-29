@@ -29,7 +29,8 @@ export class SandboxRunner {
     const baseContext: GroundedAgentContext = {
       processInstanceId,
       workspaceId: input.workspaceId,
-      processType: input.definition.requiredAgentTypes[0] ?? input.definition.name,
+      processId: input.definition.processId,
+      processType: input.definition.processId,
       jurisdiction: input.jurisdiction,
       availableEvidenceTypes: input.availableEvidenceTypes,
       traceCtx,

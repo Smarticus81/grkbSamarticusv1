@@ -1,0 +1,13 @@
+processId: change-control
+name: Change Control
+description: |
+  Evaluate, approve, verify, and document design and process changes under
+  ISO 13485 §7.3.9. Covers impact assessment, change approval, and
+  verification/validation before implementation where required.
+category: qms-core
+jurisdictions: [GLOBAL]
+version: "1.0.0"
+
+governedBy:
+  - ISO13485.7.3.9.OBL.001
+  - ISO13485.7.3.9.OBL.002

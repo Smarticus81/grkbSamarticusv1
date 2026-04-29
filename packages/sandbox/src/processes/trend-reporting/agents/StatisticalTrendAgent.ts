@@ -38,7 +38,16 @@ export class StatisticalTrendAgent extends BaseGroundedAgent<StatTrendInput, Sta
         persona: 'You are a biostatistician.',
         systemPrompt: 'Apply the requested statistical method and report signal status.',
         processTypes: ['TREND'],
-        requiredObligations: ['EUMDR.83.OBL.001'],
+        requiredObligations: [
+          'ISO13485.8.4.OBL.001',
+          'ISO13485.8.4.OBL.002',
+          'ISO13485.8.2.1.OBL.002',
+          'ISO13485.8.2.1.OBL.003',
+          'ISO13485.8.5.2.OBL.001',
+          'ISO13485.8.5.3.OBL.001',
+          'EUMDR.83.OBL.001',
+          'EUMDR.84.OBL.001',
+        ],
       },
       deps,
     );
@@ -87,7 +96,7 @@ export class StatisticalTrendAgent extends BaseGroundedAgent<StatTrendInput, Sta
       controlLimits: { ucl: Number(ucl.toFixed(3)), lcl: Number(lcl.toFixed(3)) },
       signal,
       pValue,
-      addressedObligations: ['EUMDR.83.OBL.001'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

@@ -107,9 +107,12 @@ export const TrendDeterminationTask: TaskAgentDefinition<Input, Output> = {
   claimedObligationIds: [
     'ISO13485.8.4.OBL.001',
     'ISO13485.8.4.OBL.002',
+    'ISO13485.8.2.1.OBL.002',
+    'ISO13485.8.2.1.OBL.003',
     'ISO13485.8.5.2.OBL.001',
     'ISO13485.8.5.3.OBL.001',
     'EUMDR.83.OBL.001',
+    'EUMDR.84.OBL.001',
     'EUMDR.85.OBL.001',
     'MDCG2022-21.2.OBL.007',
   ],
@@ -119,6 +122,8 @@ export const TrendDeterminationTask: TaskAgentDefinition<Input, Output> = {
   obligationChecks: [
     { obligationId: 'ISO13485.8.4.OBL.001', satisfiedBy: (o, ob) => citesObligation(o, ob) },
     { obligationId: 'ISO13485.8.4.OBL.002', satisfiedBy: (o, ob) => citesObligation(o, ob) },
+    { obligationId: 'ISO13485.8.2.1.OBL.002', satisfiedBy: (o, ob) => citesObligation(o, ob) },
+    { obligationId: 'ISO13485.8.2.1.OBL.003', satisfiedBy: (o, ob) => citesObligation(o, ob) },
     {
       obligationId: 'ISO13485.8.5.2.OBL.001',
       satisfiedBy: (o, ob) => {
@@ -128,6 +133,7 @@ export const TrendDeterminationTask: TaskAgentDefinition<Input, Output> = {
     },
     { obligationId: 'ISO13485.8.5.3.OBL.001', satisfiedBy: (o, ob) => citesObligation(o, ob) },
     { obligationId: 'EUMDR.83.OBL.001',       satisfiedBy: (o, ob) => citesObligation(o, ob) },
+    { obligationId: 'EUMDR.84.OBL.001',       satisfiedBy: (o, ob) => citesObligation(o, ob) },
     {
       obligationId: 'EUMDR.85.OBL.001',
       satisfiedBy: (o, ob) => {

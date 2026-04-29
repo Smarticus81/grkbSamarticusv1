@@ -32,7 +32,7 @@ export class ComplaintTriageAgent extends BaseGroundedAgent<TriageInput, TriageO
         persona: 'You are a regulatory affairs specialist.',
         systemPrompt: 'Triage the complaint for severity and decide reportability.',
         processTypes: ['COMPLAINT'],
-        requiredObligations: ['ISO13485.8.2.2.OBL.003', 'ISO13485.8.2.2.OBL.004'],
+        requiredObligations: ['ISO13485.8.2.2.OBL.003', 'ISO13485.8.2.2.OBL.004', 'CFR820.198.OBL.002'],
       },
       deps,
     );
@@ -54,7 +54,7 @@ export class ComplaintTriageAgent extends BaseGroundedAgent<TriageInput, TriageO
       severity: isPatientHarm ? 'critical' : 'medium',
       reportable: isPatientHarm,
       reportingDeadlineDays: isPatientHarm ? 10 : 0,
-      addressedObligations: ['ISO13485.8.2.2.OBL.003', 'ISO13485.8.2.2.OBL.004'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

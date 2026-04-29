@@ -11,11 +11,25 @@ import { ComplaintCoderTask } from './agents/complaint-coder.js';
 import { AeReportabilityTask } from './agents/ae-reportability.js';
 import { TrendDeterminationTask } from './agents/trend-determination.js';
 import { TemplateComplianceEvaluatorTask } from './agents/template-compliance-evaluator.js';
+import {
+  CapaReviewTask,
+  ChangeControlReviewTask,
+  ComplaintHandlingReviewTask,
+  InternalAuditReviewTask,
+  ManagementReviewTask,
+  NonconformanceReviewTask,
+} from './agents/process-review.js';
 
 export const TASK_AGENTS: ReadonlyArray<TaskAgentDefinition<any, any>> = [
+  ComplaintHandlingReviewTask,
   ComplaintCoderTask,
   AeReportabilityTask,
+  CapaReviewTask,
+  NonconformanceReviewTask,
+  ChangeControlReviewTask,
   TrendDeterminationTask,
+  InternalAuditReviewTask,
+  ManagementReviewTask,
   TemplateComplianceEvaluatorTask,
 ];
 

@@ -36,7 +36,7 @@ export class EffectivenessCheckAgent extends BaseGroundedAgent<
       persona: 'You are a CAPA verification engineer.',
       systemPrompt: 'Compare post-implementation metrics to baseline. Confirm effectiveness or recommend rework.',
       processTypes: ['CAPA'],
-      requiredObligations: ['ISO13485.8.5.2.OBL.003'],
+      requiredObligations: ['ISO13485.8.5.2.OBL.003', 'CFR820.100.OBL.003'],
     };
     super(config, deps);
   }
@@ -67,7 +67,7 @@ export class EffectivenessCheckAgent extends BaseGroundedAgent<
       rationale: effective
         ? 'Metrics improved by ≥10% across all measures.'
         : 'One or more metrics did not improve sufficiently; rework recommended.',
-      addressedObligations: ['ISO13485.8.5.2.OBL.003'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

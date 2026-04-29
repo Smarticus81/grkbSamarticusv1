@@ -34,7 +34,7 @@ export class ComplaintIntakeAgent extends BaseGroundedAgent<IntakeInput, IntakeO
         persona: 'You are a complaint intake specialist.',
         systemPrompt: 'Parse the complaint, classify category, and record it.',
         processTypes: ['COMPLAINT'],
-        requiredObligations: ['ISO13485.8.2.2.OBL.001', 'ISO13485.8.2.2.OBL.002'],
+        requiredObligations: ['ISO13485.8.2.2.OBL.001', 'ISO13485.8.2.2.OBL.002', 'CFR820.198.OBL.001'],
       },
       deps,
     );
@@ -61,7 +61,7 @@ export class ComplaintIntakeAgent extends BaseGroundedAgent<IntakeInput, IntakeO
       source: input.source,
       category,
       receivedAt: input.receivedAt,
-      addressedObligations: ['ISO13485.8.2.2.OBL.001', 'ISO13485.8.2.2.OBL.002'],
+      addressedObligations: this.config.requiredObligations,
     };
   }
 }

@@ -17,6 +17,8 @@ export interface GroundedAgentConfig {
 export interface GroundedAgentContext {
   processInstanceId: string;
   workspaceId: string;
+  /** Process-first graph scope: (:Process {processId})-[:GOVERNED_BY]->(:Obligation). */
+  processId?: string;
   processType: string;
   jurisdiction: string;
   availableEvidenceTypes: string[];

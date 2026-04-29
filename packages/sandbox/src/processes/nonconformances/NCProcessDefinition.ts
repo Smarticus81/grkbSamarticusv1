@@ -11,6 +11,7 @@ import {
 
 export const NC_PROCESS: ProcessDefinition = {
   id: 'nc-iso13485-v1',
+  processId: 'nonconformance-handling',
   name: 'Nonconformance Handling',
   description: 'Identification, classification, investigation, and disposition of nonconforming product.',
   version: '1.0.0',
