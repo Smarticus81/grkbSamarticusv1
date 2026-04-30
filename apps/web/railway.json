@@ -5,7 +5,7 @@
     "dockerfilePath": "Dockerfile.web"
   },
   "deploy": {
-    "startCommand": "serve -s dist -l ${PORT:-8080}",
+    "startCommand": "serve -s dist -l ${PORT:-5173}",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5
   }

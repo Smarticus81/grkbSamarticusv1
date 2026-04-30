@@ -62,6 +62,10 @@ function parseOriginList(
 
 const app = express();
 
+// Railway terminates TLS and forwards client IP information through proxy
+// headers. express-rate-limit requires this to identify clients correctly.
+app.set('trust proxy', 1);
+
 // --- Security headers via helmet -----------------------------------------
 app.use(
   helmet({
