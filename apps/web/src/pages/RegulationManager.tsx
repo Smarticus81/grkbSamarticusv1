@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { RegulatorCompactStrip } from '../components/ui/RegulatorAssets.js';
-import { api } from '../lib/queryClient.js';
+import { useAuthenticatedApi } from '../auth/useApi.js';
 
 /* ── Types ── */
 interface Obligation {
@@ -63,6 +63,8 @@ const friendlyProcess = (pt: string) =>
   pt.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
 export function RegulationManager() {
+  const { api } = useAuthenticatedApi();
+
   const data = useQuery({
     queryKey: ['obligations-by-regulation'],
     queryFn: () => api<RegulationData>('/api/graph/obligations-by-regulation'),

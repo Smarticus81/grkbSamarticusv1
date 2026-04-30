@@ -10,7 +10,7 @@ export const queryClient = new QueryClient({
   },
 });
 
-const API_BASE = (import.meta as any).env?.VITE_API_URL ?? 'http://localhost:4000';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
 /**
  * Unauthenticated API helper — use for health checks and public endpoints.

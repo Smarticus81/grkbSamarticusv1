@@ -1,7 +1,7 @@
-import { QueryClientProvider, useQuery } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Link, Route, Switch, useLocation } from 'wouter';
 import { SignedIn, SignedOut, RedirectToSignIn, OrganizationSwitcher, UserButton } from '@clerk/clerk-react';
-import { queryClient, api } from './lib/queryClient.js';
+import { queryClient } from './lib/queryClient.js';
 import { LandingPage } from './pages/LandingPage.js';
 import { TraceExplorer } from './pages/TraceExplorer.js';
 import { RegulationManager } from './pages/RegulationManager.js';
@@ -10,17 +10,15 @@ import { Sandbox } from './pages/Sandbox.js';
 import { CommandCenter } from './pages/CommandCenter.js';
 import { Builder } from './pages/Builder.js';
 import { ThemeToggle } from './components/ui/ThemeToggle.js';
-import { RegulatorCompactStrip } from './components/ui/RegulatorAssets.js';
 import { SmarticusWordmark } from './components/ui/logos.js';
-import { REG_COUNT, OBLIGATION_COUNT } from './lib/coverage.js';
 
-const NAV: { href: string; label: string; n: string }[] = [
-  { href: '/app',              label: 'Command',    n: '01' },
-  { href: '/app/builder',     label: 'Builder',    n: '02' },
-  { href: '/app/sandbox',     label: 'Sandbox',    n: '03' },
-  { href: '/app/requirements', label: 'Requirements',   n: '04' },
-  { href: '/app/trails',      label: 'Decision Trails', n: '05' },
-  { href: '/app/connect',     label: 'Connect',         n: '06' },
+const NAV: { href: string; label: string }[] = [
+  { href: '/app',              label: 'Command' },
+  { href: '/app/builder',      label: 'Processes' },
+  { href: '/app/sandbox',      label: 'Sandbox' },
+  { href: '/app/requirements', label: 'Requirements' },
+  { href: '/app/trails',       label: 'Traces' },
+  { href: '/app/connect',      label: 'API access' },
 ];
 
 /**
@@ -29,7 +27,7 @@ const NAV: { href: string; label: string; n: string }[] = [
  */
 const clerkAvailable = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-function NavLink({ href, label, n }: { href: string; label: string; n: string }) {
+function NavLink({ href, label }: { href: string; label: string }) {
   const [location] = useLocation();
   const isExact = location === href || location === `${href}/`;
   const isNested = href !== '/app' && location.startsWith(href);
@@ -40,7 +38,7 @@ function NavLink({ href, label, n }: { href: string; label: string; n: string })
       href={href}
       style={{
         display: 'grid',
-        gridTemplateColumns: '28px 1fr',
+        gridTemplateColumns: '1fr',
         alignItems: 'center',
         padding: '10px 14px',
         textDecoration: 'none',
@@ -53,16 +51,6 @@ function NavLink({ href, label, n }: { href: string; label: string; n: string })
         transition: 'color var(--t-fast) var(--ease)',
       }}
     >
-      <span
-        style={{
-          fontFamily: 'var(--mono)',
-          fontSize: 10,
-          letterSpacing: '0.14em',
-          color: active ? 'var(--ink-2)' : 'var(--ink-4)',
-        }}
-      >
-        {n}
-      </span>
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
         {label}
         {active && (
@@ -122,51 +110,7 @@ function SidebarAuthControls() {
   );
 }
 
-function TopbarAuthControls() {
-  if (!clerkAvailable) return null;
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '8px 16px',
-        borderBottom: '1px solid var(--rule)',
-        justifyContent: 'flex-end',
-        background: 'var(--paper)',
-      }}
-    >
-      <OrganizationSwitcher
-        hidePersonal
-        appearance={{
-          elements: {
-            organizationSwitcherTrigger: { fontSize: '12px' },
-          },
-        }}
-      />
-      <UserButton
-        appearance={{
-          elements: {
-            avatarBox: { width: 28, height: 28 },
-          },
-        }}
-      />
-    </div>
-  );
-}
-
 function AppShell() {
-  const { data: stats } = useQuery({
-    queryKey: ['graph-stats'],
-    queryFn: () =>
-      api<{ regulations: number; obligations: number; evidenceTypes: number }>(
-        '/api/graph/stats',
-      ),
-    retry: false,
-    staleTime: 60_000,
-  });
-  const regCount = stats?.regulations ?? REG_COUNT;
-  const obligationCount = stats?.obligations ?? OBLIGATION_COUNT;
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--paper)' }}>
       <nav
@@ -193,7 +137,7 @@ function AppShell() {
               color: 'var(--ink)',
             }}
           >
-            <SmarticusWordmark size={16} tagline="REGULATORY INTELLIGENCE. ENGINEERED." />
+            <SmarticusWordmark size={16} />
           </Link>
         </div>
 
@@ -207,29 +151,6 @@ function AppShell() {
 
         <SidebarAuthControls />
 
-        <div
-          style={{
-            margin: '0 12px 12px',
-            padding: '12px',
-            borderTop: '1px solid var(--rule)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="signal-dot" />
-            <span className="eyebrow" style={{ color: 'var(--ink-2)', fontSize: 10 }}>
-              Ground / live
-            </span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--ink-3)' }}>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{regCount} regulations</span>
-            <span style={{ fontFamily: 'var(--mono)', fontSize: 11 }}>{obligationCount} requirements</span>
-          </div>
-          <RegulatorCompactStrip />
-        </div>
-
         <div style={{ padding: '0 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.14em' }}>
             v0.1
@@ -239,12 +160,11 @@ function AppShell() {
       </nav>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <TopbarAuthControls />
         <main style={{ flex: 1, overflow: 'auto', background: 'var(--paper)' }}>
           <Switch>
             <Route path="/app/builder" component={Builder} />
-            <Route path="/app/sandbox">{() => <Sandbox />}</Route>
             <Route path="/app/sandbox/:taskId">{(params) => <Sandbox initialTaskId={params.taskId} />}</Route>
+            <Route path="/app/sandbox">{() => <Sandbox />}</Route>
             <Route path="/app/requirements" component={RegulationManager} />
             <Route path="/app/trails/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
             <Route path="/app/trails">{() => <TraceExplorer />}</Route>
@@ -283,7 +203,7 @@ export function App() {
       <Switch>
         <Route path="/" component={LandingPage} />
         <Route path="/app" component={ProtectedAppShell} />
-        <Route path="/app/:rest*" component={ProtectedAppShell} />
+        <Route path="/app/*" component={ProtectedAppShell} />
       </Switch>
     </QueryClientProvider>
   );

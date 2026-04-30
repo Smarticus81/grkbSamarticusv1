@@ -2,14 +2,14 @@
  * Builder routes — persist agent configurations composed in the low-code
  * Builder. Every row is scoped to req.tenantId.
  *
- * - GET    /                 list this tenant's saved agents
- * - GET    /:id              fetch one
- * - POST   /                 create or upsert by (tenantId, name)
- * - PATCH  /:id/attach       attach data to a slot on this agent
- * - DELETE /:id/attach/:slot remove a slot's attached data
- * - POST   /:id/launch       resolve agent → sandbox task + merged input
- * - DELETE /:id              delete an agent
- * - GET    /processes        list QMS processes runnable on the live graph
+ * - GET    /agents                 list this tenant's saved agents
+ * - GET    /agents/:id             fetch one
+ * - POST   /agents                 create or upsert by (tenantId, name)
+ * - PATCH  /agents/:id/attach      attach data to a slot on this agent
+ * - DELETE /agents/:id/attach/:slot remove a slot's attached data
+ * - POST   /agents/:id/launch      resolve agent → sandbox task + merged input
+ * - DELETE /agents/:id             delete an agent
+ * - GET    /processes              list QMS processes runnable on the live graph
  */
 
 import { Router } from 'express';
@@ -48,8 +48,8 @@ const AttachSchema = z.object({
   contentType: z.string().max(128).default('text/plain'),
 });
 
-/* ── GET / ─────────────────────────────────────────────────────────── */
-router.get('/', async (req, res) => {
+/* ── GET /agents ──────────────────────────────────────────────────── */
+router.get('/agents', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
     const rows = await getDB()
@@ -83,8 +83,8 @@ router.get('/processes', (_req, res) => {
   });
 });
 
-/* ── GET /:id ──────────────────────────────────────────────────────── */
-router.get('/:id', async (req, res) => {
+/* ── GET /agents/:id ──────────────────────────────────────────────── */
+router.get('/agents/:id', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
     const id = req.params.id;
@@ -101,8 +101,8 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-/* ── POST / ─ create or upsert ─────────────────────────────────────── */
-router.post('/', async (req, res) => {
+/* ── POST /agents ─ create or upsert ──────────────────────────────── */
+router.post('/agents', async (req, res) => {
   const parsed = SaveSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ errors: parsed.error.errors });
   try {
@@ -160,8 +160,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-/* ── PATCH /:id/attach ─ attach data to a slot ─────────────────────── */
-router.patch('/:id/attach', async (req, res) => {
+/* ── PATCH /agents/:id/attach ─ attach data to a slot ─────────────── */
+router.patch('/agents/:id/attach', async (req, res) => {
   const parsed = AttachSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ errors: parsed.error.errors });
   try {
@@ -200,8 +200,8 @@ router.patch('/:id/attach', async (req, res) => {
   }
 });
 
-/* ── DELETE /:id/attach/:slot ─────────────────────────────────────── */
-router.delete('/:id/attach/:slot', async (req, res) => {
+/* ── DELETE /agents/:id/attach/:slot ──────────────────────────────── */
+router.delete('/agents/:id/attach/:slot', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
     const id = req.params.id;
@@ -232,8 +232,8 @@ router.delete('/:id/attach/:slot', async (req, res) => {
   }
 });
 
-/* ── POST /:id/launch ─ resolve agent → sandbox task + merged input ── */
-router.post('/:id/launch', async (req, res) => {
+/* ── POST /agents/:id/launch ─ resolve agent → sandbox task + merged input ── */
+router.post('/agents/:id/launch', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
     const id = req.params.id;
@@ -294,8 +294,8 @@ router.post('/:id/launch', async (req, res) => {
   }
 });
 
-/* ── DELETE /:id ───────────────────────────────────────────────────── */
-router.delete('/:id', async (req, res) => {
+/* ── DELETE /agents/:id ───────────────────────────────────────────── */
+router.delete('/agents/:id', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
     const id = req.params.id;

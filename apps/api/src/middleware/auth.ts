@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { verifyToken as clerkVerifyToken } from '@clerk/backend';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -10,7 +11,7 @@ export interface AuthedRequest extends Request {
 }
 
 // ---------------------------------------------------------------------------
-// JWT claim shape
+// JWT claim shape (custom regground tokens)
 // ---------------------------------------------------------------------------
 
 interface JwtClaims {
@@ -59,7 +60,39 @@ export function validateJwtSecret(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Token verification helpers
+// Clerk JWT verification
+// ---------------------------------------------------------------------------
+
+/**
+ * Try to verify a token as a Clerk-issued JWT.
+ * Returns the normalized user tuple on success, null if Clerk is not
+ * configured or the token is not a valid Clerk JWT.
+ */
+async function tryVerifyClerkToken(
+  token: string,
+): Promise<{ sub: string; tenantId: string; roles: string[] } | null> {
+  const secretKey = process.env.CLERK_SECRET_KEY;
+  if (!secretKey) return null;
+
+  try {
+    const payload = await clerkVerifyToken(token, { secretKey });
+    const sub = payload.sub;
+    // org_id is the Clerk organization ID — map it to tenantId.
+    // Fall back to the user's sub if they have no org (solo users in dev).
+    const orgId = (payload as Record<string, unknown>)['org_id'] as string | undefined;
+    const tenantId = orgId ?? sub;
+    // Clerk org roles come in as org_role claim, e.g. "org:admin"
+    const orgRole = (payload as Record<string, unknown>)['org_role'] as string | undefined;
+    const roles = orgRole ? [orgRole.replace('org:', '')] : [];
+    return { sub, tenantId, roles };
+  } catch {
+    // Not a valid Clerk token — fall through to custom JWT path.
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Custom JWT verification helpers
 // ---------------------------------------------------------------------------
 
 const VERIFY_OPTIONS: jwt.VerifyOptions = {
@@ -87,7 +120,7 @@ function tryVerify(token: string, secret: string): JwtClaims | null {
  *    to allow a grace period during rotation.
  * 3. If both fail, throw so the caller can return 401.
  */
-function verifyToken(token: string): JwtClaims {
+function verifyCustomToken(token: string): JwtClaims {
   const currentSecret = process.env.JWT_SECRET;
   if (!currentSecret) {
     throw new Error('JWT_SECRET is not configured');
@@ -112,7 +145,7 @@ function verifyToken(token: string): JwtClaims {
 // Middleware
 // ---------------------------------------------------------------------------
 
-export function auth(req: AuthedRequest, res: Response, next: NextFunction) {
+export function auth(req: AuthedRequest, res: Response, next: NextFunction): void {
   const header = req.header('authorization');
 
   // ------------------------------------------------------------------
@@ -127,25 +160,38 @@ export function auth(req: AuthedRequest, res: Response, next: NextFunction) {
         `[auth] WARN: dev bypass active — request ${req.method} ${req.originalUrl} authed as dev/admin`,
       );
       req.user = { sub: 'dev', tenantId: 'dev', roles: ['admin'] };
-      return next();
+      next();
+      return;
     }
-    return res.status(401).json({ error: 'missing bearer token' });
+    res.status(401).json({ error: 'missing bearer token' });
+    return;
   }
 
-  // ------------------------------------------------------------------
-  // Verify JWT (with key rotation support)
-  // ------------------------------------------------------------------
   const token = header.slice(7);
-  try {
-    const decoded = verifyToken(token);
-    req.user = {
-      sub: decoded.sub,
-      tenantId: decoded.tenantId,
-      roles: decoded.roles ?? [],
-    };
-    next();
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : 'unknown error';
-    return res.status(401).json({ error: 'invalid token', detail: message });
-  }
+
+  // ------------------------------------------------------------------
+  // Try Clerk first (if CLERK_SECRET_KEY is configured), then custom JWT
+  // ------------------------------------------------------------------
+  void tryVerifyClerkToken(token).then((clerkUser) => {
+    if (clerkUser) {
+      req.user = clerkUser;
+      next();
+      return;
+    }
+
+    // Clerk not configured or token not a Clerk JWT — try custom JWT.
+    try {
+      const decoded = verifyCustomToken(token);
+      req.user = {
+        sub: decoded.sub,
+        tenantId: decoded.tenantId,
+        roles: decoded.roles ?? [],
+      };
+      next();
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'unknown error';
+      res.status(401).json({ error: 'invalid token', detail: message });
+    }
+  });
 }
+

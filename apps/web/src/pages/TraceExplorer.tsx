@@ -12,7 +12,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { api } from '../lib/queryClient.js';
+import { useAuthenticatedApi } from '../auth/useApi.js';
 import { shortHash } from '../lib/utils.js';
 import { PageHeader } from '../components/ui/PageHeader.js';
 import { EmptyState } from '../components/ui/EmptyState.js';
@@ -52,7 +52,7 @@ function friendlyEvent(eventType: string): { label: string; tone: Tone } {
   if (lower.includes('correct') || lower.includes('retry')) return { label: 'Correction applied', tone: 'warn' };
   if (lower.includes('agent')) return { label: 'Agent step', tone: 'info' };
   if (lower.includes('hitl') || lower.includes('approve')) return { label: 'Human review', tone: 'info' };
-  if (lower.includes('evidence')) return { label: 'Evidence handled', tone: 'info' };
+  if (lower.includes('evidence')) return { label: 'Data handled', tone: 'info' };
   return { label: eventType.replace(/_/g, ' ').toLowerCase(), tone: 'info' };
 }
 
@@ -66,6 +66,8 @@ function toneColor(t: Tone): string {
 }
 
 export function TraceExplorer({ initialId }: Props) {
+  const { api } = useAuthenticatedApi();
+
   const [pid, setPid] = useState(initialId ?? '');
   const [chain, setChain] = useState<TraceEntry[]>([]);
   const [verification, setVerification] = useState<Verification | null>(null);
@@ -80,9 +82,16 @@ export function TraceExplorer({ initialId }: Props) {
     setError(null);
     setHasSearched(true);
     try {
+      const id = pid.trim();
+      const tracePath = id.startsWith('run_')
+        ? `/api/sandbox/runs/${id}/trace`
+        : `/api/traces/${id}`;
+      const verifyPath = id.startsWith('run_')
+        ? `/api/sandbox/runs/${id}/trace/verify`
+        : `/api/traces/${id}/verify`;
       const [traceData, verifyData] = await Promise.all([
-        api<TraceEntry[]>(`/api/traces/${pid}`),
-        api<Verification>(`/api/traces/${pid}/verify`),
+        api<TraceEntry[]>(tracePath),
+        api<Verification>(verifyPath),
       ]);
       setChain(traceData);
       setVerification(verifyData);
@@ -423,7 +432,7 @@ export function TraceExplorer({ initialId }: Props) {
 }
 
 function PayloadRow({ label, value }: { label: string; value: unknown }) {
-  const display = typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value);
+  const display = plainTraceValue(value);
   return (
     <>
       <dt
@@ -442,14 +451,23 @@ function PayloadRow({ label, value }: { label: string; value: unknown }) {
           margin: 0,
           color: 'var(--ink-2)',
           wordBreak: 'break-word',
-          fontFamily: typeof value === 'object' ? 'var(--mono)' : 'inherit',
-          fontSize: typeof value === 'object' ? 11.5 : 12.5,
+          fontFamily: 'inherit',
+          fontSize: 12.5,
         }}
       >
         {display}
       </dd>
     </>
   );
+}
+
+function plainTraceValue(value: unknown): string {
+  if (value == null) return 'Not provided';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return `${value.length} item${value.length === 1 ? '' : 's'}`;
+  if (typeof value === 'object') return `${Object.keys(value).length} field${Object.keys(value).length === 1 ? '' : 's'} recorded`;
+  return 'Recorded';
 }
 
 export default TraceExplorer;

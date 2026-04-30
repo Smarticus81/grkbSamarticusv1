@@ -1,46 +1,65 @@
 import { useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { createAuthenticatedApi } from '../lib/queryClient.js';
+import { createAuthenticatedApi, api as unauthApi } from '../lib/queryClient.js';
+
+// Build-time constant — true only when a Clerk publishable key is present.
+// This never changes between renders, so selecting the hook at module init
+// satisfies React's rules of hooks.
+const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+interface AuthenticatedApiReturn {
+  api: <T>(path: string, init?: RequestInit) => Promise<T>;
+  isSignedIn: boolean;
+  orgId: string | null;
+  userId: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Clerk-backed hook (only used when VITE_CLERK_PUBLISHABLE_KEY is set,
+// meaning ClerkProvider is guaranteed to be in the tree)
+// ---------------------------------------------------------------------------
+function useClerkApi(): AuthenticatedApiReturn {
+  const { getToken, isSignedIn, orgId, userId } = useAuth();
+
+  const getTokenStable = useCallback(
+    () => getToken(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [getToken, isSignedIn],
+  );
+
+  const authenticatedApi = useMemo(
+    () => createAuthenticatedApi(getTokenStable),
+    [getTokenStable],
+  );
+
+  return {
+    api: authenticatedApi,
+    isSignedIn: isSignedIn ?? false,
+    orgId: orgId ?? null,
+    userId: userId ?? null,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// No-auth fallback (used when Clerk is not configured — dev bypass mode)
+// ---------------------------------------------------------------------------
+function useDevApi(): AuthenticatedApiReturn {
+  const stableApi = useMemo(() => unauthApi, []);
+  return { api: stableApi, isSignedIn: false, orgId: null, userId: null };
+}
 
 /**
- * React hook that returns an authenticated API function.
+ * Returns an authenticated API function and auth state.
  *
- * Uses Clerk's `useAuth().getToken()` to automatically attach
- * an `Authorization: Bearer <token>` header to every request.
+ * When `VITE_CLERK_PUBLISHABLE_KEY` is set, attaches a Clerk JWT Bearer token
+ * to every request. When not set (dev / local mode), falls back to the
+ * unauthenticated helper — pair this with `AUTH_BYPASS_DEV=true` on the API.
  *
  * Usage:
  * ```ts
  * const { api } = useAuthenticatedApi();
  * const data = await api<MyType>('/api/graph/obligations');
  * ```
- *
- * Falls back gracefully when Clerk is not configured — requests
- * are sent without an Authorization header.
  */
-export function useAuthenticatedApi() {
-  const { getToken, isSignedIn, orgId, userId } = useAuth();
-
-  const getTokenStable = useCallback(
-    () => getToken(),
-    // getToken identity is stable per Clerk docs, but we include
-    // isSignedIn so the memo updates on sign-in/sign-out.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [getToken, isSignedIn],
-  );
-
-  const api = useMemo(
-    () => createAuthenticatedApi(getTokenStable),
-    [getTokenStable],
-  );
-
-  return {
-    /** Authenticated fetch wrapper — auto-attaches Clerk JWT */
-    api,
-    /** Whether the user is currently signed in */
-    isSignedIn: isSignedIn ?? false,
-    /** Current Clerk organization ID (if any) */
-    orgId: orgId ?? null,
-    /** Current Clerk user ID (if any) */
-    userId: userId ?? null,
-  };
-}
+export const useAuthenticatedApi: () => AuthenticatedApiReturn =
+  CLERK_ENABLED ? useClerkApi : useDevApi;

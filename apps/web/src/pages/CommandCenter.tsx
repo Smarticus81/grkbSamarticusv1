@@ -10,7 +10,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
-import { api } from '../lib/queryClient.js';
+import { useAuthenticatedApi } from '../auth/useApi.js';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -120,6 +120,14 @@ function fmtRelative(iso: string): string {
   return `${Math.floor(diff / 86_400_000)}d ago`;
 }
 
+function friendlyProcessText(text: string): string {
+  return text
+    .replace(/obligations?/gi, 'requirements')
+    .replace(/obligation graph/gi, 'requirement library')
+    .replace(/live graph/gi, 'requirement library')
+    .replace(/graph-bound\s*/gi, '');
+}
+
 /* ── Section shell ─────────────────────────────────────────────────── */
 
 function Section({
@@ -204,6 +212,7 @@ function Section({
 
 export function CommandCenter() {
   const [, navigate] = useLocation();
+  const { api } = useAuthenticatedApi();
 
   const stats = useQuery<GraphStats>({
     queryKey: ['graph-stats'],
@@ -269,8 +278,7 @@ export function CommandCenter() {
             Your live regulatory ground.
           </h1>
           <p style={{ margin: '8px 0 0', color: 'var(--ink-3)', fontSize: 14, maxWidth: 640 }}>
-            Everything below is live — pulled straight from the obligation graph,
-            the sandbox, and your tenant&apos;s usage telemetry.
+            Start a review, inspect recent activity, or open the requirement library.
           </p>
         </header>
 
@@ -278,16 +286,16 @@ export function CommandCenter() {
         <Section
           label="01 · The ground"
           title="Regulations covered"
-          action={{ href: '/app/regulations', text: 'Browse' }}
+          action={{ href: '/app/requirements', text: 'Browse' }}
         >
           {stats.isLoading && <Skeleton lines={2} />}
           {stats.isError && <ErrorLine err={stats.error} />}
           {stats.data && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 28, maxWidth: 520 }}>
                 <Stat n={stats.data.regulations} label="regulations" />
-                <Stat n={stats.data.obligations} label="obligations" />
-                <Stat n={stats.data.evidenceTypes} label="evidence types" />
+                <Stat n={stats.data.obligations} label="requirements" />
+                <Stat n={stats.data.evidenceTypes} label="data types" />
               </div>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
                 {stats.data.jurisdictions.slice(0, 12).map((j) => (
@@ -312,8 +320,8 @@ export function CommandCenter() {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                gap: 8,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: 10,
               }}
             >
               {processes.data.tasks.map((t) => (
@@ -322,23 +330,23 @@ export function CommandCenter() {
                   onClick={() => navigate(`/app/sandbox/${t.id}`)}
                   style={{
                     textAlign: 'left',
-                    padding: 14,
+                    padding: 12,
                     background: 'var(--paper)',
                     border: '1px solid var(--rule-strong)',
                     borderRadius: 8,
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 6,
+                    gap: 5,
                   }}
                 >
                   <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{t.name}</div>
                   <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.4 }}>
-                    {t.oneLiner}
+                    {friendlyProcessText(t.oneLiner)}
                   </div>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     <span style={PILL}>{t.regulation}</span>
-                    <span style={PILL}>{t.obligationCount} obligations</span>
+                    <span style={PILL}>{t.obligationCount} requirements</span>
                   </div>
                 </button>
               ))}
@@ -377,8 +385,8 @@ export function CommandCenter() {
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                      gap: 8,
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                      gap: 10,
                     }}
                   >
                     {agents.data.slice(0, 8).map((a) => (
@@ -402,8 +410,7 @@ export function CommandCenter() {
                         <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{a.name}</div>
                         <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{a.jobTitle}</div>
                         <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
-                          <span style={PILL}>{a.riskBand}</span>
-                          {!a.taskId && <span style={PILL}>no runner</span>}
+                          <span style={PILL}>{a.taskId ? 'Ready to review' : 'Needs setup'}</span>
                         </div>
                       </button>
                     ))}
@@ -427,9 +434,9 @@ export function CommandCenter() {
                   </div>
                   <div
                     style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 4,
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                      gap: 8,
                       border: '1px solid var(--rule)',
                       borderRadius: 8,
                       overflow: 'hidden',
@@ -438,7 +445,7 @@ export function CommandCenter() {
                     {recent.data.runs.slice(0, 6).map((r) => (
                       <button
                         key={r.runId}
-                        onClick={() => navigate(`/app/traces/${r.runId}`)}
+                        onClick={() => navigate(`/app/trails/${r.runId}`)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -480,30 +487,30 @@ export function CommandCenter() {
 
         {/* Section 4 — Usage & limits */}
         <Section
-          label="04 · Telemetry"
-          title="Usage & limits"
-          action={{ href: '/app/api-access', text: 'API access' }}
+          label="04 · Activity"
+          title="Review activity"
+          action={{ href: '/app/connect', text: 'API access' }}
         >
           {usage.isLoading && <Skeleton lines={3} />}
           {usage.isError && <ErrorLine err={usage.error} />}
           {usage.data && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-                <Stat n={usage.data.totals.requestsToday} label="requests today" />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 24 }}>
+                <Stat n={usage.data.totals.requestsToday} label="reviews today" />
                 <Stat n={usage.data.totals.requests7d} label="last 7 days" />
                 <Stat n={usage.data.totals.requests30d} label="last 30 days" />
-                <Stat n={usage.data.totals.latencyP50Ms} label="p50 ms" />
-                <Stat n={usage.data.totals.latencyP95Ms} label="p95 ms" />
+                <Stat n={usage.data.totals.latencyP50Ms} label="typical response ms" />
+                <Stat n={usage.data.totals.latencyP95Ms} label="slow response ms" />
                 <Stat
                   n={Math.round(usage.data.totals.errorRate * 1000) / 10}
-                  label="error rate %"
+                  label="issue rate %"
                 />
               </div>
 
               {/* Quota bars */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <QuotaBar
-                  label="Monthly requests"
+                  label="Monthly reviews"
                   current={usage.data.quota.currentMonthRequests}
                   limit={usage.data.quota.monthlyRequestLimit}
                 />
@@ -527,7 +534,7 @@ export function CommandCenter() {
                       marginBottom: 6,
                     }}
                   >
-                    Top tools (last 30d)
+                    Review activity by source
                   </div>
                   <div
                     style={{

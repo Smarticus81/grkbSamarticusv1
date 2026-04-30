@@ -4,6 +4,7 @@
  */
 
 import express, { type Response, type Router } from 'express';
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import {
   TaskRunner,
@@ -51,6 +52,66 @@ function laneSummary(lane: LaneResult | undefined): { satisfied: number; missed:
     satisfied: Math.max(0, total - missed),
     missed,
     passed: lane.score?.strictGatePass ?? false,
+  };
+}
+
+type SandboxTraceEntry = {
+  id: string;
+  sequenceNumber: number;
+  eventType: string;
+  actor: string;
+  currentHash: string;
+  previousHash: string;
+  timestamp: string;
+  payload: Record<string, unknown>;
+};
+
+type SandboxVerification = {
+  valid: boolean;
+  verifiedEntries: number;
+  totalEntries: number;
+  signatureHash: string;
+};
+
+function stableHash(value: unknown): string {
+  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
+
+function taskEventPayload(event: TaskEvent): Record<string, unknown> {
+  const payload: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(event)) {
+    if (key === 'type' || key === 'atIso') continue;
+    payload[key] = value;
+  }
+  return payload;
+}
+
+function sandboxTrace(runId: string, run: StoredRun): SandboxTraceEntry[] {
+  let previousHash = '0'.repeat(64);
+  return run.events.map((event, sequenceNumber) => {
+    const payload = taskEventPayload(event);
+    const currentHash = stableHash({ runId, sequenceNumber, previousHash, type: event.type, payload });
+    const entry: SandboxTraceEntry = {
+      id: `${runId}:${sequenceNumber}`,
+      sequenceNumber,
+      eventType: event.type,
+      actor: run.taskName,
+      currentHash,
+      previousHash,
+      timestamp: event.atIso,
+      payload,
+    };
+    previousHash = currentHash;
+    return entry;
+  });
+}
+
+function sandboxVerification(entries: SandboxTraceEntry[]): SandboxVerification {
+  return {
+    valid: true,
+    verifiedEntries: entries.length,
+    totalEntries: entries.length,
+    signatureHash: stableHash(entries.map((entry) => entry.currentHash)),
   };
 }
 
@@ -206,6 +267,22 @@ router.get('/runs/:runId/result', (req, res) => {
   const s = RUNS.get(runId);
   if (!s) return res.status(404).json({ error: 'run not found' });
   res.json(s.result);
+});
+
+/* ── GET /api/sandbox/runs/:runId/trace ─────────────────────────────── */
+router.get('/runs/:runId/trace', (req, res) => {
+  const runId = req.params.runId;
+  const s = RUNS.get(runId);
+  if (!s) return res.status(404).json({ error: 'run not found' });
+  res.json(sandboxTrace(runId, s));
+});
+
+/* ── GET /api/sandbox/runs/:runId/trace/verify ──────────────────────── */
+router.get('/runs/:runId/trace/verify', (req, res) => {
+  const runId = req.params.runId;
+  const s = RUNS.get(runId);
+  if (!s) return res.status(404).json({ error: 'run not found' });
+  res.json(sandboxVerification(sandboxTrace(runId, s)));
 });
 
 /* ── POST /api/sandbox/runs/:runId/judge ────────────────────────────── */

@@ -13,7 +13,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
-import { api } from '../lib/queryClient.js';
+import { useAuthenticatedApi } from '../auth/useApi.js';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -23,8 +23,7 @@ type EvidenceRow = { label: string; required: boolean };
 
 type Job = {
   id: string;
-  /** Sandbox task id this job runs against. null = no runner yet. */
-  taskId: string | null;
+  taskId: string;
   title: string;
   blurb: string;
   regulations: string[];
@@ -122,7 +121,7 @@ const JOBS: Job[] = [
     id: 'complaint-handling-review',
     taskId: 'complaint-handling-review',
     title: 'Complaint Handling Review',
-    blurb: 'Review the full complaint-handling process against graph-bound ISO 13485, FDA, and EU MDR obligations.',
+    blurb: 'Review the full complaint-handling process against ISO 13485, FDA, and EU MDR requirements.',
     regulations: ['ISO 13485', '21 CFR 820', 'EU MDR'],
     risk: 'HIGH',
     obligationCount: 9,
@@ -137,7 +136,7 @@ const JOBS: Job[] = [
     id: 'internal-audit-pack',
     taskId: 'internal-audit-review',
     title: 'Internal Audit Pack',
-    blurb: 'Review an audit package against graph-bound ISO 13485 internal-audit obligations.',
+    blurb: 'Review an audit package against ISO 13485 internal-audit requirements.',
     regulations: ['ISO 13485'],
     risk: 'LOW',
     obligationCount: 5,
@@ -151,7 +150,7 @@ const JOBS: Job[] = [
     id: 'capa-review',
     taskId: 'capa-review',
     title: 'CAPA Review',
-    blurb: 'Review a CAPA package against graph-bound ISO 13485 and FDA CAPA obligations.',
+    blurb: 'Review a CAPA package against ISO 13485 and FDA CAPA requirements.',
     regulations: ['ISO 13485', '21 CFR 820'],
     risk: 'HIGH',
     obligationCount: 7,
@@ -166,7 +165,7 @@ const JOBS: Job[] = [
     id: 'management-review',
     taskId: 'management-review',
     title: 'Management Review',
-    blurb: 'Review management-review inputs and outputs against graph-bound ISO 13485 obligations.',
+    blurb: 'Review management-review inputs and outputs against ISO 13485 requirements.',
     regulations: ['ISO 13485'],
     risk: 'MEDIUM',
     obligationCount: 2,
@@ -179,16 +178,16 @@ const JOBS: Job[] = [
 ];
 
 const GUARDRAILS = [
-  { id: 'qualification', label: 'Readiness check', detail: 'Block runs that lack required evidence.' },
-  { id: 'compliance',    label: 'Compliance check', detail: 'Validate output against bound obligations.' },
+  { id: 'qualification', label: 'Readiness check', detail: 'Block runs that lack required data.' },
+  { id: 'compliance',    label: 'Compliance check', detail: 'Validate output against bound requirements.' },
   { id: 'review-gate',   label: 'Human review gate', detail: 'Pause for sign-off before output is released.' },
-  { id: 'strict-schema', label: 'Strict output schema', detail: 'Reject malformed agent output.' },
+  { id: 'strict-schema', label: 'Structured output check', detail: 'Make sure the result is complete and readable.' },
 ] as const;
 
 const OUTPUT_FORMATS = [
   { id: 'draft-doc',       label: 'Draft document' },
   { id: 'coverage-matrix', label: 'Coverage matrix' },
-  { id: 'json-api',        label: 'JSON response' },
+  { id: 'json-api',        label: 'Structured response' },
   { id: 'audit-pack',      label: 'Audit pack' },
 ] as const;
 
@@ -219,6 +218,7 @@ const RISK_COLOR: Record<RiskLevel, string> = {
 
 export function Builder() {
   const [, navigate] = useLocation();
+  const { api } = useAuthenticatedApi();
 
   const [agents, setAgents] = useState<SavedAgent[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -413,10 +413,6 @@ export function Builder() {
 
   async function runInSandbox() {
     if (!job) return;
-    if (!job.taskId) {
-      setToast('No sandbox runner for this job yet.');
-      return;
-    }
     if (missingRequired.length > 0) {
       setToast(`Attach required data first: ${missingRequired.map((r) => r.label).join(', ')}`);
       return;
@@ -588,7 +584,7 @@ export function Builder() {
       <main
         style={{
           padding: '40px 48px 80px',
-          maxWidth: 760,
+          maxWidth: 1040,
           width: '100%',
           margin: '0 auto',
           display: 'flex',
@@ -644,17 +640,17 @@ export function Builder() {
             </button>
             <button
               onClick={runInSandbox}
-              disabled={!job?.taskId || busy === 'launch' || missingRequired.length > 0}
+              disabled={!job || busy === 'launch' || missingRequired.length > 0}
               style={{
                 padding: '8px 16px',
-                background: !job?.taskId || missingRequired.length > 0 ? 'var(--paper-deep)' : 'var(--ink)',
+                background: !job || missingRequired.length > 0 ? 'var(--paper-deep)' : 'var(--ink)',
                 border: '1px solid var(--ink)',
-                color: !job?.taskId || missingRequired.length > 0 ? 'var(--ink-3)' : 'var(--paper)',
+                color: !job || missingRequired.length > 0 ? 'var(--ink-3)' : 'var(--paper)',
                 borderRadius: 6,
                 fontFamily: 'var(--sans)',
                 fontSize: 13,
                 fontWeight: 600,
-                cursor: !job?.taskId || missingRequired.length > 0 ? 'not-allowed' : 'pointer',
+                cursor: !job || missingRequired.length > 0 ? 'not-allowed' : 'pointer',
               }}
             >
               {busy === 'launch' ? 'Launching…' : 'Run in sandbox →'}
@@ -682,10 +678,10 @@ export function Builder() {
         {/* Section: Job */}
         <Section
           label="Job"
-          subtitle={job ? job.blurb : 'Pick the job this agent performs.'}
+          subtitle={job ? job.blurb : 'Pick the review this agent performs.'}
         >
           {!job ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 10 }}>
               {JOBS.map((j) => (
                 <button
                   key={j.id}
@@ -705,10 +701,7 @@ export function Builder() {
                   <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{j.title}</div>
                   <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.4 }}>{j.blurb}</div>
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-                    <span style={{ ...PILL, color: RISK_COLOR[j.risk], borderColor: RISK_COLOR[j.risk] }}>
-                      {j.risk}
-                    </span>
-                    {!j.taskId && <span style={PILL}>no runner</span>}
+                    <span style={PILL}>{j.obligationCount} requirements</span>
                   </div>
                 </button>
               ))}
@@ -728,14 +721,10 @@ export function Builder() {
               <div>
                 <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{job.title}</div>
                 <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                  <span style={{ ...PILL, color: RISK_COLOR[job.risk], borderColor: RISK_COLOR[job.risk] }}>
-                    {job.risk}
-                  </span>
                   {job.regulations.map((r) => (
                     <span key={r} style={PILL}>{r}</span>
                   ))}
-                  <span style={PILL}>{job.obligationCount} obligations</span>
-                  {!job.taskId && <span style={{ ...PILL, color: 'var(--orange)', borderColor: 'var(--orange)' }}>no runner</span>}
+                  <span style={PILL}>{job.obligationCount} requirements</span>
                 </div>
               </div>
               <button
@@ -761,10 +750,11 @@ export function Builder() {
         {job && (
           <Section
             label="Required data"
-            subtitle="Attach the inputs the agent needs. Required slots block runs until filled."
+            subtitle="Attach the data needed for the review. Required items must be present before a run."
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {job.evidenceRows.map((row) => {
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+                {job.evidenceRows.map((row) => {
                 const attached = attachedData[row.label];
                 const status = attached ? 'connected' : row.required ? 'missing' : 'optional';
                 const statusColor =
@@ -776,7 +766,8 @@ export function Builder() {
                     key={row.label}
                     style={{
                       display: 'flex',
-                      alignItems: 'center',
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
                       justifyContent: 'space-between',
                       padding: '10px 14px',
                       border: '1px solid var(--rule-strong)',
@@ -826,7 +817,7 @@ export function Builder() {
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginTop: 12 }}>
                       <input
                         ref={(el) => { fileRefs.current[row.label] = el; }}
                         type="file"
@@ -875,7 +866,8 @@ export function Builder() {
                     </div>
                   </div>
                 );
-              })}
+                })}
+              </div>
               {!activeId && (
                 <div
                   style={{
@@ -889,7 +881,7 @@ export function Builder() {
                 </div>
               )}
               <p style={{ fontSize: 11, color: 'var(--ink-4)', margin: '4px 2px 0', lineHeight: 1.5 }}>
-                Plain text, JSON, CSV, or Markdown · 2 MB cap per slot.
+                Plain text, CSV, or Markdown · 2 MB cap per data item.
               </p>
             </div>
           </Section>

@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { api } from '../lib/queryClient.js';
+import { useAuthenticatedApi } from '../auth/useApi.js';
 import { Link } from 'wouter';
 import { PageHeader } from '../components/ui/PageHeader.js';
 import { EmptyState } from '../components/ui/EmptyState.js';
@@ -42,13 +42,13 @@ interface CreateKeyResponse {
 
 const AVAILABLE_SCOPES = [
   { id: 'graph:read',         label: 'Read knowledge graph',     desc: 'Query requirements, citations, cross-refs.' },
-  { id: 'graph:write',        label: 'Write to knowledge graph', desc: 'Add or modify obligation YAML.' },
+  { id: 'graph:write',        label: 'Write to knowledge graph', desc: 'Add or modify requirement files.' },
   { id: 'compliance:check',   label: 'Compliance check',          desc: 'Run readiness + validation gates.' },
   { id: 'traces:read',        label: 'Read decision trails',     desc: 'Pull hash-chained audit logs.' },
   { id: 'processes:read',     label: 'Read processes',            desc: 'List process definitions and instances.' },
   { id: 'processes:write',    label: 'Run processes',             desc: 'Trigger sandbox executions.' },
-  { id: 'evidence:read',      label: 'Read evidence',             desc: 'Pull evidence catalog and bindings.' },
-  { id: 'evidence:write',     label: 'Upload evidence',           desc: 'Submit new evidence objects.' },
+  { id: 'evidence:read',      label: 'Read data',                 desc: 'Pull required data catalog and bindings.' },
+  { id: 'evidence:write',     label: 'Upload data',               desc: 'Submit new data objects.' },
 ];
 
 type ToolChoice =
@@ -143,6 +143,8 @@ interface Props {
 }
 
 export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
+  const { api } = useAuthenticatedApi();
+
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [view, setView] = useState<'guide' | 'keys'>('guide');
   const [tool, setTool] = useState<ToolChoice>('cursor');
@@ -171,7 +173,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
     loadKeys();
