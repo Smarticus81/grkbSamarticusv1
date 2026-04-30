@@ -5,7 +5,7 @@
     "dockerfilePath": "Dockerfile.api"
   },
   "deploy": {
-    "startCommand": "node apps/api/dist/apps/api/src/index.js",
+    "startCommand": "pnpm --filter @regground/api start",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE",

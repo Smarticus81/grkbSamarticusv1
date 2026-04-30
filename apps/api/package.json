@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
-    "start": "tsc -p tsconfig.json && node dist/apps/api/src/index.js",
+    "start": "tsx src/index.ts",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
