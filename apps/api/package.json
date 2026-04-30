@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@clerk/backend": "^1.20.0",
     "@regground/core": "workspace:*",
     "@regground/sandbox": "workspace:*",
     "cors": "^2.8.6",
