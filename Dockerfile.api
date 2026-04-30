@@ -40,4 +40,4 @@ COPY --from=build /app/packages/sandbox/dist ./packages/sandbox/dist
 COPY --from=build /app/packages/core/regulations ./packages/core/regulations
 
 EXPOSE 4000
-CMD ["node", "apps/api/dist/index.js"]
+CMD ["node", "apps/api/dist/apps/api/src/index.js"]
