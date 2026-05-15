@@ -1,0 +1,217 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "AgentOS bindings (vigilance + PSUR + PMS)"
+jurisdiction: EU_MDR
+processType: GENERIC
+artifactType: GENERIC
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+# This file is the Phase 0 pilot for AgentOS-aware regulation YAMLs. It does
+# not declare obligations; instead it binds existing EU MDR obligations to
+# the five AgentOS node types (AgentRole, HITLGate, GovernancePolicy,
+# ObservabilitySLO, ProcessTrigger). Together these turn the obligation
+# graph into the runtime substrate for grounded agents.
+
+obligations: []
+constraints: []
+definitions: []
+
+# === AgentRole nodes ========================================================
+# Declarative permission to execute steps in named processes. Replaces the
+# hardcoded `requiredAgentTypes: string[]` in ProcessDefinition.ts. At runtime,
+# AgentIdentity verifies (agent → role → process) before allowing execution.
+agentRoles:
+  - agentRoleId: "AgentRole.VigilanceTriage"
+    name: "Vigilance Triage Agent"
+    description: |
+      Performs initial triage of adverse-event reports under EU MDR Art. 87,
+      classifies severity, and decides reportability path.
+    processIds:
+      - adverse-event-reportability
+      - complaint-classification
+    obligationScope:
+      - EUMDR.87.OBL.001
+      - EUMDR.87.OBL.002
+      - EUMDR.87.OBL.003
+    llmCapabilities: ["tool_use", "long_context"]
+
+  - agentRoleId: "AgentRole.PSURCompiler"
+    name: "PSUR Compilation Agent"
+    description: |
+      Compiles Periodic Safety Update Reports under EU MDR Art. 86. Aggregates
+      vigilance, complaint, and PMS data into the regulator-facing report.
+    processIds:
+      - psur-compilation
+    obligationScope:
+      - EUMDR.86.PSUR.OBL.001
+      - EUMDR.86.PSUR.OBL.002
+      - EUMDR.83.OBL.001
+    llmCapabilities: ["long_context"]
+
+# === HITLGate nodes =========================================================
+# Where regulation MANDATES a human in the loop. Today the gate exists in
+# code (HITLGate.ts) but its trigger condition was hardcoded; here it lives
+# in the KB and the runtime reads it.
+hitlGates:
+  - gateId: "HITL.EUMDR.87.SeriousIncident"
+    appliesTo: "EUMDR.87.OBL.001"
+    approverRole: "vigilance_officer"
+    triggerCondition: |
+      Any agent decision that classifies an event as a "serious incident"
+      under EU MDR Art. 87 must be countersigned by a qualified vigilance
+      officer before submission to the competent authority.
+    description: "Mandatory human sign-off for serious-incident reportability decisions."
+    slaHours: 24
+
+  - gateId: "HITL.EUMDR.86.PSURApproval"
+    appliesTo: "EUMDR.86.PSUR.OBL.001"
+    approverRole: "quality_manager"
+    triggerCondition: |
+      PSUR draft must be reviewed and approved by the Quality Manager (and,
+      for class III / implantable, the PRRC) before submission.
+    description: "Mandatory human approval for PSUR submission."
+    slaHours: 168  # one week
+
+# === GovernancePolicy nodes =================================================
+# Tenant- and jurisdiction-scoped rules that bind agents and processes.
+# The PolicyEngine reads these at runtime and rejects non-compliant configs.
+policies:
+  - policyId: "Policy.EUMDR.ModelAllowlist"
+    policyClass: "model_allowlist"
+    jurisdiction: "EU_MDR"
+    description: |
+      Agents handling EU MDR vigilance and PSUR data may only invoke LLM
+      providers whose inference endpoints are hosted in the EU and that
+      offer a signed DPA. Non-EU endpoints are rejected at runtime.
+    rule:
+      allowedProviders: ["anthropic-eu", "openai-eu", "azure-openai-eu"]
+      forbiddenRegions: ["us-*", "ap-*"]
+    severity: "hard"
+    appliesTo:
+      - EUMDR.87.OBL.001
+      - EUMDR.86.PSUR.OBL.001
+
+  - policyId: "Policy.EUMDR.DataResidency"
+    policyClass: "data_residency"
+    jurisdiction: "EU_MDR"
+    description: |
+      Evidence, decision traces, and intermediate agent state for EU MDR
+      processes must be persisted in EU regions only.
+    rule:
+      allowedRegions: ["eu-west-1", "eu-central-1", "eu-north-1"]
+    severity: "hard"
+    appliesTo:
+      - EUMDR.87.OBL.001
+      - EUMDR.86.PSUR.OBL.001
+      - EUMDR.83.OBL.001
+
+  - policyId: "Policy.EUMDR.PIIRedaction"
+    policyClass: "pii_redaction"
+    jurisdiction: "EU_MDR"
+    description: |
+      Patient identifiers (name, DOB, national ID, contact details) must be
+      redacted from any payload sent to an LLM during vigilance processing.
+      Device serials and lot numbers are NOT considered PII for vigilance.
+    rule:
+      redactFields: ["patient_name", "patient_dob", "national_id", "contact_email", "contact_phone"]
+      preserveFields: ["device_serial", "lot_number", "udi"]
+    severity: "hard"
+    appliesTo:
+      - EUMDR.87.OBL.001
+      - EUMDR.87.OBL.002
+
+  - policyId: "Policy.EUMDR.HITLRequired"
+    policyClass: "hitl_required"
+    jurisdiction: "EU_MDR"
+    description: |
+      Reportability decisions and PSUR submissions are non-delegable to
+      autonomous agents and require the linked HITLGate to resolve
+      successfully before submission.
+    rule:
+      gateIds: ["HITL.EUMDR.87.SeriousIncident", "HITL.EUMDR.86.PSURApproval"]
+    severity: "hard"
+    appliesTo:
+      - EUMDR.87.OBL.001
+      - EUMDR.86.PSUR.OBL.001
+
+  - policyId: "Policy.EUMDR.ReportingDeadlines"
+    policyClass: "slo_time_bound"
+    jurisdiction: "EU_MDR"
+    description: |
+      EU MDR Art. 87(3) reporting clocks are non-negotiable: serious-public-
+      health-threat = 2 days, death/serious deterioration = 10 days, other
+      serious incidents = 15 days. The PolicyEngine surfaces breach risk
+      while the linked SLO measures actual time-to-submission.
+    rule:
+      deadlines:
+        public_health_threat_days: 2
+        death_or_serious_deterioration_days: 10
+        other_serious_incident_days: 15
+    severity: "hard"
+    appliesTo:
+      - EUMDR.87.OBL.003
+
+# === ObservabilitySLO nodes =================================================
+# Measurable SLOs derived from the regulation. The AgentTelemetry layer
+# auto-emits these as Prometheus / OTel metrics and alerts on breach.
+slos:
+  - sloId: "SLO.EUMDR.87.SeriousIncidentLatency"
+    appliesTo: "EUMDR.87.OBL.003"
+    metric: "serious_incident_submission_latency_days"
+    threshold: 10
+    unit: "days"
+    comparator: "lte"
+    description: "Submission of a serious incident to the competent authority must occur within 10 days (EU MDR Art. 87(3)(b))."
+
+  - sloId: "SLO.EUMDR.87.PublicHealthThreatLatency"
+    appliesTo: "EUMDR.87.OBL.003"
+    metric: "public_health_threat_submission_latency_days"
+    threshold: 2
+    unit: "days"
+    comparator: "lte"
+    description: "Submission of an event constituting a serious public health threat must occur within 2 days (EU MDR Art. 87(3)(a))."
+
+  - sloId: "SLO.EUMDR.86.PSURCadence"
+    appliesTo: "EUMDR.86.PSUR.OBL.001"
+    metric: "psur_overdue_days"
+    threshold: 0
+    unit: "days"
+    comparator: "lte"
+    description: "PSUR must be updated at the cadence required by device class (annual for class IIb/III, biennial for class IIa). Overdue days > 0 = breach."
+
+  - sloId: "SLO.EUMDR.83.PMSCoverage"
+    appliesTo: "EUMDR.83.OBL.001"
+    metric: "pms_evidence_coverage_percent"
+    threshold: 95
+    unit: "percent"
+    comparator: "gte"
+    description: "PMS plan execution must cover ≥ 95% of planned evidence collection points per cycle."
+
+# === ProcessTrigger nodes ===================================================
+# The events that legitimately start a process. The AgentOS Scheduler reads
+# these and wires event-bus subscriptions and cron jobs at boot. This is
+# what makes the system responsive without hardcoded triggers in TS.
+triggers:
+  - triggerId: "Trigger.AdverseEvent.Received"
+    processId: "adverse-event-reportability"
+    eventType: "complaint.received"
+    filter:
+      severity_in: ["serious", "death", "public_health_threat"]
+    description: "Any complaint flagged as a serious adverse event auto-starts the reportability process."
+
+  - triggerId: "Trigger.Complaint.Received"
+    processId: "complaint-classification"
+    eventType: "complaint.received"
+    description: "Every incoming complaint is auto-classified into IMDRF coding."
+
+  - triggerId: "Trigger.PSUR.Cadence"
+    processId: "psur-compilation"
+    eventType: "schedule"
+    schedule: "0 0 1 */12 *"  # annually at midnight on Jan 1 (class IIb/III default; tenant override per device)
+    description: "Annual PSUR compilation kickoff for class IIb/III devices."
+
+  - triggerId: "Trigger.MgmtReview.Cadence"
+    processId: "management-review"
+    eventType: "schedule"
+    schedule: "0 0 1 1,7 *"  # twice yearly: Jan 1 and Jul 1
+    description: "Semiannual management review per ISO 13485 §5.6 planned-interval requirement."

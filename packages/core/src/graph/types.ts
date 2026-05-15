@@ -55,7 +55,116 @@ export type RelationType =
   | 'CROSS_REFERENCES'
   | 'TRIGGERS'
   | 'SATISFIES'
-  | 'CONFLICTS_WITH';
+  | 'CONFLICTS_WITH'
+  // === AgentOS extensions (Phase 0) ===
+  // AgentRole -> Process: this role is permitted to execute steps in this process
+  | 'EXECUTES'
+  // Obligation -> HITLGate: satisfying this obligation requires the named HITL gate
+  | 'REQUIRES_HITL'
+  // Obligation|Process -> GovernancePolicy: subject is bound by this governance rule
+  | 'BOUND_BY_POLICY'
+  // Obligation|Process -> ObservabilitySLO: subject is measured by this SLO
+  | 'MEASURED_BY'
+  // Process -> ProcessTrigger: this process is started by the named trigger
+  | 'STARTED_BY';
+
+// =============================================================================
+// AgentOS node schemas (Phase 0)
+//
+// These five node types extend the obligation graph from a pure regulatory
+// reference store into a complete substrate for an AgentOS:
+//   - AgentRole         : who may act
+//   - HITLGate          : when humans must sign off
+//   - GovernancePolicy  : what rules bind the actor (model, residency, PII...)
+//   - ObservabilitySLO  : how performance is measured
+//   - ProcessTrigger    : when a process legitimately starts
+//
+// Every AgentOS manager (Scheduler, GuardrailKernel, PolicyEngine,
+// AgentTelemetry, AgentIdentity) reads from these nodes — agent behaviour is
+// derived from the KB, not hardcoded in TypeScript.
+// =============================================================================
+
+export const AgentRoleNodeSchema = z.object({
+  agentRoleId: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  /** Process IDs whose steps this role is permitted to execute. */
+  processIds: z.array(z.string().min(1)).default([]),
+  /** Obligation IDs this role is permitted to satisfy / cite. */
+  obligationScope: z.array(z.string()).default([]),
+  /** LLM capabilities this role requires (e.g. 'tool_use', 'long_context'). */
+  llmCapabilities: z.array(z.string()).default([]),
+  metadata: z.record(z.unknown()).default({}),
+});
+export type AgentRoleNode = z.infer<typeof AgentRoleNodeSchema>;
+
+export const HITLGateNodeSchema = z.object({
+  gateId: z.string().min(1),
+  /** obligationId whose satisfaction requires this HITL gate. */
+  appliesTo: z.string().min(1),
+  /** Role of the human approver (e.g. 'vigilance_officer', 'quality_manager'). */
+  approverRole: z.string().min(1),
+  description: z.string().min(1),
+  /** Human-readable trigger condition (when this gate fires). */
+  triggerCondition: z.string().min(1),
+  /** Optional SLA in hours for the human to resolve the gate. */
+  slaHours: z.number().int().positive().optional(),
+  metadata: z.record(z.unknown()).default({}),
+});
+export type HITLGateNode = z.infer<typeof HITLGateNodeSchema>;
+
+export const PolicyClassSchema = z.enum([
+  'model_allowlist',
+  'data_residency',
+  'pii_redaction',
+  'hitl_required',
+  'slo_time_bound',
+]);
+export type PolicyClass = z.infer<typeof PolicyClassSchema>;
+
+export const GovernancePolicyNodeSchema = z.object({
+  policyId: z.string().min(1),
+  policyClass: PolicyClassSchema,
+  /** Jurisdiction this policy applies to (e.g. 'EU_MDR', 'US_FDA', 'GLOBAL'). */
+  jurisdiction: z.string().min(1),
+  description: z.string().min(1),
+  /** Class-specific structured rule (e.g. {"allowed":["claude-*-eu","gpt-*-eu"]}). */
+  rule: z.record(z.unknown()).default({}),
+  severity: z.enum(['hard', 'soft']).default('hard'),
+  /** Subjects bound by this policy (obligationIds or processIds). */
+  appliesTo: z.array(z.string()).default([]),
+  metadata: z.record(z.unknown()).default({}),
+});
+export type GovernancePolicyNode = z.infer<typeof GovernancePolicyNodeSchema>;
+
+export const ObservabilitySLONodeSchema = z.object({
+  sloId: z.string().min(1),
+  /** Subject being measured: obligationId or processId. */
+  appliesTo: z.string().min(1),
+  /** Metric name (e.g. 'time_to_decision_hours', 'mdr_submission_latency_days'). */
+  metric: z.string().min(1),
+  threshold: z.number(),
+  unit: z.string().min(1),
+  comparator: z.enum(['lte', 'gte', 'eq']).default('lte'),
+  description: z.string().min(1),
+  metadata: z.record(z.unknown()).default({}),
+});
+export type ObservabilitySLONode = z.infer<typeof ObservabilitySLONodeSchema>;
+
+export const ProcessTriggerNodeSchema = z.object({
+  triggerId: z.string().min(1),
+  /** processId that this trigger starts. */
+  processId: z.string().min(1),
+  /** Event type that fires the trigger (e.g. 'complaint.received', 'schedule'). */
+  eventType: z.string().min(1),
+  /** Cron expression for time-based triggers (only when eventType === 'schedule'). */
+  schedule: z.string().optional(),
+  /** Optional event-payload filter (engine-specific). */
+  filter: z.record(z.unknown()).optional(),
+  description: z.string().min(1),
+  metadata: z.record(z.unknown()).default({}),
+});
+export type ProcessTriggerNode = z.infer<typeof ProcessTriggerNodeSchema>;
 
 export interface GraphPath {
   nodes: ObligationNode[];
@@ -87,6 +196,12 @@ export interface SeedResult {
   constraintsLoaded: number;
   definitionsLoaded: number;
   relationshipsLoaded: number;
+  // === AgentOS extensions (Phase 0) ===
+  agentRolesLoaded: number;
+  hitlGatesLoaded: number;
+  policiesLoaded: number;
+  slosLoaded: number;
+  triggersLoaded: number;
   errors: string[];
 }
 

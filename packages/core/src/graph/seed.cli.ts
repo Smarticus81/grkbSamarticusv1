@@ -20,8 +20,13 @@ async function main() {
   const results = await seeder.seedAllRegulations(dir);
   for (const r of results) {
     // eslint-disable-next-line no-console
+    const agentos =
+      r.agentRolesLoaded + r.hitlGatesLoaded + r.policiesLoaded + r.slosLoaded + r.triggersLoaded;
     console.log(
       `[${r.file}] obligations=${r.obligationsLoaded} constraints=${r.constraintsLoaded} definitions=${r.definitionsLoaded} rels=${r.relationshipsLoaded}` +
+        (agentos
+          ? ` agentRoles=${r.agentRolesLoaded} hitlGates=${r.hitlGatesLoaded} policies=${r.policiesLoaded} slos=${r.slosLoaded} triggers=${r.triggersLoaded}`
+          : '') +
         (r.errors.length ? ` errors=${r.errors.length}` : ''),
     );
     for (const e of r.errors) {

@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json && vite build",
     "check": "tsc -p tsconfig.json --noEmit",
     "preview": "vite preview",
-    "start": "serve -s dist -l tcp://0.0.0.0:${PORT:-5173}",
+    "start": "npx serve -s dist -l tcp://0.0.0.0:${PORT:-5173}",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {

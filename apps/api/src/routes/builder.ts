@@ -14,8 +14,20 @@
 
 import { Router } from 'express';
 import { z } from 'zod';
-import { getDB, schema, eq, desc, and } from '@regground/core';
-import { listTasks, getTask } from '@regground/sandbox';
+import {
+  getDB,
+  schema,
+  eq,
+  desc,
+  and,
+  ObligationGraph,
+  KBCatalog,
+  ProcessBuilderAgent,
+  LLMAbstraction,
+  templateToWorkflowDraft,
+  summarizeTemplate,
+} from '@regground/core';
+import { listTasks, getTask, ProcessRegistry, registerAllProcesses } from '@regground/sandbox';
 
 const { builderAgents } = schema;
 
@@ -306,6 +318,143 @@ router.delete('/agents/:id', async (req, res) => {
       .returning();
     if (!row) return res.status(404).json({ error: 'agent not found' });
     res.status(204).end();
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Process Designer (chat → KB-grounded workflow)
+// ─────────────────────────────────────────────────────────────────────────
+
+let _graph: ObligationGraph | null = null;
+let _catalog: KBCatalog | null = null;
+let _agent: ProcessBuilderAgent | null = null;
+function getCatalog(): KBCatalog {
+  if (!_catalog) {
+    _graph = new ObligationGraph();
+    _catalog = new KBCatalog(_graph);
+  }
+  return _catalog;
+}
+function getBuilderAgent(): ProcessBuilderAgent {
+  if (!_agent) {
+    _agent = new ProcessBuilderAgent(LLMAbstraction.fromEnv(), getCatalog());
+  }
+  return _agent;
+}
+
+// GET /api/builder/catalog?jurisdiction=&processType=
+router.get('/catalog', async (req, res) => {
+  try {
+    requireTenantId(req);
+    const jurisdiction =
+      typeof req.query.jurisdiction === 'string' ? req.query.jurisdiction : undefined;
+    const processType =
+      typeof req.query.processType === 'string' ? req.query.processType : undefined;
+    const snapshot = await getCatalog().snapshot({ jurisdiction, processType });
+    res.json({ snapshot, capturedAt: new Date().toISOString() });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+const DraftSchema = z.object({
+  description: z.string().min(10).max(4000),
+  jurisdiction: z.string().min(1).max(64).optional(),
+  processType: z.string().min(1).max(64).optional(),
+  conversation: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string().min(1).max(8000),
+      }),
+    )
+    .max(20)
+    .optional(),
+});
+
+// POST /api/builder/draft  — KB-grounded LLM workflow draft
+router.post('/draft', async (req, res) => {
+  try {
+    requireTenantId(req);
+    const parsed = DraftSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request', issues: parsed.error.issues });
+    }
+    const result = await getBuilderAgent().build(parsed.data);
+    res.json({ ...result, generatedAt: new Date().toISOString() });
+  } catch (e) {
+    const err = e as Error & {
+      validation?: unknown;
+      parseError?: { message: string; rawSnippet: string };
+      attempts?: number;
+    };
+    console.error('[builder/draft] failed', {
+      message: err.message,
+      attempts: err.attempts,
+      parseError: err.parseError,
+    });
+    res.status(422).json({
+      error: err.message,
+      validation: err.validation,
+      parseError: err.parseError,
+      attempts: err.attempts,
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Process Templates — shipped boilerplate processes that can be loaded
+// into the Process Designer canvas as a starting point.
+// ─────────────────────────────────────────────────────────────────────────
+
+let _templates: ProcessRegistry | null = null;
+function getTemplateRegistry(): ProcessRegistry {
+  if (!_templates) {
+    _templates = registerAllProcesses(new ProcessRegistry());
+  }
+  return _templates;
+}
+
+// GET /api/builder/templates
+router.get('/templates', (req, res) => {
+  try {
+    requireTenantId(req);
+    const reg = getTemplateRegistry();
+    res.json({
+      templates: reg.list().map((d) => summarizeTemplate(d)),
+      capturedAt: new Date().toISOString(),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// GET /api/builder/templates/:id  → full summary
+router.get('/templates/:id', (req, res) => {
+  try {
+    requireTenantId(req);
+    const def = getTemplateRegistry().get(req.params.id);
+    if (!def) return res.status(404).json({ error: `Template not found: ${req.params.id}` });
+    res.json(summarizeTemplate(def));
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// GET /api/builder/templates/:id/draft  → ready-to-edit WorkflowDraft
+router.get('/templates/:id/draft', (req, res) => {
+  try {
+    requireTenantId(req);
+    const def = getTemplateRegistry().get(req.params.id);
+    if (!def) return res.status(404).json({ error: `Template not found: ${req.params.id}` });
+    const draft = templateToWorkflowDraft(def);
+    res.json({
+      draft,
+      template: summarizeTemplate(def),
+      generatedAt: new Date().toISOString(),
+    });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }

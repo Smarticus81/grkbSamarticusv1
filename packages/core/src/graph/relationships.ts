@@ -10,6 +10,12 @@ export const ALL_RELATION_TYPES: RelationType[] = [
   'TRIGGERS',
   'SATISFIES',
   'CONFLICTS_WITH',
+  // === AgentOS extensions (Phase 0) ===
+  'EXECUTES',
+  'REQUIRES_HITL',
+  'BOUND_BY_POLICY',
+  'MEASURED_BY',
+  'STARTED_BY',
 ];
 
 export function isValidRelationType(type: string): type is RelationType {

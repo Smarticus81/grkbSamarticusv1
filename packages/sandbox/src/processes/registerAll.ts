@@ -32,6 +32,21 @@ import { AuditPlanningAgent } from './audit/agents/AuditPlanningAgent.js';
 import { AuditFindingAgent } from './audit/agents/AuditFindingAgent.js';
 import { AuditReportAgent } from './audit/agents/AuditReportAgent.js';
 
+import { ADVERSE_EVENT_PROCESS } from './adverse-event-reportability/AdverseEventProcessDefinition.js';
+import { ReportabilityDecisionAgent } from './adverse-event-reportability/agents/ReportabilityDecisionAgent.js';
+
+import { COMPLAINT_CLASSIFICATION_PROCESS } from './complaint-classification/ComplaintClassificationProcessDefinition.js';
+import { IMDRFCodingAgent } from './complaint-classification/agents/IMDRFCodingAgent.js';
+import { ReportabilityScreenAgent } from './complaint-classification/agents/ReportabilityScreenAgent.js';
+
+import { MGMT_REVIEW_PROCESS } from './management-review/MgmtReviewProcessDefinition.js';
+import { MgmtReviewInputsAgent } from './management-review/agents/MgmtReviewInputsAgent.js';
+import { MgmtReviewDecisionAgent } from './management-review/agents/MgmtReviewDecisionAgent.js';
+
+import { PSUR_PROCESS } from './psur-compilation/PSURProcessDefinition.js';
+import { PSURStructureAgent } from './psur-compilation/agents/PSURStructureAgent.js';
+import { PSURContentAgent } from './psur-compilation/agents/PSURContentAgent.js';
+
 /**
  * One-shot registration of every shipped process and agent. Call once at
  * sandbox boot. Tests use the registry too via `registerAllAgents(...)`.
@@ -43,6 +58,10 @@ export function registerAllProcesses(registry: ProcessRegistry): ProcessRegistry
   registry.register(TREND_PROCESS);
   registry.register(CHANGE_PROCESS);
   registry.register(AUDIT_PROCESS);
+  registry.register(ADVERSE_EVENT_PROCESS);
+  registry.register(COMPLAINT_CLASSIFICATION_PROCESS);
+  registry.register(MGMT_REVIEW_PROCESS);
+  registry.register(PSUR_PROCESS);
   return registry;
 }
 
@@ -74,6 +93,17 @@ export function registerAllAgents(registry: AgentRegistry, deps: BaseGroundedAge
   reg('AuditPlanningAgent', ['AUDIT'], () => new AuditPlanningAgent(deps));
   reg('AuditFindingAgent', ['AUDIT'], () => new AuditFindingAgent(deps));
   reg('AuditReportAgent', ['AUDIT'], () => new AuditReportAgent(deps));
+
+  reg('ReportabilityDecisionAgent', ['ADVERSE_EVENT'], () => new ReportabilityDecisionAgent(deps));
+
+  reg('IMDRFCodingAgent', ['COMPLAINT_CLASSIFICATION'], () => new IMDRFCodingAgent(deps));
+  reg('ReportabilityScreenAgent', ['COMPLAINT_CLASSIFICATION'], () => new ReportabilityScreenAgent(deps));
+
+  reg('MgmtReviewInputsAgent', ['MANAGEMENT_REVIEW'], () => new MgmtReviewInputsAgent(deps));
+  reg('MgmtReviewDecisionAgent', ['MANAGEMENT_REVIEW'], () => new MgmtReviewDecisionAgent(deps));
+
+  reg('PSURStructureAgent', ['PSUR'], () => new PSURStructureAgent(deps));
+  reg('PSURContentAgent', ['PSUR'], () => new PSURContentAgent(deps));
 
   return registry;
 }

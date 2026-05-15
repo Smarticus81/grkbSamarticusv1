@@ -9,11 +9,13 @@ import { ApiAccess } from './pages/ApiAccess.js';
 import { Sandbox } from './pages/Sandbox.js';
 import { CommandCenter } from './pages/CommandCenter.js';
 import { Builder } from './pages/Builder.js';
+import { ProcessDesigner } from './pages/ProcessDesigner.js';
 import { ThemeToggle } from './components/ui/ThemeToggle.js';
 import { SmarticusWordmark } from './components/ui/logos.js';
 
 const NAV: { href: string; label: string }[] = [
   { href: '/app',              label: 'Command' },
+  { href: '/app/designer',     label: 'Designer' },
   { href: '/app/builder',      label: 'Processes' },
   { href: '/app/sandbox',      label: 'Sandbox' },
   { href: '/app/requirements', label: 'Requirements' },
@@ -162,6 +164,7 @@ function AppShell() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <main style={{ flex: 1, overflow: 'auto', background: 'var(--paper)' }}>
           <Switch>
+            <Route path="/app/designer" component={ProcessDesigner} />
             <Route path="/app/builder" component={Builder} />
             <Route path="/app/sandbox/:taskId">{(params) => <Sandbox initialTaskId={params.taskId} />}</Route>
             <Route path="/app/sandbox">{() => <Sandbox />}</Route>

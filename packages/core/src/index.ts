@@ -13,6 +13,20 @@ export * from './graph/types.js';
 export { ObligationGraph } from './graph/ObligationGraph.js';
 export { GraphSeeder, type RegulationFile } from './graph/GraphSeeder.js';
 export { GraphQuerier } from './graph/GraphQuerier.js';
+export { KBCatalog } from './graph/KBCatalog.js';
+export type {
+  KBCatalogSnapshot,
+  CatalogObligation,
+  CatalogAgentRole,
+  CatalogHITLGate,
+  CatalogPolicy,
+  CatalogSLO,
+  CatalogTrigger,
+  CatalogProcess,
+  CatalogEvidenceType,
+  CatalogFilter,
+} from './graph/KBCatalog.js';
+export * from './process/builder/index.js';
 export { GraphVersioning } from './graph/GraphVersioning.js';
 export { ObligationDiscovery, type DiscoveredScope } from './graph/ObligationDiscovery.js';
 export { ALL_RELATION_TYPES, isValidRelationType } from './graph/relationships.js';

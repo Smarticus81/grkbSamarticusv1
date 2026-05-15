@@ -33,6 +33,10 @@ export { NC_PROCESS } from './processes/nonconformances/NCProcessDefinition.js';
 export { TREND_PROCESS } from './processes/trend-reporting/TrendProcessDefinition.js';
 export { CHANGE_PROCESS } from './processes/change-control/ChangeProcessDefinition.js';
 export { AUDIT_PROCESS } from './processes/audit/AuditProcessDefinition.js';
+export { ADVERSE_EVENT_PROCESS } from './processes/adverse-event-reportability/AdverseEventProcessDefinition.js';
+export { COMPLAINT_CLASSIFICATION_PROCESS } from './processes/complaint-classification/ComplaintClassificationProcessDefinition.js';
+export { MGMT_REVIEW_PROCESS } from './processes/management-review/MgmtReviewProcessDefinition.js';
+export { PSUR_PROCESS } from './processes/psur-compilation/PSURProcessDefinition.js';
 
 // tasks (single-step task agents for the sandbox)
 export * from './tasks/index.js';
