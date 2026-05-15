@@ -480,6 +480,35 @@ export const builderAgents = pgTable(
   }),
 );
 
+// === Process Workflows — saved WorkflowDrafts from the Process Designer ===
+// Each row is one operational workflow a user composed (or loaded from a
+// template) in the Designer. Persists the full draft JSON so it can be
+// reopened in the canvas and later promoted to a ProcessDefinition.
+export const processWorkflows = pgTable(
+  'process_workflows',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+    createdBy: uuid('created_by'),
+    name: varchar('name', { length: 200 }).notNull(),
+    processType: varchar('process_type', { length: 64 }).notNull(),
+    jurisdiction: varchar('jurisdiction', { length: 64 }).notNull(),
+    description: text('description'),
+    /** Full WorkflowDraft JSON (nodes, edges, automation lanes, grounded refs). */
+    draft: jsonb('draft').$type<Record<string, unknown>>().notNull(),
+    /** Source: 'template' (loaded from shipped registry) or 'chat' (LLM-drafted) or 'manual'. */
+    source: varchar('source', { length: 32 }).notNull().default('manual'),
+    /** Optional source template id when source = 'template'. */
+    sourceTemplateId: varchar('source_template_id', { length: 64 }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    tenantUpdatedIdx: index('process_workflows_tenant_updated_idx').on(t.tenantId, t.updatedAt),
+    tenantNameIdx: uniqueIndex('process_workflows_tenant_name_idx').on(t.tenantId, t.name),
+  }),
+);
+
 // === API Keys — external agent graph access ===
 export const apiKeys = pgTable(
   'api_keys',

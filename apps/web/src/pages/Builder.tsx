@@ -21,6 +21,17 @@ type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 type EvidenceRow = { label: string; required: boolean };
 
+type SavedWorkflowRow = {
+  id: string;
+  name: string;
+  processType: string;
+  jurisdiction: string;
+  description: string | null;
+  source: string;
+  sourceTemplateId: string | null;
+  updatedAt: string;
+};
+
 type Job = {
   id: string;
   taskId: string;
@@ -223,6 +234,8 @@ export function Builder() {
   const [agents, setAgents] = useState<SavedAgent[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  const [workflows, setWorkflows] = useState<SavedWorkflowRow[]>([]);
+
   // Working draft (not yet saved). When activeId is set, this mirrors the saved agent.
   const [name, setName] = useState('Untitled agent');
   const [jobId, setJobId] = useState<string | null>(null);
@@ -251,8 +264,28 @@ export function Builder() {
     }
   };
 
+  const refreshWorkflows = async () => {
+    try {
+      const rows = await api<SavedWorkflowRow[]>('/api/builder/workflows');
+      setWorkflows(rows);
+    } catch {
+      setWorkflows([]);
+    }
+  };
+
+  const deleteWorkflow = async (id: string) => {
+    if (!window.confirm('Delete this process?')) return;
+    try {
+      await api(`/api/builder/workflows/${id}`, { method: 'DELETE' });
+      await refreshWorkflows();
+    } catch (err) {
+      setToast(`Delete failed: ${(err as Error).message}`);
+    }
+  };
+
   useEffect(() => {
     void refresh();
+    void refreshWorkflows();
   }, []);
 
   function loadAgent(a: SavedAgent) {
@@ -657,6 +690,104 @@ export function Builder() {
             </button>
           </div>
         </header>
+
+        {/* ── My Processes (saved workflows from Designer) ── */}
+        <Section
+          label={`My processes · ${workflows.length}`}
+          subtitle="Multi-agent workflows you've designed. Open in the Process Designer to edit, or run in the Sandbox."
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button
+              onClick={() => navigate('/app/designer')}
+              style={{
+                alignSelf: 'flex-start',
+                padding: '8px 14px',
+                background: 'transparent',
+                border: '1px dashed var(--rule-strong)',
+                color: 'var(--ink)',
+                borderRadius: 6,
+                fontFamily: 'var(--sans)',
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              + New process in Designer
+            </button>
+            {workflows.length === 0 && (
+              <div
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: 11,
+                  color: 'var(--ink-4)',
+                  padding: '8px 0',
+                }}
+              >
+                No saved processes yet.
+              </div>
+            )}
+            {workflows.map((w) => (
+              <div
+                key={w.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  padding: '12px 14px',
+                  background: 'var(--paper-deep)',
+                  border: '1px solid var(--rule)',
+                  borderRadius: 8,
+                }}
+              >
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{w.name}</div>
+                  <div
+                    style={{
+                      fontFamily: 'var(--mono)',
+                      fontSize: 10,
+                      color: 'var(--ink-3)',
+                      marginTop: 3,
+                      letterSpacing: '0.04em',
+                    }}
+                  >
+                    {w.processType} · {w.jurisdiction} · {w.source}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={() => navigate(`/app/designer?workflow=${w.id}`)}
+                    style={{
+                      padding: '6px 12px',
+                      background: 'var(--ink)',
+                      color: 'var(--paper)',
+                      border: '1px solid var(--ink)',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Open
+                  </button>
+                  <button
+                    onClick={() => void deleteWorkflow(w.id)}
+                    title="Delete"
+                    style={{
+                      padding: '6px 10px',
+                      background: 'transparent',
+                      color: 'var(--ink-3)',
+                      border: '1px solid var(--rule-strong)',
+                      borderRadius: 6,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
 
         {toast && (
           <div

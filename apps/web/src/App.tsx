@@ -7,16 +7,14 @@ import { TraceExplorer } from './pages/TraceExplorer.js';
 import { RegulationManager } from './pages/RegulationManager.js';
 import { ApiAccess } from './pages/ApiAccess.js';
 import { Sandbox } from './pages/Sandbox.js';
-import { CommandCenter } from './pages/CommandCenter.js';
 import { Builder } from './pages/Builder.js';
 import { ProcessDesigner } from './pages/ProcessDesigner.js';
 import { ThemeToggle } from './components/ui/ThemeToggle.js';
 import { SmarticusWordmark } from './components/ui/logos.js';
 
 const NAV: { href: string; label: string }[] = [
-  { href: '/app',              label: 'Command' },
-  { href: '/app/designer',     label: 'Designer' },
   { href: '/app/builder',      label: 'Processes' },
+  { href: '/app/designer',     label: 'Designer' },
   { href: '/app/sandbox',      label: 'Sandbox' },
   { href: '/app/requirements', label: 'Requirements' },
   { href: '/app/trails',       label: 'Traces' },
@@ -33,8 +31,9 @@ function NavLink({ href, label }: { href: string; label: string }) {
   const [location] = useLocation();
   const isExact = location === href || location === `${href}/`;
   const isNested = href !== '/app' && location.startsWith(href);
-  const isOverview = href === '/app' && (location === '/app' || location === '/app/');
-  const active = isExact || isNested || isOverview;
+  // Treat /app and /app/ as the Processes page (Builder is the default route).
+  const isBuilderHome = href === '/app/builder' && (location === '/app' || location === '/app/');
+  const active = isExact || isNested || isBuilderHome;
   return (
     <Link
       href={href}
@@ -172,7 +171,7 @@ function AppShell() {
             <Route path="/app/trails/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
             <Route path="/app/trails">{() => <TraceExplorer />}</Route>
             <Route path="/app/connect">{() => <ApiAccess />}</Route>
-            <Route><CommandCenter /></Route>
+            <Route><Builder /></Route>
           </Switch>
         </main>
       </div>

@@ -29,7 +29,7 @@ import {
 } from '@regground/core';
 import { listTasks, getTask, ProcessRegistry, registerAllProcesses } from '@regground/sandbox';
 
-const { builderAgents } = schema;
+const { builderAgents, processWorkflows } = schema;
 
 const router: Router = Router();
 
@@ -455,6 +455,120 @@ router.get('/templates/:id/draft', (req, res) => {
       template: summarizeTemplate(def),
       generatedAt: new Date().toISOString(),
     });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Process Workflows — persisted WorkflowDrafts from the Process Designer
+// ─────────────────────────────────────────────────────────────────────────
+
+const WorkflowSaveSchema = z.object({
+  name: z.string().min(1).max(200),
+  processType: z.string().min(1).max(64),
+  jurisdiction: z.string().min(1).max(64),
+  description: z.string().max(2000).optional().nullable(),
+  draft: z.record(z.unknown()),
+  source: z.enum(['template', 'chat', 'manual']).default('manual'),
+  sourceTemplateId: z.string().max(64).optional().nullable(),
+});
+
+// GET /api/builder/workflows
+router.get('/workflows', async (req, res) => {
+  try {
+    const tenantId = requireTenantId(req);
+    const rows = await getDB()
+      .select({
+        id: processWorkflows.id,
+        name: processWorkflows.name,
+        processType: processWorkflows.processType,
+        jurisdiction: processWorkflows.jurisdiction,
+        description: processWorkflows.description,
+        source: processWorkflows.source,
+        sourceTemplateId: processWorkflows.sourceTemplateId,
+        createdAt: processWorkflows.createdAt,
+        updatedAt: processWorkflows.updatedAt,
+      })
+      .from(processWorkflows)
+      .where(eq(processWorkflows.tenantId, tenantId))
+      .orderBy(desc(processWorkflows.updatedAt));
+    res.json(rows);
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// GET /api/builder/workflows/:id
+router.get('/workflows/:id', async (req, res) => {
+  try {
+    const tenantId = requireTenantId(req);
+    const id = req.params.id;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const [row] = await getDB()
+      .select()
+      .from(processWorkflows)
+      .where(and(eq(processWorkflows.id, id), eq(processWorkflows.tenantId, tenantId)))
+      .limit(1);
+    if (!row) return res.status(404).json({ error: 'workflow not found' });
+    res.json(row);
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// POST /api/builder/workflows — upsert by (tenantId, name)
+router.post('/workflows', async (req, res) => {
+  try {
+    const tenantId = requireTenantId(req);
+    const parsed = WorkflowSaveSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request', issues: parsed.error.issues });
+    }
+    const v = parsed.data;
+    const [row] = await getDB()
+      .insert(processWorkflows)
+      .values({
+        tenantId,
+        name: v.name,
+        processType: v.processType,
+        jurisdiction: v.jurisdiction,
+        description: v.description ?? null,
+        draft: v.draft as Record<string, unknown>,
+        source: v.source,
+        sourceTemplateId: v.sourceTemplateId ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [processWorkflows.tenantId, processWorkflows.name],
+        set: {
+          processType: v.processType,
+          jurisdiction: v.jurisdiction,
+          description: v.description ?? null,
+          draft: v.draft as Record<string, unknown>,
+          source: v.source,
+          sourceTemplateId: v.sourceTemplateId ?? null,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    res.status(201).json(row);
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// DELETE /api/builder/workflows/:id
+router.delete('/workflows/:id', async (req, res) => {
+  try {
+    const tenantId = requireTenantId(req);
+    const id = req.params.id;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const [row] = await getDB()
+      .delete(processWorkflows)
+      .where(and(eq(processWorkflows.id, id), eq(processWorkflows.tenantId, tenantId)))
+      .returning();
+    if (!row) return res.status(404).json({ error: 'workflow not found' });
+    res.status(204).end();
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }

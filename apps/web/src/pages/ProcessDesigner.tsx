@@ -257,6 +257,31 @@ export function ProcessDesigner() {
   const [railOpen, setRailOpen] = useState(true);
   const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
 
+  // Saved workflows
+  type SavedWorkflowRow = {
+    id: string;
+    name: string;
+    processType: string;
+    jurisdiction: string;
+    description: string | null;
+    source: string;
+    sourceTemplateId: string | null;
+    updatedAt: string;
+  };
+  const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflowRow[] | null>(null);
+  const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
+  const [savingWorkflow, setSavingWorkflow] = useState(false);
+  const [savedToast, setSavedToast] = useState<string | null>(null);
+
+  const refreshWorkflows = useCallback(async () => {
+    try {
+      const rows = await api<SavedWorkflowRow[]>('/api/builder/workflows');
+      setSavedWorkflows(rows);
+    } catch {
+      setSavedWorkflows([]);
+    }
+  }, [api]);
+
   const loadedOnce = useRef(false);
   useEffect(() => {
     if (loadedOnce.current) return;
@@ -274,8 +299,201 @@ export function ProcessDesigner() {
       } catch {
         setTemplates([]);
       }
+      void refreshWorkflows();
+      // Auto-load workflow from ?workflow=:id
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const wfId = params.get('workflow');
+        const tplId = params.get('template');
+        if (wfId) {
+          const row = await api<{
+            id: string;
+            name: string;
+            processType: string;
+            jurisdiction: string;
+            description: string | null;
+            source: string;
+            sourceTemplateId: string | null;
+            draft: WorkflowDraft;
+          }>(`/api/builder/workflows/${wfId}`);
+          const fake: BuildResult = {
+            draft: row.draft,
+            validation: {
+              valid: true,
+              unknownRefs: [],
+              danglingEdges: [],
+              missingStart: false,
+              missingEnd: false,
+              ungroundedSteps: [],
+              invalidDecisions: [],
+            },
+            catalogSummary: {
+              obligations: 0,
+              agentRoles: 0,
+              hitlGates: 0,
+              policies: 0,
+              slos: 0,
+              triggers: 0,
+              evidenceTypes: 0,
+              jurisdictionUsed: row.jurisdiction,
+              processTypeUsed: row.processType,
+            },
+            llmModel: 'saved',
+            llmProvider: 'saved',
+            attempts: 0,
+            generatedAt: new Date().toISOString(),
+          };
+          setResult(fake);
+          setActiveWorkflowId(row.id);
+        } else if (tplId) {
+          // delegated below via loadTemplate after definition
+          void (async () => {
+            try {
+              const r = await api<TemplateDraftResponse>(`/api/builder/templates/${tplId}/draft`);
+              setResult({
+                draft: r.draft,
+                validation: {
+                  valid: true,
+                  unknownRefs: [],
+                  danglingEdges: [],
+                  missingStart: false,
+                  missingEnd: false,
+                  ungroundedSteps: [],
+                  invalidDecisions: [],
+                },
+                catalogSummary: {
+                  obligations: 0,
+                  agentRoles: 0,
+                  hitlGates: 0,
+                  policies: 0,
+                  slos: 0,
+                  triggers: 0,
+                  evidenceTypes: 0,
+                  jurisdictionUsed: r.draft.jurisdiction,
+                  processTypeUsed: r.draft.processType,
+                },
+                llmModel: 'template',
+                llmProvider: 'template',
+                attempts: 0,
+                generatedAt: r.generatedAt,
+              });
+            } catch {
+              /* ignore */
+            }
+          })();
+        }
+      } catch {
+        /* ignore */
+      }
     })();
-  }, [api]);
+  }, [api, refreshWorkflows]);
+
+  const saveWorkflow = useCallback(async () => {
+    if (!result) return;
+    setSavingWorkflow(true);
+    setSavedToast(null);
+    try {
+      const defaultName = result.draft.name?.trim() || 'Untitled workflow';
+      const name = window.prompt('Save workflow as:', defaultName) ?? '';
+      if (!name.trim()) {
+        setSavingWorkflow(false);
+        return;
+      }
+      const body = {
+        name: name.trim(),
+        processType: result.draft.processType,
+        jurisdiction: result.draft.jurisdiction,
+        description: result.draft.rationale?.slice(0, 1000) ?? null,
+        draft: result.draft as unknown as Record<string, unknown>,
+        source: result.llmProvider === 'template' ? 'template' : result.llmProvider === 'saved' ? 'manual' : 'chat',
+      };
+      const saved = await api<SavedWorkflowRow>('/api/builder/workflows', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+      setActiveWorkflowId(saved.id);
+      setSavedToast(`Saved "${saved.name}"`);
+      void refreshWorkflows();
+      window.setTimeout(() => setSavedToast(null), 2500);
+    } catch (e) {
+      setSavedToast(e instanceof Error ? `Save failed: ${e.message}` : 'Save failed.');
+    } finally {
+      setSavingWorkflow(false);
+    }
+  }, [api, refreshWorkflows, result]);
+
+  const loadSavedWorkflow = useCallback(
+    async (id: string) => {
+      setError(null);
+      setBusy(true);
+      try {
+        const row = await api<{
+          id: string;
+          name: string;
+          processType: string;
+          jurisdiction: string;
+          description: string | null;
+          source: string;
+          draft: WorkflowDraft;
+        }>(`/api/builder/workflows/${id}`);
+        setResult({
+          draft: row.draft,
+          validation: {
+            valid: true,
+            unknownRefs: [],
+            danglingEdges: [],
+            missingStart: false,
+            missingEnd: false,
+            ungroundedSteps: [],
+            invalidDecisions: [],
+          },
+          catalogSummary: {
+            obligations: 0,
+            agentRoles: 0,
+            hitlGates: 0,
+            policies: 0,
+            slos: 0,
+            triggers: 0,
+            evidenceTypes: 0,
+            jurisdictionUsed: row.jurisdiction,
+            processTypeUsed: row.processType,
+          },
+          llmModel: 'saved',
+          llmProvider: 'saved',
+          attempts: 0,
+          generatedAt: new Date().toISOString(),
+        });
+        setActiveWorkflowId(row.id);
+        setChat((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `Loaded saved workflow "${row.name}".`,
+            ts: new Date().toISOString(),
+          },
+        ]);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [api],
+  );
+
+  const deleteSavedWorkflow = useCallback(
+    async (id: string) => {
+      if (!window.confirm('Delete this saved workflow?')) return;
+      try {
+        await api<void>(`/api/builder/workflows/${id}`, { method: 'DELETE' });
+        if (activeWorkflowId === id) setActiveWorkflowId(null);
+        void refreshWorkflows();
+      } catch (e) {
+        setSavedToast(e instanceof Error ? e.message : 'Delete failed.');
+      }
+    },
+    [api, activeWorkflowId, refreshWorkflows],
+  );
 
   const send = useCallback(async () => {
     const text = input.trim();
@@ -401,6 +619,10 @@ export function ProcessDesigner() {
         onExpand={(id) => setExpandedTemplateId((v) => (v === id ? null : id))}
         onLoad={loadTemplate}
         busy={busy}
+        savedWorkflows={savedWorkflows}
+        activeWorkflowId={activeWorkflowId}
+        onLoadSaved={loadSavedWorkflow}
+        onDeleteSaved={deleteSavedWorkflow}
       />
 
       {/* ── Chat composer ──────────────────────────────────────────────── */}
@@ -424,6 +646,10 @@ export function ProcessDesigner() {
         result={result}
         selectedNodeId={selectedNodeId}
         onSelect={setSelectedNodeId}
+        onSave={saveWorkflow}
+        savingWorkflow={savingWorkflow}
+        savedToast={savedToast}
+        activeWorkflowId={activeWorkflowId}
       />
     </div>
   );
@@ -439,8 +665,30 @@ function TemplatesRail(props: {
   onExpand: (id: string) => void;
   onLoad: (id: string) => void;
   busy: boolean;
+  savedWorkflows: Array<{
+    id: string;
+    name: string;
+    processType: string;
+    jurisdiction: string;
+    updatedAt: string;
+  }> | null;
+  activeWorkflowId: string | null;
+  onLoadSaved: (id: string) => void;
+  onDeleteSaved: (id: string) => void;
 }) {
-  const { open, onToggle, templates, expandedId, onExpand, onLoad, busy } = props;
+  const {
+    open,
+    onToggle,
+    templates,
+    expandedId,
+    onExpand,
+    onLoad,
+    busy,
+    savedWorkflows,
+    activeWorkflowId,
+    onLoadSaved,
+    onDeleteSaved,
+  } = props;
   return (
     <div
       style={{
@@ -491,6 +739,91 @@ function TemplatesRail(props: {
 
       {open && (
         <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
+          {/* ── Saved workflows ── */}
+          {savedWorkflows && savedWorkflows.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  fontWeight: 600,
+                  color: INK.muted,
+                  padding: '4px 4px 8px',
+                }}
+              >
+                MY WORKFLOWS · {savedWorkflows.length}
+              </div>
+              {savedWorkflows.map((w) => {
+                const isActive = activeWorkflowId === w.id;
+                return (
+                  <div
+                    key={w.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'stretch',
+                      marginBottom: 6,
+                      border: `1px solid ${isActive ? '#198754' : INK.rule}`,
+                      borderRadius: 6,
+                      background: isActive ? '#0b3a25' : INK.bg1,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    <button
+                      onClick={() => onLoadSaved(w.id)}
+                      disabled={busy}
+                      style={{
+                        flex: 1,
+                        background: 'transparent',
+                        border: 0,
+                        color: INK.primary,
+                        textAlign: 'left',
+                        padding: '8px 10px',
+                        cursor: busy ? 'wait' : 'pointer',
+                        fontSize: 12,
+                      }}
+                    >
+                      <div style={{ fontWeight: 600 }}>{w.name}</div>
+                      <div style={{ fontSize: 10, color: INK.muted, marginTop: 2 }}>
+                        {w.processType} · {w.jurisdiction}
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => onDeleteSaved(w.id)}
+                      title="Delete"
+                      style={{
+                        background: 'transparent',
+                        border: 0,
+                        color: INK.muted,
+                        cursor: 'pointer',
+                        padding: '0 8px',
+                        fontSize: 14,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+              <div
+                style={{
+                  height: 1,
+                  background: INK.rule,
+                  margin: '14px 0 10px',
+                }}
+              />
+              <div
+                style={{
+                  fontSize: 10,
+                  letterSpacing: '0.12em',
+                  fontWeight: 600,
+                  color: INK.muted,
+                  padding: '0 4px 8px',
+                }}
+              >
+                SHIPPED TEMPLATES
+              </div>
+            </div>
+          )}
           {templates === null && (
             <div style={{ padding: 12, fontSize: 12, color: INK.muted }}>Loading templates…</div>
           )}
@@ -761,8 +1094,12 @@ function CanvasPane(props: {
   result: BuildResult | null;
   selectedNodeId: string | null;
   onSelect: (id: string | null) => void;
+  onSave: () => void;
+  savingWorkflow: boolean;
+  savedToast: string | null;
+  activeWorkflowId: string | null;
 }) {
-  const { result, selectedNodeId, onSelect } = props;
+  const { result, selectedNodeId, onSelect, onSave, savingWorkflow, savedToast, activeWorkflowId } = props;
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -844,6 +1181,40 @@ function CanvasPane(props: {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {result && <ValidationBadge validation={result.validation} />}
+          {result && (
+            <button
+              onClick={onSave}
+              disabled={savingWorkflow}
+              style={{
+                background: activeWorkflowId ? INK.bg2 : '#0f5132',
+                color: activeWorkflowId ? INK.primary : '#e6ffec',
+                border: `1px solid ${activeWorkflowId ? INK.rule : '#198754'}`,
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: savingWorkflow ? 'wait' : 'pointer',
+                opacity: savingWorkflow ? 0.6 : 1,
+              }}
+              title={activeWorkflowId ? 'Save as new name (or overwrite)' : 'Save this workflow'}
+            >
+              {savingWorkflow ? 'Saving…' : activeWorkflowId ? 'Save as…' : '+ Save workflow'}
+            </button>
+          )}
+          {savedToast && (
+            <span
+              style={{
+                fontSize: 11,
+                color: INK.secondary,
+                background: INK.bg2,
+                border: `1px solid ${INK.rule}`,
+                borderRadius: 4,
+                padding: '4px 8px',
+              }}
+            >
+              {savedToast}
+            </span>
+          )}
           {result && (
             <div style={{ display: 'flex', gap: 4 }}>
               <CanvasButton onClick={() => setZoom((z) => Math.max(0.15, z * 0.9))}>−</CanvasButton>
