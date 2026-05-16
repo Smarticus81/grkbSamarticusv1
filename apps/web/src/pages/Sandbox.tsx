@@ -206,151 +206,173 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
   const completed = !!primaryResult;
   const compliant = primaryResult?.score.strictGatePass === true;
 
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--paper)', overflowX: 'hidden' }}>
-      <header style={{ padding: '32px 40px 20px', borderBottom: '1px solid var(--rule)' }}>
-        <div>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Process review</div>
-          <h1 style={{ fontSize: 30, fontWeight: 500, letterSpacing: '-0.025em', margin: 0 }}>
-            Run a QMS process review.
+  // ── Two states: pick a process, OR focus on the chosen one ──
+  if (!detail) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
+        <header style={{ padding: '40px 40px 24px' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
+            Pick a process to run.
           </h1>
-          <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 14, maxWidth: 640 }}>
-            Pick a process, review the data package, then see whether the output is compliant and traceable.
-          </p>
-        </div>
-      </header>
-
-      <div style={{ padding: '20px 0 56px' }}>
-        <section style={{ padding: '0 40px 18px', borderBottom: '1px solid var(--rule)' }}>
-          <div className="eyebrow" style={{ marginBottom: 12 }}>Choose a process</div>
+        </header>
+        <div style={{ padding: '0 40px 56px' }}>
           {error && <div style={{ padding: 12, color: '#B00020', fontSize: 13 }}>Could not load: {error}</div>}
           {!tasks && !error && <div style={{ padding: 12, color: 'var(--ink-3)', fontSize: 13 }}>Loading…</div>}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
-            {tasks?.map((t) => {
-              const active = t.id === selectedId;
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => setSelectedId(t.id)}
-                  style={{
-                    textAlign: 'left',
-                    background: active ? 'var(--paper-deep)' : 'var(--paper)',
-                    border: `1px solid ${active ? 'var(--ink)' : 'var(--rule)'}`,
-                    borderTop: `3px solid ${active ? 'var(--orange)' : 'transparent'}`,
-                    borderRadius: 8,
-                    padding: '12px 14px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <SmarticusMark size={18} />
-                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{t.name}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.45 }}>{friendlyReviewText(t.oneLiner)}</div>
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    <span style={SMALL_PILL}>{t.regulation}</span>
-                    <span style={SMALL_PILL}>{t.obligationCount} requirements</span>
-                  </div>
-                </button>
-              );
-            })}
+            {tasks?.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setSelectedId(t.id)}
+                style={{
+                  textAlign: 'left',
+                  background: 'var(--paper)',
+                  border: '1px solid var(--rule)',
+                  borderRadius: 8,
+                  padding: '14px 16px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <SmarticusMark size={18} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{t.name}</span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t.regulation}</div>
+              </button>
+            ))}
           </div>
-        </section>
+        </div>
+      </div>
+    );
+  }
 
-        {!detail && (
-          <div style={{ padding: 40, color: 'var(--ink-3)', fontSize: 14 }}>
-            Choose a process review to begin.
+  // ── Focused single-process view ──
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
+      <header
+        style={{
+          padding: '20px 40px 16px',
+          borderBottom: '1px solid var(--rule)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+          <button
+            onClick={() => { setSelectedId(undefined); setDetail(null); setResult(null); setEvents([]); }}
+            style={{
+              background: 'transparent',
+              border: '1px solid var(--rule-strong)',
+              borderRadius: 6,
+              padding: '6px 10px',
+              fontSize: 12,
+              color: 'var(--ink-2)',
+              cursor: 'pointer',
+            }}
+          >
+            ← Change
+          </button>
+          <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {detail.name}
+          </h1>
+          <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>{detail.regulation}</span>
+        </div>
+        {!result && (
+          <button
+            onClick={runAgent}
+            disabled={running}
+            className="btn-orange"
+            style={{ fontSize: 14, padding: '10px 22px' }}
+          >
+            {running ? 'Running…' : 'Run'}
+          </button>
+        )}
+      </header>
+
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: '28px 24px 56px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Status panel */}
+        {!completed && !running && (
+          <div style={{ padding: 20, border: '1px dashed var(--rule-strong)', borderRadius: 10, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}>
+            Press <b style={{ color: 'var(--ink)' }}>Run</b> to check this process.
+          </div>
+        )}
+        {running && (
+          <div style={{ padding: 20, border: '1px solid var(--rule)', borderRadius: 10, color: 'var(--ink-2)', fontSize: 13, textAlign: 'center' }}>
+            Working…
           </div>
         )}
 
-        {detail && (
-          <section style={{ padding: '24px 40px 8px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 0.9fr) minmax(320px, 1.1fr) minmax(300px, 0.9fr)', gap: 14, alignItems: 'stretch' }}>
-            <WorkflowPanel>
-              <div className="eyebrow">Selected review</div>
-              <h2 style={{ margin: '8px 0 6px', fontSize: 24, fontWeight: 600, letterSpacing: '-0.02em' }}>{detail.name}</h2>
-              <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5 }}>{friendlyReviewText(detail.oneLiner)}</p>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 16 }}>
-                <span style={SMALL_PILL}>{detail.regulation}</span>
-                <span style={SMALL_PILL}>{detail.jurisdiction}</span>
-                <span style={SMALL_PILL}>{detail.obligations.length} requirements</span>
-              </div>
-            </WorkflowPanel>
+        {primaryResult && result && (
+          <OutcomeSummary
+            result={result}
+            laneResult={primaryResult}
+            compliant={compliant}
+            onOpenTrace={() => navigate(`/app/trails/${result.runId}`)}
+          />
+        )}
 
-            <WorkflowPanel>
-              <div className="eyebrow">Data package</div>
-              <p style={{ margin: '8px 0 14px', color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5 }}>Information used for this review.</p>
-              <DataSummary value={runInput ?? detail.sampleData} />
-            </WorkflowPanel>
+        {/* Disclosures — hidden unless opened, so the page stays calm */}
+        <details style={DETAILS_STYLE}>
+          <summary style={SUMMARY_STYLE}>Inputs</summary>
+          <div style={{ padding: '14px 16px' }}>
+            <DataSummary value={runInput ?? detail.sampleData} />
+          </div>
+        </details>
 
-            <WorkflowPanel>
-              <div className="eyebrow">Run</div>
-              <div style={{ display: 'flex', gap: 0, marginBottom: 18, border: '1px solid var(--rule)', borderRadius: 8, overflow: 'hidden', width: 'fit-content' }}>
-                {(['with-graph', 'compare'] as Mode[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => setMode(m)}
-                    style={{
-                      padding: '9px 14px',
-                      fontSize: 12,
-                      background: mode === m ? 'var(--ink)' : 'transparent',
-                      color: mode === m ? 'var(--paper)' : 'var(--ink-2)',
-                      border: 0,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {m === 'with-graph' ? 'Compliance review' : 'Compare review'}
-                  </button>
-                ))}
-              </div>
-              <button onClick={runAgent} disabled={running} className="btn-orange" style={{ fontSize: 14, padding: '12px 24px' }}>
-                {running ? 'Review running…' : 'Run review'}
-              </button>
-              <div style={{ marginTop: 14 }}>
-                <button onClick={downloadAgent} style={SECONDARY_BUTTON}>Download package</button>
-              </div>
-            </WorkflowPanel>
+        <details style={DETAILS_STYLE}>
+          <summary style={SUMMARY_STYLE}>What this checks ({detail.obligations.length})</summary>
+          <div style={{ padding: '14px 16px' }}>
+            <RequirementList requirements={detail.obligations} />
+          </div>
+        </details>
+
+        {result && (
+          <details style={DETAILS_STYLE}>
+            <summary style={SUMMARY_STYLE}>Compare with / without rules</summary>
+            <div style={{ padding: '14px 16px' }}>
+              <EvalCard result={result} judging={judging} onJudge={judgeRun} />
             </div>
+          </details>
+        )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: result ? 'minmax(340px, 1fr) minmax(340px, 1fr)' : 'minmax(340px, 1fr)', gap: 14, marginTop: 14 }}>
-            <WorkflowPanel>
-              <div className="eyebrow">Outcome</div>
-              {!completed && !running && (
-                <p style={{ margin: '10px 0 0', color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5 }}>
-                  Run the review to see compliance status, requirements checked, and trace availability.
-                </p>
-              )}
-              {running && (
-                <p style={{ margin: '10px 0 0', color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5 }}>
-                  Review in progress. The result will appear here when the compliance check is complete.
-                </p>
-              )}
-              {primaryResult && result && (
-                <OutcomeSummary result={result} laneResult={primaryResult} compliant={compliant} onOpenTrace={() => navigate(`/app/trails/${result.runId}`)} />
-              )}
-            </WorkflowPanel>
-
-            <WorkflowPanel>
-              <div className="eyebrow">Requirements checked</div>
-              <p style={{ margin: '8px 0 14px', color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5 }}>The review uses these requirements.</p>
-              <RequirementList requirements={detail.obligations} />
-            </WorkflowPanel>
-
-            {result && (
-              <WorkflowPanel>
-                <EvalCard result={result} judging={judging} onJudge={judgeRun} />
-              </WorkflowPanel>
-            )}
-            </div>
-          </section>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          {result && (
+            <button onClick={() => { setResult(null); setEvents([]); }} style={SECONDARY_BUTTON}>
+              Run again
+            </button>
           )}
+          <button onClick={downloadAgent} style={SECONDARY_BUTTON}>Download</button>
+          <button
+            onClick={() => setMode(mode === 'compare' ? 'with-graph' : 'compare')}
+            style={SECONDARY_BUTTON}
+            title="Toggle compare mode"
+          >
+            Mode: {mode === 'compare' ? 'Compare' : 'Standard'}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
+
+const DETAILS_STYLE: React.CSSProperties = {
+  border: '1px solid var(--rule)',
+  borderRadius: 10,
+  background: '#fff',
+};
+
+const SUMMARY_STYLE: React.CSSProperties = {
+  padding: '12px 16px',
+  fontSize: 13,
+  fontWeight: 600,
+  color: 'var(--ink)',
+  cursor: 'pointer',
+  listStyle: 'none',
+};
 
 /* ── Sub-components ──────────────────────────────────────────────────── */
 
@@ -379,36 +401,11 @@ const SECONDARY_BUTTON: React.CSSProperties = {
   cursor: 'pointer',
 };
 
-function WorkflowPanel({ children }: { children: React.ReactNode }) {
-  return (
-    <article
-      style={{
-        background: '#fff',
-        border: '1px solid var(--rule)',
-        borderRadius: 10,
-        padding: 18,
-        alignSelf: 'stretch',
-        boxShadow: '0 1px 0 rgba(20,20,20,0.03)',
-      }}
-    >
-      {children}
-    </article>
-  );
-}
-
 function labelFromKey(key: string): string {
   return key
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function friendlyReviewText(text: string): string {
-  return text
-    .replace(/obligations?/gi, 'requirements')
-    .replace(/obligation graph/gi, 'requirement library')
-    .replace(/live graph/gi, 'requirement library')
-    .replace(/graph-bound\s*/gi, '');
 }
 
 function shortText(value: unknown): string {
@@ -470,34 +467,28 @@ function OutcomeSummary({
           {compliant ? 'Compliant' : 'Needs review'}
         </div>
         <div style={{ marginTop: 4, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>
-          {compliant
-            ? 'The review passed the compliance check and generated a trace.'
-            : 'The review found items that should be checked before release.'}
+          {compliant ? 'Passed all checks.' : 'A few items need review.'}
         </div>
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-        <MiniStat value={`${laneResult.score.obligationsConsulted}`} label="requirements checked" />
+        <MiniStat value={`${laneResult.score.obligationsConsulted}`} label="checks" />
         <MiniStat value={`${Math.round(laneResult.score.coverage * 100)}%`} label="coverage" />
-        <MiniStat value={`${laneResult.citations.length}`} label="data references" />
+        <MiniStat value={`${laneResult.citations.length}`} label="citations" />
       </div>
       {laneResult.score.violations.length > 0 && (
         <div style={{ fontSize: 12, color: 'var(--orange)', lineHeight: 1.5 }}>
-          Review notes: {laneResult.score.violations.join('; ')}
+          Notes: {laneResult.score.violations.join('; ')}
         </div>
       )}
       <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 12 }}>
-        <div className="eyebrow" style={{ marginBottom: 8 }}>Trace</div>
-        <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5, marginBottom: 10 }}>
-          A trace was created for this review so QA/RA can reconstruct what was checked.
-        </div>
-        <button onClick={onOpenTrace} style={SECONDARY_BUTTON}>Open trace</button>
+        <button onClick={onOpenTrace} style={SECONDARY_BUTTON}>Open trail</button>
         <span style={{ marginLeft: 8, color: 'var(--ink-4)', fontFamily: 'var(--mono)', fontSize: 10 }}>
           {result.runId.slice(0, 12)}
         </span>
       </div>
       {laneResult.output !== undefined && laneResult.output !== null && (
         <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 12 }}>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>Review output</div>
+          <div className="eyebrow" style={{ marginBottom: 8 }}>Output</div>
           <DataSummary value={laneResult.output} />
         </div>
       )}
