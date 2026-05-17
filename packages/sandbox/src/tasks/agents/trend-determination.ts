@@ -35,12 +35,12 @@ type Input = z.infer<typeof InputSchema>;
 type Output = z.infer<typeof OutputSchema>;
 
 const SAMPLE: Input = {
-  deviceFamily: 'CardioFlow ICD Lead L7',
+  deviceFamily: '',
   windowDays: 30,
-  baselineRatePerKUnits: 0.12,
-  observedCount: 9,
-  unitsInField: 18_500,
-  failureMode: 'Insulation breach at proximal coil',
+  baselineRatePerKUnits: 0.1,
+  observedCount: 0,
+  unitsInField: 1,
+  failureMode: '',
 };
 
 async function runWithGraph(input: Input, ctx: WithGraphContext): Promise<Output> {

@@ -22,7 +22,7 @@
  */
 
 import { z } from 'zod';
-import type { ObligationNode } from '@regground/core';
+import type { LLMAbstraction, ObligationNode } from '@regground/core';
 
 /* ── Public event vocabulary streamed during a run ───────────────────── */
 
@@ -117,6 +117,28 @@ export interface WithGraphContext {
   /** Obligations fetched from the graph for this process+claimed IDs.
    *  ALL citations the agent emits MUST come from this set. */
   obligations: ObligationNode[];
+  /** Optional LLM abstraction. When present, the TaskRunner prefers LLM-
+   *  driven generation grounded on the obligation set and falls back to the
+   *  deterministic body only on failure. */
+  llm?: LLMAbstraction;
+  /** Optional per-run agent persona/context (system prompt addendum) —
+   *  typically synthesized at agent creation time and passed through at
+   *  launch. */
+  agentContext?: string;
+}
+
+/* ── Composition hints (declared chains, not enforced) ────────────── */
+
+export interface ChainHint {
+  /** Task ID this task naturally receives input from. */
+  taskId: string;
+  /** One-line explanation of what flows. */
+  via: string;
+}
+
+export interface ChainHints {
+  upstream?: ChainHint[];
+  downstream?: ChainHint[];
 }
 
 /* ── Task agent definition (process-tethered) ────────────────────────── */
@@ -141,6 +163,13 @@ export interface TaskAgentDefinition<TInput = unknown, TOutput = unknown> {
   outputSchema: z.ZodType<TOutput>;
   /** Pre-loaded sample data the user can run immediately. */
   sampleData: TInput;
+  /** Declared composition with other tasks — informational, not enforced. */
+  chainHints?: ChainHints;
+  /** Persona/system prompt used by the LLM-driven execution path. When set
+   *  and an LLM is available at run time, the runner calls the LLM with this
+   *  prompt + obligation citations + the user's per-agent context and asks
+   *  for a JSON object matching `outputSchema`. */
+  systemPrompt?: string;
   /** Run the agent with the graph (graph-fetched obligations injected). */
   runWithGraph: (input: TInput, ctx: WithGraphContext) => Promise<TOutput>;
   /** Run the agent without the graph (no obligations, no citations). */

@@ -1,18 +1,24 @@
 /**
- * Sandbox — run graph-bound task agents.
+ * Sandbox — run a created process against sample or user-provided input,
+ * and get back: an answer, the applicable regulations, and the
+ * decision trace that explains the agent's reasoning.
  *
- * Pick a pre-built task agent, view its sample data, run it in one of three
- * modes (with-graph, without-graph, compare), watch a live ticker show
- * exactly how the agent talks to the obligation graph, score the
- * delta, and download the agent as a self-contained runner.
+ * Layout
+ *   Left  pane  : Input editor (auto-generated form + raw JSON tab)
+ *   Right pane  : Answer · Applicable regulations · Decision trace
+ *
+ * The graph-vs-no-graph comparison still exists in the backend (mode
+ * defaults to `with-graph`) but is not the primary user surface here.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { SmarticusMark } from '../components/ui/logos.js';
 import { useAuthenticatedApi } from '../auth/useApi.js';
 
 /* ── Types mirrored from @regground/sandbox ─────────────────────────── */
+
+type ChainHint = { taskId: string; via: string };
 
 type TaskCard = {
   id: string;
@@ -21,9 +27,23 @@ type TaskCard = {
   regulation: string;
   jurisdiction: string;
   obligationCount: number;
+  upstream?: ChainHint[];
+  downstream?: ChainHint[];
 };
 
-type Obligation = { obligationId: string; regulation: string; citation: string; summary: string };
+type JsonSchema = {
+  type?: string | string[];
+  properties?: Record<string, JsonSchema>;
+  required?: string[];
+  enum?: unknown[];
+  description?: string;
+  minimum?: number;
+  maximum?: number;
+  minLength?: number;
+  items?: JsonSchema;
+};
+
+type Obligation = { obligationId: string; regulation?: string; citation?: string; summary?: string };
 
 type TaskDetail = {
   id: string;
@@ -32,10 +52,11 @@ type TaskDetail = {
   regulation: string;
   jurisdiction: string;
   sampleData: unknown;
+  inputJsonSchema?: JsonSchema;
   obligations: Obligation[];
+  chainHints?: { upstream: ChainHint[]; downstream: ChainHint[] };
 };
 
-type Mode = 'with-graph' | 'without-graph' | 'compare';
 type Lane = 'with-graph' | 'without-graph';
 
 type LaneEvent =
@@ -62,13 +83,6 @@ type LaneResult = {
     violations: string[];
     obligationsConsulted: number;
   };
-  judge?: {
-    accuracy: number;
-    citations: number;
-    regulatoryAwareness: number;
-    completeness: number;
-    rationale: string;
-  };
   error?: string;
 };
 
@@ -93,17 +107,20 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
   const [detail, setDetail] = useState<TaskDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | undefined>(initialTaskId);
-  const [mode, setMode] = useState<Mode>('compare');
-  const [runInput, setRunInput] = useState<unknown | null>(null);
+
+  // Input editor state
+  const [inputValue, setInputValue] = useState<unknown>(null);
+  const [editorTab, setEditorTab] = useState<'form' | 'json'>('form');
+  const [jsonDraft, setJsonDraft] = useState<string>('');
+  const [jsonError, setJsonError] = useState<string | null>(null);
+
+  // Run state
   const [running, setRunning] = useState(false);
   const [events, setEvents] = useState<LaneEvent[]>([]);
   const [result, setResult] = useState<RunResult | null>(null);
-  const [judging, setJudging] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  useEffect(() => {
-    if (initialTaskId) setSelectedId(initialTaskId);
-  }, [initialTaskId]);
+  useEffect(() => { if (initialTaskId) setSelectedId(initialTaskId); }, [initialTaskId]);
 
   /* Load catalog */
   useEffect(() => {
@@ -122,10 +139,11 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     setDetail(null);
     setEvents([]);
     setResult(null);
+    setError(null);
     api<TaskDetail>(`/api/sandbox/tasks/${selectedId}`)
       .then((d) => {
         setDetail(d);
-        // Pick up pre-filled input from Builder's "Run in sandbox" if present.
+        // Prefer Builder hand-off input if present.
         let prefilled: unknown | null = null;
         try {
           const cached = sessionStorage.getItem(`builder:input:${selectedId}`);
@@ -134,21 +152,62 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             sessionStorage.removeItem(`builder:input:${selectedId}`);
           }
         } catch { /* ignore */ }
-        setRunInput(prefilled ?? d.sampleData);
+        const initial = prefilled ?? d.sampleData;
+        setInputValue(initial);
+        setJsonDraft(JSON.stringify(initial, null, 2));
+        setEditorTab('form');
       })
       .catch((e) => setError(String(e?.message ?? e)));
   }, [selectedId]);
 
-  async function runAgent() {
+  function updateField(key: string, value: unknown) {
+    setInputValue((prev: unknown) => {
+      const next = { ...(prev as Record<string, unknown>), [key]: value };
+      setJsonDraft(JSON.stringify(next, null, 2));
+      return next;
+    });
+  }
+
+  function applyJsonDraft() {
+    try {
+      const parsed = JSON.parse(jsonDraft);
+      setInputValue(parsed);
+      setJsonError(null);
+    } catch (e) {
+      setJsonError(String((e as Error)?.message ?? e));
+    }
+  }
+
+  function resetToSample() {
     if (!detail) return;
+    setInputValue(detail.sampleData);
+    setJsonDraft(JSON.stringify(detail.sampleData, null, 2));
+    setJsonError(null);
+  }
+
+  async function runProcess() {
+    if (!detail) return;
+    // Make sure raw-JSON edits are committed before sending.
+    let body = inputValue;
+    if (editorTab === 'json') {
+      try {
+        body = JSON.parse(jsonDraft);
+        setInputValue(body);
+        setJsonError(null);
+      } catch (e) {
+        setJsonError(String((e as Error)?.message ?? e));
+        return;
+      }
+    }
     setRunning(true);
     setEvents([]);
     setResult(null);
+    setError(null);
     eventSourceRef.current?.close();
     try {
       const start = await api<{ runId: string }>(`/api/sandbox/tasks/${detail.id}/run`, {
         method: 'POST',
-        body: JSON.stringify({ input: runInput ?? detail.sampleData, mode }),
+        body: JSON.stringify({ input: body, mode: 'with-graph' }),
       });
       const es = new EventSource(`${API_BASE}/api/sandbox/runs/${start.runId}/stream`);
       eventSourceRef.current = es;
@@ -180,45 +239,23 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     }
   }
 
-  async function judgeRun() {
-    if (!result) return;
-    setJudging(true);
-    try {
-      const r = await api<{ judges: { withGraph?: LaneResult['judge']; withoutGraph?: LaneResult['judge'] } }>(`/api/sandbox/runs/${result.runId}/judge`, { method: 'POST', body: JSON.stringify({ useLiveLLM: false }) });
-      setResult((prev) => {
-        if (!prev) return prev;
-        const next: RunResult = { ...prev };
-        if (next.withGraph    && r.judges.withGraph)    next.withGraph    = { ...next.withGraph,    judge: r.judges.withGraph };
-        if (next.withoutGraph && r.judges.withoutGraph) next.withoutGraph = { ...next.withoutGraph, judge: r.judges.withoutGraph };
-        return next;
-      });
-    } finally {
-      setJudging(false);
-    }
-  }
-
-  function downloadAgent() {
-    if (!detail) return;
-    window.location.href = `${API_BASE}/api/sandbox/tasks/${detail.id}/download`;
-  }
-
-  const primaryResult = result?.withGraph ?? result?.withoutGraph;
-  const completed = !!primaryResult;
-  const compliant = primaryResult?.score.strictGatePass === true;
-
-  // ── Two states: pick a process, OR focus on the chosen one ──
+  /* ── Catalog state ─────────────────────────────────────────────── */
   if (!detail) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
-        <header style={{ padding: '40px 40px 24px' }}>
+        <header style={{ padding: '40px 40px 8px' }}>
           <h1 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
             Pick a process to run.
           </h1>
+          <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 13 }}>
+            Each process runs against the obligation graph, applies the relevant rules to your input,
+            and returns an answer with citations and a decision trace.
+          </p>
         </header>
-        <div style={{ padding: '0 40px 56px' }}>
+        <div style={{ padding: '24px 40px 56px' }}>
           {error && <div style={{ padding: 12, color: '#B00020', fontSize: 13 }}>Could not load: {error}</div>}
           {!tasks && !error && <div style={{ padding: 12, color: 'var(--ink-3)', fontSize: 13 }}>Loading…</div>}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
             {tasks?.map((t) => (
               <button
                 key={t.id}
@@ -239,7 +276,14 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   <SmarticusMark size={18} />
                   <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{t.name}</span>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)' }}>{t.regulation}</div>
+                <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.45 }}>{t.oneLiner}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>{t.regulation}</div>
+                {((t.upstream?.length ?? 0) + (t.downstream?.length ?? 0)) > 0 && (
+                  <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>
+                    ↔ chains with {(t.upstream?.length ?? 0) + (t.downstream?.length ?? 0)} task
+                    {(t.upstream?.length ?? 0) + (t.downstream?.length ?? 0) === 1 ? '' : 's'}
+                  </div>
+                )}
               </button>
             ))}
           </div>
@@ -248,12 +292,12 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     );
   }
 
-  // ── Focused single-process view ──
+  /* ── Focused process runner ─────────────────────────────────────── */
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
       <header
         style={{
-          padding: '20px 40px 16px',
+          padding: '20px 32px 16px',
           borderBottom: '1px solid var(--rule)',
           display: 'flex',
           alignItems: 'center',
@@ -264,142 +308,179 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
           <button
             onClick={() => { setSelectedId(undefined); setDetail(null); setResult(null); setEvents([]); }}
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--rule-strong)',
-              borderRadius: 6,
-              padding: '6px 10px',
-              fontSize: 12,
-              color: 'var(--ink-2)',
-              cursor: 'pointer',
-            }}
+            style={GHOST_BUTTON}
           >
             ← Change
           </button>
-          <h1 style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {detail.name}
           </h1>
           <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>{detail.regulation}</span>
+          <ChainHintsStrip
+            upstream={detail.chainHints?.upstream ?? []}
+            downstream={detail.chainHints?.downstream ?? []}
+            tasks={tasks ?? []}
+            onPick={(id) => { setSelectedId(id); setDetail(null); setResult(null); setEvents([]); }}
+          />
         </div>
-        {!result && (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={resetToSample} style={GHOST_BUTTON} disabled={running}>Reset to sample</button>
           <button
-            onClick={runAgent}
+            onClick={runProcess}
             disabled={running}
             className="btn-orange"
             style={{ fontSize: 14, padding: '10px 22px' }}
           >
-            {running ? 'Running…' : 'Run'}
-          </button>
-        )}
-      </header>
-
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '28px 24px 56px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Status panel */}
-        {!completed && !running && (
-          <div style={{ padding: 20, border: '1px dashed var(--rule-strong)', borderRadius: 10, color: 'var(--ink-3)', fontSize: 13, textAlign: 'center' }}>
-            Press <b style={{ color: 'var(--ink)' }}>Run</b> to check this process.
-          </div>
-        )}
-        {running && (
-          <div style={{ padding: 20, border: '1px solid var(--rule)', borderRadius: 10, color: 'var(--ink-2)', fontSize: 13, textAlign: 'center' }}>
-            Working…
-          </div>
-        )}
-
-        {primaryResult && result && (
-          <OutcomeSummary
-            result={result}
-            laneResult={primaryResult}
-            compliant={compliant}
-            onOpenTrace={() => navigate(`/app/trails/${result.runId}`)}
-          />
-        )}
-
-        {/* Disclosures — hidden unless opened, so the page stays calm */}
-        <details style={DETAILS_STYLE}>
-          <summary style={SUMMARY_STYLE}>Inputs</summary>
-          <div style={{ padding: '14px 16px' }}>
-            <DataSummary value={runInput ?? detail.sampleData} />
-          </div>
-        </details>
-
-        <details style={DETAILS_STYLE}>
-          <summary style={SUMMARY_STYLE}>What this checks ({detail.obligations.length})</summary>
-          <div style={{ padding: '14px 16px' }}>
-            <RequirementList requirements={detail.obligations} />
-          </div>
-        </details>
-
-        {result && (
-          <details style={DETAILS_STYLE}>
-            <summary style={SUMMARY_STYLE}>Compare with / without rules</summary>
-            <div style={{ padding: '14px 16px' }}>
-              <EvalCard result={result} judging={judging} onJudge={judgeRun} />
-            </div>
-          </details>
-        )}
-
-        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-          {result && (
-            <button onClick={() => { setResult(null); setEvents([]); }} style={SECONDARY_BUTTON}>
-              Run again
-            </button>
-          )}
-          <button onClick={downloadAgent} style={SECONDARY_BUTTON}>Download</button>
-          <button
-            onClick={() => setMode(mode === 'compare' ? 'with-graph' : 'compare')}
-            style={SECONDARY_BUTTON}
-            title="Toggle compare mode"
-          >
-            Mode: {mode === 'compare' ? 'Compare' : 'Standard'}
+            {running ? 'Running…' : 'Run process'}
           </button>
         </div>
+      </header>
+
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.3fr)',
+          gap: 20,
+          padding: '20px 32px 56px',
+          alignItems: 'start',
+        }}
+      >
+        {/* ── LEFT: Input editor ─────────────────────────────────── */}
+        <section style={CARD}>
+          <div style={CARD_HEADER}>
+            <div className="eyebrow">Input</div>
+            <div style={{ display: 'flex', gap: 4, border: '1px solid var(--rule)', borderRadius: 6, padding: 2 }}>
+              <TabButton active={editorTab === 'form'} onClick={() => setEditorTab('form')}>Form</TabButton>
+              <TabButton active={editorTab === 'json'} onClick={() => setEditorTab('json')}>JSON</TabButton>
+            </div>
+          </div>
+          <p style={{ margin: '4px 16px 0', color: 'var(--ink-3)', fontSize: 12 }}>{detail.oneLiner}</p>
+
+          {editorTab === 'form' ? (
+            <InputForm
+              schema={detail.inputJsonSchema}
+              value={inputValue as Record<string, unknown> | null}
+              onChange={updateField}
+              disabled={running}
+            />
+          ) : (
+            <div style={{ padding: '12px 16px 16px' }}>
+              <textarea
+                value={jsonDraft}
+                onChange={(e) => setJsonDraft(e.target.value)}
+                onBlur={applyJsonDraft}
+                spellCheck={false}
+                disabled={running}
+                style={{
+                  width: '100%',
+                  minHeight: 360,
+                  fontFamily: 'var(--mono)',
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  border: '1px solid var(--rule)',
+                  borderRadius: 6,
+                  padding: 10,
+                  resize: 'vertical',
+                  background: '#fff',
+                  color: 'var(--ink)',
+                }}
+              />
+              {jsonError && (
+                <div style={{ marginTop: 6, color: '#B00020', fontSize: 12, fontFamily: 'var(--mono)' }}>
+                  {jsonError}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* ── RIGHT: Live reasoning + result ────────────────────── */}
+        <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {error && (
+            <div style={{ padding: 12, color: '#B00020', fontSize: 13, border: '1px solid #f5cccc', borderRadius: 8, background: '#fff5f5' }}>
+              {error}
+            </div>
+          )}
+
+          {!running && !result && (
+            <div style={{ ...CARD, padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
+              Edit the input on the left, then press <b style={{ color: 'var(--ink)' }}>Run process</b> to
+              get the answer, applicable regulations, and decision trace.
+            </div>
+          )}
+
+          {(running || result) && (
+            <AnswerPanel
+              result={result}
+              running={running}
+              taskName={detail.name}
+            />
+          )}
+
+          {(events.length > 0 || result) && (
+            <RegulationsPanel
+              events={events}
+              result={result}
+              fallback={detail.obligations}
+            />
+          )}
+
+          {events.length > 0 && (
+            <TracePanel
+              events={events}
+              runId={result?.runId}
+              onOpenFullTrace={result ? () => navigate(`/app/trails/${result.runId}`) : undefined}
+            />
+          )}
+        </section>
       </div>
     </div>
   );
 }
 
-const DETAILS_STYLE: React.CSSProperties = {
-  border: '1px solid var(--rule)',
-  borderRadius: 10,
-  background: '#fff',
-};
-
-const SUMMARY_STYLE: React.CSSProperties = {
-  padding: '12px 16px',
-  fontSize: 13,
-  fontWeight: 600,
-  color: 'var(--ink)',
-  cursor: 'pointer',
-  listStyle: 'none',
-};
-
 /* ── Sub-components ──────────────────────────────────────────────────── */
 
-const SMALL_PILL: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  height: 22,
-  padding: '0 8px',
-  fontFamily: 'var(--mono)',
-  fontSize: 10,
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase',
-  color: 'var(--ink-2)',
-  border: '1px solid var(--rule-strong)',
-  borderRadius: 11,
+const CARD: React.CSSProperties = {
+  background: '#fff',
+  border: '1px solid var(--rule)',
+  borderRadius: 10,
 };
-
-const SECONDARY_BUTTON: React.CSSProperties = {
+const CARD_HEADER: React.CSSProperties = {
+  padding: '12px 16px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  borderBottom: '1px solid var(--rule)',
+};
+const GHOST_BUTTON: React.CSSProperties = {
   background: 'transparent',
   border: '1px solid var(--rule-strong)',
   borderRadius: 6,
-  color: 'var(--ink-2)',
-  fontFamily: 'var(--sans)',
+  padding: '6px 10px',
   fontSize: 12,
-  padding: '8px 12px',
+  color: 'var(--ink-2)',
   cursor: 'pointer',
 };
+
+function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        background: active ? 'var(--paper)' : 'transparent',
+        border: 'none',
+        borderRadius: 4,
+        padding: '4px 10px',
+        fontSize: 11,
+        color: active ? 'var(--ink)' : 'var(--ink-3)',
+        cursor: 'pointer',
+        fontWeight: active ? 600 : 400,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 function labelFromKey(key: string): string {
   return key
@@ -408,193 +489,560 @@ function labelFromKey(key: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-function shortText(value: unknown): string {
-  if (value == null) return 'Not provided';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `${value.length} item${value.length === 1 ? '' : 's'}`;
-  if (typeof value === 'object') return `${Object.keys(value).length} field${Object.keys(value).length === 1 ? '' : 's'}`;
-  return 'Provided';
+/* ── Chain hints strip (focused header) ─────────────────────────────── */
+
+function ChainHintsStrip({
+  upstream,
+  downstream,
+  tasks,
+  onPick,
+}: {
+  upstream: ChainHint[];
+  downstream: ChainHint[];
+  tasks: TaskCard[];
+  onPick: (id: string) => void;
+}) {
+  if (upstream.length === 0 && downstream.length === 0) return null;
+  const nameFor = (id: string) => tasks.find((t) => t.id === id)?.name ?? id;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginLeft: 8, flexWrap: 'wrap' }}>
+      {upstream.length > 0 && (
+        <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+          Receives from:{' '}
+          {upstream.map((h, i) => (
+            <ChainChip key={`u-${h.taskId}`} label={nameFor(h.taskId)} title={h.via} onClick={() => onPick(h.taskId)} trailingComma={i < upstream.length - 1} />
+          ))}
+        </span>
+      )}
+      {downstream.length > 0 && (
+        <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>
+          Feeds into:{' '}
+          {downstream.map((h, i) => (
+            <ChainChip key={`d-${h.taskId}`} label={nameFor(h.taskId)} title={h.via} onClick={() => onPick(h.taskId)} trailingComma={i < downstream.length - 1} />
+          ))}
+        </span>
+      )}
+    </div>
+  );
 }
 
-function DataSummary({ value }: { value: unknown }) {
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
-    const entries = Object.entries(value as Record<string, unknown>).slice(0, 8);
+function ChainChip({ label, title, onClick, trailingComma }: { label: string; title: string; onClick: () => void; trailingComma: boolean }) {
+  return (
+    <>
+      <button
+        onClick={onClick}
+        title={title}
+        style={{
+          display: 'inline-block',
+          background: 'transparent',
+          border: '1px solid var(--rule)',
+          borderRadius: 999,
+          padding: '1px 8px',
+          fontSize: 11,
+          color: 'var(--ink-2)',
+          cursor: 'pointer',
+          margin: '0 2px',
+        }}
+      >
+        {label}
+      </button>
+      {trailingComma ? ' ' : ''}
+    </>
+  );
+}
+
+/* ── Form auto-generated from JSON Schema ───────────────────────────── */
+
+function InputForm({
+  schema,
+  value,
+  onChange,
+  disabled,
+}: {
+  schema?: JsonSchema;
+  value: Record<string, unknown> | null;
+  onChange: (key: string, val: unknown) => void;
+  disabled: boolean;
+}) {
+  // Derive the field list from the schema if available; otherwise infer from value.
+  const fields: Array<[string, JsonSchema]> = useMemo(() => {
+    if (schema?.properties) return Object.entries(schema.properties);
+    if (value && typeof value === 'object') {
+      return Object.entries(value).map(([k, v]) => [k, inferSchema(v)]);
+    }
+    return [];
+  }, [schema, value]);
+
+  if (!value || typeof value !== 'object') {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {entries.map(([key, entryValue]) => (
-          <div key={key} style={{ border: '1px solid var(--rule)', borderRadius: 8, padding: '9px 11px', background: 'var(--paper)' }}>
-            <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 3 }}>{labelFromKey(key)}</div>
-            <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.45 }}>{shortText(entryValue)}</div>
-            {Array.isArray(entryValue) && entryValue.length > 0 && (
-              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 7 }}>
-                {entryValue.slice(0, 5).map((item, index) => (
-                  <span key={`${key}-${index}`} style={SMALL_PILL}>{shortText(item)}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+      <div style={{ padding: 16, color: 'var(--ink-3)', fontSize: 12 }}>
+        This process expects a non-object input. Use the JSON tab.
       </div>
     );
   }
 
-  return <div style={{ color: 'var(--ink-2)', fontSize: 13, lineHeight: 1.5 }}>{shortText(value)}</div>;
-}
-
-function OutcomeSummary({
-  result,
-  laneResult,
-  compliant,
-  onOpenTrace,
-}: {
-  result: RunResult;
-  laneResult: LaneResult;
-  compliant: boolean;
-  onOpenTrace: () => void;
-}) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 12 }}>
-      <div
-        style={{
-          padding: 16,
-          borderRadius: 10,
-          border: `1px solid ${compliant ? 'var(--ok)' : 'var(--orange)'}`,
-          background: compliant ? 'rgba(111,207,151,0.10)' : 'rgba(250,80,15,0.10)',
-        }}
-      >
-        <div style={{ fontSize: 28, fontWeight: 700, color: compliant ? 'var(--ok)' : 'var(--orange)' }}>
-          {compliant ? 'Compliant' : 'Needs review'}
-        </div>
-        <div style={{ marginTop: 4, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.45 }}>
-          {compliant ? 'Passed all checks.' : 'A few items need review.'}
-        </div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-        <MiniStat value={`${laneResult.score.obligationsConsulted}`} label="checks" />
-        <MiniStat value={`${Math.round(laneResult.score.coverage * 100)}%`} label="coverage" />
-        <MiniStat value={`${laneResult.citations.length}`} label="citations" />
-      </div>
-      {laneResult.score.violations.length > 0 && (
-        <div style={{ fontSize: 12, color: 'var(--orange)', lineHeight: 1.5 }}>
-          Notes: {laneResult.score.violations.join('; ')}
-        </div>
-      )}
-      <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 12 }}>
-        <button onClick={onOpenTrace} style={SECONDARY_BUTTON}>Open trail</button>
-        <span style={{ marginLeft: 8, color: 'var(--ink-4)', fontFamily: 'var(--mono)', fontSize: 10 }}>
-          {result.runId.slice(0, 12)}
-        </span>
-      </div>
-      {laneResult.output !== undefined && laneResult.output !== null && (
-        <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 12 }}>
-          <div className="eyebrow" style={{ marginBottom: 8 }}>Output</div>
-          <DataSummary value={laneResult.output} />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MiniStat({ value, label }: { value: string; label: string }) {
-  return (
-    <div style={{ border: '1px solid var(--rule)', borderRadius: 8, padding: 10, background: 'var(--paper)' }}>
-      <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--ink)' }}>{value}</div>
-      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{label}</div>
-    </div>
-  );
-}
-
-function RequirementList({ requirements }: { requirements: Obligation[] }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
-      {requirements.map((o) => (
-        <div key={o.obligationId} style={{ border: '1px solid var(--rule)', borderRadius: 8, padding: 10, background: 'var(--paper)' }}>
-          <div style={{ fontWeight: 600, color: 'var(--ink)', fontSize: 12 }}>{o.citation ?? o.obligationId}</div>
-          <div style={{ color: 'var(--ink-3)', marginTop: 4, lineHeight: 1.45, fontSize: 11 }}>{o.summary ?? 'Requirement checked during review.'}</div>
-        </div>
+    <div style={{ padding: '12px 16px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {fields.map(([key, fieldSchema]) => (
+        <FieldRow
+          key={key}
+          name={key}
+          schema={fieldSchema}
+          value={(value as Record<string, unknown>)[key]}
+          onChange={(v) => onChange(key, v)}
+          disabled={disabled}
+        />
       ))}
     </div>
   );
 }
 
-function EvalCard({ result, judging, onJudge }: { result: RunResult; judging: boolean; onJudge: () => void }) {
-  const w = result.withGraph?.score;
-  const wo = result.withoutGraph?.score;
-  return (
-    <div style={{ marginTop: 18, background: '#fff', border: '1px solid var(--rule)', padding: 18 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <div className="eyebrow">Review comparison</div>
-        <button onClick={onJudge} disabled={judging} style={{ background: 'none', border: '1px solid var(--rule)', color: 'var(--ink-2)', padding: '6px 12px', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'pointer' }}>
-          {judging ? 'Scoring…' : 'Score with quality review'}
-        </button>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-        <Metric label="Requirement coverage" withVal={w ? `${Math.round(w.coverage * 100)}%` : '—'} withoutVal={wo ? `${Math.round(wo.coverage * 100)}%` : '—'} bar={{ withN: (w?.coverage ?? 0), withoutN: (wo?.coverage ?? 0) }} />
-        <Metric label="Source citations"  withVal={`${w?.citations ?? 0}`} withoutVal={`${wo?.citations ?? 0}`} bar={{ withN: Math.min(1, (w?.citations ?? 0) / 8), withoutN: Math.min(1, (wo?.citations ?? 0) / 8) }} />
-        <Metric label="Output check"           withVal={w?.strictGatePass ? 'Pass' : 'Fail'} withoutVal={wo?.strictGatePass ? 'Pass' : 'Fail'} bar={{ withN: w?.strictGatePass ? 1 : 0, withoutN: wo?.strictGatePass ? 1 : 0 }} />
-      </div>
-
-      {(result.withGraph?.judge || result.withoutGraph?.judge) && (
-        <div style={{ marginTop: 18, paddingTop: 16, borderTop: '1px solid var(--rule)' }}>
-          <div className="eyebrow" style={{ marginBottom: 4 }}>Quality review</div>
-          <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)', letterSpacing: '0.04em', marginBottom: 10 }}>
-            Rule-based judge
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <JudgePanel title="Compliance review" judge={result.withGraph?.judge} />
-            <JudgePanel title="Baseline review" judge={result.withoutGraph?.judge} />
-          </div>
-        </div>
-      )}
-    </div>
-  );
+function inferSchema(v: unknown): JsonSchema {
+  if (typeof v === 'string') return { type: 'string' };
+  if (typeof v === 'number') return { type: 'number' };
+  if (typeof v === 'boolean') return { type: 'boolean' };
+  if (Array.isArray(v)) return { type: 'array' };
+  if (v && typeof v === 'object') return { type: 'object' };
+  return {};
 }
 
-function Metric({ label, withVal, withoutVal, bar }: { label: string; withVal: string; withoutVal: string; bar: { withN: number; withoutN: number } }) {
+function FieldRow({
+  name,
+  schema,
+  value,
+  onChange,
+  disabled,
+}: {
+  name: string;
+  schema: JsonSchema;
+  value: unknown;
+  onChange: (v: unknown) => void;
+  disabled: boolean;
+}) {
+  const label = labelFromKey(name);
+  const type = Array.isArray(schema.type) ? schema.type[0] : schema.type;
+  const isEnum = Array.isArray(schema.enum) && schema.enum.length > 0;
+  const isLongText =
+    type === 'string' && ((schema.minLength ?? 0) >= 20 || /description|notes|details|narrative|comment/i.test(name));
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    fontFamily: 'var(--sans)',
+    fontSize: 13,
+    color: 'var(--ink)',
+    background: '#fff',
+    border: '1px solid var(--rule)',
+    borderRadius: 6,
+    padding: '8px 10px',
+  };
+
+  let control: React.ReactNode;
+  if (isEnum) {
+    control = (
+      <select
+        value={value as string ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        style={inputStyle}
+      >
+        {(schema.enum as unknown[]).map((opt) => (
+          <option key={String(opt)} value={String(opt)}>{labelFromKey(String(opt))}</option>
+        ))}
+      </select>
+    );
+  } else if (type === 'boolean') {
+    control = (
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink-2)' }}>
+        <input
+          type="checkbox"
+          checked={!!value}
+          onChange={(e) => onChange(e.target.checked)}
+          disabled={disabled}
+        />
+        {value ? 'Yes' : 'No'}
+      </label>
+    );
+  } else if (type === 'number' || type === 'integer') {
+    control = (
+      <input
+        type="number"
+        value={typeof value === 'number' ? value : ''}
+        min={schema.minimum}
+        max={schema.maximum}
+        onChange={(e) => {
+          const n = e.target.value === '' ? 0 : Number(e.target.value);
+          onChange(Number.isFinite(n) ? n : 0);
+        }}
+        disabled={disabled}
+        style={inputStyle}
+      />
+    );
+  } else if (type === 'string' && isLongText) {
+    control = (
+      <textarea
+        value={typeof value === 'string' ? value : ''}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        rows={4}
+        style={{ ...inputStyle, fontFamily: 'var(--sans)', resize: 'vertical' }}
+      />
+    );
+  } else if (type === 'string') {
+    control = (
+      <input
+        type="text"
+        value={typeof value === 'string' ? value : ''}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        style={inputStyle}
+      />
+    );
+  } else {
+    // arrays, objects, unknown → JSON snippet
+    const draft = JSON.stringify(value, null, 2);
+    control = (
+      <textarea
+        defaultValue={draft}
+        onBlur={(e) => {
+          try { onChange(JSON.parse(e.target.value)); } catch { /* ignore */ }
+        }}
+        disabled={disabled}
+        rows={4}
+        style={{ ...inputStyle, fontFamily: 'var(--mono)', fontSize: 12, resize: 'vertical' }}
+      />
+    );
+  }
+
   return (
     <div>
-      <div className="eyebrow" style={{ marginBottom: 8 }}>{label}</div>
-      <div style={{ marginBottom: 6 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>
-          <span>Compliance review</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withVal}</span>
-        </div>
-        <div style={{ height: 6, background: 'var(--paper-2, #E8E4DA)', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ width: `${Math.round(bar.withN * 100)}%`, height: '100%', background: 'var(--orange)' }} />
-        </div>
+      <label style={{ display: 'block', fontSize: 11, color: 'var(--ink-3)', marginBottom: 4 }}>
+        {label}
+        {schema.description && (
+          <span style={{ color: 'var(--ink-4)', marginLeft: 6, fontStyle: 'italic' }}>{schema.description}</span>
+        )}
+      </label>
+      {control}
+    </div>
+  );
+}
+
+/* ── Answer panel ─────────────────────────────────────────────────── */
+
+function AnswerPanel({
+  result,
+  running,
+  taskName,
+}: {
+  result: RunResult | null;
+  running: boolean;
+  taskName: string;
+}) {
+  const lane = result?.withGraph ?? result?.withoutGraph;
+  return (
+    <section style={CARD}>
+      <div style={CARD_HEADER}>
+        <div className="eyebrow">Answer</div>
+        {lane && (
+          <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>
+            {lane.durationMs} ms · {lane.score.obligationsConsulted} checks
+          </span>
+        )}
       </div>
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--ink-3)', marginBottom: 2 }}>
-          <span>Baseline review</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{withoutVal}</span>
+      <div style={{ padding: 16 }}>
+        {running && !lane && (
+          <div style={{ color: 'var(--ink-3)', fontSize: 13 }}>
+            {taskName} is working…
+          </div>
+        )}
+        {lane?.error && (
+          <div style={{ color: '#B00020', fontSize: 13 }}>{lane.error}</div>
+        )}
+        {lane && !lane.error && lane.output != null && (
+          <OutputRenderer value={lane.output} />
+        )}
+      </div>
+    </section>
+  );
+}
+
+/* Renders the agent's structured output in a human-friendly way.
+ * Recognises the common shapes used by sandbox tasks:
+ *   - { decisions: [{jurisdiction, reportable, clockDays, reasoning, citation}] }
+ *   - { summary: string, ... }
+ *   - generic objects → labelled rows
+ */
+function OutputRenderer({ value }: { value: unknown }) {
+  if (value == null) return <Muted>No output.</Muted>;
+  if (typeof value !== 'object') return <div style={{ fontSize: 14, color: 'var(--ink)' }}>{String(value)}</div>;
+
+  const obj = value as Record<string, unknown>;
+
+  // Per-jurisdiction reportability decisions (AE / Complaint coder etc).
+  if (Array.isArray(obj.decisions)) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {typeof obj.summary === 'string' && (
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.55, color: 'var(--ink)' }}>{obj.summary}</p>
+        )}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+          {(obj.decisions as Array<Record<string, unknown>>).map((d, i) => (
+            <DecisionCard key={i} decision={d} />
+          ))}
         </div>
-        <div style={{ height: 6, background: 'var(--paper-2, #E8E4DA)', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ width: `${Math.round(bar.withoutN * 100)}%`, height: '100%', background: 'var(--ink-4)' }} />
+        {typeof obj.trendReportTriggered === 'boolean' && (
+          <div style={{ fontSize: 12, color: obj.trendReportTriggered ? 'var(--orange)' : 'var(--ink-3)' }}>
+            Trend report {obj.trendReportTriggered ? 'triggered' : 'not triggered'}.
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Generic object — show top-level fields.
+  const entries = Object.entries(obj);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {entries.map(([k, v]) => (
+        <ValueRow key={k} label={labelFromKey(k)} value={v} />
+      ))}
+    </div>
+  );
+}
+
+function DecisionCard({ decision }: { decision: Record<string, unknown> }) {
+  const jur = String(decision.jurisdiction ?? '');
+  const reportable = decision.reportable === true;
+  const clock = typeof decision.clockDays === 'number' ? decision.clockDays : null;
+  const reasoning = typeof decision.reasoning === 'string' ? decision.reasoning : '';
+  const citation = typeof decision.citation === 'string' ? decision.citation : '';
+
+  const color = reportable ? 'var(--orange)' : 'var(--ink-2)';
+  const bg = reportable ? 'rgba(250,80,15,0.08)' : 'var(--paper)';
+  return (
+    <div style={{ border: `1px solid ${reportable ? 'var(--orange)' : 'var(--rule)'}`, borderRadius: 8, padding: 12, background: bg }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.06em', color: 'var(--ink-3)' }}>{jur}</div>
+        <div style={{ fontSize: 13, fontWeight: 700, color }}>{reportable ? 'Reportable' : 'Not reportable'}</div>
+      </div>
+      {clock != null && (
+        <div style={{ fontSize: 12, color: 'var(--ink-2)', marginBottom: 6 }}>
+          Clock: <b style={{ color: 'var(--ink)' }}>{clock} day{clock === 1 ? '' : 's'}</b>
         </div>
+      )}
+      {reasoning && (
+        <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>{reasoning}</div>
+      )}
+      {citation && (
+        <div style={{ marginTop: 8, fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{citation}</div>
+      )}
+    </div>
+  );
+}
+
+function ValueRow({ label, value }: { label: string; value: unknown }) {
+  return (
+    <div style={{ border: '1px solid var(--rule)', borderRadius: 8, padding: '8px 10px', background: 'var(--paper)' }}>
+      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+        {renderValue(value)}
       </div>
     </div>
   );
 }
 
-function JudgePanel({ title, judge }: { title: string; judge?: LaneResult['judge'] }) {
-  if (!judge) return <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>{title} — not scored.</div>;
-  const rows: Array<[string, number]> = [
-    ['Accuracy', judge.accuracy],
-    ['Citations', judge.citations],
-    ['Regulatory awareness', judge.regulatoryAwareness],
-    ['Completeness', judge.completeness],
-  ];
+function renderValue(v: unknown): React.ReactNode {
+  if (v == null) return <Muted>—</Muted>;
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
+  if (Array.isArray(v)) {
+    if (v.every((x) => typeof x === 'string' || typeof x === 'number')) {
+      return v.join(', ');
+    }
+    return <pre style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: 11 }}>{JSON.stringify(v, null, 2)}</pre>;
+  }
+  return <pre style={{ margin: 0, fontFamily: 'var(--mono)', fontSize: 11 }}>{JSON.stringify(v, null, 2)}</pre>;
+}
+
+function Muted({ children }: { children: React.ReactNode }) {
+  return <span style={{ color: 'var(--ink-4)' }}>{children}</span>;
+}
+
+/* ── Applicable regulations ──────────────────────────────────────── */
+
+function RegulationsPanel({
+  events,
+  result,
+  fallback,
+}: {
+  events: LaneEvent[];
+  result: RunResult | null;
+  fallback: Obligation[];
+}) {
+  // Build from graph.cite events (richest data: id, citation, regulation, summary).
+  const cites = new Map<string, { obligationId: string; citation: string; regulation: string; summary: string }>();
+  for (const e of events) {
+    if (e.type === 'graph.cite' && !cites.has(e.obligationId)) {
+      cites.set(e.obligationId, {
+        obligationId: e.obligationId,
+        citation: e.citation,
+        regulation: e.regulation,
+        summary: e.summary,
+      });
+    }
+  }
+  const lane = result?.withGraph ?? result?.withoutGraph;
+  const violations = new Set(lane?.score.violations ?? []);
+  const items = Array.from(cites.values());
+  const showFallback = items.length === 0 && fallback.length > 0;
+
   return (
-    <div style={{ background: 'var(--paper)', padding: 12, border: '1px solid var(--rule)' }}>
-      <div className="eyebrow" style={{ marginBottom: 8 }}>{title}</div>
-      {rows.map(([k, v]) => (
-        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--ink-2)', padding: '3px 0' }}>
-          <span>{k}</span><span style={{ color: 'var(--ink)', fontWeight: 500 }}>{v.toFixed(1)} / 10</span>
-        </div>
-      ))}
-      <div style={{ marginTop: 8, fontSize: 11, color: 'var(--ink-3)', lineHeight: 1.5, fontStyle: 'italic' }}>{judge.rationale}</div>
-    </div>
+    <section style={CARD}>
+      <div style={CARD_HEADER}>
+        <div className="eyebrow">Applicable regulations</div>
+        <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>
+          {items.length || fallback.length}
+        </span>
+      </div>
+      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {showFallback &&
+          fallback.map((o) => (
+            <div key={o.obligationId} style={OBLIGATION_ROW}>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>{o.obligationId}</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{o.summary ?? 'Loading from graph…'}</div>
+            </div>
+          ))}
+        {items.map((o) => (
+          <div
+            key={o.obligationId}
+            style={{
+              ...OBLIGATION_ROW,
+              borderColor: violations.has(o.obligationId) ? 'var(--orange)' : 'var(--rule)',
+              background: violations.has(o.obligationId) ? 'rgba(250,80,15,0.05)' : '#fff',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)' }}>{o.citation || o.obligationId}</div>
+              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{o.regulation}</div>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 4, lineHeight: 1.5 }}>{o.summary}</div>
+            {violations.has(o.obligationId) && (
+              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--orange)', fontStyle: 'italic' }}>
+                Output did not satisfy this obligation.
+              </div>
+            )}
+          </div>
+        ))}
+        {!showFallback && items.length === 0 && (
+          <div style={{ color: 'var(--ink-3)', fontSize: 12 }}>No regulations cited yet.</div>
+        )}
+      </div>
+    </section>
   );
+}
+
+const OBLIGATION_ROW: React.CSSProperties = {
+  border: '1px solid var(--rule)',
+  borderRadius: 8,
+  padding: '10px 12px',
+  background: '#fff',
+};
+
+/* ── Decision trace (inline) ─────────────────────────────────────── */
+
+function TracePanel({
+  events,
+  runId,
+  onOpenFullTrace,
+}: {
+  events: LaneEvent[];
+  runId?: string;
+  onOpenFullTrace?: () => void;
+}) {
+  const interesting = events.filter((e) =>
+    e.type === 'agent.thinking' ||
+    e.type === 'graph.query' ||
+    e.type === 'obligation.satisfied' ||
+    e.type === 'obligation.missed' ||
+    e.type === 'output.gated',
+  );
+
+  return (
+    <section style={CARD}>
+      <div style={CARD_HEADER}>
+        <div className="eyebrow">Decision trace</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {runId && (
+            <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
+              {runId.slice(0, 12)}
+            </span>
+          )}
+          {onOpenFullTrace && (
+            <button onClick={onOpenFullTrace} style={GHOST_BUTTON}>Open full trail</button>
+          )}
+        </div>
+      </div>
+      <ol
+        style={{
+          margin: 0,
+          padding: '12px 16px 16px 32px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+          maxHeight: 360,
+          overflow: 'auto',
+        }}
+      >
+        {interesting.map((e, i) => (
+          <li key={i} style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+            <TraceLine event={e} />
+          </li>
+        ))}
+        {interesting.length === 0 && (
+          <li style={{ color: 'var(--ink-3)', listStyle: 'none', marginLeft: -16 }}>
+            Trace will appear here as the agent reasons through the input.
+          </li>
+        )}
+      </ol>
+    </section>
+  );
+}
+
+function TraceLine({ event }: { event: LaneEvent }) {
+  switch (event.type) {
+    case 'agent.thinking':
+      return <span><b style={{ color: 'var(--ink)' }}>Thinking · </b>{event.message}</span>;
+    case 'graph.query':
+      return (
+        <span>
+          <b style={{ color: 'var(--ink)' }}>Graph · </b>
+          {event.message}
+          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', marginLeft: 6 }}>
+            ({event.resultCount} result{event.resultCount === 1 ? '' : 's'})
+          </span>
+        </span>
+      );
+    case 'obligation.satisfied':
+      return (
+        <span style={{ color: 'var(--ok, #2a8c4f)' }}>
+          ✓ Satisfied <span style={{ fontFamily: 'var(--mono)', color: 'var(--ink-3)' }}>{event.obligationId}</span>
+          {event.reason && <span style={{ color: 'var(--ink-3)' }}> — {event.reason}</span>}
+        </span>
+      );
+    case 'obligation.missed':
+      return (
+        <span style={{ color: 'var(--orange)' }}>
+          ✗ Missed <span style={{ fontFamily: 'var(--mono)', color: 'var(--ink-3)' }}>{event.obligationId}</span>
+          {event.reason && <span style={{ color: 'var(--ink-3)' }}> — {event.reason}</span>}
+        </span>
+      );
+    case 'output.gated':
+      return (
+        <span style={{ color: event.passed ? 'var(--ok, #2a8c4f)' : 'var(--orange)' }}>
+          {event.passed ? 'Output passed strict gate.' : `Output blocked by strict gate: ${event.violations.join('; ')}`}
+        </span>
+      );
+    default:
+      return null;
+  }
 }
 
 export default Sandbox;

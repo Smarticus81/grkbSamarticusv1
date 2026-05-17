@@ -38,13 +38,12 @@ type Input = z.infer<typeof InputSchema>;
 type Output = z.infer<typeof OutputSchema>;
 
 const SAMPLE: Input = {
-  eventId: 'AE-2026-0408-22',
-  deviceClassification: 'IIb',
-  patientOutcome: 'serious_injury',
+  eventId: '',
+  deviceClassification: 'IIa',
+  patientOutcome: 'no_harm',
   rootCauseConfirmed: false,
-  similarEventsIn30Days: 4,
-  description:
-    'Implantable infusion pump delivered a 4x bolus dose during a programmed basal cycle. Patient hospitalized for 48h with stable recovery. Pump retrieved for failure analysis. Three other similar pump events flagged in the prior 30 days across EU sites.',
+  similarEventsIn30Days: 0,
+  description: '',
 };
 
 function pickCitation(obligations: ObligationNode[], pattern: RegExp): string {

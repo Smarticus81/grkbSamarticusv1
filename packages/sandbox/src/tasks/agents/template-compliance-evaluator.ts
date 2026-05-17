@@ -44,16 +44,11 @@ type Input = z.infer<typeof InputSchema>;
 type Output = z.infer<typeof OutputSchema>;
 
 const SAMPLE: Input = {
-  documentTitle: 'PSUR — GlucoSense CGM Sensor v3 (2025)',
+  documentTitle: '',
   documentType: 'PSUR',
-  authorRole: 'PRRC',
+  authorRole: '',
   draftSections: [
-    { heading: 'Executive Summary',                       wordCount: 420, hasReferences: false },
-    { heading: 'Device Description and Intended Purpose', wordCount: 680, hasReferences: true  },
-    { heading: 'Sales and Estimated Population Exposed',  wordCount: 240, hasReferences: true  },
-    { heading: 'Conclusions of the Benefit-Risk Analysis',wordCount: 510, hasReferences: true  },
-    { heading: 'Main Findings of PMCF',                   wordCount: 380, hasReferences: true  },
-    { heading: 'Volume of Sales',                         wordCount: 110, hasReferences: false },
+    { heading: '', wordCount: 0, hasReferences: false },
   ],
 };
 

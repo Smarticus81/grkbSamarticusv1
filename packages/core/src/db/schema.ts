@@ -461,9 +461,14 @@ export const builderAgents = pgTable(
     taskId: varchar('task_id', { length: 64 }),
     regulations: jsonb('regulations').$type<string[]>().default([]).notNull(),
     evidenceStatus: jsonb('evidence_status').$type<Record<string, string>>().default({}).notNull(),
-    /** Per-slot attached data: { [slotLabel]: { filename, sizeBytes, content, contentType, attachedAt } } */
+    /** Per-slot attached data: { [slotLabel]: { filename, sizeBytes, content, contentType, attachedAt } }
+     *  Reserved slot `__context` stores the LLM-synthesised agent context
+     *  ({ systemPrompt, personaSummary, regulatoryFocus, practicesIncorporated, generatedAt, model, source }). */
     attachedData: jsonb('attached_data')
-      .$type<Record<string, { filename: string; sizeBytes: number; content: string; contentType: string; attachedAt: string }>>()
+      .$type<Record<string,
+        | { filename: string; sizeBytes: number; content: string; contentType: string; attachedAt: string }
+        | { systemPrompt: string; personaSummary: string; regulatoryFocus: string[]; practicesIncorporated: string[]; generatedAt: string; model: string | null; source: 'llm' | 'deterministic' }
+      >>()
       .default({})
       .notNull(),
     guardrails: jsonb('guardrails').$type<Record<string, boolean>>().default({}).notNull(),

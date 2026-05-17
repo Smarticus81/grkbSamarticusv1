@@ -1,17 +1,19 @@
 /**
  * Decision Trails — Smarticus
  *
- * Hayes Raffle: an audit trail isn't a database — it's a story your future
- * self tells an inspector. The whole page is a story:
- *   1. WHO am I auditing? (the search)
- *   2. IS IT REAL? (verification seal)
- *   3. WHAT HAPPENED? (the timeline)
- *   4. WHY? (per-event payload)
+ * An audit trail isn't a database — it's a story your future self tells an
+ * inspector. It is NOT a log of every step the system took. It is the
+ * record of every *decision* the system made:
  *
- * Paper, ink, signal. No neon. The seriousness of an audit deserves it.
+ *   WHY  — the reason for the decision
+ *   WHO  — the agent that made it
+ *   WHEN — when it was made
+ *   REG  — the granular regulation or standard it came from
+ *
+ * Steps (queries, thinking, internal plumbing) are intentionally hidden.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuthenticatedApi } from '../auth/useApi.js';
 import { shortHash } from '../lib/utils.js';
 import { PageHeader } from '../components/ui/PageHeader.js';
@@ -40,28 +42,129 @@ interface Props {
   initialId?: string;
 }
 
-type Tone = 'ok' | 'warn' | 'err' | 'info';
+type Verdict = 'identified' | 'satisfied' | 'missed' | 'gated' | 'other';
 
-function friendlyEvent(eventType: string): { label: string; tone: Tone } {
-  const lower = eventType.toLowerCase();
-  if (lower.includes('qualif') || lower.includes('readiness')) return { label: 'Readiness check', tone: 'info' };
-  if (lower.includes('valid') || lower.includes('compliance')) return { label: 'Validation check', tone: 'info' };
-  if (lower.includes('start') || lower.includes('init')) return { label: 'Process started', tone: 'info' };
-  if (lower.includes('complete') || lower.includes('finish')) return { label: 'Process completed', tone: 'ok' };
-  if (lower.includes('reject') || lower.includes('fail') || lower.includes('miss')) return { label: 'Requirement not satisfied', tone: 'err' };
-  if (lower.includes('correct') || lower.includes('retry')) return { label: 'Correction applied', tone: 'warn' };
-  if (lower.includes('agent')) return { label: 'Agent step', tone: 'info' };
-  if (lower.includes('hitl') || lower.includes('approve')) return { label: 'Human review', tone: 'info' };
-  if (lower.includes('evidence')) return { label: 'Data handled', tone: 'info' };
-  return { label: eventType.replace(/_/g, ' ').toLowerCase(), tone: 'info' };
+interface Decision {
+  id: string;
+  sequenceNumber: number;
+  verdict: Verdict;
+  headline: string;
+  why: string;
+  agent: string;
+  timestamp: string;
+  obligationId?: string;
+  citation?: string;
+  regulation?: string;
+  currentHash: string;
+  previousHash: string;
 }
 
-function toneColor(t: Tone): string {
-  switch (t) {
-    case 'ok':   return 'var(--ok)';
-    case 'warn': return 'var(--warn)';
-    case 'err':  return 'var(--err)';
-    case 'info': return 'var(--ink-2)';
+function str(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function toDecision(entry: TraceEntry): Decision | null {
+  const p = entry.payload ?? {};
+  const obligationId = str(p['obligationId']);
+  const citation = str(p['citation']);
+  const regulation = str(p['regulation']);
+  const summary = str(p['summary']);
+  const reason = str(p['reason']) ?? str(p['message']);
+
+  const lower = entry.eventType.toLowerCase();
+
+  if (lower === 'graph.cite' || lower.endsWith('.cite')) {
+    return {
+      id: entry.id,
+      sequenceNumber: entry.sequenceNumber,
+      verdict: 'identified',
+      headline: 'Identified as applicable',
+      why: summary ?? reason ?? 'This requirement applies to the inputs provided.',
+      agent: entry.actor,
+      timestamp: entry.timestamp,
+      obligationId,
+      citation,
+      regulation,
+      currentHash: entry.currentHash,
+      previousHash: entry.previousHash,
+    };
+  }
+
+  if (lower === 'obligation.satisfied' || lower.endsWith('.satisfied')) {
+    return {
+      id: entry.id,
+      sequenceNumber: entry.sequenceNumber,
+      verdict: 'satisfied',
+      headline: 'Decided satisfied',
+      why: reason ?? 'The output addressed this requirement.',
+      agent: entry.actor,
+      timestamp: entry.timestamp,
+      obligationId,
+      citation,
+      regulation,
+      currentHash: entry.currentHash,
+      previousHash: entry.previousHash,
+    };
+  }
+
+  if (lower === 'obligation.missed' || lower.endsWith('.missed') || lower.endsWith('.failed')) {
+    return {
+      id: entry.id,
+      sequenceNumber: entry.sequenceNumber,
+      verdict: 'missed',
+      headline: 'Decided not satisfied',
+      why: reason ?? 'The output did not address this requirement.',
+      agent: entry.actor,
+      timestamp: entry.timestamp,
+      obligationId,
+      citation,
+      regulation,
+      currentHash: entry.currentHash,
+      previousHash: entry.previousHash,
+    };
+  }
+
+  if (lower === 'output.gated' || lower.includes('strict') || lower.includes('gate')) {
+    const passed = p['passed'];
+    const ok = passed === true || passed === 'true';
+    return {
+      id: entry.id,
+      sequenceNumber: entry.sequenceNumber,
+      verdict: 'gated',
+      headline: ok ? 'Output released' : 'Output blocked',
+      why: reason ?? (ok
+        ? 'Output passed every applicable requirement and the strict schema check.'
+        : 'Output did not pass every applicable requirement and was withheld.'),
+      agent: entry.actor,
+      timestamp: entry.timestamp,
+      obligationId,
+      citation,
+      regulation,
+      currentHash: entry.currentHash,
+      previousHash: entry.previousHash,
+    };
+  }
+
+  return null;
+}
+
+function verdictColor(v: Verdict): string {
+  switch (v) {
+    case 'satisfied': return 'var(--ok)';
+    case 'missed':    return 'var(--err)';
+    case 'gated':     return 'var(--orange)';
+    case 'identified':return 'var(--ink-2)';
+    case 'other':     return 'var(--ink-3)';
+  }
+}
+
+function verdictLabel(v: Verdict): string {
+  switch (v) {
+    case 'satisfied': return 'Satisfied';
+    case 'missed':    return 'Not satisfied';
+    case 'gated':     return 'Gate';
+    case 'identified':return 'Applicable';
+    case 'other':     return 'Decision';
   }
 }
 
@@ -260,214 +363,187 @@ export function TraceExplorer({ initialId }: Props) {
         )}
 
         {chain.length > 0 && (
-          <div style={{ position: 'relative' }} className="rise-1">
-            <div className="eyebrow" style={{ marginBottom: 16 }}>
-              Timeline · {chain.length} {chain.length === 1 ? 'entry' : 'entries'}
-            </div>
-
-            <div
-              style={{
-                position: 'absolute',
-                left: 17,
-                top: 48,
-                bottom: 16,
-                width: 1,
-                background: 'var(--rule-strong)',
-              }}
-              aria-hidden
-            />
-
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {chain.map((entry) => {
-                const evt = friendlyEvent(entry.eventType);
-                const color = toneColor(evt.tone);
-                const isOpen = expanded === entry.id;
-                const time = new Date(entry.timestamp);
-                return (
-                  <div
-                    key={entry.id}
-                    style={{ position: 'relative', paddingLeft: 52, paddingBottom: 16 }}
-                  >
-                    <div
-                      style={{
-                        position: 'absolute',
-                        left: 6,
-                        top: 14,
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: 'var(--paper)',
-                        border: `2px solid ${color}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontFamily: 'var(--mono)',
-                        fontSize: 10,
-                        color,
-                        zIndex: 1,
-                      }}
-                    >
-                      {entry.sequenceNumber}
-                    </div>
-
-                    <button
-                      onClick={() => setExpanded(isOpen ? null : entry.id)}
-                      style={{
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '12px 16px',
-                        background: isOpen ? 'var(--paper-deep)' : 'transparent',
-                        border: `1px solid ${isOpen ? 'var(--rule-strong)' : 'var(--rule)'}`,
-                        borderRadius: 'var(--r-2)',
-                        cursor: 'pointer',
-                        transition: 'background var(--t-fast) var(--ease), border-color var(--t-fast) var(--ease)',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!isOpen) e.currentTarget.style.borderColor = 'var(--rule-strong)';
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isOpen) e.currentTarget.style.borderColor = 'var(--rule)';
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: 12,
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                          <span
-                            style={{
-                              fontFamily: 'var(--mono)',
-                              fontSize: 10,
-                              letterSpacing: '0.12em',
-                              textTransform: 'uppercase',
-                              padding: '3px 8px',
-                              borderRadius: 999,
-                              border: `1px solid ${color}`,
-                              color,
-                              flexShrink: 0,
-                            }}
-                          >
-                            {evt.label}
-                          </span>
-                          <span style={{ fontSize: 13, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {entry.actor.replace(/[-_]/g, ' ')}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                          <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>
-                            {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </span>
-                          <span style={{ color: 'var(--ink-4)', fontSize: 14 }}>{isOpen ? '−' : '+'}</span>
-                        </div>
-                      </div>
-
-                      {isOpen && (
-                        <div
-                          style={{
-                            marginTop: 14,
-                            paddingTop: 14,
-                            borderTop: '1px solid var(--rule)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 12,
-                          }}
-                        >
-                          {entry.payload && Object.keys(entry.payload).length > 0 ? (
-                            <div>
-                              <div className="eyebrow" style={{ marginBottom: 8, fontSize: 10 }}>
-                                What was decided
-                              </div>
-                              <dl
-                                style={{
-                                  margin: 0,
-                                  display: 'grid',
-                                  gridTemplateColumns: '160px 1fr',
-                                  gap: '8px 16px',
-                                  fontSize: 12.5,
-                                }}
-                              >
-                                {Object.entries(entry.payload).map(([k, v]) => (
-                                  <PayloadRow key={k} label={k} value={v} />
-                                ))}
-                              </dl>
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>
-                              No payload recorded for this event.
-                            </div>
-                          )}
-
-                          <div
-                            style={{
-                              fontFamily: 'var(--mono)',
-                              fontSize: 11,
-                              color: 'var(--ink-4)',
-                              letterSpacing: '0.04em',
-                              borderTop: '1px solid var(--rule)',
-                              paddingTop: 10,
-                              display: 'flex',
-                              gap: 12,
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            <span>hash {shortHash(entry.currentHash)}</span>
-                            <span>← prev {shortHash(entry.previousHash)}</span>
-                          </div>
-                        </div>
-                      )}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <DecisionsList
+            chain={chain}
+            expanded={expanded}
+            onToggle={(id) => setExpanded(expanded === id ? null : id)}
+          />
         )}
       </div>
     </div>
   );
 }
 
-function PayloadRow({ label, value }: { label: string; value: unknown }) {
-  const display = plainTraceValue(value);
+function DecisionsList({
+  chain,
+  expanded,
+  onToggle,
+}: {
+  chain: TraceEntry[];
+  expanded: string | null;
+  onToggle: (id: string) => void;
+}) {
+  const decisions = useMemo(
+    () => chain.map(toDecision).filter((d): d is Decision => d !== null),
+    [chain]
+  );
+
+  if (decisions.length === 0) {
+    return (
+      <div
+        className="ground-card"
+        style={{ padding: '20px 22px', color: 'var(--ink-3)', fontSize: 13.5 }}
+      >
+        This run completed without recording any regulation-bound decisions.
+      </div>
+    );
+  }
+
   return (
-    <>
-      <dt
-        style={{
-          fontFamily: 'var(--mono)',
-          fontSize: 11,
-          letterSpacing: '0.04em',
-          textTransform: 'lowercase',
-          color: 'var(--ink-3)',
-        }}
-      >
-        {label.replace(/_/g, ' ')}
-      </dt>
-      <dd
-        style={{
-          margin: 0,
-          color: 'var(--ink-2)',
-          wordBreak: 'break-word',
-          fontFamily: 'inherit',
-          fontSize: 12.5,
-        }}
-      >
-        {display}
-      </dd>
-    </>
+    <div className="rise-1">
+      <div className="eyebrow" style={{ marginBottom: 16 }}>
+        Decisions · {decisions.length}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {decisions.map((d) => (
+          <DecisionCard
+            key={d.id}
+            decision={d}
+            open={expanded === d.id}
+            onToggle={() => onToggle(d.id)}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
-function plainTraceValue(value: unknown): string {
-  if (value == null) return 'Not provided';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) return `${value.length} item${value.length === 1 ? '' : 's'}`;
-  if (typeof value === 'object') return `${Object.keys(value).length} field${Object.keys(value).length === 1 ? '' : 's'} recorded`;
-  return 'Recorded';
+function DecisionCard({
+  decision,
+  open,
+  onToggle,
+}: {
+  decision: Decision;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const color = verdictColor(decision.verdict);
+  const label = verdictLabel(decision.verdict);
+  const time = new Date(decision.timestamp);
+  const agent = decision.agent.replace(/[-_]/g, ' ');
+
+  return (
+    <div
+      style={{
+        border: `1px solid var(--rule)`,
+        borderLeft: `3px solid ${color}`,
+        borderRadius: 'var(--r-2)',
+        background: 'var(--paper)',
+        overflow: 'hidden',
+      }}
+    >
+      <button
+        onClick={onToggle}
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          padding: '16px 20px',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontFamily: 'var(--mono)',
+                fontSize: 10,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                padding: '3px 8px',
+                borderRadius: 999,
+                border: `1px solid ${color}`,
+                color,
+              }}
+            >
+              {label}
+            </span>
+            {decision.citation && (
+              <span style={{ fontSize: 14, color: 'var(--ink)', fontWeight: 500, letterSpacing: '-0.005em' }}>
+                {decision.citation}
+              </span>
+            )}
+            {decision.regulation && (
+              <span
+                style={{
+                  fontFamily: 'var(--mono)',
+                  fontSize: 10,
+                  letterSpacing: '0.08em',
+                  color: 'var(--ink-3)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {decision.regulation.replace(/_/g, ' ')}
+              </span>
+            )}
+          </div>
+          <span style={{ color: 'var(--ink-4)', fontSize: 16, flexShrink: 0 }}>{open ? '−' : '+'}</span>
+        </div>
+
+        <p style={{ margin: 0, fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+          {decision.why}
+        </p>
+
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            flexWrap: 'wrap',
+            fontFamily: 'var(--mono)',
+            fontSize: 11,
+            color: 'var(--ink-3)',
+            letterSpacing: '0.04em',
+          }}
+        >
+          <span>by {agent}</span>
+          <span>
+            {time.toLocaleString([], {
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })}
+          </span>
+          {decision.obligationId && <span>{decision.obligationId}</span>}
+        </div>
+      </button>
+
+      {open && (
+        <div
+          style={{
+            padding: '12px 20px 14px',
+            borderTop: '1px solid var(--rule)',
+            background: 'var(--paper-deep)',
+            fontFamily: 'var(--mono)',
+            fontSize: 11,
+            color: 'var(--ink-4)',
+            letterSpacing: '0.04em',
+            display: 'flex',
+            gap: 14,
+            flexWrap: 'wrap',
+          }}
+        >
+          <span>hash {shortHash(decision.currentHash)}</span>
+          <span>← prev {shortHash(decision.previousHash)}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default TraceExplorer;

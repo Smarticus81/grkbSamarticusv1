@@ -28,8 +28,14 @@ import {
   summarizeTemplate,
 } from '@regground/core';
 import { listTasks, getTask, ProcessRegistry, registerAllProcesses } from '@regground/sandbox';
+import { synthesizeAgentContext } from '../services/AgentContextSynthesizer.js';
 
 const { builderAgents, processWorkflows } = schema;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function isUuid(v: unknown): v is string {
+  return typeof v === 'string' && UUID_RE.test(v);
+}
 
 const router: Router = Router();
 
@@ -128,6 +134,28 @@ router.post('/agents', async (req, res) => {
       .limit(1);
 
     if (existing) {
+      // Re-synthesise context only when the user changed something material
+      // (regulations, role, description, riskBand) or never synthesised one.
+      const existingCtx = (existing.attachedData as Record<string, unknown> | null)?.__context as
+        | { generatedAt?: string }
+        | undefined;
+      const materialChanged =
+        JSON.stringify(existing.regulations ?? []) !== JSON.stringify(parsed.data.regulations)
+        || existing.jobId !== parsed.data.jobId
+        || existing.riskBand !== parsed.data.riskBand
+        || (existing.description ?? null) !== (parsed.data.description ?? null);
+      let nextAttachedData: typeof existing.attachedData = existing.attachedData ?? {};
+      if (!existingCtx || materialChanged) {
+        const ctx = await synthesizeAgentContext({
+          jobId: parsed.data.jobId,
+          jobTitle: parsed.data.jobTitle,
+          taskId: parsed.data.taskId ?? null,
+          regulations: parsed.data.regulations,
+          description: parsed.data.description ?? null,
+          riskBand: parsed.data.riskBand,
+        });
+        nextAttachedData = { ...nextAttachedData, __context: ctx };
+      }
       const [row] = await db
         .update(builderAgents)
         .set({
@@ -141,6 +169,7 @@ router.post('/agents', async (req, res) => {
           deployTarget: parsed.data.deployTarget ?? null,
           riskBand: parsed.data.riskBand,
           description: parsed.data.description ?? null,
+          attachedData: nextAttachedData,
           updatedAt: new Date(),
         })
         .where(eq(builderAgents.id, existing.id))
@@ -148,11 +177,20 @@ router.post('/agents', async (req, res) => {
       return res.json(row);
     }
 
+    const initialCtx = await synthesizeAgentContext({
+      jobId: parsed.data.jobId,
+      jobTitle: parsed.data.jobTitle,
+      taskId: parsed.data.taskId ?? null,
+      regulations: parsed.data.regulations,
+      description: parsed.data.description ?? null,
+      riskBand: parsed.data.riskBand,
+    });
+
     const [row] = await db
       .insert(builderAgents)
       .values({
         tenantId,
-        createdBy: req.user?.sub ?? null,
+        createdBy: isUuid(req.user?.sub) ? req.user!.sub : null,
         name: parsed.data.name,
         jobId: parsed.data.jobId,
         jobTitle: parsed.data.jobTitle,
@@ -164,6 +202,7 @@ router.post('/agents', async (req, res) => {
         deployTarget: parsed.data.deployTarget ?? null,
         riskBand: parsed.data.riskBand,
         description: parsed.data.description ?? null,
+        attachedData: { __context: initialCtx },
       })
       .returning();
     res.status(201).json(row);
@@ -275,7 +314,16 @@ router.post('/agents/:id/launch', async (req, res) => {
     // slot label; we expose it under input.attachments so the task agent
     // can opt to consume it.
     const attachments: Record<string, unknown> = {};
+    let agentContext: string | null = null;
     for (const [slot, payload] of Object.entries(agent.attachedData ?? {})) {
+      // The synthesised context lives under a reserved __context slot; pull
+      // it out so it's surfaced separately instead of as an "attachment".
+      if (slot === '__context') {
+        const ctx = payload as unknown as { systemPrompt?: string } | null | undefined;
+        if (ctx && typeof ctx.systemPrompt === 'string') agentContext = ctx.systemPrompt;
+        continue;
+      }
+      if (!payload || typeof payload !== 'object' || !('content' in payload)) continue;
       let parsed: unknown = payload.content;
       if (payload.contentType.includes('json')) {
         try { parsed = JSON.parse(payload.content); } catch { /* fall back to string */ }
@@ -300,6 +348,7 @@ router.post('/agents/:id/launch', async (req, res) => {
       input: mergedInput,
       hasAttachments: Object.keys(attachments).length > 0,
       attachmentSlots: Object.keys(attachments),
+      agentContext,
     });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });

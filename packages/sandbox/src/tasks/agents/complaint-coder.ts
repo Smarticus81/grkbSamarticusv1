@@ -39,13 +39,12 @@ type Input = z.infer<typeof InputSchema>;
 type Output = z.infer<typeof OutputSchema>;
 
 const SAMPLE: Input = {
-  complaintId: 'CMP-2026-0411-118',
-  receivedAt: '2026-04-11T09:14:00Z',
-  productFamily: 'NeuroPace EEG Patch v2',
-  patientHarm: 'serious',
-  description:
-    'Adhesive patch detached after 6 hours of normal wear; concurrent loss of EEG signal during a clinical recording session. Patient reported skin irritation and a missed seizure event window. Device returned for failure analysis.',
-  reporterRole: 'clinician',
+  complaintId: '',
+  receivedAt: '',
+  productFamily: '',
+  patientHarm: 'none',
+  description: '',
+  reporterRole: 'patient',
 };
 
 function outputCitesObligation(o: unknown, ob: ObligationNode): boolean {

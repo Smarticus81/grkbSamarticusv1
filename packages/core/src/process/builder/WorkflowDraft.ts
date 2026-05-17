@@ -82,6 +82,9 @@ export const WorkflowNodeSchema = z.object({
   groundedRefs: z.array(WorkflowGroundingRefSchema).max(12),
   /** Why this step exists in the workflow (≤500 chars). */
   rationale: z.string().min(1).max(500),
+  /** Optional pre-baked agent context (system-prompt seed) for agent/hybrid
+   *  steps, derived from the template's regulatory bindings. */
+  agentContext: z.string().max(2000).optional(),
   jurisdiction: z.string().min(1).max(64).optional(),
 });
 export type WorkflowNode = z.infer<typeof WorkflowNodeSchema>;

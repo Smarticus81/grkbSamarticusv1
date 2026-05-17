@@ -1,9 +1,10 @@
 ﻿/**
  * Task agent registry. Single source of truth for the sandbox catalog.
  *
- * The PSUR Section Drafter has been retired in favor of the Template
- * Compliance Evaluator, which is tethered to the `psur-compilation`
- * process bundle in the graph.
+ * Tasks are deliberately narrow — each does ONE piece of real QMS work
+ * and produces a structured artifact. `chainHints` on each task declare
+ * which other tasks it naturally combines with (upstream/downstream),
+ * so users can build longer processes by chaining tasks.
  */
 
 import type { TaskAgentDefinition } from './types.js';
@@ -12,26 +13,36 @@ import { AeReportabilityTask } from './agents/ae-reportability.js';
 import { TrendDeterminationTask } from './agents/trend-determination.js';
 import { TemplateComplianceEvaluatorTask } from './agents/template-compliance-evaluator.js';
 import {
-  CapaReviewTask,
-  ChangeControlReviewTask,
-  ComplaintHandlingReviewTask,
-  InternalAuditReviewTask,
-  ManagementReviewTask,
-  NonconformanceReviewTask,
-} from './agents/process-review.js';
+  RootCauseInvestigatorTask,
+  CapaPlanDrafterTask,
+  NonconformanceDispositionerTask,
+  ChangeImpactAssessorTask,
+  MirDrafterTask,
+  AuditFindingDrafterTask,
+} from './agents/production-tasks.js';
 
 export const TASK_AGENTS: ReadonlyArray<TaskAgentDefinition<any, any>> = [
-  ComplaintHandlingReviewTask,
+  // Complaint handling chain
   ComplaintCoderTask,
   AeReportabilityTask,
-  CapaReviewTask,
-  NonconformanceReviewTask,
-  ChangeControlReviewTask,
+  MirDrafterTask,
+  // CAPA chain
+  RootCauseInvestigatorTask,
+  CapaPlanDrafterTask,
+  // Nonconformance + change control
+  NonconformanceDispositionerTask,
+  ChangeImpactAssessorTask,
+  // Surveillance + governance
   TrendDeterminationTask,
-  InternalAuditReviewTask,
-  ManagementReviewTask,
+  AuditFindingDrafterTask,
+  // Meta
   TemplateComplianceEvaluatorTask,
 ];
+
+export interface TaskChainHintEntry {
+  taskId: string;
+  via: string;
+}
 
 export interface TaskCatalogEntry {
   id: string;
@@ -41,6 +52,8 @@ export interface TaskCatalogEntry {
   jurisdiction: string;
   processId: string;
   obligationCount: number;
+  upstream: TaskChainHintEntry[];
+  downstream: TaskChainHintEntry[];
 }
 
 export function listTasks(): TaskCatalogEntry[] {
@@ -52,6 +65,8 @@ export function listTasks(): TaskCatalogEntry[] {
     jurisdiction: t.jurisdiction,
     processId: t.processId,
     obligationCount: t.claimedObligationIds.length,
+    upstream: t.chainHints?.upstream?.map((h) => ({ taskId: h.taskId, via: h.via })) ?? [],
+    downstream: t.chainHints?.downstream?.map((h) => ({ taskId: h.taskId, via: h.via })) ?? [],
   }));
 }
 

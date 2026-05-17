@@ -73,27 +73,48 @@ export function templateToWorkflowDraft(def: ProcessDefinition): WorkflowDraft {
   const stepIds = new Set(def.steps.map((s) => s.id));
   let prevId = 'start';
 
+  const regulationTags = def.regulations.map((r) => `${r.regulation} ${r.section}`);
+  const regulationLine = regulationTags.length ? regulationTags.join('; ') : 'general QMS practice';
+
   for (const step of def.steps) {
     const stepNodeId = `s_${step.id}`;
     const groundedRefs: WorkflowGroundingRef[] = [];
     for (const ob of step.obligationIds) {
       groundedRefs.push({ refId: ob, refKind: 'Obligation' });
     }
-    // The agent type itself is recorded as the "responsible" name; if the
-    // catalog later confirms an AgentRole exists, the chat agent can promote
-    // it to a grounded ref of kind=AgentRole.
+    const automation = automationForAgentType(step.agentType);
+    const isTaskNode = automation !== 'system';
+    const obligationList = step.obligationIds.length
+      ? step.obligationIds.slice(0, 12).join(', ')
+      : '(none bound \u2014 ask the user to bind obligations before running)';
+    const agentContext = isTaskNode
+      ? [
+          `You are the ${step.agentType} performing "${step.name}" within the ${def.name} process.`,
+          `Regulatory focus: ${regulationLine}.`,
+          `Bound obligations: ${obligationList}.`,
+          `Step intent: ${step.description}`,
+          step.hitlGate
+            ? `Human approval required after this step (${step.hitlGate.approverRole}). Produce output a human can review without rework.`
+            : '',
+          'Cite only the obligations bound to this step; never invent regulatory references. Be specific, evidence-driven, and avoid generic compliance language.',
+        ]
+          .filter(Boolean)
+          .join('\n')
+          .slice(0, 2000)
+      : undefined;
     nodes.push({
       id: stepNodeId,
-      kind: automationForAgentType(step.agentType) === 'human' ? 'human_task' : 'agent_task',
+      kind: automation === 'human' ? 'human_task' : 'agent_task',
       label: step.name,
       description: step.description,
-      automation: automationForAgentType(step.agentType),
+      automation,
       responsible: [step.agentType],
       inputs: [`step:${step.id}:input`],
       outputs: [`step:${step.id}:output`],
       durationEstimate: msToHuman(step.timeoutMs),
       groundedRefs,
       rationale: `${step.name} satisfies ${step.obligationIds.length} obligation(s).`,
+      ...(agentContext ? { agentContext } : {}),
     });
 
     // Link from previous node (linear order) ...

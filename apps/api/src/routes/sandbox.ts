@@ -6,6 +6,7 @@
 import express, { type Response, type Router } from 'express';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 import {
   TaskRunner,
   TaskEventStream,
@@ -20,6 +21,21 @@ import {
 import { buildAgentBundle } from '../services/AgentBundler.js';
 import type { AuthedRequest } from '../middleware/auth.js';
 import { getContext } from '../context.js';
+import { LLMAbstraction } from '@regground/core';
+
+/** Lazy, cached LLM facade. Built on first run; graceful if no providers. */
+let _llm: LLMAbstraction | null | undefined;
+function getLLM(): LLMAbstraction | null {
+  if (_llm !== undefined) return _llm;
+  try {
+    _llm = LLMAbstraction.fromEnv();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[sandbox] LLM unavailable, will run deterministic-only:', err instanceof Error ? err.message : err);
+    _llm = null;
+  }
+  return _llm;
+}
 
 const router: Router = express.Router();
 
@@ -133,9 +149,14 @@ router.get('/tasks/:id', (req, res) => {
     regulation: def.regulation,
     jurisdiction: def.jurisdiction,
     sampleData: def.sampleData,
+    inputJsonSchema: zodToJsonSchema(def.inputSchema, { target: 'jsonSchema7' }),
     processId: def.processId,
     claimedObligationIds: def.claimedObligationIds,
     obligations: def.claimedObligationIds.map((id) => ({ obligationId: id })),
+    chainHints: {
+      upstream: def.chainHints?.upstream ?? [],
+      downstream: def.chainHints?.downstream ?? [],
+    },
   });
 });
 
@@ -144,6 +165,8 @@ const RunBodySchema = z.object({
   input: z.unknown().optional(),
   mode: z.enum(['with-graph', 'without-graph', 'compare']).default('compare'),
   paceMs: z.number().int().min(0).max(2000).optional(),
+  /** Optional per-run persona/context injected into the LLM system prompt. */
+  agentContext: z.string().max(4000).optional(),
 });
 
 router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
@@ -156,7 +179,7 @@ router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: 'invalid run body', detail: parsed.error.flatten() });
   }
-  const { mode, paceMs } = parsed.data;
+  const { mode, paceMs, agentContext } = parsed.data;
   const rawInput = parsed.data.input ?? def.sampleData;
   const inputParsed = def.inputSchema.safeParse(rawInput);
   if (!inputParsed.success) {
@@ -174,8 +197,15 @@ router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
 
   try {
     const runner = new TaskRunner(getContext().graph);
+    const llm = getLLM();
     // Use a fast pace by default for HTTP runs — the SSE replay re-paces.
-    const runResult = await runner.run(def, inputParsed.data, { mode, stream, paceMs: paceMs ?? 0 });
+    const runResult = await runner.run(def, inputParsed.data, {
+      mode,
+      stream,
+      paceMs: paceMs ?? 0,
+      llm: llm ?? undefined,
+      agentContext,
+    });
     rememberRun(runResult.runId, {
       result: runResult,
       events: [...events],

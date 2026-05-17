@@ -9,7 +9,7 @@
  * that the graph does not bind to its process.
  */
 
-import type { ObligationGraph, ObligationNode } from '@regground/core';
+import type { LLMAbstraction, ObligationGraph, ObligationNode } from '@regground/core';
 import type {
   DeterministicScore,
   LaneResult,
@@ -50,6 +50,13 @@ export interface RunOptions {
   mode: 'with-graph' | 'without-graph' | 'compare';
   stream?: TaskEventStream;
   paceMs?: number;
+  /** Optional LLM abstraction. When present (and the agent declares a
+   *  systemPrompt), the with-graph lane prefers LLM-driven JSON generation
+   *  grounded on the loaded obligations, and falls back to the agent's
+   *  deterministic runWithGraph if the LLM call fails. */
+  llm?: LLMAbstraction;
+  /** Optional per-run agent persona/context (system prompt addendum). */
+  agentContext?: string;
 }
 
 export class TaskRunner {
@@ -74,10 +81,10 @@ export class TaskRunner {
     };
 
     if (opts.mode === 'with-graph' || opts.mode === 'compare') {
-      result.withGraph = await this.runLane(def, input, 'with-graph', runId, stream, paceMs);
+      result.withGraph = await this.runLane(def, input, 'with-graph', runId, stream, paceMs, opts.llm, opts.agentContext);
     }
     if (opts.mode === 'without-graph' || opts.mode === 'compare') {
-      result.withoutGraph = await this.runLane(def, input, 'without-graph', runId, stream, paceMs);
+      result.withoutGraph = await this.runLane(def, input, 'without-graph', runId, stream, paceMs, undefined, undefined);
     }
 
     result.finishedAtIso = nowIso();
@@ -92,6 +99,8 @@ export class TaskRunner {
     runId: string,
     stream: TaskEventStream | undefined,
     paceMs: number,
+    llm: LLMAbstraction | undefined,
+    agentContext: string | undefined,
   ): Promise<LaneResult<TOutput>> {
     const laneStartMs = Date.now();
     const emit = (e: TaskEvent) => stream?.publish(e);
@@ -172,9 +181,38 @@ export class TaskRunner {
     let output: TOutput | null = null;
     let runErr: string | undefined;
     try {
-      output = lane === 'with-graph'
-        ? await def.runWithGraph(input, { obligations: fetched })
-        : await def.runWithoutGraph(input);
+      if (lane === 'with-graph') {
+        const ctx: import('./types.js').WithGraphContext = { obligations: fetched, llm, agentContext };
+        // Prefer LLM-driven generation when an LLM is available AND the agent
+        // declares a persona. Fall back to the deterministic body on any
+        // failure (LLM error, JSON parse error, schema violation).
+        if (llm && def.systemPrompt) {
+          emit({
+            type: 'agent.thinking',
+            lane,
+            atIso: nowIso(),
+            message: 'Using LLM-driven generation grounded on the obligation set.',
+          });
+          await pace();
+          try {
+            output = await generateViaLLM(def, input, fetched, llm, def.systemPrompt, agentContext);
+          } catch (llmErr) {
+            const msg = llmErr instanceof Error ? llmErr.message : String(llmErr);
+            emit({
+              type: 'agent.thinking',
+              lane,
+              atIso: nowIso(),
+              message: `LLM path failed (${msg}). Falling back to deterministic body.`,
+            });
+            await pace();
+            output = await def.runWithGraph(input, ctx);
+          }
+        } else {
+          output = await def.runWithGraph(input, ctx);
+        }
+      } else {
+        output = await def.runWithoutGraph(input);
+      }
     } catch (err) {
       runErr = err instanceof Error ? err.message : String(err);
       emit({ type: 'run.error', lane, runId, atIso: nowIso(), message: runErr });
@@ -295,3 +333,59 @@ function errorLane<TOutput>(lane: TaskLane, startMs: number, message: string): L
 
 // Reference for tooling that may scan unused exports.
 export type { ObligationCheck };
+
+/* ── LLM-driven generation (default execution path) ──────────────── */
+
+async function generateViaLLM<TInput, TOutput>(
+  def: TaskAgentDefinition<TInput, TOutput>,
+  input: TInput,
+  obligations: ObligationNode[],
+  llm: LLMAbstraction,
+  systemPrompt: string,
+  agentContext: string | undefined,
+): Promise<TOutput> {
+  const citationsBlock = obligations.length
+    ? obligations
+        .map(
+          (o) =>
+            `- [${o.obligationId}] ${o.sourceCitation} \u2014 ${(o.title ?? '').slice(0, 160)}`,
+        )
+        .join('\n')
+    : '(no obligations loaded)';
+
+  const allowedCitations = obligations.map((o) => o.sourceCitation);
+  const allowedObligationIds = obligations.map((o) => o.obligationId);
+
+  const system = [
+    systemPrompt.trim(),
+    agentContext ? `\n## Agent Context\n${agentContext.trim()}` : '',
+    `\n## Grounded Obligations (the ONLY citations you may use)\n${citationsBlock}`,
+    `\n## Rules\n- Return a single JSON object that exactly matches the output schema.\n- The "citations" array MUST be a subset of the listed source citations \u2014 do not invent.\n- The "addressedObligations" array MUST be a subset of: ${allowedObligationIds.join(', ') || '(none)'}.\n- Be specific, regulatorily precise, and avoid fluff.`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const user = [
+    `Task: ${def.name} \u2014 ${def.oneLiner}`,
+    `Process: ${def.processId}`,
+    `Allowed citations (verbatim): ${JSON.stringify(allowedCitations)}`,
+    `Allowed obligation IDs: ${JSON.stringify(allowedObligationIds)}`,
+    `Input:\n${JSON.stringify(input, null, 2)}`,
+  ].join('\n\n');
+
+  const response = await llm.completeJSON<TOutput>(
+    {
+      messages: [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      temperature: 0.2,
+      maxTokens: 2000,
+    },
+    def.outputSchema,
+    { structuredOutput: true, minContextTokens: obligations.length > 6 ? 32000 : undefined },
+  );
+
+  // Final validation pass to be safe \u2014 throws if the LLM drifted.
+  return def.outputSchema.parse(response);
+}
