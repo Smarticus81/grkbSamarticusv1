@@ -12,6 +12,25 @@ export const queryClient = new QueryClient({
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
+async function apiError(res: Response): Promise<Error> {
+  const text = await res.text();
+  if (!text) return new Error(`API ${res.status}`);
+  try {
+    const body = JSON.parse(text) as { message?: unknown; error?: unknown; detail?: unknown };
+    const message =
+      typeof body.message === 'string'
+        ? body.message
+        : typeof body.error === 'string'
+          ? body.error
+          : typeof body.detail === 'string'
+            ? body.detail
+            : text;
+    return new Error(`API ${res.status}: ${message}`);
+  } catch {
+    return new Error(`API ${res.status}: ${text}`);
+  }
+}
+
 export interface SseMessage {
   event: string;
   data: string;
@@ -30,7 +49,7 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
     headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
   });
-  if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+  if (!res.ok) throw await apiError(res);
   if (res.status === 204) return undefined as T;
   const text = await res.text();
   if (!text) return undefined as T;
@@ -62,7 +81,7 @@ export function createAuthenticatedApi(
       ...init,
       headers,
     });
-    if (!res.ok) throw new Error(`API ${res.status}: ${await res.text()}`);
+    if (!res.ok) throw await apiError(res);
     if (res.status === 204) return undefined as T;
     const text = await res.text();
     if (!text) return undefined as T;

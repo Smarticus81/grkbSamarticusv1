@@ -461,13 +461,45 @@ export const builderAgents = pgTable(
     taskId: varchar('task_id', { length: 64 }),
     regulations: jsonb('regulations').$type<string[]>().default([]).notNull(),
     evidenceStatus: jsonb('evidence_status').$type<Record<string, string>>().default({}).notNull(),
-    /** Per-slot attached data: { [slotLabel]: { filename, sizeBytes, content, contentType, attachedAt } }
-     *  Reserved slot `__context` stores the LLM-synthesised agent context
-     *  ({ systemPrompt, personaSummary, regulatoryFocus, practicesIncorporated, generatedAt, model, source }). */
+    /** Per-slot attached data.
+     *  Reserved slots:
+     *  - `__context` stores the LLM-synthesised agent context.
+     *  - `__input` stores the exact evidence snapshot used for the validated run.
+     *  - `__groundedRunManifest` stores the immutable promotion manifest tying
+     *    the managed agent to run output, citations, validation, and trace proof. */
     attachedData: jsonb('attached_data')
       .$type<Record<string,
         | { filename: string; sizeBytes: number; content: string; contentType: string; attachedAt: string }
         | { systemPrompt: string; personaSummary: string; regulatoryFocus: string[]; practicesIncorporated: string[]; generatedAt: string; model: string | null; source: 'llm' | 'deterministic' }
+        | {
+            runId: string;
+            taskId: string;
+            taskName: string;
+            tenantId: string;
+            mode: string;
+            createdAtIso: string;
+            inputSnapshot: unknown;
+            outputSnapshot: unknown;
+            obligationsConsulted: string[];
+            citations: string[];
+            validation: {
+              coverage: number;
+              citationCount: number;
+              strictGatePass: boolean;
+              violations: string[];
+              obligationsConsulted: number;
+            };
+            trace: {
+              entries: unknown[];
+              verification: {
+                valid: boolean;
+                verifiedEntries: number;
+                totalEntries: number;
+                signatureHash: string;
+              };
+            };
+            manifestHash: string;
+          }
       >>()
       .default({})
       .notNull(),
@@ -521,6 +553,32 @@ export const processWorkflows = pgTable(
   (t) => ({
     tenantUpdatedIdx: index('process_workflows_tenant_updated_idx').on(t.tenantId, t.updatedAt),
     tenantNameIdx: uniqueIndex('process_workflows_tenant_name_idx').on(t.tenantId, t.name),
+  }),
+);
+
+// === Grounded Runs — immutable promotion records from agent-template runs ===
+// Each row stores the validated run result, event log, and manifest used to
+// promote a template execution into a managed operating agent. This makes the
+// lifecycle durable across API restarts and deployment rollouts.
+export const groundedRuns = pgTable(
+  'grounded_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    runId: varchar('run_id', { length: 128 }).notNull(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+    taskId: varchar('task_id', { length: 128 }).notNull(),
+    taskName: varchar('task_name', { length: 200 }).notNull(),
+    mode: varchar('mode', { length: 32 }).notNull(),
+    inputSnapshot: jsonb('input_snapshot').$type<unknown>().notNull(),
+    resultSnapshot: jsonb('result_snapshot').$type<unknown>().notNull(),
+    eventLog: jsonb('event_log').$type<unknown[]>().default([]).notNull(),
+    manifest: jsonb('manifest').$type<Record<string, unknown>>().notNull(),
+    manifestHash: varchar('manifest_hash', { length: 128 }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    runIdx: uniqueIndex('grounded_runs_run_id_idx').on(t.runId),
+    tenantCreatedIdx: index('grounded_runs_tenant_created_idx').on(t.tenantId, t.createdAt),
   }),
 );
 

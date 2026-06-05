@@ -32,6 +32,7 @@ import {
 } from '@regground/core';
 import { listTasks, getTask, ProcessRegistry, registerAllProcesses } from '@regground/sandbox';
 import { synthesizeAgentContext } from '../services/AgentContextSynthesizer.js';
+import { getGroundedRunManifest } from './sandbox.js';
 
 const { builderAgents, processWorkflows } = schema;
 
@@ -60,6 +61,7 @@ const SaveSchema = z.object({
   deployTarget: z.string().max(64).optional().nullable(),
   riskBand: z.enum(['low', 'medium', 'high']).default('medium'),
   description: z.string().max(2000).optional().nullable(),
+  sourceRunId: z.string().min(1).max(128).optional().nullable(),
 });
 
 const AttachSchema = z.object({
@@ -129,6 +131,27 @@ router.post('/agents', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
     const db = getDB();
+    const requiresGroundedRun = parsed.data.deployTarget === 'claude-managed-agents';
+    const groundedRunManifest = parsed.data.sourceRunId
+      ? await getGroundedRunManifest(parsed.data.sourceRunId, tenantId)
+      : null;
+
+    if (requiresGroundedRun && !groundedRunManifest) {
+      return res.status(409).json({
+        error: 'grounded_run_required',
+        message:
+          parsed.data.sourceRunId
+            ? 'This run is not available for promotion. Re-run the template, wait for it to finish, then create the managed agent from that passing run.'
+            : 'Run a template to completion before creating a managed agent. Managed agents are created only from passing grounded runs.',
+      });
+    }
+    if (groundedRunManifest && !groundedRunManifest.validation.strictGatePass) {
+      return res.status(409).json({
+        error: 'grounded_run_failed_gate',
+        message: 'The grounded run did not pass its strict compliance gate. Resolve violations before creating a managed agent.',
+        violations: groundedRunManifest.validation.violations,
+      });
+    }
 
     const [existing] = await db
       .select()
@@ -158,6 +181,19 @@ router.post('/agents', async (req, res) => {
           riskBand: parsed.data.riskBand,
         });
         nextAttachedData = { ...nextAttachedData, __context: ctx };
+      }
+      if (groundedRunManifest) {
+        nextAttachedData = {
+          ...nextAttachedData,
+          __groundedRunManifest: groundedRunManifest,
+          __input: {
+            filename: 'input.json',
+            sizeBytes: JSON.stringify(groundedRunManifest.inputSnapshot).length,
+            content: JSON.stringify(groundedRunManifest.inputSnapshot, null, 2),
+            contentType: 'application/json',
+            attachedAt: new Date().toISOString(),
+          },
+        };
       }
       const [row] = await db
         .update(builderAgents)
@@ -205,7 +241,19 @@ router.post('/agents', async (req, res) => {
         deployTarget: parsed.data.deployTarget ?? null,
         riskBand: parsed.data.riskBand,
         description: parsed.data.description ?? null,
-        attachedData: { __context: initialCtx },
+        attachedData: groundedRunManifest
+          ? {
+              __context: initialCtx,
+              __groundedRunManifest: groundedRunManifest,
+              __input: {
+                filename: 'input.json',
+                sizeBytes: JSON.stringify(groundedRunManifest.inputSnapshot).length,
+                content: JSON.stringify(groundedRunManifest.inputSnapshot, null, 2),
+                contentType: 'application/json',
+                attachedAt: new Date().toISOString(),
+              },
+            }
+          : { __context: initialCtx },
       })
       .returning();
     res.status(201).json(row);

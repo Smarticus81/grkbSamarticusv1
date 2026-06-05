@@ -1,5 +1,21 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Link } from 'wouter';
+import { Link, useLocation } from 'wouter';
+import {
+  BellRinging,
+  CheckCircle,
+  ClipboardText,
+  Clock,
+  FlowArrow,
+  GitBranch,
+  Handshake,
+  PlayCircle,
+  Robot,
+  ShieldCheck,
+  SignOut,
+  UserCircle,
+  XCircle,
+  type Icon,
+} from '@phosphor-icons/react';
 import { useAuthenticatedApi } from '../auth/useApi.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -244,30 +260,25 @@ const GRID_SIZE = 20;
 const PORT_R = 6;
 const SNAP_THRESHOLD = 12;
 
+const WORKFLOW_ICONS: Record<WorkflowNodeKind, Icon> = {
+  start: PlayCircle,
+  task: ClipboardText,
+  agent_task: Robot,
+  human_task: UserCircle,
+  decision: GitBranch,
+  evidence_capture: ClipboardText,
+  hitl_gate: Handshake,
+  notification: BellRinging,
+  wait: Clock,
+  subprocess: FlowArrow,
+  compliance_check: ShieldCheck,
+  end_success: CheckCircle,
+  end_fail: XCircle,
+};
+
 function WorkflowIcon({ kind, color = 'currentColor', size = 18 }: { kind: WorkflowNodeKind; color?: string; size?: number }) {
-  const common = {
-    stroke: color,
-    strokeWidth: 1.8,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    fill: 'none',
-  };
-  const body: Record<WorkflowNodeKind, React.ReactNode> = {
-    start: <><circle cx="12" cy="12" r="8" {...common} /><path d="M10 8.8 15 12l-5 3.2V8.8Z" fill={color} stroke="none" /></>,
-    task: <><rect x="5" y="6" width="14" height="12" rx="3" {...common} /><path d="M8 10h8M8 14h5" {...common} /></>,
-    agent_task: <><path d="M12 3v3M12 18v3M4.6 7.5l2.6 1.5M16.8 15l2.6 1.5M4.6 16.5 7.2 15M16.8 9l2.6-1.5" {...common} /><circle cx="12" cy="12" r="4.2" {...common} /></>,
-    human_task: <><circle cx="12" cy="8" r="3.2" {...common} /><path d="M5.5 19c1.2-3.4 3.3-5 6.5-5s5.3 1.6 6.5 5" {...common} /></>,
-    decision: <><path d="M12 3.5 20.5 12 12 20.5 3.5 12 12 3.5Z" {...common} /><path d="M9.5 10a2.6 2.6 0 1 1 4.1 2.1c-.9.6-1.1 1-1.1 1.9M12.5 17h.01" {...common} /></>,
-    evidence_capture: <><path d="M8 4h7l3 3v13H8V4Z" {...common} /><path d="M15 4v4h4M11 12h5M11 16h4" {...common} /></>,
-    hitl_gate: <><rect x="5" y="10" width="14" height="10" rx="2.5" {...common} /><path d="M8 10V8a4 4 0 0 1 8 0v2M12 14v2" {...common} /></>,
-    notification: <><path d="M4 7.5 12 13l8-5.5" {...common} /><rect x="4" y="6" width="16" height="12" rx="3" {...common} /></>,
-    wait: <><circle cx="12" cy="12" r="8" {...common} /><path d="M12 7v5l3 2" {...common} /></>,
-    subprocess: <><rect x="4" y="7" width="9" height="10" rx="2" {...common} /><rect x="11" y="7" width="9" height="10" rx="2" {...common} /><path d="M8 12h8" {...common} /></>,
-    compliance_check: <><circle cx="12" cy="12" r="8" {...common} /><path d="m8.5 12 2.3 2.3 4.8-5" {...common} /></>,
-    end_success: <><circle cx="12" cy="12" r="8" {...common} /><path d="m8.5 12 2.3 2.3 4.8-5" {...common} /></>,
-    end_fail: <><circle cx="12" cy="12" r="8" {...common} /><path d="m9 9 6 6M15 9l-6 6" {...common} /></>,
-  };
-  return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{body[kind]}</svg>;
+  const IconComponent = WORKFLOW_ICONS[kind] ?? SignOut;
+  return <IconComponent size={size} color={color} weight="duotone" aria-hidden />;
 }
 
 function snapToGrid(v: number): number {
@@ -357,12 +368,13 @@ function draftToCanvasNodes(draft: WorkflowDraft): CanvasNode[] {
 
 export function ProcessDesigner() {
   const { api } = useAuthenticatedApi();
+  const [, navigate] = useLocation();
 
   // ── Core canvas state ──
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
   const [edges, setEdges] = useState<WorkflowEdge[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [workflowName, setWorkflowName] = useState('Untitled workflow');
+  const [workflowName, setWorkflowName] = useState('Untitled agent workflow');
   const [workflowMeta, setWorkflowMeta] = useState({ jurisdiction: '', processType: '', regulations: [] as string[] });
 
   // ── Interaction state ──
@@ -404,7 +416,7 @@ export function ProcessDesigner() {
   const [toast, setToast] = useState<string | null>(null);
   const [toastError, setToastError] = useState(false);
   const [lastSavedFingerprint, setLastSavedFingerprint] = useState<string | null>(null);
-  const [paletteOpen, setPaletteOpen] = useState(true);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   const currentFingerprint = useMemo(
@@ -432,7 +444,7 @@ export function ProcessDesigner() {
     const loadedNodes = draftToCanvasNodes(row.draft);
     setNodes(loadedNodes);
     setEdges([...row.draft.edges]);
-    setWorkflowName(row.name || row.draft.name || 'Untitled workflow');
+    setWorkflowName(row.name || row.draft.name || 'Untitled agent workflow');
     setWorkflowMeta({
       jurisdiction: row.jurisdiction || row.draft.jurisdiction,
       processType: row.processType || row.draft.processType,
@@ -443,8 +455,10 @@ export function ProcessDesigner() {
     setActiveWorkflowId(row.id);
     setSelectedId(null);
     setEditingLabel(null);
+    setPaletteOpen(false);
+    setChatOpen(false);
     setLastSavedFingerprint(workflowFingerprint(
-      row.name || row.draft.name || 'Untitled workflow',
+      row.name || row.draft.name || 'Untitled agent workflow',
       {
         jurisdiction: row.jurisdiction || row.draft.jurisdiction,
         processType: row.processType || row.draft.processType,
@@ -460,7 +474,7 @@ export function ProcessDesigner() {
     const loadedNodes = draftToCanvasNodes(draft);
     setNodes(loadedNodes);
     setEdges([...draft.edges]);
-    setWorkflowName(draft.name || 'Untitled workflow');
+    setWorkflowName(draft.name || 'Untitled agent workflow');
     setWorkflowMeta({
       jurisdiction: draft.jurisdiction,
       processType: draft.processType,
@@ -471,6 +485,7 @@ export function ProcessDesigner() {
     setActiveWorkflowId(null);
     setSelectedId(null);
     setEditingLabel(null);
+    setPaletteOpen(false);
     setLastSavedFingerprint(null);
     setTimeout(() => fitView(loadedNodes, canvasRef, setZoom, setPan), 50);
   }, []);
@@ -499,22 +514,22 @@ export function ProcessDesigner() {
   }, [api, applyLoadedWorkflow, loadDraft, refreshWorkflows]);
 
   // ── Save ──
-  const saveCurrent = useCallback(async () => {
+  const saveCurrent = useCallback(async (): Promise<SavedWorkflowRow | null> => {
     if (nodes.length === 0) {
       showToast('Add at least one step before saving.', true);
-      return;
+      return null;
     }
     setSaving(true);
     try {
       let name = workflowName.trim();
-      if (!activeWorkflowId && (!name || name === 'Untitled workflow')) {
-        const prompted = window.prompt('Name this workflow:', name || 'Untitled workflow') ?? '';
-        if (!prompted.trim()) return;
+      if (!activeWorkflowId && (!name || name === 'Untitled workflow' || name === 'Untitled agent workflow')) {
+        const prompted = window.prompt('Name this workflow:', name || 'Untitled agent workflow') ?? '';
+        if (!prompted.trim()) return null;
         name = prompted.trim();
       }
       if (!name) {
         showToast('Workflow name is required.', true);
-        return;
+        return null;
       }
 
       const { jurisdiction, processType } = resolveWorkflowMeta(workflowMeta);
@@ -543,12 +558,25 @@ export function ProcessDesigner() {
       setLastSavedFingerprint(workflowFingerprint(saved.name, { ...workflowMeta, jurisdiction, processType }, nodes, edges));
       showToast(`Saved "${saved.name}"`);
       void refreshWorkflows();
+      return saved;
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Save failed', true);
+      return null;
     } finally {
       setSaving(false);
     }
   }, [activeWorkflowId, api, edges, nodes, refreshWorkflows, showToast, workflowMeta, workflowName]);
+
+  const buildManagedAgents = useCallback(async () => {
+    if (nodes.length === 0) {
+      showToast('Add at least one workflow step before building agents.', true);
+      return;
+    }
+    const saved = await saveCurrent();
+    if (!saved) return;
+    showToast('Workflow saved. Continue with a validated agent build.');
+    navigate(`/app/sandbox?workflow=${encodeURIComponent(saved.id)}`);
+  }, [navigate, nodes.length, saveCurrent, showToast]);
 
   // ── Chat send ──
   const sendChat = useCallback(async () => {
@@ -574,7 +602,10 @@ export function ProcessDesigner() {
           conversation: conversationHistory.length > 0 ? conversationHistory : undefined,
         }),
       });
+      const generatedNodes = draftToCanvasNodes(r.draft);
       loadDraft(r.draft);
+      setPaletteOpen(false);
+      setChatOpen(false);
       setWorkflowMeta({
         jurisdiction: r.draft.jurisdiction || jurisdiction || 'GLOBAL',
         processType: r.draft.processType || processType || 'GENERIC',
@@ -582,6 +613,30 @@ export function ProcessDesigner() {
       });
       setJurisdiction(r.draft.jurisdiction || jurisdiction || '');
       setProcessType(r.draft.processType || processType || '');
+
+      const saved = await api<SavedWorkflowRow>(activeWorkflowId ? `/api/builder/workflows/${activeWorkflowId}` : '/api/builder/workflows', {
+        method: activeWorkflowId ? 'PATCH' : 'POST',
+        body: JSON.stringify({
+          name: r.draft.name || 'Untitled agent workflow',
+          processType: r.draft.processType || processType || 'GENERIC',
+          jurisdiction: r.draft.jurisdiction || jurisdiction || 'GLOBAL',
+          draft: r.draft,
+          source: 'chat',
+        }),
+      });
+      setActiveWorkflowId(saved.id);
+      setWorkflowName(saved.name);
+      setLastSavedFingerprint(workflowFingerprint(
+        saved.name,
+        {
+          jurisdiction: r.draft.jurisdiction || jurisdiction || 'GLOBAL',
+          processType: r.draft.processType || processType || 'GENERIC',
+          regulations: r.draft.regulations,
+        },
+        generatedNodes,
+        [...r.draft.edges],
+      ));
+      void refreshWorkflows();
 
       // Build a richer assistant response when semantic context is available
       const sc = r.semanticContext;
@@ -593,26 +648,29 @@ export function ProcessDesigner() {
           assistantMsg += `\n\nOpen questions: ${sc.ambiguities.map((a) => `• ${a}`).join('\n')}`;
         }
         if (sc.retrieval.degradedReason) {
-          assistantMsg += `\n⚠ ${sc.retrieval.degradedReason}`;
+          assistantMsg += `\nNote: ${sc.retrieval.degradedReason}`;
         }
       }
-      assistantMsg += ' Rearrange on the canvas, then save when you are ready.';
+      assistantMsg += ' It has been saved. Rearrange on the canvas if you want to refine it.';
 
       setChat([...nextChat, {
         role: 'assistant',
         content: assistantMsg,
         ts: new Date().toISOString(),
       }]);
+      setChatOpen(false);
+      showToast(`Built and saved "${saved.name}".`);
     } catch (e) {
       setChat([...nextChat, { role: 'assistant', content: `Error: ${e instanceof Error ? e.message : e}`, ts: new Date().toISOString() }]);
     } finally { setChatBusy(false); }
-  }, [api, chat, chatBusy, chatInput, jurisdiction, loadDraft, processType]);
+  }, [activeWorkflowId, api, chat, chatBusy, chatInput, jurisdiction, loadDraft, processType, refreshWorkflows, showToast]);
 
   // ── Template load ──
   const loadTemplate = useCallback(async (id: string) => {
     try {
       const r = await api<TemplateDraftResponse>(`/api/builder/templates/${id}/draft`);
       loadDraft(r.draft);
+      setPaletteOpen(false);
     } catch { /* */ }
   }, [api, loadDraft]);
 
@@ -643,7 +701,7 @@ export function ProcessDesigner() {
     if (nodes.length > 0 && !window.confirm('Start a new workflow? Unsaved changes will be lost.')) return;
     setNodes([]);
     setEdges([]);
-    setWorkflowName('Untitled workflow');
+    setWorkflowName('Untitled agent workflow');
     setWorkflowMeta({ jurisdiction: '', processType: '', regulations: [] });
     setJurisdiction('');
     setProcessType('');
@@ -736,6 +794,7 @@ export function ProcessDesigner() {
       setJustDropped(node.id);
       setTimeout(() => setJustDropped(null), 400);
       setSelectedId(node.id);
+      setPaletteOpen(false);
     }
   }, [dragState, dropPreview, edges, hoverPort, screenToCanvas]);
 
@@ -754,6 +813,8 @@ export function ProcessDesigner() {
     setNodes(prev => [...prev, node]);
     setSelectedId(node.id);
     setEditingLabel(node.id);
+    setPaletteOpen(false);
+    setChatOpen(false);
     setJustDropped(node.id);
     setTimeout(() => setJustDropped(null), 400);
   }, [screenToCanvas]);
@@ -770,10 +831,10 @@ export function ProcessDesigner() {
         onNameChange={setWorkflowName}
         stepCount={nodes.length}
         isDirty={isDirty}
-        zoom={zoom}
-        onZoom={setZoom}
+        isSaved={!!activeWorkflowId && !isDirty}
         onFit={() => fitView(nodes, canvasRef, setZoom, setPan)}
         onSave={() => { void saveCurrent(); }}
+        onBuildAgents={() => { void buildManagedAgents(); }}
         saving={saving}
         toast={toast}
         toastError={toastError}
@@ -789,37 +850,39 @@ export function ProcessDesigner() {
         onNewWorkflow={startNewWorkflow}
       />
 
-      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+      <div style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
         {paletteOpen && (
-          <NodePalette
-            onCollapse={() => setPaletteOpen(false)}
-            onDragStart={(kind) => setDropPreview({ kind, x: 0, y: 0 })}
-            onDragEnd={() => setDropPreview(null)}
-            templates={templates}
-            onLoadTemplate={loadTemplate}
-            savedWorkflows={savedWorkflows}
-            onNewWorkflow={startNewWorkflow}
-            onLoadSaved={async (id) => {
-              try {
-                const row = await api<{ id: string; name: string; processType: string; jurisdiction: string; draft: WorkflowDraft }>(`/api/builder/workflows/${id}`);
-                applyLoadedWorkflow(row);
-                showToast(`Opened "${row.name}"`);
-              } catch (e) {
-                showToast(e instanceof Error ? e.message : 'Could not open workflow', true);
-              }
-            }}
-            onDeleteSaved={async (id) => {
-              if (!window.confirm('Delete this workflow?')) return;
-              try {
-                await api<void>(`/api/builder/workflows/${id}`, { method: 'DELETE' });
-                if (activeWorkflowId === id) setActiveWorkflowId(null);
-                void refreshWorkflows();
-                showToast('Workflow deleted');
-              } catch (e) {
-                showToast(e instanceof Error ? e.message : 'Delete failed', true);
-              }
-            }}
-          />
+          <div style={{ position: 'absolute', top: 16, left: 16, bottom: 16, zIndex: 12 }}>
+            <NodePalette
+              onCollapse={() => setPaletteOpen(false)}
+              onDragStart={(kind) => setDropPreview({ kind, x: 0, y: 0 })}
+              onDragEnd={() => setDropPreview(null)}
+              templates={templates}
+              onLoadTemplate={loadTemplate}
+              savedWorkflows={savedWorkflows}
+              onNewWorkflow={startNewWorkflow}
+              onLoadSaved={async (id) => {
+                try {
+                  const row = await api<{ id: string; name: string; processType: string; jurisdiction: string; draft: WorkflowDraft }>(`/api/builder/workflows/${id}`);
+                  applyLoadedWorkflow(row);
+                  showToast(`Opened "${row.name}"`);
+                } catch (e) {
+                  showToast(e instanceof Error ? e.message : 'Could not open workflow', true);
+                }
+              }}
+              onDeleteSaved={async (id) => {
+                if (!window.confirm('Delete this workflow?')) return;
+                try {
+                  await api<void>(`/api/builder/workflows/${id}`, { method: 'DELETE' });
+                  if (activeWorkflowId === id) setActiveWorkflowId(null);
+                  void refreshWorkflows();
+                  showToast('Workflow deleted');
+                } catch (e) {
+                  showToast(e instanceof Error ? e.message : 'Delete failed', true);
+                }
+              }}
+            />
+          </div>
         )}
 
         {/* Canvas */}
@@ -828,15 +891,16 @@ export function ProcessDesigner() {
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              title="Show sidebar"
+              title="Open starters and saved workflows"
               style={{
-                position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
-                zIndex: 5, background: 'var(--paper)', border: '1px solid var(--rule)',
-                borderLeft: 0, borderRadius: '0 8px 8px 0', padding: '10px 6px',
-                cursor: 'pointer', color: 'var(--ink-3)', fontSize: 12,
+                position: 'absolute', left: 16, top: 16,
+                zIndex: 6, background: 'rgba(255,255,255,0.94)', border: '1px solid var(--rule)',
+                borderRadius: 999, padding: '9px 13px',
+                cursor: 'pointer', color: 'var(--ink)', fontSize: 12, fontWeight: 650,
+                boxShadow: '0 12px 30px rgba(15,23,42,0.08)',
               }}
             >
-              {'\u2039'}
+              Starters
             </button>
           )}
 
@@ -929,7 +993,7 @@ export function ProcessDesigner() {
             </div>
           )}
 
-          {selectedNode && (
+          {selectedNode && !chatOpen && (
             <NodeInspector
               node={selectedNode}
               onChange={(updates) => setNodes(prev => prev.map(n => n.id === selectedId ? { ...n, ...updates } : n))}
@@ -946,25 +1010,27 @@ export function ProcessDesigner() {
 
         {/* Chat panel (optional) */}
         {chatOpen && (
-          <ChatPanel
-            chat={chat}
-            input={chatInput}
-            setInput={setChatInput}
-            send={sendChat}
-            busy={chatBusy}
-            jurisdiction={jurisdiction}
-            setJurisdiction={(v) => {
-              setJurisdiction(v);
-              setWorkflowMeta((prev) => ({ ...prev, jurisdiction: v }));
-            }}
-            processType={processType}
-            setProcessType={(v) => {
-              setProcessType(v);
-              setWorkflowMeta((prev) => ({ ...prev, processType: v }));
-            }}
-            catalog={catalog}
-            onClose={() => setChatOpen(false)}
-          />
+          <div style={{ position: 'absolute', top: 16, right: 16, bottom: 16, zIndex: 14 }}>
+            <ChatPanel
+              chat={chat}
+              input={chatInput}
+              setInput={setChatInput}
+              send={sendChat}
+              busy={chatBusy}
+              jurisdiction={jurisdiction}
+              setJurisdiction={(v) => {
+                setJurisdiction(v);
+                setWorkflowMeta((prev) => ({ ...prev, jurisdiction: v }));
+              }}
+              processType={processType}
+              setProcessType={(v) => {
+                setProcessType(v);
+                setWorkflowMeta((prev) => ({ ...prev, processType: v }));
+              }}
+              catalog={catalog}
+              onClose={() => setChatOpen(false)}
+            />
+          </div>
         )}
       </div>
     </div>
@@ -977,8 +1043,10 @@ function DesignerHeader(props: {
   name: string; onNameChange: (v: string) => void;
   stepCount: number;
   isDirty: boolean;
-  zoom: number; onZoom: (z: number) => void; onFit: () => void;
+  isSaved: boolean;
+  onFit: () => void;
   onSave: () => void; saving: boolean; toast: string | null; toastError?: boolean;
+  onBuildAgents: () => void;
   chatOpen: boolean; onToggleChat: () => void;
   detailsOpen: boolean; onToggleDetails: () => void;
   catalog: CatalogSnapshot | null;
@@ -999,7 +1067,7 @@ function DesignerHeader(props: {
         padding: '0 20px', height: 56, gap: 16,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-          <Link href="/app" style={{ color: 'var(--ink-3)', textDecoration: 'none', fontSize: 13, flexShrink: 0 }}>{'\u2190'} Home</Link>
+          <Link href="/app" style={{ color: 'var(--ink-3)', textDecoration: 'none', fontSize: 13, flexShrink: 0 }}>{'\u2190'} Command Center</Link>
           <div style={{ width: 1, height: 20, background: 'var(--rule)', flexShrink: 0 }} />
           {editingName ? (
             <input
@@ -1036,6 +1104,19 @@ function DesignerHeader(props: {
               Unsaved changes
             </span>
           )}
+          {props.isSaved && (
+            <span style={{
+              fontSize: 11,
+              color: 'var(--ok, #2a8c4f)',
+              background: 'rgba(42, 140, 79, 0.08)',
+              border: '1px solid rgba(42, 140, 79, 0.22)',
+              borderRadius: 999,
+              padding: '3px 10px',
+              flexShrink: 0,
+            }}>
+              Saved
+            </span>
+          )}
           {props.stepCount > 0 && (
             <span style={{ fontSize: 12, color: 'var(--ink-3)', flexShrink: 0 }}>
               {props.stepCount} {props.stepCount === 1 ? 'step' : 'steps'}
@@ -1045,17 +1126,11 @@ function DesignerHeader(props: {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <HdrBtn onClick={props.onToggleDetails} active={props.detailsOpen} title="Jurisdiction and process type">
-            Details
+            Scope
           </HdrBtn>
-          <HdrBtn onClick={props.onToggleChat} active={props.chatOpen} title="Describe a process in plain language">
-            Build with AI
+          <HdrBtn onClick={props.onToggleChat} active={props.chatOpen} title="Describe an agent workflow in plain language">
+            Generate
           </HdrBtn>
-          <div style={{ width: 1, height: 24, background: 'var(--rule)' }} />
-          <HdrBtn onClick={() => props.onZoom(Math.max(0.1, props.zoom * 0.9))} title="Zoom out">{'\u2212'}</HdrBtn>
-          <span style={{ fontSize: 12, color: 'var(--ink-3)', minWidth: 42, textAlign: 'center' }}>
-            {Math.round(props.zoom * 100)}%
-          </span>
-          <HdrBtn onClick={() => props.onZoom(Math.min(3, props.zoom * 1.1))} title="Zoom in">+</HdrBtn>
           <HdrBtn onClick={props.onFit} title="Fit workflow to screen">Fit</HdrBtn>
           <button
             onClick={props.onSave}
@@ -1069,6 +1144,19 @@ function DesignerHeader(props: {
             }}
           >
             {props.saving ? 'Saving\u2026' : 'Save workflow'}
+          </button>
+          <button
+            onClick={props.onBuildAgents}
+            disabled={props.saving || props.stepCount === 0}
+            title={props.stepCount === 0 ? 'Add at least one step first' : 'Save this workflow and continue to validated agent builds'}
+            style={{
+              background: 'var(--orange)', color: '#fff', border: 0, borderRadius: 8,
+              padding: '8px 16px', fontSize: 13, fontWeight: 650,
+              cursor: props.saving ? 'wait' : props.stepCount === 0 ? 'not-allowed' : 'pointer',
+              opacity: props.saving || props.stepCount === 0 ? 0.55 : 1,
+            }}
+          >
+            Build agents
           </button>
         </div>
       </div>
@@ -1095,7 +1183,7 @@ function DesignerHeader(props: {
             <option value="">Any process type</option>
             {props.catalog?.processTypes.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <HdrBtn onClick={props.onNewWorkflow} title="Start a blank workflow">New workflow</HdrBtn>
+          <HdrBtn onClick={props.onNewWorkflow} title="Start a blank agent workflow">New workflow</HdrBtn>
         </div>
       )}
 
@@ -1153,14 +1241,17 @@ function NodePalette(props: {
 
   return (
     <div style={{
-      width: 260, borderRight: '1px solid var(--rule)', display: 'flex', flexDirection: 'column',
-      background: 'var(--paper)', flexShrink: 0,
+      width: 292, height: '100%', border: '1px solid var(--rule)', borderRadius: 18,
+      display: 'flex', flexDirection: 'column',
+      background: 'rgba(255,255,255,0.96)', flexShrink: 0,
+      boxShadow: '0 24px 70px rgba(15,23,42,0.14)',
+      overflow: 'hidden',
     }}>
       <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid var(--rule)', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>Start building</div>
+          <div style={{ fontSize: 14, fontWeight: 650, color: 'var(--ink)' }}>Add to canvas</div>
           <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, lineHeight: 1.45 }}>
-            Pick a starter, add steps, or reopen a saved workflow.
+            Choose a starter, saved workflow, or step.
           </div>
         </div>
         <button
@@ -1241,12 +1332,23 @@ function NodePalette(props: {
             {props.templates?.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>No starters available.</div>}
             {props.templates?.map(t => (
               <button key={t.id} onClick={() => props.onLoadTemplate(t.id)} style={{
-                width: '100%', textAlign: 'left', padding: '12px 14px', marginBottom: 8,
-                background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 10,
+                width: '100%', textAlign: 'left', padding: '13px 14px', marginBottom: 8,
+                background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 14,
                 cursor: 'pointer', color: 'var(--ink)',
               }}>
                 <div style={{ fontWeight: 600, fontSize: 13 }}>{t.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4, lineHeight: 1.45 }}>{t.description}</div>
+                <div style={{
+                  fontSize: 11,
+                  color: 'var(--ink-3)',
+                  marginTop: 4,
+                  lineHeight: 1.45,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}>
+                  {t.description}
+                </div>
                 <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
                   {t.steps.length} steps{t.hitlGates.length > 0 ? ` · ${t.hitlGates.length} approvals` : ''}
                 </div>
@@ -1270,7 +1372,7 @@ function NodePalette(props: {
             {!props.savedWorkflows && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Loading...</div>}
             {props.savedWorkflows?.length === 0 && (
               <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                Nothing saved yet. Build a workflow on the canvas, then click Save workflow.
+                Nothing saved yet. Build an agent workflow on the canvas, then click Save workflow.
               </div>
             )}
             {props.savedWorkflows?.map(w => (
@@ -1621,7 +1723,7 @@ function NodeInspector(props: {
 
   return (
     <div style={{
-      position: 'absolute', top: 16, right: 16, bottom: 16, width: 320,
+      position: 'absolute', top: 16, right: 16, width: 320, maxHeight: 'calc(100% - 32px)',
       background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 12,
       boxShadow: '0 12px 40px rgba(0,0,0,0.12)', zIndex: 4,
       display: 'flex', flexDirection: 'column', overflow: 'hidden',
@@ -1758,13 +1860,16 @@ function ChatPanel(props: {
 
   return (
     <div style={{
-      width: 360, borderLeft: '1px solid var(--rule)', display: 'flex', flexDirection: 'column',
-      background: 'var(--paper)', flexShrink: 0,
+      width: 380, height: '100%', border: '1px solid var(--rule)', borderRadius: 18,
+      display: 'flex', flexDirection: 'column',
+      background: 'rgba(255,255,255,0.97)', flexShrink: 0,
+      boxShadow: '0 24px 70px rgba(15,23,42,0.16)',
+      overflow: 'hidden',
     }}>
       <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--rule)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>Build with AI</div>
-          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>Describe the process in plain language.</div>
+          <div style={{ fontSize: 14, fontWeight: 650 }}>Build with AI</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>Describe the workflow. It will appear on the canvas.</div>
         </div>
         <button onClick={props.onClose} style={{ background: 'transparent', border: 0, color: 'var(--ink-3)', cursor: 'pointer', fontSize: 16 }}>{'\u2715'}</button>
       </div>

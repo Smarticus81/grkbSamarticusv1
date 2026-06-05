@@ -192,7 +192,7 @@ export class TaskRunner {
           // instead of a templated placeholder.
           if (!llm) {
             throw new Error(
-              'This agent is LLM-driven and requires a configured model provider, but none is available. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY.',
+              'This agent is LLM-driven and requires a configured model provider, but none is available. Set DEEPSEEK_API_KEY, GOOGLE_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY.',
             );
           }
           emit({
@@ -230,6 +230,18 @@ export class TaskRunner {
     const unsatisfiedIds: string[] = [...preGateViolations];
 
     if (lane === 'with-graph') {
+      const decisionTrace = extractDecisionTrace(output);
+      if (decisionTrace) {
+        emit({
+          type: 'agent.decision',
+          lane,
+          atIso: nowIso(),
+          decision: decisionTrace.decision,
+          reason: decisionTrace.reason,
+        });
+        await pace();
+      }
+
       for (const check of def.obligationChecks) {
         const ob = obligationsById.get(check.obligationId);
         if (!ob) {
@@ -340,6 +352,49 @@ function extractCitations(output: unknown): string[] {
   return c.filter((x): x is string => typeof x === 'string' && x.length > 0);
 }
 
+function extractDecisionTrace(output: unknown): { decision: string; reason: string } | null {
+  if (!output || typeof output !== 'object') return null;
+  const record = output as Record<string, unknown>;
+  const decision = firstString(record, [
+    'decision',
+    'reportabilityDecision',
+    'classification',
+    'determination',
+    'disposition',
+    'recommendation',
+    'conclusion',
+    'status',
+    'result',
+  ]);
+  const reason = firstString(record, [
+    'reason',
+    'rationale',
+    'justification',
+    'assessmentRationale',
+    'decisionRationale',
+    'summary',
+    'analysis',
+    'finding',
+  ]);
+  if (!decision && !reason) return null;
+  return {
+    decision: decision ?? 'Decision recorded',
+    reason: reason ?? 'No explicit reason field was returned by the agent.',
+  };
+}
+
+function firstString(record: Record<string, unknown>, keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (Array.isArray(value)) {
+      const strings = value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+      if (strings.length > 0) return strings.slice(0, 3).join('; ');
+    }
+  }
+  return undefined;
+}
+
 function errorLane<TOutput>(lane: TaskLane, startMs: number, message: string): LaneResult<TOutput> {
   return {
     lane,
@@ -415,5 +470,22 @@ async function generateViaLLM<TInput, TOutput>(
   );
 
   // Final validation pass to be safe \u2014 throws if the LLM drifted.
-  return def.outputSchema.parse(response);
+  return def.outputSchema.parse(normalizeOutputCitations(response, obligations));
+}
+
+function normalizeOutputCitations<TOutput>(output: TOutput, obligations: ObligationNode[]): TOutput {
+  if (!output || typeof output !== 'object' || !('citations' in output)) return output;
+  const maybeCitations = (output as { citations?: unknown }).citations;
+  if (!Array.isArray(maybeCitations)) return output;
+
+  const byId = new Map(obligations.map((ob) => [ob.obligationId, ob.sourceCitation]));
+  const normalized = maybeCitations.map((citation) => {
+    if (typeof citation !== 'string') return citation;
+    return byId.get(citation) ?? citation;
+  });
+
+  return {
+    ...(output as Record<string, unknown>),
+    citations: normalized,
+  } as TOutput;
 }

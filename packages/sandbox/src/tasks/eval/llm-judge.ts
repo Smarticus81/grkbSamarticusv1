@@ -23,7 +23,7 @@ export async function judgeLane(
     // Hook for a future LLM-backed judge. Falls through to the surrogate
     // if any required environment variable is absent — the sandbox must
     // never throw because of missing keys.
-    const hasKey = !!(process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY || process.env.GOOGLE_API_KEY);
+    const hasKey = !!(process.env.DEEPSEEK_API_KEY || process.env.GOOGLE_API_KEY || process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY);
     if (!hasKey) return surrogate(def, lane);
     return surrogate(def, lane); // TODO: wire LLMAbstraction once provider keys are present
   }

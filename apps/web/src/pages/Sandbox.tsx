@@ -1,21 +1,19 @@
 /**
- * Sandbox — run a created process against sample or user-provided input,
- * and get back: an answer, the applicable regulations, and the
- * decision trace that explains the agent's reasoning.
+ * Agent Templates — launch a medical-device agent against real evidence,
+ * then promote the validated run into the managed runtime.
  *
  * Layout
- *   Left  pane  : Input editor (auto-generated form + raw JSON tab)
- *   Right pane  : Answer · Applicable regulations · Decision trace
+ *   Left  pane  : Evidence input
+ *   Right pane  : Agent result · requirement coverage · audit trail
  *
- * The graph-vs-no-graph comparison still exists in the backend (mode
- * defaults to `with-graph`) but is not the primary user surface here.
+ * The graph-vs-no-graph comparison still exists in the backend, but the user
+ * experience presents one governed operating path.
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { SmarticusMark } from '../components/ui/logos.js';
 import { useAuthenticatedApi } from '../auth/useApi.js';
-import { processS } from './Builder.js';
 
 /* ── Types mirrored from @regground/sandbox ─────────────────────────── */
 
@@ -65,6 +63,7 @@ type LaneEvent =
   | { type: 'agent.thinking'; lane: Lane; atIso: string; message: string }
   | { type: 'graph.query'; lane: Lane; atIso: string; method: string; args: Record<string, unknown>; resultCount: number; message: string }
   | { type: 'graph.cite'; lane: Lane; atIso: string; obligationId: string; citation: string; regulation: string; summary: string }
+  | { type: 'agent.decision'; lane: Lane; atIso: string; decision: string; reason: string }
   | { type: 'obligation.satisfied'; lane: Lane; atIso: string; obligationId: string; reason: string }
   | { type: 'obligation.missed'; lane: Lane; atIso: string; obligationId: string; reason: string }
   | { type: 'output.gated'; lane: Lane; atIso: string; passed: boolean; violations: string[] }
@@ -96,6 +95,47 @@ type RunResult = {
   withoutGraph?: LaneResult;
 };
 
+type WorkflowBuildNode = {
+  id: string;
+  kind: string;
+  label: string;
+  description?: string;
+  automation?: string;
+};
+
+type WorkflowBuildSource = {
+  id: string;
+  name: string;
+  processType: string;
+  jurisdiction: string;
+  description: string | null;
+  draft: {
+    name: string;
+    description?: string;
+    processType: string;
+    jurisdiction: string;
+    regulations: string[];
+    nodes: WorkflowBuildNode[];
+    edges: Array<{ from: string; to: string; label?: string }>;
+  };
+};
+
+function regulationList(regulation: string): string[] {
+  return regulation.split('·').map((s) => s.trim()).filter(Boolean);
+}
+
+function riskBandForTask(taskId: string): 'low' | 'medium' | 'high' {
+  const highRiskTasks = new Set([
+    'complaint-coder',
+    'mir-drafter',
+    'root-cause-investigator',
+    'capa-plan-drafter',
+    'change-impact-assessor',
+    'template-compliance-evaluator',
+  ]);
+  return highRiskTasks.has(taskId) ? 'high' : 'medium';
+}
+
 /* ── Component ───────────────────────────────────────────────────────── */
 
 export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
@@ -104,6 +144,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
 
   const [tasks, setTasks] = useState<TaskCard[] | null>(null);
   const [detail, setDetail] = useState<TaskDetail | null>(null);
+  const [workflowSource, setWorkflowSource] = useState<WorkflowBuildSource | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | undefined>(initialTaskId);
 
@@ -119,15 +160,14 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
   const [result, setResult] = useState<RunResult | null>(null);
   const streamAbortRef = useRef<AbortController | null>(null);
 
-  // Save-as-agent state (the Builder is now an inline action on a run)
+  // Promotion state for turning a validated run into a managed agent.
   const [agentName, setAgentName] = useState('');
   const [savingAgent, setSavingAgent] = useState(false);
   const [savedAgentMsg, setSavedAgentMsg] = useState<string | null>(null);
   const [savedAgentOk, setSavedAgentOk] = useState(false);
 
-  // The route (/app/sandbox vs /app/sandbox/:taskId) is the single source of
-  // truth for which process is open. No process is auto-selected — choosing a process is
-  // an explicit first step.
+  // The route is the single source of truth for which template is open.
+  // Choosing a template is an explicit first step.
   useEffect(() => { setSelectedId(initialTaskId); }, [initialTaskId]);
 
   /* Load catalog once (used by the picker and the chain-hints strip). */
@@ -135,6 +175,12 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     api<{ tasks: TaskCard[] }>('/api/sandbox/tasks')
       .then((r) => setTasks(r.tasks))
       .catch((e) => setError(String(e?.message ?? e)));
+    const workflowId = new URLSearchParams(window.location.search).get('workflow');
+    if (workflowId) {
+      api<WorkflowBuildSource>(`/api/builder/workflows/${workflowId}`)
+        .then((workflow) => setWorkflowSource(workflow))
+        .catch((e) => setError(String(e?.message ?? e)));
+    }
     return () => { streamAbortRef.current?.abort(); };
   }, []);
 
@@ -156,7 +202,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     api<TaskDetail>(`/api/sandbox/tasks/${selectedId}`)
       .then((d) => {
         setDetail(d);
-        // Prefer Builder hand-off input if present.
+        // Prefer workflow hand-off input if present.
         let prefilled: unknown | null = null;
         try {
           const cached = sessionStorage.getItem(`builder:input:${selectedId}`);
@@ -220,13 +266,17 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     try {
       const start = await api<{ runId: string }>(`/api/sandbox/tasks/${detail.id}/run`, {
         method: 'POST',
-        body: JSON.stringify({ input: body, mode: 'with-graph' }),
+        body: JSON.stringify({
+          input: body,
+          mode: 'with-graph',
+          agentContext: workflowSource ? workflowBuildContext(workflowSource, detail.name) : undefined,
+        }),
       });
       const controller = new AbortController();
       streamAbortRef.current = controller;
       const eventNames = new Set<LaneEvent['type']>([
         'run.started', 'agent.thinking', 'graph.query', 'graph.cite',
-        'obligation.satisfied', 'obligation.missed', 'output.gated',
+        'agent.decision', 'obligation.satisfied', 'obligation.missed', 'output.gated',
         'run.completed', 'run.error',
       ]);
       await streamSse(`/api/sandbox/runs/${start.runId}/stream`, {
@@ -256,29 +306,35 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     }
   }
 
-  /* Save the current task + edited input as a reusable agent. This is the
-   * Builder, folded into the run screen: one click turns a working run into
-   * something you can re-open and re-run with the same input. */
+  /* Save the current task + edited input as a managed medical-device agent. */
   async function saveAsAgent() {
     if (!detail) return;
-    const process = processS.find((j) => j.taskId === detail.id);
+    const lane = result?.withGraph ?? result?.withoutGraph;
+    if (!result?.runId || !lane) {
+      setSavedAgentOk(false);
+      setSavedAgentMsg('Run the template before creating a managed agent.');
+      return;
+    }
+    if (!lane.score.strictGatePass) {
+      setSavedAgentOk(false);
+      setSavedAgentMsg('This run did not pass the strict compliance gate. Resolve violations before creating a managed agent.');
+      return;
+    }
     const name =
       agentName.trim() ||
-      `${detail.name}${process ? '' : ' agent'}`;
-    const riskBand: 'low' | 'medium' | 'high' =
-      process?.risk === 'HIGH' ? 'high' : process?.risk === 'LOW' ? 'low' : 'medium';
-    const regulations =
-      process?.regulations ?? detail.regulation.split('·').map((s) => s.trim()).filter(Boolean);
+      `${detail.name} agent`;
+    const riskBand = riskBandForTask(detail.id);
+    const regulations = regulationList(detail.regulation);
 
     setSavingAgent(true);
     setSavedAgentMsg(null);
     try {
-      const saved = await api<{ id: string }>('/api/builder/agents', {
+      await api<{ id: string }>('/api/builder/agents', {
         method: 'POST',
         body: JSON.stringify({
           name,
-          processId: process?.id ?? detail.id,
-          processTitle: process?.title ?? detail.name,
+          processId: detail.id,
+          processTitle: detail.name,
           taskId: detail.id,
           regulations,
           evidenceStatus: {},
@@ -287,20 +343,11 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           deployTarget: 'claude-managed-agents',
           riskBand,
           description: detail.oneLiner,
-        }),
-      });
-      // Persist the exact input so the agent re-runs with it.
-      await api(`/api/builder/agents/${saved.id}/attach`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          slot: '__input',
-          filename: 'input.json',
-          content: JSON.stringify(inputValue ?? {}, null, 2),
-          contentType: 'application/json',
+          sourceRunId: result.runId,
         }),
       });
       setSavedAgentOk(true);
-      setSavedAgentMsg(`Saved "${name}" to your agents.`);
+      setSavedAgentMsg(`Created "${name}" from validated run ${result.runId.slice(0, 12)}.`);
     } catch (e) {
       setSavedAgentOk(false);
       setSavedAgentMsg(e instanceof Error ? e.message : 'Save failed.');
@@ -309,38 +356,35 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     }
   }
 
+  const workflowTaskSuggestions = workflowSource && tasks
+    ? suggestWorkflowTasks(workflowSource, tasks)
+    : [];
+
   /* ── Catalog state ─────────────────────────────────────────────── */
   if (!detail) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
         <header style={{ padding: '40px 40px 8px' }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Step 1 of 4 · Select a managed-agent template</div>
-          <h1 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-            Choose the Claude Managed Agent you want to create.
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Agent Templates</div>
+          <h1 style={{ fontSize: 34, fontWeight: 500, letterSpacing: '-0.045em', margin: 0 }}>
+            Pick one grounded agent.
           </h1>
-          <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 620, lineHeight: 1.55 }}>
-            Each template runs once with graph-grounded citations, then saves as a Claude Managed Agent ready to deploy
-            from Agent Builder.
+          <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 540, lineHeight: 1.55 }}>
+            Run it against real evidence. If it passes the gate, create the Anthropic managed agent.
           </p>
-          <div
-            style={{
-              marginTop: 16,
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: 10,
-              maxWidth: 760,
-            }}
-          >
-            <ManagedStep label="1. Configure" body="Paste real QMS input or use the starter schema." />
-            <ManagedStep label="2. Ground" body="Regulatory Ground loads obligations and citations." />
-            <ManagedStep label="3. Deploy" body="Save directly into Claude Managed Agents." />
-          </div>
-          <CatalogStepHint />
         </header>
         <div style={{ padding: '24px 40px 56px' }}>
           {error && <div style={{ padding: 12, color: '#B00020', fontSize: 13 }}>Could not load: {error}</div>}
           {!tasks && !error && <div style={{ padding: 12, color: 'var(--ink-3)', fontSize: 13 }}>Loading…</div>}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 10 }}>
+          {workflowSource && (
+            <WorkflowBuildSourcePanel
+              workflow={workflowSource}
+              tasks={workflowTaskSuggestions}
+              onPick={(taskId) => navigate(`/app/sandbox/${taskId}?workflow=${encodeURIComponent(workflowSource.id)}`)}
+              onOpenWorkflow={() => navigate(`/app/designer?workflow=${encodeURIComponent(workflowSource.id)}`)}
+            />
+          )}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 12 }}>
             {tasks?.map((t) => (
               <button
                 key={t.id}
@@ -349,30 +393,36 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   textAlign: 'left',
                   background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)',
                   border: '1px solid rgba(255, 115, 0, 0.22)',
-                  borderRadius: 14,
-                  padding: '16px 18px',
+                  borderRadius: 16,
+                  padding: 16,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 10,
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  aspectRatio: '1 / 1',
                   boxShadow: '0 14px 36px rgba(17, 24, 39, 0.04)',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <SmarticusMark size={18} />
-                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{t.name}</span>
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.45 }}>{t.oneLiner}</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={SMALL_RUNTIME_PILL}>Claude Managed Agent</span>
-                  <span style={SMALL_RUNTIME_PILL}>{t.regulation}</span>
-                </div>
-                {((t.upstream?.length ?? 0) + (t.downstream?.length ?? 0)) > 0 && (
-                  <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>
-                    ↔ chains with {(t.upstream?.length ?? 0) + (t.downstream?.length ?? 0)} task
-                    {(t.upstream?.length ?? 0) + (t.downstream?.length ?? 0) === 1 ? '' : 's'}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <SmarticusMark size={18} />
+                    <span style={{ fontSize: 14, fontWeight: 650, color: 'var(--ink)', lineHeight: 1.25 }}>{t.name}</span>
                   </div>
-                )}
+                  <div style={{
+                    marginTop: 10,
+                    fontSize: 12,
+                    color: 'var(--ink-2)',
+                    lineHeight: 1.45,
+                    display: '-webkit-box',
+                    WebkitLineClamp: 4,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden',
+                  }}>
+                    {t.oneLiner}
+                  </div>
+                </div>
+                <span style={{ color: 'var(--orange)', fontSize: 12, fontWeight: 650 }}>Run build -&gt;</span>
               </button>
             ))}
           </div>
@@ -381,7 +431,11 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     );
   }
 
-  /* ── Focused process runner ─────────────────────────────────────── */
+  const laneForPromotion = result?.withGraph ?? result?.withoutGraph;
+  const canPromote = !!laneForPromotion?.score.strictGatePass;
+  const promotionExplanations = explainPromotionBlockers(laneForPromotion?.score.violations ?? [], events);
+
+  /* ── Focused agent launcher ─────────────────────────────────────── */
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
       <header
@@ -399,7 +453,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             onClick={() => navigate('/app/sandbox')}
             style={GHOST_BUTTON}
           >
-            ← All managed agents
+            ← Agent templates
           </button>
           <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {detail.name}
@@ -413,14 +467,14 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={resetToSample} style={GHOST_BUTTON} disabled={running}>Reset input</button>
+          <button onClick={resetToSample} style={GHOST_BUTTON} disabled={running}>Reset evidence</button>
           <button
             onClick={runProcess}
             disabled={running}
             className="btn-orange"
             style={{ fontSize: 14, padding: '10px 22px' }}
           >
-            {running ? 'Grounding…' : 'Run grounding pass'}
+            {running ? 'Grounding…' : 'Run template'}
           </button>
         </div>
       </header>
@@ -439,10 +493,10 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
         {/* ── LEFT: Input editor ─────────────────────────────────── */}
         <section style={CARD}>
           <div style={CARD_HEADER}>
-            <div className="eyebrow">Input</div>
+            <div className="eyebrow">Evidence input</div>
             <div style={{ display: 'flex', gap: 4, border: '1px solid var(--rule)', borderRadius: 6, padding: 2 }}>
               <TabButton active={editorTab === 'form'} onClick={() => setEditorTab('form')}>Form</TabButton>
-              <TabButton active={editorTab === 'json'} onClick={() => setEditorTab('json')}>JSON</TabButton>
+              <TabButton active={editorTab === 'json'} onClick={() => setEditorTab('json')}>Advanced</TabButton>
             </div>
           </div>
           <p style={{ margin: '4px 16px 0', color: 'var(--ink-3)', fontSize: 12 }}>{detail.oneLiner}</p>
@@ -495,19 +549,16 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
 
           {!running && !result && (
             <div style={{ ...CARD, padding: 20 }}>
-              <div className="eyebrow" style={{ marginBottom: 10 }}>How to run this</div>
+              <div className="eyebrow" style={{ marginBottom: 10 }}>Launch checklist</div>
               <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-                  On the left, <b style={{ color: 'var(--ink)' }}>paste your own document or data</b> over the
-                  sample — or just run the sample to see how it works.
+                  Add the <b style={{ color: 'var(--ink)' }}>real evidence</b> the agent should process, or run the starter input first.
                 </li>
                 <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-                  Press <b style={{ color: 'var(--ink)' }}>Run</b> (top right).
+                  Press <b style={{ color: 'var(--ink)' }}>Run template</b> to ground the work against requirements.
                 </li>
                 <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-                  Read the result here: the <b style={{ color: 'var(--ink)' }}>answer</b>, the{' '}
-                  <b style={{ color: 'var(--ink)' }}>regulations</b> behind it, and the{' '}
-                  <b style={{ color: 'var(--ink)' }}>decision trace</b>.
+                  Review the <b style={{ color: 'var(--ink)' }}>result</b>, requirement coverage, and audit trail before promotion.
                 </li>
               </ol>
             </div>
@@ -541,20 +592,79 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             <section style={{ ...CARD, padding: 18, background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)', borderColor: 'rgba(255, 115, 0, 0.24)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
                 <div>
-                  <div className="eyebrow" style={{ marginBottom: 6 }}>Promote this run</div>
+                  <div className="eyebrow" style={{ marginBottom: 6 }}>Create managed agent</div>
                   <h2 style={{ margin: 0, fontSize: 18, fontWeight: 650, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
-                    Save it as a runtime-ready agent.
+                    Turn this validated run into an operating agent.
                   </h2>
                 </div>
                 {savedAgentOk && (
                   <button onClick={() => navigate('/app/builder')} className="btn btn-orange" style={{ fontSize: 12 }}>
-                    Open Agent Builder
+                    Open Managed Agents
                   </button>
                 )}
               </div>
               <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.55 }}>
-                Capture the exact input, graph grounding, and guardrails from this run. Every saved agent now opens in Agent Builder for Claude Managed Agents deployment.
+                Capture the exact evidence input, requirement grounding, and guardrails from this run. The managed agent
+                can then be deployed, versioned, and operated from the control plane.
               </p>
+              {!canPromote && (
+                <div
+                  style={{
+                    marginBottom: 12,
+                    padding: 12,
+                    border: '1px solid rgba(176, 0, 32, 0.18)',
+                    borderRadius: 10,
+                    background: 'rgba(176, 0, 32, 0.05)',
+                    fontSize: 12.5,
+                    color: '#B00020',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <div style={{ fontWeight: 650, marginBottom: 6 }}>
+                    This run cannot create a managed agent until the strict compliance gate passes.
+                  </div>
+                  {promotionExplanations.length > 0 ? (
+                    <div style={{ display: 'grid', gap: 10, marginTop: 10 }}>
+                      {promotionExplanations.slice(0, 5).map((item) => (
+                        <div
+                          key={item.key}
+                          style={{
+                            padding: '10px 12px',
+                            border: '1px solid rgba(176, 0, 32, 0.14)',
+                            borderRadius: 10,
+                            background: '#fff',
+                            color: 'var(--ink-2)',
+                          }}
+                        >
+                          <div style={{ fontWeight: 650, color: 'var(--ink)', marginBottom: 4 }}>
+                            {item.title}
+                          </div>
+                          <div style={{ color: '#B00020' }}>
+                            {item.reason}
+                          </div>
+                          <div style={{ marginTop: 5, color: 'var(--ink-3)' }}>
+                            {item.nextStep}
+                          </div>
+                          {item.reference && (
+                            <div style={{ marginTop: 6, fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-4)' }}>
+                              {item.reference}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {promotionExplanations.length > 5 && (
+                        <div style={{ color: 'var(--ink-3)' }}>
+                          {promotionExplanations.length - 5} more item{promotionExplanations.length - 5 === 1 ? '' : 's'} are listed in the requirement coverage panel.
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      Review the requirement coverage and audit trail above for the failed gate event.
+                    </div>
+                  )}
+                </div>
+              )}
               {savedAgentOk ? (
                 <div
                   style={{
@@ -582,21 +692,21 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                       <div style={{ fontSize: 14, fontWeight: 650, color: 'var(--ink)' }}>
-                        Claude Managed Agents
+                        Managed Agent Runtime
                       </div>
                       <span style={{ ...SMALL_RUNTIME_PILL, color: 'var(--orange)', borderColor: 'rgba(255, 115, 0, 0.34)' }}>
                         default runtime
                       </span>
                     </div>
                     <div style={{ fontSize: 12.5, lineHeight: 1.55, color: 'var(--ink-3)' }}>
-                      This creates a Builder agent that provisions a Claude agent, cloud environment, and live session stream.
+                      This provisions a Claude agent, cloud environment, and live session stream behind a simple operator workflow.
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <input
                       value={agentName}
                       onChange={(e) => setAgentName(e.target.value)}
-                      placeholder={`${detail.name} runtime agent`}
+                      placeholder={`${detail.name} managed agent`}
                       disabled={savingAgent}
                       style={{
                         flex: 1,
@@ -612,17 +722,17 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                     />
                     <button
                       onClick={saveAsAgent}
-                      disabled={savingAgent}
+                      disabled={savingAgent || !canPromote}
                       className="btn-orange"
                       style={{ fontSize: 13, padding: '10px 18px' }}
                     >
-                      {savingAgent ? 'Saving…' : 'Save for Claude deploy'}
+                      {savingAgent ? 'Creating…' : canPromote ? 'Create managed agent' : 'Gate blocked'}
                     </button>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={SMALL_RUNTIME_PILL}>input snapshot</span>
+                    <span style={SMALL_RUNTIME_PILL}>evidence snapshot</span>
                     <span style={SMALL_RUNTIME_PILL}>guardrails on</span>
-                    <span style={SMALL_RUNTIME_PILL}>deploy from Builder</span>
+                    <span style={SMALL_RUNTIME_PILL}>managed runtime</span>
                   </div>
                 </div>
               )}
@@ -675,36 +785,321 @@ const SMALL_RUNTIME_PILL: React.CSSProperties = {
   textTransform: 'uppercase',
 };
 
-function ManagedStep({ label, body }: { label: string; body: string }) {
+function WorkflowBuildSourcePanel({
+  workflow,
+  tasks,
+  onPick,
+  onOpenWorkflow,
+}: {
+  workflow: WorkflowBuildSource;
+  tasks: TaskCard[];
+  onPick: (taskId: string) => void;
+  onOpenWorkflow: () => void;
+}) {
+  const agenticSteps = workflowAgenticSteps(workflow);
   return (
-    <div
+    <section
       style={{
-        padding: '12px 14px',
-        border: '1px solid rgba(255, 115, 0, 0.20)',
-        borderRadius: 12,
-        background: '#fff',
+        marginBottom: 18,
+        border: '1px solid rgba(255, 115, 0, 0.24)',
+        borderRadius: 16,
+        background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)',
+        padding: 18,
+        boxShadow: '0 18px 42px rgba(17, 24, 39, 0.05)',
       }}
     >
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--orange)' }}>
-        {label}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 14 }}>
+        <div style={{ minWidth: 0 }}>
+          <div className="eyebrow" style={{ marginBottom: 7 }}>Workflow build source</div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 650, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
+            {workflow.name}
+          </h2>
+          <p style={{ margin: '7px 0 0', color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5, maxWidth: 720 }}>
+            Built in Workflow Studio. Pick a grounded agent template below to validate one step, capture the decision trace,
+            then promote the passing run into Anthropic Managed Agents.
+          </p>
+        </div>
+        <button onClick={onOpenWorkflow} style={GHOST_BUTTON}>
+          Edit workflow
+        </button>
       </div>
-      <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.45, color: 'var(--ink-3)' }}>
-        {body}
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        <span style={SMALL_RUNTIME_PILL}>{workflow.draft.nodes.length} steps</span>
+        <span style={SMALL_RUNTIME_PILL}>{agenticSteps.length} agentic steps</span>
+        <span style={SMALL_RUNTIME_PILL}>{workflow.processType || workflow.draft.processType || 'process'}</span>
+        <span style={SMALL_RUNTIME_PILL}>{workflow.jurisdiction || workflow.draft.jurisdiction || 'jurisdiction'}</span>
       </div>
-    </div>
+
+      {agenticSteps.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8, marginBottom: 14 }}>
+          {agenticSteps.slice(0, 5).map((step) => (
+            <div
+              key={step.id}
+              style={{
+                padding: '11px 12px',
+                border: '1px solid var(--rule)',
+                borderRadius: 12,
+                background: '#fff',
+                minHeight: 86,
+              }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 650, color: 'var(--ink)', marginBottom: 5 }}>{step.label}</div>
+              <div style={{ fontSize: 11.5, color: 'var(--ink-3)', lineHeight: 1.45 }}>
+                {step.description || step.kind.replace(/_/g, ' ')}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+        {tasks.length > 0 ? tasks.map((task) => (
+          <button
+            key={task.id}
+            onClick={() => onPick(task.id)}
+            style={{
+              minHeight: 132,
+              textAlign: 'left',
+              background: '#fff',
+              border: '1px solid rgba(255, 115, 0, 0.22)',
+              borderRadius: 14,
+              padding: 14,
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: 10,
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 650, color: 'var(--ink)' }}>{task.name}</div>
+              <div style={{ marginTop: 6, fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.45 }}>
+                {task.oneLiner}
+              </div>
+            </div>
+            <span style={{ color: 'var(--orange)', fontSize: 12, fontWeight: 650 }}>Run grounded build -&gt;</span>
+          </button>
+        )) : (
+          <div style={{ color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5 }}>
+            No direct template match found. Use the full template list below to choose the closest grounded agent.
+          </div>
+        )}
+      </div>
+    </section>
   );
+}
+
+function workflowAgenticSteps(workflow: WorkflowBuildSource): WorkflowBuildNode[] {
+  return workflow.draft.nodes.filter((node) =>
+    node.kind === 'agent_task' ||
+    node.kind === 'compliance_check' ||
+    node.kind === 'evidence_capture' ||
+    node.automation === 'agent' ||
+    node.automation === 'hybrid',
+  );
+}
+
+function suggestWorkflowTasks(workflow: WorkflowBuildSource, tasks: TaskCard[]): TaskCard[] {
+  const processText = `${workflow.name} ${workflow.processType} ${workflow.draft.processType} ${workflow.draft.description ?? ''}`.toLowerCase();
+  const selected = new Map<string, TaskCard>();
+  const aliases: Array<[RegExp, string[]]> = [
+    [/complaint|triage|imdrf|coding/, ['complaint-coder']],
+    [/adverse|vigilance|reportability|mir/, ['ae-reportability', 'mir-drafter']],
+    [/capa|corrective|preventive|root cause/, ['root-cause-investigator', 'capa-plan-drafter']],
+    [/nonconformance|disposition/, ['nonconformance-dispositioner']],
+    [/trend|pms|post-market/, ['trend-determination']],
+    [/change|impact/, ['change-impact-assessor']],
+    [/audit|finding/, ['audit-finding-drafter']],
+    [/psur|periodic safety|template/, ['template-compliance-evaluator', 'psur-template-reviewer']],
+  ];
+
+  for (const [pattern, ids] of aliases) {
+    if (!pattern.test(processText)) continue;
+    for (const id of ids) {
+      const task = tasks.find((candidate) => candidate.id === id);
+      if (task) selected.set(task.id, task);
+    }
+  }
+
+  const scored = tasks
+    .map((task) => ({ task, score: workflowTaskScore(workflow, task) }))
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+  for (const item of scored) {
+    selected.set(item.task.id, item.task);
+    if (selected.size >= 4) break;
+  }
+  return Array.from(selected.values()).slice(0, 4);
+}
+
+function workflowTaskScore(workflow: WorkflowBuildSource, task: TaskCard): number {
+  const workflowTerms = tokenize([
+    workflow.name,
+    workflow.processType,
+    workflow.draft.processType,
+    workflow.draft.description ?? '',
+    ...workflow.draft.nodes.map((node) => `${node.label} ${node.description ?? ''}`),
+  ].join(' '));
+  const taskTerms = tokenize(`${task.name} ${task.oneLiner} ${task.regulation}`);
+  let score = 0;
+  for (const term of workflowTerms) {
+    if (taskTerms.has(term)) score += term.length > 6 ? 2 : 1;
+  }
+  return score;
+}
+
+function tokenize(value: string): Set<string> {
+  return new Set(
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, ' ')
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter((term) => term.length > 3),
+  );
+}
+
+function workflowBuildContext(workflow: WorkflowBuildSource, taskName: string): string {
+  const nodes = workflow.draft.nodes.map((node) => ({
+    id: node.id,
+    kind: node.kind,
+    label: node.label,
+    description: node.description,
+    automation: node.automation,
+  }));
+  return [
+    `This run is part of the saved agentic workflow "${workflow.name}".`,
+    `Workflow process type: ${workflow.processType || workflow.draft.processType || 'unspecified'}.`,
+    `Workflow jurisdiction: ${workflow.jurisdiction || workflow.draft.jurisdiction || 'unspecified'}.`,
+    `Current grounded template: ${taskName}.`,
+    'Use the workflow only as orchestration context. The regulatory decision must still be based on the input evidence and the graph obligations loaded for this run.',
+    `Workflow steps: ${JSON.stringify(nodes)}`,
+    `Workflow edges: ${JSON.stringify(workflow.draft.edges)}`,
+  ].join('\n');
+}
+
+type PromotionExplanation = {
+  key: string;
+  title: string;
+  reason: string;
+  nextStep: string;
+  reference?: string;
+};
+
+function explainPromotionBlockers(violations: string[], events: LaneEvent[]): PromotionExplanation[] {
+  return violations.map((violation, idx) => {
+    if (violation.startsWith('obligation:')) {
+      const obligationId = violation.slice('obligation:'.length);
+      const missed = [...events]
+        .reverse()
+        .find((event): event is Extract<LaneEvent, { type: 'obligation.missed' }> =>
+          event.type === 'obligation.missed' && event.obligationId === obligationId,
+        );
+      const cited = events.find((event): event is Extract<LaneEvent, { type: 'graph.cite' }> =>
+        event.type === 'graph.cite' && event.obligationId === obligationId,
+      );
+      return explainObligationBlocker(obligationId, missed?.reason, cited);
+    }
+    if (violation.startsWith('output.')) {
+      return {
+        key: `${violation}-${idx}`,
+        title: 'The agent output was missing required structure.',
+        reason: toSentence(violation.replace(/^output\./, '')),
+        nextStep: 'Review the generated result, add the missing required evidence, then run the template again.',
+      };
+    }
+    if (violation.startsWith('run.error:')) {
+      return {
+        key: `${violation}-${idx}`,
+        title: 'The run did not complete successfully.',
+        reason: toSentence(violation.replace(/^run\.error:\s*/, '')),
+        nextStep: 'Run the template again after correcting the error shown in the audit trail.',
+      };
+    }
+    return {
+      key: `${violation}-${idx}`,
+      title: 'The run did not pass validation.',
+      reason: toSentence(violation),
+      nextStep: 'Review the requirement coverage above, update the evidence or result, and run the template again.',
+    };
+  });
+}
+
+function explainObligationBlocker(
+  obligationId: string,
+  reason: string | undefined,
+  cited: Extract<LaneEvent, { type: 'graph.cite' }> | undefined,
+): PromotionExplanation {
+  const title = obligationTitle(obligationId, cited?.summary);
+  return {
+    key: obligationId,
+    title,
+    reason: plainReason(reason),
+    nextStep: nextStepForObligation(obligationId),
+    reference: cited?.citation
+      ? `Reference: ${cited.citation}`
+      : `Requirement: ${obligationId}`,
+  };
+}
+
+function obligationTitle(obligationId: string, summary?: string): string {
+  if (summary && !summary.toLowerCase().includes('loading')) return summary;
+  if (obligationId.startsWith('IMDRF.AET')) return 'The adverse-event coding was not fully supported.';
+  if (obligationId.startsWith('ISO13485.8.2.2')) return 'The complaint-handling record was not fully supported.';
+  if (obligationId.startsWith('EUMDR.87')) return 'The EU MDR reportability decision was not fully supported.';
+  if (obligationId.startsWith('CFR820.198')) return 'The FDA complaint-file requirement was not fully supported.';
+  return 'A required compliance check was not fully supported.';
+}
+
+function plainReason(reason: string | undefined): string {
+  if (!reason) {
+    return 'The run did not provide enough evidence or explanation for this requirement.';
+  }
+  if (reason.includes('not bound to process')) {
+    return 'This requirement is claimed by the template, but the current requirement map did not bind it to this process. The system blocks promotion so the agent cannot operate from an inconsistent scope.';
+  }
+  if (reason === 'Output did not satisfy obligation check.') {
+    return 'The generated result did not prove that this requirement was satisfied.';
+  }
+  return toSentence(reason);
+}
+
+function nextStepForObligation(obligationId: string): string {
+  if (obligationId.startsWith('IMDRF.AET')) {
+    return 'Add enough event detail for device problem, clinical signs, health impact, investigation outcome, and coding rationale, then run the template again.';
+  }
+  if (obligationId.startsWith('ISO13485.8.2.2')) {
+    return 'Add complaint record evidence such as receipt date, reporter, investigation status, actions taken, and required complaint-handling rationale.';
+  }
+  if (obligationId.startsWith('EUMDR.87')) {
+    return 'Add the facts needed for reportability: seriousness, incident outcome, timing, region, and why the event is or is not reportable.';
+  }
+  if (obligationId.startsWith('CFR820.198')) {
+    return 'Add FDA complaint-file evidence such as investigation decision, MDR evaluation, corrective action link, or closure rationale.';
+  }
+  return 'Add the missing evidence or rationale for this requirement, then run the template again.';
+}
+
+function toSentence(value: string): string {
+  const cleaned = value
+    .replace(/^obligation:/, '')
+    .replace(/[_:]+/g, ' ')
+    .trim();
+  if (!cleaned) return 'The run did not provide enough evidence for this check.';
+  return cleaned.endsWith('.') ? cleaned : `${cleaned}.`;
 }
 
 /* ── Flow stepper ────────────────────────────────────────────────────── */
 
 const FLOW_STEPS = [
   { key: 'select', label: 'Select agent' },
-  { key: 'configure', label: 'Configure input' },
+  { key: 'configure', label: 'Add evidence' },
   { key: 'run', label: 'Ground run' },
-  { key: 'save', label: 'Save for deploy' },
+  { key: 'save', label: 'Create agent' },
 ] as const;
 
-/** Slim Select → Configure → Ground → Save indicator on the run screen. */
+/** Slim Select → Evidence → Ground → Promote indicator on the run screen. */
 function Stepper({ current }: { current: 'configure' | 'run' | 'save' }) {
   const currentIdx = FLOW_STEPS.findIndex((s) => s.key === current);
   return (
@@ -754,28 +1149,6 @@ function Stepper({ current }: { current: 'configure' | 'run' | 'save' }) {
           </div>
         );
       })}
-    </div>
-  );
-}
-
-/** Shows the same four steps on the catalog screen so the user sees the path ahead. */
-function CatalogStepHint() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
-      {FLOW_STEPS.map((s, i) => (
-        <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span
-            style={{
-              fontSize: 11.5,
-              color: i === 0 ? 'var(--ink)' : 'var(--ink-4)',
-              fontWeight: i === 0 ? 600 : 400,
-            }}
-          >
-            {i + 1}. {s.label}
-          </span>
-          {i < FLOW_STEPS.length - 1 && <span style={{ color: 'var(--ink-4)', fontSize: 11 }}>→</span>}
-        </div>
-      ))}
     </div>
   );
 }
@@ -894,7 +1267,7 @@ function InputForm({
   if (!value || typeof value !== 'object') {
     return (
       <div style={{ padding: 16, color: 'var(--ink-3)', fontSize: 12 }}>
-        This process expects a non-object input. Use the JSON tab.
+        This template expects a structured payload. Use the Advanced tab.
       </div>
     );
   }
@@ -1358,7 +1731,7 @@ function Muted({ children }: { children: React.ReactNode }) {
   return <span style={{ color: 'var(--ink-4)' }}>{children}</span>;
 }
 
-/* ── Applicable regulations ──────────────────────────────────────── */
+/* ── Requirement coverage ─────────────────────────────────────────── */
 
 function RegulationsPanel({
   events,
@@ -1389,7 +1762,7 @@ function RegulationsPanel({
   return (
     <section style={CARD}>
       <div style={CARD_HEADER}>
-        <div className="eyebrow">Applicable regulations</div>
+        <div className="eyebrow">Requirement coverage</div>
         <span style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>
           {items.length || fallback.length}
         </span>
@@ -1399,7 +1772,7 @@ function RegulationsPanel({
           fallback.map((o) => (
             <div key={o.obligationId} style={OBLIGATION_ROW}>
               <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>{o.obligationId}</div>
-              <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{o.summary ?? 'Loading from graph…'}</div>
+              <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>{o.summary ?? 'Loading requirement context...'}</div>
             </div>
           ))}
         {items.map((o) => (
@@ -1438,7 +1811,7 @@ const OBLIGATION_ROW: React.CSSProperties = {
   background: '#fff',
 };
 
-/* ── Decision trace (inline) ─────────────────────────────────────── */
+/* ── Audit trail (inline) ─────────────────────────────────────────── */
 
 function TracePanel({
   events,
@@ -1452,6 +1825,7 @@ function TracePanel({
   const interesting = events.filter((e) =>
     e.type === 'agent.thinking' ||
     e.type === 'graph.query' ||
+    e.type === 'agent.decision' ||
     e.type === 'obligation.satisfied' ||
     e.type === 'obligation.missed' ||
     e.type === 'output.gated',
@@ -1490,7 +1864,7 @@ function TracePanel({
         ))}
         {interesting.length === 0 && (
           <li style={{ color: 'var(--ink-3)', listStyle: 'none', marginLeft: -16 }}>
-            Trace will appear here as the agent reasons through the input.
+            Trace will appear here as the agent decides why the output is justified.
           </li>
         )}
       </ol>
@@ -1510,6 +1884,14 @@ function TraceLine({ event }: { event: LaneEvent }) {
           <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', marginLeft: 6 }}>
             ({event.resultCount} result{event.resultCount === 1 ? '' : 's'})
           </span>
+        </span>
+      );
+    case 'agent.decision':
+      return (
+        <span>
+          <b style={{ color: 'var(--ink)' }}>Decision · </b>
+          {event.decision}
+          <span style={{ color: 'var(--ink-3)' }}> — Why: {event.reason}</span>
         </span>
       );
     case 'obligation.satisfied':

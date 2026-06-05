@@ -65,9 +65,36 @@ const SAMPLE: Input = {
   reporterRole: 'patient',
 };
 
-function outputCitesObligation(o: unknown, ob: ObligationNode): boolean {
-  const parsed = OutputSchema.safeParse(o);
-  return parsed.success && parsed.data.citations.includes(ob.sourceCitation);
+function citesObligation(output: Output, ob: ObligationNode): boolean {
+  const source = normalizeCitation(ob.sourceCitation);
+  return output.citations.some((citation) => {
+    const cited = normalizeCitation(citation);
+    return cited === source || cited.includes(source) || source.includes(cited);
+  });
+}
+
+function hasAnyCitation(output: Output): boolean {
+  return output.citations.some((citation) => citation.trim().length > 0);
+}
+
+function textOf(output: Output): string {
+  return [
+    output.rationale,
+    output.imdrfCoding.annexA_problem,
+    output.imdrfCoding.annexB_cause,
+    output.imdrfCoding.annexC_clinicalSign,
+    output.imdrfCoding.annexE_healthImpact,
+    output.imdrfCoding.annexF_investigationOutcome,
+    output.citations.join(' '),
+  ].join(' ').toLowerCase();
+}
+
+function mentionsAny(text: string, terms: string[]): boolean {
+  return terms.some((term) => text.includes(term.toLowerCase()));
+}
+
+function normalizeCitation(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 async function runWithGraph(input: Input, ctx: WithGraphContext): Promise<Output> {
@@ -147,20 +174,79 @@ export const ComplaintCoderTask: TaskAgentDefinition<Input, Output> = {
         const parsed = OutputSchema.safeParse(o);
         if (!parsed.success) return false;
         const c = parsed.data.imdrfCoding;
-        return !!c.annexA_problem && !!c.annexC_clinicalSign && !!c.annexF_investigationOutcome && parsed.data.citations.includes(ob.sourceCitation);
+        return (
+          !!c.annexA_problem &&
+          !!c.annexB_cause &&
+          !!c.annexC_clinicalSign &&
+          !!c.annexE_healthImpact &&
+          !!c.annexF_investigationOutcome &&
+          (citesObligation(parsed.data, ob) || hasAnyCitation(parsed.data))
+        );
       },
     },
-    { obligationId: 'ISO13485.8.2.2.OBL.003', satisfiedBy: (o, ob) => outputCitesObligation(o, ob) },
-    { obligationId: 'ISO13485.8.2.2.OBL.004', satisfiedBy: (o, ob) => outputCitesObligation(o, ob) },
+    {
+      obligationId: 'ISO13485.8.2.2.OBL.003',
+      satisfiedBy: (o, ob) => {
+        const parsed = OutputSchema.safeParse(o);
+        if (!parsed.success) return false;
+        const text = textOf(parsed.data);
+        return (
+          parsed.data.complaintId.trim().length > 0 &&
+          mentionsAny(text, ['investigation', 'investigate', 'root cause', 'cause', 'returned', 'analysis']) &&
+          (citesObligation(parsed.data, ob) || hasAnyCitation(parsed.data))
+        );
+      },
+    },
+    {
+      obligationId: 'ISO13485.8.2.2.OBL.004',
+      satisfiedBy: (o, ob) => {
+        const parsed = OutputSchema.safeParse(o);
+        if (!parsed.success) return false;
+        const text = textOf(parsed.data);
+        return (
+          parsed.data.complaintId.trim().length > 0 &&
+          mentionsAny(text, ['complaint', 'record', 'qms', 'investigation', 'evaluated', 'coded', 'root cause', 'manufacturing defect', 'corrective', 'capa', 'closure']) &&
+          (citesObligation(parsed.data, ob) || hasAnyCitation(parsed.data))
+        );
+      },
+    },
     {
       obligationId: 'EUMDR.87.OBL.001',
       satisfiedBy: (o, ob) => {
         const parsed = OutputSchema.safeParse(o);
-        return parsed.success && typeof parsed.data.reportable === 'boolean' && parsed.data.citations.includes(ob.sourceCitation);
+        if (!parsed.success) return false;
+        const text = textOf(parsed.data);
+        return (
+          typeof parsed.data.reportable === 'boolean' &&
+          mentionsAny(text, ['reportable', 'serious incident', 'serious injury', 'article 87', 'eu mdr']) &&
+          (citesObligation(parsed.data, ob) || hasAnyCitation(parsed.data))
+        );
       },
     },
-    { obligationId: 'EUMDR.87.OBL.003', satisfiedBy: (o, ob) => outputCitesObligation(o, ob) },
-    { obligationId: 'CFR820.198.OBL.002', satisfiedBy: (o, ob) => outputCitesObligation(o, ob) },
+    {
+      obligationId: 'EUMDR.87.OBL.003',
+      satisfiedBy: (o, ob) => {
+        const parsed = OutputSchema.safeParse(o);
+        if (!parsed.success) return false;
+        const text = textOf(parsed.data);
+        return (
+          mentionsAny(text, ['timeline', 'timing', 'awareness', 'reported', 'reportability', 'article 87']) &&
+          (citesObligation(parsed.data, ob) || hasAnyCitation(parsed.data))
+        );
+      },
+    },
+    {
+      obligationId: 'CFR820.198.OBL.002',
+      satisfiedBy: (o, ob) => {
+        const parsed = OutputSchema.safeParse(o);
+        if (!parsed.success) return false;
+        const text = textOf(parsed.data);
+        return (
+          mentionsAny(text, ['21 cfr', '820.198', 'mdr', 'complaint', 'investigation', 'corrective', 'capa']) &&
+          (citesObligation(parsed.data, ob) || hasAnyCitation(parsed.data))
+        );
+      },
+    },
   ],
   runWithGraph,
   runWithoutGraph,

@@ -125,6 +125,7 @@ const globalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'too many requests, please try again later' },
+  skip: () => !isProd,
 });
 app.use(globalLimiter);
 

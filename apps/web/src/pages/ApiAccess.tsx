@@ -41,14 +41,14 @@ interface CreateKeyResponse {
 }
 
 const AVAILABLE_SCOPES = [
-  { id: 'graph:read',         label: 'Read knowledge graph',     desc: 'Query requirements, citations, cross-refs.' },
-  { id: 'graph:write',        label: 'Write to knowledge graph', desc: 'Add or modify requirement files.' },
+  { id: 'graph:read',         label: 'Read requirement map',     desc: 'Query requirements, citations, cross-refs.' },
+  { id: 'graph:write',        label: 'Write requirement map',    desc: 'Add or modify requirement files.' },
   { id: 'compliance:check',   label: 'Compliance check',          desc: 'Run readiness + validation gates.' },
-  { id: 'traces:read',        label: 'Read decision trails',     desc: 'Pull hash-chained audit logs.' },
-  { id: 'processes:read',     label: 'Read processes',            desc: 'List process definitions and instances.' },
-  { id: 'processes:write',    label: 'Run processes',             desc: 'Trigger sandbox executions.' },
-  { id: 'evidence:read',      label: 'Read data',                 desc: 'Pull required data catalog and bindings.' },
-  { id: 'evidence:write',     label: 'Upload data',               desc: 'Submit new data objects.' },
+  { id: 'traces:read',        label: 'Read audit packs',          desc: 'Pull hash-chained audit logs.' },
+  { id: 'processes:read',     label: 'Read agent workflows',      desc: 'List agent templates, workflows, and runs.' },
+  { id: 'processes:write',    label: 'Run agents',                desc: 'Trigger governed agent executions.' },
+  { id: 'evidence:read',      label: 'Read evidence',             desc: 'Pull required evidence catalog and bindings.' },
+  { id: 'evidence:write',     label: 'Upload evidence',           desc: 'Submit new evidence objects.' },
 ];
 
 type ToolChoice =

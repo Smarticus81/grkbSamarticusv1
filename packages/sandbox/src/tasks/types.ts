@@ -68,6 +68,13 @@ export type TaskEvent =
       reason: string;
     }
   | {
+      type: 'agent.decision';
+      lane: TaskLane;
+      atIso: string;
+      decision: string;
+      reason: string;
+    }
+  | {
       type: 'obligation.missed';
       lane: TaskLane;
       atIso: string;

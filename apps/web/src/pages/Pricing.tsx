@@ -5,11 +5,11 @@
  * "why would I pay for this?". The boundaries below map directly to the value
  * the product creates:
  *
- *   Sandbox (free)  — prove it works on sample data. Zero friction, zero risk.
+ *   Launch (free)   — prove the agent path on sample evidence. Zero friction, zero risk.
  *   Pro             — the line where it becomes real work: your own data,
- *                     saved agents, exportable audit packs.
+ *                     managed agents, exportable audit packs.
  *   Enterprise      — the line where it becomes infrastructure: orgs, SSO,
- *                     MCP/API at scale, private graph, audit support.
+ *                     MCP/API at scale, private control plane, audit support.
  *
  * Plus a usage-based developer tier for teams grounding their own agents.
  */
@@ -33,15 +33,15 @@ interface Tier {
 const TIERS: Tier[] = [
   {
     id: 'sandbox',
-    name: 'Sandbox',
+    name: 'Launch',
     price: 'Free',
-    tagline: 'Prove it on sample data before you commit anything.',
-    cta: { label: 'Open the sandbox', action: 'sandbox' },
+    tagline: 'Launch medical-device agents on sample evidence before you commit anything.',
+    cta: { label: 'Start agent build', action: 'sandbox' },
     features: [
-      'Run every regulatory process on built-in sample data',
+      'Launch every medical-device agent template on built-in sample evidence',
       `Browse all ${REQUIREMENT_COUNT} requirements across ${REG_COUNT} regulations`,
-      'See citations, applicable requirements, and the live decision trace',
-      'Verify the hash chain on any run',
+      'See citations, applicable requirements, and the live audit trail',
+      'Verify the hash chain on any agent run',
     ],
   },
   {
@@ -53,7 +53,7 @@ const TIERS: Tier[] = [
     cta: { label: 'Start Pro', action: 'pro' },
     featured: true,
     features: [
-      'Everything in Sandbox',
+      'Everything in Launch',
       'Run managed agents on your own data — your tenant, never stored by us',
       'Deploy reusable Claude Managed Agents with required-data slots and review gates',
       'Design multi-agent workflows in the canvas',
@@ -70,8 +70,8 @@ const TIERS: Tier[] = [
     features: [
       'Everything in Pro',
       'Organisations, SSO, and role-based access',
-      'MCP server + Knowledge Graph API at scale',
-      'Private or on-premise obligation graph',
+      'MCP server + Requirement API at scale',
+      'Private or on-premise requirement control plane',
       'Custom regulations and internal SOP grounding',
       'Audit support, SLAs, and a named solutions engineer',
     ],
@@ -89,7 +89,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'How is the developer tier billed?',
-    a: 'Usage-based. You pay per grounding call (qualification, discovery, validation) against the Knowledge Graph API or MCP server, with volume tiers. Talk to us for committed-use pricing.',
+    a: 'Usage-based. You pay per grounding call (qualification, discovery, validation) against the Requirement API or MCP server, with volume tiers. Talk to us for committed-use pricing.',
   },
   {
     q: 'Which regulations are covered today?',
@@ -143,7 +143,7 @@ export function Pricing() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
             <ThemeToggle />
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Open the sandbox
+              Start agent build
             </button>
           </div>
         </div>
@@ -219,7 +219,7 @@ export function Pricing() {
               Ground your own agents, metered by call.
             </h2>
             <p style={{ margin: '12px 0 0', fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 520 }}>
-              The MCP server and Knowledge Graph API are usage-based: pay per qualification, discovery, and
+              The MCP server and Requirement API are usage-based: pay per qualification, discovery, and
               validation call. Eleven tools, one snippet, every call hash-chained.
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
@@ -255,7 +255,7 @@ export function Pricing() {
             See it produce a deliverable before you decide.
           </h2>
           <div style={{ marginTop: 26, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>Open the sandbox</button>
+            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>Start agent build</button>
             <button
               className="btn btn-ghost"
               style={{ color: 'var(--paper)', borderColor: 'var(--ink-3)' }}

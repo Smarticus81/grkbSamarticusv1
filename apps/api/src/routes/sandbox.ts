@@ -21,7 +21,9 @@ import {
 import { buildAgentBundle } from '../services/AgentBundler.js';
 import type { AuthedRequest } from '../middleware/auth.js';
 import { getContext } from '../context.js';
-import { LLMAbstraction } from '@regground/core';
+import { LLMAbstraction, getDB, schema, eq, and } from '@regground/core';
+
+const { groundedRuns } = schema;
 
 /** Lazy, cached LLM facade. Built on first run; graceful if no providers. */
 let _llm: LLMAbstraction | null | undefined;
@@ -43,6 +45,7 @@ const router: Router = express.Router();
 interface StoredRun {
   result: RunResult<unknown>;
   events: TaskEvent[];
+  inputSnapshot: unknown;
   taskId: string;
   taskName: string;
   tenantId: string;
@@ -51,6 +54,31 @@ interface StoredRun {
 }
 const RUNS = new Map<string, StoredRun>();
 const MAX_RUNS = 100;
+
+export interface GroundedRunManifest {
+  runId: string;
+  taskId: string;
+  taskName: string;
+  tenantId: string;
+  mode: StoredRun['mode'];
+  createdAtIso: string;
+  inputSnapshot: unknown;
+  outputSnapshot: unknown;
+  obligationsConsulted: string[];
+  citations: string[];
+  validation: {
+    coverage: number;
+    citationCount: number;
+    strictGatePass: boolean;
+    violations: string[];
+    obligationsConsulted: number;
+  };
+  trace: {
+    entries: SandboxTraceEntry[];
+    verification: SandboxVerification;
+  };
+  manifestHash: string;
+}
 
 function rememberRun(runId: string, run: StoredRun) {
   RUNS.set(runId, run);
@@ -131,6 +159,94 @@ function sandboxVerification(entries: SandboxTraceEntry[]): SandboxVerification 
   };
 }
 
+function runLane(result: RunResult<unknown>): LaneResult | undefined {
+  return result.withGraph ?? result.withoutGraph;
+}
+
+function manifestFromStoredRun(runId: string, run: StoredRun): GroundedRunManifest | null {
+  const lane = runLane(run.result);
+  if (!lane) return null;
+  const entries = sandboxTrace(runId, run);
+  const verification = sandboxVerification(entries);
+  const manifestBase = {
+    runId,
+    taskId: run.taskId,
+    taskName: run.taskName,
+    tenantId: run.tenantId,
+    mode: run.mode,
+    createdAtIso: run.createdAtIso,
+    inputSnapshot: run.inputSnapshot,
+    outputSnapshot: lane.output,
+    obligationsConsulted: lane.obligationsConsulted ?? [],
+    citations: lane.citations ?? [],
+    validation: {
+      coverage: lane.score?.coverage ?? 0,
+      citationCount: lane.score?.citations ?? 0,
+      strictGatePass: lane.score?.strictGatePass ?? false,
+      violations: lane.score?.violations ?? [],
+      obligationsConsulted: lane.score?.obligationsConsulted ?? 0,
+    },
+    trace: {
+      entries,
+      verification,
+    },
+  };
+  return {
+    ...manifestBase,
+    manifestHash: stableHash(manifestBase),
+  };
+}
+
+export async function getGroundedRunManifest(runId: string, tenantId: string): Promise<GroundedRunManifest | null> {
+  const inMemory = RUNS.get(runId);
+  if (inMemory?.tenantId === tenantId) {
+    const manifest = manifestFromStoredRun(runId, inMemory);
+    if (manifest) return manifest;
+  }
+
+  const [row] = await getDB()
+    .select()
+    .from(groundedRuns)
+    .where(and(eq(groundedRuns.runId, runId), eq(groundedRuns.tenantId, tenantId)))
+    .limit(1);
+  return (row?.manifest as unknown as GroundedRunManifest | undefined) ?? null;
+}
+
+async function persistGroundedRun(runId: string, run: StoredRun): Promise<void> {
+  const manifest = manifestFromStoredRun(runId, run);
+  if (!manifest) {
+    throw new Error('Cannot persist grounded run without a lane result.');
+  }
+  await getDB()
+    .insert(groundedRuns)
+    .values({
+      runId,
+      tenantId: run.tenantId,
+      taskId: run.taskId,
+      taskName: run.taskName,
+      mode: run.mode,
+      inputSnapshot: run.inputSnapshot,
+      resultSnapshot: run.result,
+      eventLog: run.events,
+      manifest: manifest as unknown as Record<string, unknown>,
+      manifestHash: manifest.manifestHash,
+    })
+    .onConflictDoUpdate({
+      target: groundedRuns.runId,
+      set: {
+        tenantId: run.tenantId,
+        taskId: run.taskId,
+        taskName: run.taskName,
+        mode: run.mode,
+        inputSnapshot: run.inputSnapshot,
+        resultSnapshot: run.result,
+        eventLog: run.events,
+        manifest: manifest as unknown as Record<string, unknown>,
+        manifestHash: manifest.manifestHash,
+      },
+    });
+}
+
 /* ── GET /api/sandbox/tasks ─────────────────────────────────────────── */
 router.get('/tasks', (_req, res) => {
   res.json({ tasks: listTasks() });
@@ -206,15 +322,18 @@ router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
       llm: llm ?? undefined,
       agentContext,
     });
-    rememberRun(runResult.runId, {
+    const storedRun: StoredRun = {
       result: runResult,
       events: [...events],
+      inputSnapshot: inputParsed.data,
       taskId: def.id,
       taskName: def.name,
       tenantId: req.tenantId ?? req.user?.tenantId ?? 'dev',
       mode,
       createdAtIso: new Date().toISOString(),
-    });
+    };
+    rememberRun(runResult.runId, storedRun);
+    await persistGroundedRun(runResult.runId, storedRun);
     res.status(202).json({ runId: runResult.runId, taskId: def.id, mode });
   } catch (err) {
     res.status(500).json({ error: 'run failed', detail: err instanceof Error ? err.message : String(err) });

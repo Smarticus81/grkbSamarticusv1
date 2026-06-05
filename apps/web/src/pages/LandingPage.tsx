@@ -25,7 +25,7 @@ const PRODUCTS: {
       'Required data pulled from your QMS, never stored by us',
       'Citations on every claim',
     ],
-    cta: { label: 'Open in sandbox', to: '/app' },
+    cta: { label: 'Start build', to: '/app' },
     visual: 'psur',
     before: 'A PSUR draft with unsupported claims and manual citation cleanup.',
     after: 'A PSUR draft structured to MDCG 2022-21, checked against EU MDR Articles 83\u201386, with required data coverage and traceable citations.',
@@ -40,7 +40,7 @@ const PRODUCTS: {
       'ISO 13485 \u00a78.2.2 required data trail',
       'Auto-coded with IMDRF Annex A through G',
     ],
-    cta: { label: 'Open in sandbox', to: '/app' },
+    cta: { label: 'Start build', to: '/app' },
     visual: 'complaints',
     before: 'A spreadsheet triage with deadlines tracked manually across three regulations.',
     after: 'A single queue with SLA clocks mapped to EU MDR Art. 87, 21 CFR 803, and ISO 13485 \u00a78.2.2, with coded rationale.',
@@ -52,18 +52,18 @@ const PRODUCTS: {
     bullets: [
       'Annex A through G coverage',
       'Rationale and confidence per code',
-      'Reviewable in the sandbox before connecting to production',
+      'Reviewable before connecting to production',
       'Versioned against IMDRF terminology releases',
     ],
-    cta: { label: 'Open in sandbox', to: '/app' },
+    cta: { label: 'Start build', to: '/app' },
     visual: 'imdrf',
     before: 'Manual IMDRF coding with inconsistent annex coverage and no confidence scores.',
     after: 'Automated codes across Annexes A\u2013G with rationale, confidence, and version-locked terminology.',
   },
   {
-    eyebrow: 'The requirements engine',
+    eyebrow: 'The requirement control plane',
     title: 'One map. Eight regulations. Every relationship.',
-    body: 'Your agents query Smarticus instead of re-reading the regulation. The requirements engine holds the requirements, the cross-references, the required data types, and the constraints \u2014 versioned, citable, and replayable.',
+    body: 'Your agents query Smarticus instead of re-reading the regulation. The control plane holds the requirements, cross-references, required data types, and constraints \u2014 versioned, citable, and replayable.',
     bullets: [
       `${OBLIGATION_COUNT} requirements across ${REG_COUNT} regulations and standards`,
       'Walks chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
@@ -332,11 +332,11 @@ export function LandingPage() {
           <div className="nav-mid" style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
             <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Products</button>
             <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Requirements</button>
-            <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Builder</button>
+            <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Agent OS</button>
             <button className="nav-link" onClick={() => navigate('/app/connect')}>Developers</button>
             <ThemeToggle />
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Open the sandbox
+              Start agent build
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
@@ -358,11 +358,11 @@ export function LandingPage() {
         <div className="container" style={{ position: 'relative', padding: '92px 32px 48px' }}>
           <div className="eyebrow rise" style={{ marginBottom: 28 }}>
             <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
-            Regulatory infrastructure for AI agents
+            Medical Device Agent OS
           </div>
 
           <h1 className="hero-display rise-1" style={{ maxWidth: 1100 }}>
-            Regulatory Infrastructure that makes QMS and AI, <span className="accent">consistent and compliant</span>.
+            Managed AI agents for medical-device operations, <span className="accent">grounded and auditable</span>.
           </h1>
 
           <p
@@ -372,16 +372,17 @@ export function LandingPage() {
               color: 'var(--ink-2)',
             }}
           >
-            Smarticus enables QMS teams to use AI, to prepare PSUR drafts, complaint assessments, IMDRF coding, perform audits, PMS plans, and provides traceability and auditability.
+            Smarticus gives QMS and Regulatory Affairs teams a control room for PSURs, complaints, IMDRF coding,
+            audits, PMS plans, CAPA, and change control. Agents do the work; the platform keeps the proof.
           </p>
 
           <div className="rise-3" style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Open the sandbox
+              Start agent build
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button className="btn btn-ghost" onClick={() => navigate('/app/builder')}>
-              Build a QMS tool
+              Open command center
             </button>
           </div>
 
@@ -545,10 +546,10 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Section 5: Builder preview ── */}
+      {/* ── Section 5: Agent OS preview ── */}
       <section id="builder" style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', padding: '64px 0' }}>
         <div className="container">
-          <div className="eyebrow" style={{ marginBottom: 14 }}>Agent builder</div>
+          <div className="eyebrow" style={{ marginBottom: 14 }}>Agent OS</div>
           <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
             Build by QMS intent, not by prompt.
           </h2>
@@ -561,7 +562,7 @@ export function LandingPage() {
               { step: '1', label: 'Choose QMS job' },
               { step: '2', label: 'Select requirements' },
               { step: '3', label: 'Attach required data' },
-              { step: '4', label: 'Run sandbox' },
+              { step: '4', label: 'Run template' },
               { step: '5', label: 'Export or connect' },
             ].map((s) => (
               <div key={s.step} className="flow-step">
@@ -573,7 +574,7 @@ export function LandingPage() {
 
           <div style={{ textAlign: 'center' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/builder')}>
-              Open the builder
+              Open Managed Agents
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
@@ -587,7 +588,7 @@ export function LandingPage() {
           Connect Smarticus requirement checks to your AI tools.
         </h2>
         <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-          Connect any MCP-compatible agent to the Smarticus requirements engine. Eleven tools, one line to install.
+          Connect any MCP-compatible agent to the Smarticus requirement control plane. Eleven tools, one line to install.
         </p>
 
         <pre style={{ marginTop: 28, fontSize: 14, padding: '18px 22px', maxWidth: 480 }}>
@@ -649,12 +650,12 @@ export function LandingPage() {
               color: 'var(--paper)', maxWidth: 1100, margin: 0,
             }}
           >
-            Give your QMS team an AI co-pilot they can <span style={{ color: 'var(--orange)' }}>trust</span>.
+            Give your QMS team managed agents they can <span style={{ color: 'var(--orange)' }}>trust</span>.
           </h2>
 
           <div style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Open the sandbox
+              Start agent build
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button

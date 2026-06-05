@@ -15,11 +15,8 @@ import { ThemeToggle } from './components/ui/ThemeToggle.js';
 import { SmarticusWordmark } from './components/ui/logos.js';
 
 /**
- * Navigation is grouped by what a non-technical user is trying to do, with a
- * one-line caption under each heading so the purpose is obvious.
- *   "Do the work"     — create managed agents from grounded processes.
- *   "Rules & records" — the regulations, and proof of every decision.
- *   "Advanced"        — chain processes together or plug into other tools.
+ * Navigation presents one product: a medical-device agent operating system.
+ * Technical implementation details stay behind operator-facing concepts.
  */
 const NAV_GROUPS: {
   heading: string;
@@ -27,28 +24,13 @@ const NAV_GROUPS: {
   items: { href: string; label: string; exact?: boolean; tag?: string }[];
 }[] = [
   {
-    heading: 'Do the work',
-    caption: 'Create, deploy, and run managed agents.',
+    heading: 'Agent OS',
+    caption: 'Build, run, and orchestrate agents.',
     items: [
-      { href: '/app',          label: 'Home', exact: true },
-      { href: '/app/designer', label: 'Multi-step workflows' },
-      { href: '/app/sandbox',  label: 'Create managed agent' },
-      { href: '/app/builder',  label: 'Agent Builder' },
-    ],
-  },
-  {
-    heading: 'Rules & records',
-    caption: 'The regulations, and proof of each decision.',
-    items: [
-      { href: '/app/requirements', label: 'Regulations' },
-      { href: '/app/trails',       label: 'Decision trails' },
-    ],
-  },
-  {
-    heading: 'Advanced',
-    caption: 'Chain workflows or connect your tools.',
-    items: [
-      { href: '/app/connect',  label: 'Connect a tool (API / MCP)' },
+      { href: '/app',          label: 'Command Center', exact: true },
+      { href: '/app/sandbox',  label: 'Agent Builds' },
+      { href: '/app/builder',  label: 'Managed Agents' },
+      { href: '/app/designer', label: 'Workflow Studio' },
     ],
   },
 ];
@@ -186,7 +168,7 @@ function AppShell() {
               padding: '9px 14px',
             }}
           >
-            New managed agent
+            Start Agent Build
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </Link>
         </div>

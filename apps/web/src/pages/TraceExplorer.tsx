@@ -281,11 +281,11 @@ export function TraceExplorer({ initialId }: Props) {
 
         {showEmpty && (
           <EmptyState
-            eyebrow="No trail loaded"
-            title="Paste a process ID, or run one in the Sandbox."
-            body="Every process executed in Smarticus produces a hash-chained decision trail. When you have one, paste its ID above to inspect it — or open the Sandbox to generate your first."
-            primaryAction={{ label: 'Open Sandbox', href: '/app/sandbox' }}
-            secondaryAction={{ label: 'See how trails work', href: '/' }}
+            eyebrow="No audit pack loaded"
+            title="Paste a run ID, or launch an agent to generate proof."
+            body="Every medical-device agent run produces hash-chained decisions, citations, and evidence context. Paste a run ID above, or launch an agent template to generate your first audit pack."
+            primaryAction={{ label: 'Open Agent Templates', href: '/app/sandbox' }}
+            secondaryAction={{ label: 'See platform overview', href: '/' }}
           />
         )}
 

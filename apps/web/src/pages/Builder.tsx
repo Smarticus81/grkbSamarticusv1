@@ -1,14 +1,11 @@
 /**
- * Saved Agents — manage and re-run the agents you saved from a Sandbox run.
+ * Managed Agents — operate medical-device agents promoted from validated runs.
  *
- * This page does ONE thing: list your saved agents and let you re-run, rename,
- * or delete them. Creating an agent happens in the Sandbox: run a process, then
- * "Save as agent" — that captures the exact input you used. Re-running here
- * replays that saved input in the Sandbox.
+ * This page does ONE thing: list managed agent configurations and let operators
+ * deploy, version, rename, delete, or start live Claude Managed Agent sessions.
  *
- * (The `processS` catalog below is the single source the Sandbox uses to map a
- * task to its regulations/risk when saving an agent — it is exported, not
- * rendered here.)
+ * The process catalog below maps templates to regulations and risk when a run is
+ * promoted into an agent.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -42,6 +39,16 @@ type AttachedFile = {
   attachedAt: string;
 };
 
+type GroundedRunManifest = {
+  runId: string;
+  taskName: string;
+  manifestHash: string;
+  validation: {
+    strictGatePass: boolean;
+    violations: string[];
+  };
+};
+
 type ProviderRuntime = {
   provider: 'claude-managed-agents';
   agentId: string;
@@ -64,7 +71,10 @@ type ManagedEvent = {
   type: string;
   content?: Array<{ type: string; text: string }>;
   name?: string;
-  error?: string;
+  error?: string | { message?: string; type?: string };
+  text?: string;
+  delta?: { text?: string };
+  message?: { content?: Array<{ type?: string; text?: string }> };
 };
 
 type SavedAgent = {
@@ -75,7 +85,7 @@ type SavedAgent = {
   taskId: string | null;
   regulations: string[];
   evidenceStatus: Record<string, string>;
-  attachedData: Record<string, AttachedFile>;
+  attachedData: Record<string, AttachedFile | GroundedRunManifest>;
   guardrails: Record<string, boolean>;
   outputFormat: string | null;
   deployTarget: string | null;
@@ -85,9 +95,9 @@ type SavedAgent = {
   updatedAt: string;
 };
 
-/* ── process catalog (shared with the Sandbox save-as-agent mapping) ─────── */
+/* ── process catalog (shared with the agent-template promotion flow) ─────── */
 
-export const processS: process[] = [
+const processS: process[] = [
   {
     id: 'psur-audit',
     taskId: 'template-compliance-evaluator',
@@ -245,79 +255,53 @@ export const processS: process[] = [
   },
 ];
 
-/* ── Tokens ────────────────────────────────────────────────────────── */
-
-const PILL: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  height: 22,
-  padding: '0 8px',
-  fontFamily: 'var(--mono)',
-  fontSize: 10,
-  letterSpacing: '0.06em',
-  textTransform: 'uppercase',
-  color: 'var(--ink-2)',
-  border: '1px solid var(--rule-strong)',
-  borderRadius: 11,
-  background: 'transparent',
-};
-
-const RISK_COLOR: Record<'low' | 'medium' | 'high', string> = {
-  high: 'var(--orange)',
-  medium: 'var(--ink-2)',
-  low: 'var(--ink-3)',
-};
-
 /* ── Helpers ───────────────────────────────────────────────────────── */
 
-function relTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return '';
-  const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
-  if (s < 60) return 'just now';
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
-}
-
-/** A short, human description of the input saved with this agent. */
-function inputSummary(a: SavedAgent): string | null {
-  const input = a.attachedData?.['__input'];
-  if (input && typeof input.content === 'string') {
-    try {
-      const obj = JSON.parse(input.content) as unknown;
-      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
-        const keys = Object.keys(obj as Record<string, unknown>);
-        if (keys.length) {
-          return `Saved input · ${keys.slice(0, 4).join(', ')}${keys.length > 4 ? '…' : ''}`;
-        }
-      }
-    } catch {
-      /* fall through */
-    }
-    return 'Saved input';
-  }
-  const slots = Object.keys(a.attachedData ?? {}).filter((k) => k !== '__input' && k !== '__context');
-  return slots.length ? `${slots.length} attached item${slots.length === 1 ? '' : 's'}` : null;
-}
-
 function runtimeLabel(a: SavedAgent): string {
-  return a.providerRuntime?.agentId ? 'Claude cloud live' : 'Claude cloud ready';
-}
-
-function runtimeDescription(a: SavedAgent): string {
-  return a.providerRuntime?.agentId
-    ? 'Provisioned as a Claude Managed Agent with a cloud environment and session streaming.'
-    : 'Configured for Claude Managed Agents. Deploy once, then start live sessions from this card.';
+  return a.providerRuntime?.agentId ? 'Ready' : 'Deploy';
 }
 
 function runtimeTone(a: SavedAgent): { border: string; background: string; accent: string } {
   return a.providerRuntime?.agentId
     ? { border: 'rgba(37, 99, 235, 0.35)', background: 'linear-gradient(135deg, #fff 0%, #f5f8ff 100%)', accent: '#2563eb' }
     : { border: 'rgba(255, 115, 0, 0.32)', background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)', accent: 'var(--orange)' };
+}
+
+function outcomeText(events: ManagedEvent[]): string {
+  return events.map((event) => {
+    if (event.type === 'agent.message' && event.content) {
+      return event.content
+        .filter((block) => block.type === 'text')
+        .map((block) => block.text)
+        .join('');
+    }
+    if (event.type !== 'assistant.message' && event.type !== 'message.delta') return '';
+    if (typeof event.text === 'string') return event.text;
+    if (event.delta?.text) return event.delta.text;
+    if (Array.isArray(event.message?.content)) {
+      return event.message.content
+        .map((block) => block && typeof block === 'object' && 'text' in block && typeof block.text === 'string' ? block.text : '')
+        .join('');
+    }
+    return '';
+  }).join('').trim();
+}
+
+function managedEventError(event: ManagedEvent): string | null {
+  if (event.type !== 'session.error' && event.type !== 'session.status_failed') return null;
+  if (typeof event.error === 'string') return event.error;
+  if (event.error?.message) return event.error.message;
+  return 'The managed agent could not complete this run.';
+}
+
+function sessionState(events: ManagedEvent[], streaming: boolean): { label: string; tone: 'idle' | 'working' | 'done' | 'failed' } {
+  const providerError = events.map(managedEventError).find(Boolean);
+  if (providerError) return { label: 'Run failed', tone: 'failed' };
+  const failed = events.find((event) => event.type === 'session.status_failed');
+  if (failed) return { label: 'Run failed', tone: 'failed' };
+  if (events.some((event) => event.type === 'session.status_idle')) return { label: 'Outcome ready', tone: 'done' };
+  if (streaming) return { label: 'Working on it', tone: 'working' };
+  return { label: 'No outcome yet', tone: 'idle' };
 }
 
 /* ── Component ─────────────────────────────────────────────────────── */
@@ -334,6 +318,7 @@ export function Builder() {
 
   // Managed agents state
   const [activeRunAgent, setActiveRunAgent] = useState<string | null>(null);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [runMessage, setRunMessage] = useState('');
   const [streamEvents, setStreamEvents] = useState<ManagedEvent[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -427,14 +412,10 @@ export function Builder() {
         method: 'POST',
         body: JSON.stringify({ message: msg }),
       });
+      setActiveRunId(run.id);
 
       const controller = new AbortController();
       streamAbortRef.current = controller;
-      const eventTypes = new Set([
-        'agent.message', 'agent.tool_use', 'agent.tool_result',
-        'session.status_idle', 'session.status_failed',
-      ]);
-
       await streamSse(`/api/builder/agents/${a.id}/runs/${run.id}/stream`, {
         signal: controller.signal,
         onEvent: ({ event, data }) => {
@@ -448,7 +429,6 @@ export function Builder() {
             }
             return;
           }
-          if (!eventTypes.has(event)) return;
           try {
             const parsed = JSON.parse(data) as ManagedEvent;
             setStreamEvents((prev) => [...prev, parsed]);
@@ -471,48 +451,85 @@ export function Builder() {
   function closeManagedPanel() {
     streamAbortRef.current?.abort();
     setActiveRunAgent(null);
+    setActiveRunId(null);
     setStreamEvents([]);
     setStreaming(false);
     setRunMessage('');
   }
 
-  const managedCount = agents?.length ?? 0;
+  async function saveCurrentResult(a: SavedAgent) {
+    if (!activeRunId) {
+      setToast('Run the agent before saving a result.');
+      return;
+    }
+    try {
+      await api<ManagedRun>(`/api/builder/agents/${a.id}/runs/${activeRunId}/save`, { method: 'POST', body: '{}' });
+      setToast('Result saved.');
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : 'Save failed.');
+    }
+  }
+
+  function downloadCurrentResult(a: SavedAgent, text: string, error: string | null) {
+    const body = [
+      a.name,
+      a.processTitle,
+      new Date().toISOString(),
+      '',
+      error ? `Run failed:\n${error}` : text,
+    ].join('\n');
+    const blob = new Blob([body], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${a.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'agent-result'}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  useEffect(() => {
+    if (!activeRunAgent || streaming) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeManagedPanel();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [activeRunAgent, streaming]);
+
   const deployedCount = agents?.filter((a) => a.providerRuntime?.agentId).length ?? 0;
+  const activeAgent = agents?.find((agent) => agent.id === activeRunAgent) ?? null;
+  const activeText = activeAgent ? outcomeText(streamEvents) : '';
+  const activeState = activeAgent ? sessionState(streamEvents, streaming) : sessionState([], false);
+  const activeError = activeAgent ? streamEvents.map(managedEventError).find(Boolean) : null;
 
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PageHeader
-        eyebrow="Agent Builder"
-        title="All saved agents run as Claude Managed Agents."
-        subtitle="Every saved process is now promoted into the managed runtime path: deploy a Claude cloud agent, start a session, and stream events back into Regulatory Ground."
+        eyebrow="Managed Agents"
+        title="Run agents."
+        subtitle="Paste the record. Get the decision."
         actions={
           <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')} style={{ fontSize: 13 }}>
-            Create from Sandbox
+            New Agent Build
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         }
-        meta={
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, maxWidth: 760 }}>
-            <RuntimeStat label="Agent configs" value={String(agents?.length ?? 0)} />
-            <RuntimeStat label="Claude managed" value={String(managedCount)} />
-            <RuntimeStat label="Live deployments" value={String(deployedCount)} />
-            <RuntimeStat label="Need deploy" value={String(Math.max(0, managedCount - deployedCount))} />
-          </div>
-        }
+        meta={<div style={{ color: 'var(--ink-3)', fontSize: 13 }}>{deployedCount} ready</div>}
       />
 
-      <div style={{ padding: '28px 40px 80px', maxWidth: 1240, margin: '0 auto' }}>
+      <div style={{ padding: '28px 40px 80px', maxWidth: 1120, margin: '0 auto' }}>
         {toast && (
           <div
             onClick={() => setToast(null)}
             style={{
-              padding: '10px 14px',
+              padding: '12px 14px',
               marginBottom: 18,
               background: '#fff',
               border: '1px solid var(--rule-strong)',
               borderRadius: 10,
-              fontFamily: 'var(--mono)',
-              fontSize: 11,
+              fontSize: 13,
               color: 'var(--ink-2)',
               cursor: 'pointer',
               boxShadow: '0 10px 30px rgba(17, 24, 39, 0.04)',
@@ -529,31 +546,16 @@ export function Builder() {
         {agents !== null && agents.length === 0 && (
           <EmptyState
             eyebrow="No runtime agents yet"
-            title="Create a grounded agent from a real process run."
-            body="Run a regulated process, save the input, then choose whether that agent stays in Sandbox or deploys to Claude Managed Agents."
-            primaryAction={{ label: 'Create from Sandbox', href: '/app/sandbox' }}
+            title="Build your first agent."
+            body="Start from a template, run it with real evidence, then come back here to operate it."
+            primaryAction={{ label: 'Choose Template', href: '/app/sandbox' }}
           />
         )}
 
         {agents !== null && agents.length > 0 && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
-              <div>
-                <div className="eyebrow" style={{ marginBottom: 6 }}>
-                  Managed runtime inventory
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.45 }}>
-                  Every card follows the same lifecycle: saved configuration, Claude deployment, then live session.
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                <RuntimeLegend label="Awaiting deployment" color="var(--orange)" />
-                <RuntimeLegend label="Live cloud agent" color="#2563eb" />
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 16 }}>
               {agents.map((a) => {
-                const summary = inputSummary(a);
                 const renaming = renamingId === a.id;
                 const deployed = !!a.providerRuntime?.agentId;
                 const tone = runtimeTone(a);
@@ -563,18 +565,23 @@ export function Builder() {
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 14,
+                      gap: 12,
+                      aspectRatio: '1 / 1',
+                      minHeight: 230,
                       padding: 18,
-                      border: `1px solid ${tone.border}`,
-                      borderRadius: 16,
-                      background: tone.background,
-                      boxShadow: '0 16px 44px rgba(17, 24, 39, 0.05)',
+                      border: `1px solid ${deployed ? 'rgba(37, 99, 235, 0.22)' : 'rgba(255, 115, 0, 0.24)'}`,
+                      borderRadius: 18,
+                      background: '#fff',
+                      boxShadow: '0 14px 38px rgba(17, 24, 39, 0.045)',
                     }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14 }}>
-                      <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
+                        <RuntimeBadge label={runtimeLabel(a)} color={tone.accent} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
                         {renaming ? (
-                          <div style={{ display: 'flex', gap: 6 }}>
+                          <div style={{ display: 'grid', gap: 6 }}>
                             <input
                               autoFocus
                               value={renameValue}
@@ -602,60 +609,21 @@ export function Builder() {
                           </div>
                         ) : (
                           <>
-                            <div style={{ fontSize: 18, fontWeight: 650, letterSpacing: '-0.02em', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: 20, fontWeight: 650, letterSpacing: '-0.03em', color: 'var(--ink)', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                               {a.name}
                             </div>
-                            <div style={{ marginTop: 4, fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.45 }}>
+                            <div style={{ marginTop: 6, fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.45, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                               {a.processTitle}
                             </div>
                           </>
                         )}
                       </div>
-                      <RuntimeBadge label={runtimeLabel(a)} color={tone.accent} />
-                    </div>
-
-                    <AgentLifecycle deployed={deployed} />
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {a.regulations.slice(0, 4).map((r) => (
-                          <span key={r} style={PILL}>{r}</span>
-                        ))}
-                        <span style={{ ...PILL, color: RISK_COLOR[a.riskBand], borderColor: a.riskBand === 'high' ? 'var(--orange)' : 'var(--rule-strong)' }}>
-                          {a.riskBand} risk
-                        </span>
-                        {summary && <span style={PILL}>{summary}</span>}
-                      </div>
-                      <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                        {runtimeDescription(a)}
-                      </div>
-                    </div>
-
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: deployed && a.providerRuntime ? '1fr 1fr' : '1fr',
-                        gap: 8,
-                        padding: 12,
-                        border: '1px solid var(--rule)',
-                        borderRadius: 12,
-                        background: 'rgba(255,255,255,0.72)',
-                      }}
-                    >
-                      <RuntimeMeta label="Updated" value={relTime(a.updatedAt)} />
-                      {deployed && a.providerRuntime && (
-                        <>
-                          <RuntimeMeta label="Agent" value={`${a.providerRuntime.agentId.slice(0, 18)}…`} />
-                          <RuntimeMeta label="Environment" value={`${a.providerRuntime.environmentId.slice(0, 18)}…`} />
-                          <RuntimeMeta label="Version" value={`v${a.providerRuntime.agentVersion}`} />
-                        </>
-                      )}
                     </div>
 
                     <div style={{ flex: 1 }} />
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, borderTop: '1px solid var(--rule)', paddingTop: 14 }}>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'grid', gap: 8, borderTop: '1px solid var(--rule)', paddingTop: 12 }}>
+                      <div style={{ display: 'flex', gap: 6, opacity: 0.72 }}>
                         {!renaming && (
                           <button
                             className="btn btn-ghost"
@@ -674,13 +642,13 @@ export function Builder() {
                           Delete
                         </button>
                       </div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: 6 }}>
                         {deployed && (
                           <button
                             className="btn btn-ghost"
                             onClick={() => void deployAgent(a)}
                             disabled={busy === `deploy:${a.id}`}
-                            style={{ fontSize: 12 }}
+                            style={{ fontSize: 12, flex: 1 }}
                           >
                             {busy === `deploy:${a.id}` ? 'Redeploying…' : 'Redeploy'}
                           </button>
@@ -690,7 +658,7 @@ export function Builder() {
                             className="btn btn-orange"
                             onClick={() => void deployAgent(a)}
                             disabled={busy === `deploy:${a.id}`}
-                            style={{ fontSize: 12 }}
+                            style={{ fontSize: 12, flex: 1 }}
                           >
                             {busy === `deploy:${a.id}` ? 'Deploying…' : 'Deploy'}
                           </button>
@@ -698,89 +666,15 @@ export function Builder() {
                         {deployed && (
                           <button
                             className="btn btn-orange"
-                            onClick={() => { setActiveRunAgent(a.id); setRunMessage(''); setStreamEvents([]); }}
-                            disabled={streaming && activeRunAgent === a.id}
-                            style={{ fontSize: 12 }}
+                            onClick={() => { setActiveRunAgent(a.id); setActiveRunId(null); setRunMessage(''); setStreamEvents([]); }}
+                            disabled={streaming}
+                            style={{ fontSize: 13, padding: '9px 16px', flex: 1 }}
                           >
-                            Start session
+                            Run
                           </button>
                         )}
                       </div>
                     </div>
-
-                    {/* Managed session panel (inline) */}
-                    {activeRunAgent === a.id && (
-                      <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        <div>
-                          <div className="eyebrow" style={{ marginBottom: 6 }}>Claude session</div>
-                          <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                            This sends a `user.message`, opens the Managed Agents stream, and persists the run record.
-                          </div>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'stretch' }}>
-                          <textarea
-                            value={runMessage}
-                            onChange={(e) => setRunMessage(e.target.value)}
-                            placeholder="Ask the managed agent to perform a specific regulated task…"
-                            disabled={streaming}
-                            onKeyDown={(e) => { if (e.key === 'Enter' && !streaming) void startManagedRun(a); }}
-                            style={{
-                              minWidth: 0,
-                              minHeight: 76,
-                              fontFamily: 'var(--sans)',
-                              fontSize: 13,
-                              color: 'var(--ink)',
-                              background: '#fff',
-                              border: '1px solid var(--rule-strong)',
-                              borderRadius: 10,
-                              padding: '10px 12px',
-                              resize: 'vertical',
-                            }}
-                          />
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                            <button
-                              className="btn btn-orange"
-                              onClick={() => void startManagedRun(a)}
-                              disabled={streaming || !runMessage.trim()}
-                              style={{ fontSize: 12, flex: 1 }}
-                            >
-                              {streaming ? 'Running…' : 'Start'}
-                            </button>
-                            <button className="btn btn-ghost" onClick={closeManagedPanel} style={{ fontSize: 12 }}>
-                              Close
-                            </button>
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            minHeight: 120,
-                            maxHeight: 340,
-                            overflowY: 'auto',
-                            background: '#0f172a',
-                            border: '1px solid rgba(15, 23, 42, 0.2)',
-                            borderRadius: 12,
-                            padding: 12,
-                            fontSize: 12,
-                            fontFamily: 'var(--mono)',
-                            lineHeight: 1.65,
-                            color: '#dbeafe',
-                          }}
-                        >
-                          {streamEvents.length === 0 && (
-                            <div style={{ color: '#94a3b8' }}>
-                              {streaming ? 'Opening Claude Managed Agents stream…' : 'Session events will appear here.'}
-                            </div>
-                          )}
-                          {streamEvents.map((ev, i) => (
-                            <ManagedEventLine key={i} event={ev} />
-                          ))}
-                          {streaming && (
-                            <div style={{ color: '#93c5fd', marginTop: 4 }}>Streaming…</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -788,36 +682,163 @@ export function Builder() {
           </>
         )}
       </div>
+
+      {activeAgent && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Run ${activeAgent.name}`}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !streaming) closeManagedPanel();
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 80,
+            display: 'grid',
+            placeItems: 'center',
+            padding: 24,
+            background: 'rgba(15, 23, 42, 0.18)',
+            backdropFilter: 'blur(10px)',
+          }}
+        >
+          <div
+            style={{
+              width: 'min(760px, calc(100vw - 48px))',
+              maxHeight: 'min(760px, calc(100vh - 48px))',
+              overflow: 'auto',
+              borderRadius: 22,
+              border: '1px solid rgba(17, 24, 39, 0.12)',
+              background: '#fff',
+              boxShadow: '0 28px 90px rgba(17, 24, 39, 0.22)',
+              padding: 22,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 18 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>Run Agent</div>
+                <div style={{ fontSize: 24, fontWeight: 650, letterSpacing: '-0.035em', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {activeAgent.name}
+                </div>
+                <div style={{ marginTop: 5, fontSize: 13, color: 'var(--ink-3)' }}>
+                  {activeAgent.processTitle}
+                </div>
+              </div>
+              <button
+                className="btn btn-ghost"
+                onClick={closeManagedPanel}
+                disabled={streaming}
+                style={{ fontSize: 12 }}
+              >
+                Close
+              </button>
+            </div>
+
+            <div style={{ display: 'grid', gap: 14 }}>
+              <label style={{ display: 'grid', gap: 8 }}>
+                <span style={{ fontSize: 14, fontWeight: 650, color: 'var(--ink)' }}>Record</span>
+                <textarea
+                  value={runMessage}
+                  onChange={(event) => setRunMessage(event.target.value)}
+                  placeholder="Paste the complaint, audit finding, CAPA record, or device file excerpt here."
+                  disabled={streaming}
+                  style={{
+                    minHeight: 180,
+                    fontFamily: 'var(--sans)',
+                    fontSize: 14,
+                    lineHeight: 1.55,
+                    color: 'var(--ink)',
+                    background: '#fff',
+                    border: '1px solid var(--rule-strong)',
+                    borderRadius: 14,
+                    padding: '13px 14px',
+                    resize: 'vertical',
+                    outline: 'none',
+                  }}
+                />
+              </label>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button
+                  className="btn btn-orange"
+                  onClick={() => void startManagedRun(activeAgent)}
+                  disabled={streaming || !runMessage.trim()}
+                  style={{ fontSize: 13, padding: '10px 18px' }}
+                >
+                  {streaming ? 'Running…' : 'Run'}
+                </button>
+              </div>
+
+              <div
+                style={{
+                  minHeight: 190,
+                  border: '1px solid var(--rule-strong)',
+                  borderRadius: 16,
+                  background: '#fff',
+                  padding: 18,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <div className="eyebrow" style={{ marginBottom: 5 }}>Outcome</div>
+                    <div style={{ fontSize: 18, fontWeight: 650, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
+                      {activeState.tone === 'done' && !activeText ? 'No answer returned' : activeState.label}
+                    </div>
+                  </div>
+                  <OutcomeDot tone={activeState.tone} />
+                </div>
+                <div style={{ fontSize: 14, lineHeight: 1.7, color: activeError ? '#B00020' : activeText ? 'var(--ink)' : 'var(--ink-3)', whiteSpace: 'pre-wrap' }}>
+                  {activeError || activeText || (streaming
+                    ? 'The agent is reading the record and preparing the outcome.'
+                    : activeState.tone === 'done'
+                      ? 'No written answer was returned by the managed agent.'
+                      : 'Run the agent to see the outcome here.')}
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => void saveCurrentResult(activeAgent)}
+                  disabled={streaming || !activeRunId || (!activeText && !activeError)}
+                  style={{ fontSize: 12 }}
+                >
+                  Save result
+                </button>
+                <button
+                  className="btn btn-ghost"
+                  onClick={() => downloadCurrentResult(activeAgent, activeText, activeError ?? null)}
+                  disabled={streaming || (!activeText && !activeError)}
+                  style={{ fontSize: 12 }}
+                >
+                  Download
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function RuntimeStat({ label, value }: { label: string; value: string }) {
+function OutcomeDot({ tone }: { tone: 'idle' | 'working' | 'done' | 'failed' }) {
+  const colors = {
+    idle: 'var(--ink-4)',
+    working: 'var(--orange)',
+    done: 'var(--ok, #2a8c4f)',
+    failed: '#B00020',
+  };
   return (
-    <div
+    <span
+      aria-hidden="true"
       style={{
-        border: '1px solid var(--rule)',
-        borderRadius: 12,
-        padding: '12px 14px',
-        background: '#fff',
+        width: 10,
+        height: 10,
+        borderRadius: 999,
+        background: colors[tone],
+        boxShadow: tone === 'working' ? '0 0 0 6px rgba(255, 115, 0, 0.08)' : undefined,
       }}
-    >
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-3)' }}>
-        {label}
-      </div>
-      <div style={{ marginTop: 4, fontSize: 22, fontWeight: 650, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function RuntimeLegend({ label, color }: { label: string; color: string }) {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--ink-3)' }}>
-      <span style={{ width: 7, height: 7, borderRadius: 999, background: color }} />
-      {label}
-    </span>
+    />
   );
 }
 
@@ -845,76 +866,6 @@ function RuntimeBadge({ label, color }: { label: string; color: string }) {
       {label}
     </div>
   );
-}
-
-function AgentLifecycle({ deployed }: { deployed: boolean }) {
-  const steps = [
-    { label: 'Saved', done: true },
-    { label: 'Deployed', done: deployed },
-    { label: 'Session-ready', done: deployed },
-  ];
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${steps.length}, 1fr)`, gap: 6 }}>
-      {steps.map((step) => (
-        <div
-          key={step.label}
-          style={{
-            padding: '7px 8px',
-            borderRadius: 999,
-            background: step.done ? 'rgba(42, 140, 79, 0.08)' : 'rgba(17, 24, 39, 0.04)',
-            border: `1px solid ${step.done ? 'rgba(42, 140, 79, 0.22)' : 'var(--rule)'}`,
-            color: step.done ? 'var(--ok, #2a8c4f)' : 'var(--ink-3)',
-            textAlign: 'center',
-            fontFamily: 'var(--mono)',
-            fontSize: 10,
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-          }}
-        >
-          {step.label}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function RuntimeMeta({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ minWidth: 0 }}>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-4)' }}>
-        {label}
-      </div>
-      <div style={{ marginTop: 3, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-/** Renders a single event from the managed agent stream. */
-function ManagedEventLine({ event }: { event: ManagedEvent }) {
-  if (event.type === 'agent.message' && event.content) {
-    const text = event.content
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('');
-    return <div style={{ whiteSpace: 'pre-wrap', color: '#e0f2fe' }}>{text}</div>;
-  }
-  if (event.type === 'agent.tool_use') {
-    return (
-      <div style={{ color: '#93c5fd' }}>
-        [Tool: {event.name}]
-      </div>
-    );
-  }
-  if (event.type === 'session.status_idle') {
-    return <div style={{ color: '#86efac', fontWeight: 600 }}>Agent finished.</div>;
-  }
-  if (event.type === 'session.status_failed') {
-    return <div style={{ color: '#fca5a5' }}>Session failed{event.error ? `: ${event.error}` : '.'}</div>;
-  }
-  return null;
 }
 
 export default Builder;

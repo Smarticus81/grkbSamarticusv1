@@ -130,8 +130,11 @@ export class ManagedAgentClient {
    * The caller is responsible for breaking out of the loop (e.g. on
    * `session.status_idle` or `session.status_failed`).
    */
-  async *streamEvents(sessionId: string): AsyncGenerator<ManagedSessionEvent> {
-    const url = `${this.baseUrl}/v1/sessions/${sessionId}/stream`;
+  async *streamEvents(
+    sessionId: string,
+    options?: { onOpen?: () => Promise<void> | void },
+  ): AsyncGenerator<ManagedSessionEvent> {
+    const url = `${this.baseUrl}/v1/sessions/${sessionId}/events/stream`;
     const res = await fetch(url, {
       method: 'GET',
       headers: {
@@ -156,6 +159,7 @@ export class ManagedAgentClient {
     let buffer = '';
 
     try {
+      await options?.onOpen?.();
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
