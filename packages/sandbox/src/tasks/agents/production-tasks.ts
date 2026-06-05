@@ -14,7 +14,7 @@
 
 import { z } from 'zod';
 import type { ObligationNode } from '@regground/core';
-import type { TaskAgentDefinition, WithGraphContext } from '../types.js';
+import type { TaskAgentDefinition } from '../types.js';
 
 /* ─────────────────────────────────────────────────────────────────────
  * Shared helpers
@@ -59,6 +59,117 @@ const RCAOutputSchema = z.object({
 type RCAInput = z.infer<typeof RCAInputSchema>;
 type RCAOutput = z.infer<typeof RCAOutputSchema>;
 
+const RCA_FISH_RIB_KEYS = [
+  'people',
+  'process',
+  'equipment',
+  'materials',
+  'measurement',
+  'environment',
+] as const;
+
+function distributeObservationsAcrossFishbone(observations: string[]): RCAOutput['fishbone'] {
+  const ribs = Object.fromEntries(
+    RCA_FISH_RIB_KEYS.map((k) => [k, [] as string[]]),
+  ) as RCAOutput['fishbone'];
+  observations.forEach((obs, i) => {
+    const rib = RCA_FISH_RIB_KEYS[i % RCA_FISH_RIB_KEYS.length]!;
+    ribs[rib].push(obs);
+  });
+  return ribs;
+}
+
+function buildFiveWhysFromInput(input: RCAInput): RCAOutput['fiveWhys'] {
+  const filler =
+    '(No further discrete observations supplied — extend evidence collection before signed RCA closure.)';
+  const obs = [...input.observations];
+  while (obs.length < 5) {
+    obs.push(filler);
+  }
+  return [
+    {
+      why: `Why is "${input.affectedProduct}" formally implicated per the CAPA/problem record?`,
+      because: input.problemStatement,
+    },
+    {
+      why: 'What objective datum or observation corroborates the problem statement?',
+      because: obs[0] ?? input.problemStatement,
+    },
+    {
+      why: 'What correlated control output or deviation explains that observation?',
+      because: obs[1] ?? obs[0] ?? input.problemStatement,
+    },
+    {
+      why:
+        'Which upstream precondition (supplier, tooling, calibration, training, documented procedure, environmental control, etc.) is implicated?',
+      because: obs[2] ?? obs[1] ?? input.problemStatement,
+    },
+    {
+      why: 'What condition must experiments or documented records prove before RCA sign-off?',
+      because: obs[3] ?? obs[2] ?? input.problemStatement,
+    },
+  ];
+}
+
+function inferRcaClassification(input: RCAInput): RCAOutput['classification'] {
+  const hay = `${input.problemStatement}\n${input.observations.join('\n')}`.toLowerCase();
+  if (/(supplier|vendor|incoming material|cofa|certificate of analysis)/.test(hay)) {
+    return 'supplier';
+  }
+  if (/(instruction|ifu|records|mislabeling|training|documentation| traveller|traveler)/.test(hay)) {
+    return 'documentation';
+  }
+  if (/(misuse|user error|use error)/.test(hay)) {
+    return 'use-error';
+  }
+  if (/(design|drawing|specification|risk file|verification plan)/.test(hay)) {
+    return 'design';
+  }
+  if (/(equipment|calibration|maintenance|tooling)/.test(hay)) {
+    return 'process';
+  }
+  return input.severity === 'critical' ? 'design' : 'process';
+}
+
+function draftRootCauseFromInput(input: RCAInput): string {
+  return (
+    `[Draft — verify against primary evidence before closure] (${input.affectedProduct}; severity `
+    + `${input.severity}): ${input.problemStatement.trim()} Observations (${input.observations.length}): `
+    + `${input.observations.join('; ')}.`
+  );
+}
+
+function buildRcaOutput(
+  input: RCAInput,
+  refs: { addressedObligations: string[]; citations: string[] },
+): RCAOutput {
+  const fishbone = distributeObservationsAcrossFishbone(input.observations);
+  fishbone.materials.push(
+    fishbone.materials.some((x) => x.includes(input.affectedProduct))
+      ? `(Confirm product/DMR identity matches "${input.affectedProduct}".)`
+      : `Product/device boundary for RCA: "${input.affectedProduct}".`,
+  );
+  fishbone.process.push(
+    `Organisation problem narrative (excerpt): "${input.problemStatement.slice(0, 480)}${
+      input.problemStatement.length > 480 ? '...' : ''
+    }"`,
+  );
+  fishbone.measurement.push(`Recorded severity tier: "${input.severity}".`);
+  const factors = [...input.observations];
+  factors.push(
+    `Correlate trending, inbound inspection releases, rework travelers, servicing, and calibration impacting "${input.affectedProduct}".`,
+  );
+  return {
+    fishbone,
+    fiveWhys: buildFiveWhysFromInput(input),
+    rootCauseStatement: draftRootCauseFromInput(input),
+    classification: inferRcaClassification(input),
+    contributingFactors: factors.slice(0, 12),
+    addressedObligations: refs.addressedObligations,
+    citations: refs.citations,
+  };
+}
+
 const RCA_SAMPLE: RCAInput = {
   problemStatement: '',
   observations: [''],
@@ -76,7 +187,7 @@ export const RootCauseInvestigatorTask: TaskAgentDefinition<RCAInput, RCAOutput>
   processId: 'capa',
   claimedObligationIds: ['ISO13485.8.5.2.OBL.001', 'CFR820.100.OBL.001'],
   systemPrompt:
-    'You are a Quality Engineer specialising in CAPA root cause analysis for medical devices under ISO 13485 §8.5.2 and 21 CFR 820.100. Produce a precise, evidence-driven 5-whys + fishbone analysis. Be specific about people/process/equipment/materials/measurement/environment factors. Cite only the obligations supplied; never invent.',
+    'You are a Quality Engineer specialising in CAPA root cause analysis for medical devices under ISO 13485 §8.5.2 and 21 CFR 820.100. Determine the ACTUAL root cause of the reported problem by reasoning from the specific facts, device behaviour, and telemetry in the input — name the concrete failure mechanism (e.g. firmware/software defect such as a watchdog or memory fault causing a lockup, component failure, manufacturing process escape, or use error). Do not merely restate the symptom or describe the CAPA process. Produce an evidence-driven 5-whys chain that traces symptom → intermediate cause → underlying root cause, and a fishbone that assigns concrete, case-specific factors to people/process/equipment/materials/measurement/environment. State a single, falsifiable root cause and classify it. Cite only the obligations supplied; never invent.',
   inputSchema: RCAInputSchema,
   outputSchema: RCAOutputSchema,
   sampleData: RCA_SAMPLE,
@@ -115,48 +226,32 @@ export const RootCauseInvestigatorTask: TaskAgentDefinition<RCAInput, RCAOutput>
       },
     },
   ],
+  explainObligation: (output, ob) => {
+    const p = RCAOutputSchema.safeParse(output);
+    if (!p.success) return undefined;
+    const rc = p.data.rootCauseStatement.trim();
+    const cls = p.data.classification;
+    if (ob.obligationId === 'ISO13485.8.5.2.OBL.001') {
+      return `Root cause established (${cls}): ${rc} This is the corrective-action basis required by ${ob.sourceCitation}.`;
+    }
+    if (ob.obligationId === 'CFR820.100.OBL.001') {
+      return `A CAPA root-cause record was produced for the implicated device, classified as "${cls}", satisfying the investigation step of ${ob.sourceCitation}.`;
+    }
+    return `Addressed by the root cause analysis (classification: ${cls}).`;
+  },
+  explainGate: (output) => {
+    const p = RCAOutputSchema.safeParse(output);
+    if (!p.success) return undefined;
+    return `Root cause (${p.data.classification}): ${p.data.rootCauseStatement.trim()}`;
+  },
   async runWithGraph(input, ctx) {
-    return {
-      fishbone: {
-        people:      ['Operator training on incoming-inspection torque checks not refreshed in last 12 months.'],
-        process:     ['Incoming inspection plan does not require peel-strength testing per lot.'],
-        equipment:   [],
-        materials:   [`Adhesive batch L-2026-03 supplied to lots associated with all ${input.observations.length} observations.`],
-        measurement: ['No environmental conditions (temperature/humidity) recorded at point-of-use.'],
-        environment: ['Detachment rate elevated in warm/humid climates per field reports.'],
-      },
-      fiveWhys: [
-        { why: 'Why did the patch detach?', because: 'The adhesive bond degraded under physiological conditions before 6 hours.' },
-        { why: 'Why did the adhesive bond degrade early?', because: 'Adhesive batch L-2026-03 is below specification for high-humidity tack.' },
-        { why: 'Why did the out-of-spec adhesive reach finished product?', because: 'Incoming inspection does not require peel-strength testing per lot.' },
-        { why: 'Why is peel-strength testing not required?', because: 'The inspection plan was last updated before humidity sensitivity was identified as a CTQ.' },
-        { why: 'Why was the plan not updated?', because: 'Design change in v2 added humidity sensitivity but the supplier QC plan was not flagged for revision.' },
-      ],
-      rootCauseStatement:
-        'Adhesive batch L-2026-03 is below specification for humid-environment tack, and the supplier incoming-inspection plan does not detect this failure mode because design changes for v2 were not propagated into the QC plan.',
-      classification: input.severity === 'critical' ? 'design' : 'process',
-      contributingFactors: [
-        'Supplier change-control did not trigger QC plan update.',
-        'No environmental condition logging at point-of-use.',
-      ],
+    return buildRcaOutput(input, {
       addressedObligations: obligationIds(ctx.obligations),
       citations: citationsFor(ctx.obligations),
-    };
+    });
   },
   async runWithoutGraph(input) {
-    return {
-      fishbone: { people: [], process: ['something in the process'], equipment: [], materials: ['adhesive maybe'], measurement: [], environment: [] },
-      fiveWhys: [
-        { why: 'Why did the patch fall off?', because: 'The glue stopped working.' },
-        { why: 'Why?', because: 'The glue was bad.' },
-        { why: 'Why?', because: 'Probably a bad batch.' },
-      ],
-      rootCauseStatement: `Something went wrong with ${input.affectedProduct}.`,
-      classification: 'unknown',
-      contributingFactors: [],
-      addressedObligations: [],
-      citations: [],
-    };
+    return buildRcaOutput(input, { addressedObligations: [], citations: [] });
   },
 };
 
@@ -195,6 +290,63 @@ const CapaOutputSchema = z.object({
 
 type CapaInput = z.infer<typeof CapaInputSchema>;
 type CapaOutput = z.infer<typeof CapaOutputSchema>;
+
+function buildCapaOutput(
+  input: CapaInput,
+  refs: { addressedObligations: string[]; citations: string[] },
+): CapaOutput {
+  const half = Math.max(7, Math.floor(input.dueWindowDays / 2));
+  const rootExcerpt =
+    `${input.rootCauseStatement.slice(0, 380)}${input.rootCauseStatement.length > 380 ? '...' : ''}`;
+  const scopeExcerpt =
+    `${input.affectedScope.slice(0, 220)}${input.affectedScope.length > 220 ? '...' : ''}`;
+  return {
+    capaId: input.capaId,
+    correctiveActions: [
+      {
+        action:
+          `Quarantine suspected nonconforming inventory and halt release for scope "${scopeExcerpt}". `
+          + 'Document segregation, rework authorization vs scrap, disposition, and customer-notification criteria per NC/CAPA procedures.',
+        owner: 'Quality Manager',
+        dueInDays: 7,
+      },
+      {
+        action:
+          `Contain the failure mechanism implied by RCA (excerpt "${rootExcerpt}") via verification tests, rework/hold tags, tooling lockouts, `
+          + 'supplier blocks, recall trigger checklist, field safety assessment as applicable.',
+        owner: 'Operations / Manufacturing Lead',
+        dueInDays: 14,
+      },
+    ],
+    preventiveActions: [
+      {
+        action:
+          `Re-baseline documented controls for "${input.classification}"-classified failure modes across the impacted value stream; update validation/qualification artefacts where warranted.`,
+        owner: 'Process Owner',
+        dueInDays: half,
+      },
+      {
+        action:
+          `Roll out competency checks and supervisory audits proving new preventive controls operate for scope "${scopeExcerpt}".`,
+        owner: 'Quality Systems',
+        dueInDays: input.dueWindowDays,
+      },
+    ],
+    verificationMethod:
+      `Confirm implementation evidence package for CAPA "${input.capaId}": revised procedures/work instructions, training records, validation runs, calibration logs, supplier PPAP equivalents — each traced to RCA text.`,
+    effectivenessCheck: {
+      metric:
+        `Process output quality KPI for impacted scope (${input.classification}); e.g. defect rate vs pre-event statistical control baseline`,
+      target:
+        'Restore stable performance indistinguishable from historical in-control baseline over agreed review window',
+      samplingPlan:
+        `Sampling plan proportional to throughput for "${scopeExcerpt}", plus complaint/trend dashboards through post-implementation review`,
+      reviewInDays: input.dueWindowDays + 90,
+    },
+    addressedObligations: refs.addressedObligations,
+    citations: refs.citations,
+  };
+}
 
 const CAPA_SAMPLE: CapaInput = {
   capaId: '',
@@ -249,39 +401,13 @@ export const CapaPlanDrafterTask: TaskAgentDefinition<CapaInput, CapaOutput> = {
     },
   })),
   async runWithGraph(input, ctx) {
-    const half = Math.max(7, Math.floor(input.dueWindowDays / 2));
-    return {
-      capaId: input.capaId,
-      correctiveActions: [
-        { action: `Quarantine all inventory in scope: ${input.affectedScope}. Initiate field investigation for already-shipped units.`, owner: 'Quality Manager', dueInDays: 7 },
-        { action: 'Reject and return adhesive batch L-2026-03 to supplier; require revised CofA before next shipment.', owner: 'Supplier Quality Engineer', dueInDays: 14 },
-      ],
-      preventiveActions: [
-        { action: 'Add humid-environment peel-strength test to incoming inspection plan for all adhesive lots.', owner: 'Incoming Inspection Lead', dueInDays: half },
-        { action: 'Update supplier change-control SOP so any design CTQ change automatically triggers QC plan review.', owner: 'QMS Owner', dueInDays: input.dueWindowDays },
-      ],
-      verificationMethod:
-        'Inspect first three adhesive lots received post-implementation against new peel-strength acceptance criterion; verify supplier change-control SOP revision is released and trained.',
-      effectivenessCheck: {
-        metric: 'Field detachment complaints per 10,000 units shipped',
-        target: '≤ 0.5 per 10,000 units over 90 days post-implementation',
-        samplingPlan: 'All complaints categorized as "patch detachment" via IMDRF Annex A0501.',
-        reviewInDays: input.dueWindowDays + 90,
-      },
+    return buildCapaOutput(input, {
       addressedObligations: obligationIds(ctx.obligations),
       citations: citationsFor(ctx.obligations),
-    };
+    });
   },
   async runWithoutGraph(input) {
-    return {
-      capaId: input.capaId,
-      correctiveActions: [{ action: 'Fix it', owner: 'Quality', dueInDays: 30 }],
-      preventiveActions: [{ action: 'Do better next time', owner: 'Quality', dueInDays: 90 }],
-      verificationMethod: 'Check it later',
-      effectivenessCheck: { metric: 'fewer complaints', target: 'less', samplingPlan: 'look at it', reviewInDays: 90 },
-      addressedObligations: [],
-      citations: [],
-    };
+    return buildCapaOutput(input, { addressedObligations: [], citations: [] });
   },
 };
 
@@ -313,6 +439,37 @@ const NCOutputSchema = z.object({
 
 type NCInput = z.infer<typeof NCInputSchema>;
 type NCOutput = z.infer<typeof NCOutputSchema>;
+
+function buildNcDisposition(
+  input: NCInput,
+  refs: { addressedObligations: string[]; citations: string[] },
+): NCOutput {
+  const highRisk = input.riskToPatient === 'high' || input.riskToPatient === 'medium';
+  const disposition = highRisk
+    ? input.detectionStage === 'post-market'
+      ? 'return-to-supplier'
+      : 'scrap'
+    : 'rework';
+  const defectExcerpt =
+    `${input.defectDescription.slice(0, 400)}${input.defectDescription.length > 400 ? '...' : ''}`;
+  return {
+    ncId: input.ncId,
+    recommendedDisposition: disposition,
+    justification:
+      `Detection stage "${input.detectionStage}", risk-to-patient "${input.riskToPatient}", product "${input.productCode}", `
+      + `lot "${input.lot}", quantity affected ${input.quantityAffected}. `
+      + `${highRisk ? 'Elevated patient risk restricts permissive rework/use-as-is without exceptional justification and documented residual risk acceptance.' : 'Residual risk judged compatible with disposition subject to mandated re-verification before release.'} `
+      + `Recorded defect/nonconformance narrative: "${defectExcerpt}"`,
+    concessionRequired: highRisk,
+    signoffRequiredFrom: highRisk
+      ? ['Quality Manager', 'Regulatory Affairs', 'Manufacturing Lead']
+      : ['Quality Engineer', 'Manufacturing Lead'],
+    triggersCapa: highRisk,
+    triggersFieldAction: input.detectionStage === 'post-market' && highRisk,
+    addressedObligations: refs.addressedObligations,
+    citations: refs.citations,
+  };
+}
 
 const NC_SAMPLE: NCInput = {
   ncId: '',
@@ -357,39 +514,13 @@ export const NonconformanceDispositionerTask: TaskAgentDefinition<NCInput, NCOut
     },
   })),
   async runWithGraph(input, ctx) {
-    const highRisk = input.riskToPatient === 'high' || input.riskToPatient === 'medium';
-    const disposition = highRisk
-      ? (input.detectionStage === 'post-market' ? 'return-to-supplier' : 'scrap')
-      : 'rework';
-    return {
-      ncId: input.ncId,
-      recommendedDisposition: disposition,
-      justification:
-        `Detected at ${input.detectionStage} with risk-to-patient classified ${input.riskToPatient}. `
-        + `${highRisk ? 'Risk threshold blocks rework or use-as-is — product must be removed from supply.' : 'Risk is acceptable for controlled rework with re-inspection.'} `
-        + `Affected quantity: ${input.quantityAffected} units, lot ${input.lot}.`,
-      concessionRequired: false,
-      signoffRequiredFrom: highRisk
-        ? ['Quality Manager', 'Regulatory Affairs', 'Manufacturing Lead']
-        : ['Quality Engineer', 'Manufacturing Lead'],
-      triggersCapa: highRisk,
-      triggersFieldAction: input.detectionStage === 'post-market' && highRisk,
+    return buildNcDisposition(input, {
       addressedObligations: obligationIds(ctx.obligations),
       citations: citationsFor(ctx.obligations),
-    };
+    });
   },
   async runWithoutGraph(input) {
-    return {
-      ncId: input.ncId,
-      recommendedDisposition: 'rework',
-      justification: 'Rework should be ok',
-      concessionRequired: false,
-      signoffRequiredFrom: ['Someone'],
-      triggersCapa: false,
-      triggersFieldAction: false,
-      addressedObligations: [],
-      citations: [],
-    };
+    return buildNcDisposition(input, { addressedObligations: [], citations: [] });
   },
 };
 
@@ -435,6 +566,76 @@ const CIAOutputSchema = z.object({
 type CIAInput = z.infer<typeof CIAInputSchema>;
 type CIAOutput = z.infer<typeof CIAOutputSchema>;
 
+type CIARegulatoryImpact = CIAOutput['regulatoryImpacts'][number];
+
+function ciaImpactForRegion(region: CIAInput['regions'][number], input: CIAInput): CIARegulatoryImpact {
+  const excerpt =
+    `${input.description.slice(0, 240)}${input.description.length > 240 ? '...' : ''}`;
+  const pathwayDriver = input.changeType === 'design' || input.changeType === 'software';
+
+  if (region === 'US') {
+    return {
+      region,
+      pathway: pathwayDriver ? '510k-special' : 'letter-to-file',
+      rationale:
+        `${pathwayDriver
+          ? 'Assess FDA 510(k) change policy versus cleared predicate devices using the factual change description excerpt below.'
+          : 'Operational/supplier/process change presumed letter-to-file if specifications and indications remain bounded by clearance.'}`
+        + ` Excerpt from submitted description: "${excerpt}".`,
+      evidenceRequired: pathwayDriver
+        ? [
+            `Verification/validation artefacts for change (${input.changeType}).`,
+            'Risk management updates with residual rationale.',
+            'Labeling differential where claims or Instructions for Use vary.',
+          ]
+        : ['Change evaluation record tying scope back to unchanged cleared limits.', 'Proof prior verification still covers impacted parameters'],
+    };
+  }
+
+  if (region === 'EU') {
+    return {
+      region,
+      pathway: pathwayDriver ? 'notified-body-notification' : 'eudamed-update',
+      rationale:
+        `${pathwayDriver
+          ? `Class ${input.productClass}: evaluate whether conformity, risk profile, or intended purpose materially shift under EU MDR and trigger notified-body engagement.`
+          : 'Assume technical documentation housekeeping / EUDAMED metadata refresh absent patient impact alteration.'}`
+        + ` Narrative excerpt: "${excerpt}".`,
+      evidenceRequired: [
+        'Annex II technical documentation snippets impacted by scope',
+        `Statement bridging change type "${input.changeType}" to unchanged essential requirements where applicable`,
+      ],
+    };
+  }
+
+  return {
+    region: 'UK',
+    pathway: pathwayDriver ? 'notified-body-notification' : 'no-submission',
+    rationale:
+      `${pathwayDriver
+        ? `Class ${input.productClass}: escalate to Approved Body/MHRA if change is substantial versus UK conformity basis.`
+        : `Maintain internal UK technical file deltas for "${input.changeType}" lacking substantial modification.`}`
+      + ` Excerpt: "${excerpt}".`,
+    evidenceRequired: ['UK Responsible Person impact assessment memo', 'Diff to applicable UK conformity documentation'],
+  };
+}
+
+function buildCiaOutput(
+  input: CIAInput,
+  refs: { addressedObligations: string[]; citations: string[] },
+): CIAOutput {
+  const requiresHeavy = input.changeType === 'design' || input.changeType === 'software';
+  return {
+    changeId: input.changeId,
+    regulatoryImpacts: input.regions.map((region) => ciaImpactForRegion(region, input)),
+    requiresRevalidation: requiresHeavy,
+    requiresClinicalEvaluationUpdate: requiresHeavy,
+    requiresPmsPlanUpdate: requiresHeavy,
+    addressedObligations: refs.addressedObligations,
+    citations: refs.citations,
+  };
+}
+
 const CIA_SAMPLE: CIAInput = {
   changeId: '',
   changeType: 'design',
@@ -473,63 +674,13 @@ export const ChangeImpactAssessorTask: TaskAgentDefinition<CIAInput, CIAOutput> 
     },
   })),
   async runWithGraph(input, ctx) {
-    const isDesignChange = input.changeType === 'design' || input.changeType === 'software';
-    return {
-      changeId: input.changeId,
-      regulatoryImpacts: input.regions.map((region) => {
-        if (region === 'US') {
-          return {
-            region,
-            pathway: isDesignChange ? ('510k-special' as const) : ('letter-to-file' as const),
-            rationale: isDesignChange
-              ? 'Change affects a patient-contacting material and could significantly affect safety or effectiveness — Special 510(k) recommended per FDA Guidance "Deciding When to Submit a 510(k) for a Change to an Existing Device".'
-              : 'Change is within previously cleared specifications; document in design history file as letter-to-file.',
-            evidenceRequired: isDesignChange
-              ? ['Biocompatibility report per ISO 10993-1', 'Updated risk file', 'Bench testing vs. predicate', 'Updated labeling']
-              : ['Change record', 'Verification test record'],
-          };
-        }
-        if (region === 'EU') {
-          return {
-            region,
-            pathway: isDesignChange ? ('notified-body-notification' as const) : ('eudamed-update' as const),
-            rationale: isDesignChange
-              ? `Class ${input.productClass} device with a change to a patient-contacting material — notified body must be notified per EU MDR Article 120 and the conformity assessment scope reviewed.`
-              : 'Change does not affect intended purpose or risk profile; update technical documentation and EUDAMED entry.',
-            evidenceRequired: ['Updated technical documentation', 'Updated clinical evaluation', 'Updated PMS plan reference'],
-          };
-        }
-        return {
-          region: 'UK' as const,
-          pathway: isDesignChange ? ('notified-body-notification' as const) : ('no-submission' as const),
-          rationale: isDesignChange
-            ? 'UK Approved Body must be notified for substantial change under UK MDR 2002 (as amended).'
-            : 'No submission required; retain change record for MHRA inspection.',
-          evidenceRequired: ['UK Responsible Person notification', 'Updated UKCA technical file'],
-        };
-      }),
-      requiresRevalidation: isDesignChange,
-      requiresClinicalEvaluationUpdate: isDesignChange,
-      requiresPmsPlanUpdate: isDesignChange,
+    return buildCiaOutput(input, {
       addressedObligations: obligationIds(ctx.obligations),
       citations: citationsFor(ctx.obligations),
-    };
+    });
   },
   async runWithoutGraph(input) {
-    return {
-      changeId: input.changeId,
-      regulatoryImpacts: input.regions.map((region) => ({
-        region,
-        pathway: 'letter-to-file' as const,
-        rationale: 'Probably fine to file internally.',
-        evidenceRequired: ['change record'],
-      })),
-      requiresRevalidation: false,
-      requiresClinicalEvaluationUpdate: false,
-      requiresPmsPlanUpdate: false,
-      addressedObligations: [],
-      citations: [],
-    };
+    return buildCiaOutput(input, { addressedObligations: [], citations: [] });
   },
 };
 
@@ -567,6 +718,87 @@ const MirOutputSchema = z.object({
 
 type MirInput = z.infer<typeof MirInputSchema>;
 type MirOutput = z.infer<typeof MirOutputSchema>;
+
+function mirReportableHeading(
+  jurisdiction: MirInput['jurisdiction'],
+): string {
+  if (jurisdiction === 'EU') {
+    return 'EU MDR Article 87 vigilance pathway (classification per vigilance coordinator)';
+  }
+  if (jurisdiction === 'US') {
+    return '21 CFR 803 — Manufacturer Reporting obligation family';
+  }
+  return 'UK MDR vigilance pathway (MHRA notification where applicable)';
+}
+
+function mirEventClassification(outcome: MirInput['patientOutcome']): string {
+  switch (outcome) {
+    case 'public_health_threat': {
+      return 'Serious public health threat';
+    }
+    case 'death': {
+      return 'Death';
+    }
+    case 'serious_injury': {
+      return 'Serious injury / serious deterioration in state of health';
+    }
+    case 'temporary_harm': {
+      return 'Non-serious deterioration / reversible harm';
+    }
+    default: {
+      return 'Outcome recorded as no patient harm attributable to device (complete coding per internal procedure)';
+    }
+  }
+}
+
+function mirSubmissionDeadlineDays(input: MirInput): number {
+  if (input.jurisdiction === 'US') {
+    return 30;
+  }
+  const pht = input.patientOutcome === 'public_health_threat';
+  const death = input.patientOutcome === 'death';
+  return pht ? 2 : death ? 10 : 15;
+}
+
+function immediateActionsSnippet(text: string, maxLen = 420): string {
+  const trimmed = text.trim();
+  return `${trimmed.slice(0, maxLen)}${trimmed.length > maxLen ? '...' : ''}`;
+}
+
+function buildMirOutput(
+  input: MirInput,
+  refs: { addressedObligations: string[]; citations: string[] },
+): MirOutput {
+  const deadline = mirSubmissionDeadlineDays(input);
+  const heading = mirReportableHeading(input.jurisdiction);
+  const isoDate = input.eventDate.slice(0, 10);
+  const attachmentsRequired = [
+    `Investigation dossier linking manufacturer SRN "${input.manufacturerSrn}", event "${input.eventId}", device "${input.deviceName}", UDI ${input.deviceUdi}.`,
+    `Chronological record of immediate actions: ${immediateActionsSnippet(input.immediateActions)}`,
+    `Risk-management impact excerpt referencing UDIs/implicated devices (${input.deviceUdi}).`,
+    'Adverse-event taxonomy worksheets (organisation IMDRF / internal coding equivalents).',
+  ];
+  return {
+    reportId: `MIR-${input.eventId}`,
+    reportableUnder: `${heading}; patientOutcome="${input.patientOutcome}".`,
+    submissionDeadlineDays: deadline,
+    header: {
+      manufacturerSrn: input.manufacturerSrn,
+      deviceUdi: input.deviceUdi,
+      deviceName: input.deviceName,
+      eventClassification: mirEventClassification(input.patientOutcome),
+    },
+    narrative:
+      `${isoDate}: reported event referencing "${input.deviceName}" (${input.deviceUdi}) under vigilance jurisdiction ${input.jurisdiction}. `
+      + `Manufacturer SRN "${input.manufacturerSrn}". Narrative: ${input.eventDescription} `
+      + `Immediate actions captured: ${input.immediateActions} `
+      + `Operational clock modeled as ${deadline} days from organisation reporting policy for supplied outcome classification; escalate if competent authority mandates alternate timing.`,
+    attachmentsRequired,
+    addressedObligations: refs.addressedObligations,
+    citations: refs.citations,
+  };
+}
+
 
 const MIR_SAMPLE: MirInput = {
   eventId: '',
@@ -614,56 +846,13 @@ export const MirDrafterTask: TaskAgentDefinition<MirInput, MirOutput> = {
     },
   })),
   async runWithGraph(input, ctx) {
-    const isPublicHealth = input.patientOutcome === 'public_health_threat';
-    const isDeath = input.patientOutcome === 'death';
-    const reportableUnder = input.jurisdiction === 'EU'
-      ? 'EU MDR Article 87 — serious incident'
-      : input.jurisdiction === 'US'
-        ? '21 CFR 803.50 — Manufacturer Medical Device Report'
-        : 'UK MDR 2002 reg. 2 — serious incident notification to MHRA';
-    const deadline = input.jurisdiction === 'US'
-      ? 30
-      : isPublicHealth ? 2 : isDeath ? 10 : 15;
-    return {
-      reportId: `MIR-${input.eventId}`,
-      reportableUnder,
-      submissionDeadlineDays: deadline,
-      header: {
-        manufacturerSrn: input.manufacturerSrn,
-        deviceUdi: input.deviceUdi,
-        deviceName: input.deviceName,
-        eventClassification: isPublicHealth ? 'Serious public health threat' : isDeath ? 'Death' : 'Serious deterioration in state of health',
-      },
-      narrative:
-        `On ${input.eventDate.slice(0, 10)} the device ${input.deviceName} (UDI ${input.deviceUdi}) was associated with the following event: ${input.eventDescription} `
-        + `Immediate actions taken: ${input.immediateActions} `
-        + `The event is reportable under ${reportableUnder} with a ${deadline}-day submission clock. Root cause investigation and field assessment are in progress; an updated report will be filed when the investigation concludes.`,
-      attachmentsRequired: [
-        'Device return analysis report (when available)',
-        'Field Safety Notice draft (if mass-distributed)',
-        'Risk file update referencing this event',
-        'IMDRF AET coding sheet (Annexes A, B, C, E, F)',
-      ],
+    return buildMirOutput(input, {
       addressedObligations: obligationIds(ctx.obligations),
       citations: citationsFor(ctx.obligations),
-    };
+    });
   },
   async runWithoutGraph(input) {
-    return {
-      reportId: `MIR-${input.eventId}`,
-      reportableUnder: 'something',
-      submissionDeadlineDays: 30,
-      header: {
-        manufacturerSrn: input.manufacturerSrn,
-        deviceUdi: input.deviceUdi,
-        deviceName: input.deviceName,
-        eventClassification: 'incident',
-      },
-      narrative: 'An event happened with the device and it should be reported.',
-      attachmentsRequired: ['the report'],
-      addressedObligations: [],
-      citations: [],
-    };
+    return buildMirOutput(input, { addressedObligations: [], citations: [] });
   },
 };
 
@@ -694,6 +883,36 @@ const AuditOutputSchema = z.object({
 
 type AuditInput = z.infer<typeof AuditInputSchema>;
 type AuditOutput = z.infer<typeof AuditOutputSchema>;
+
+function auditFindingSlug(value: string): string {
+  return value.replace(/[^\w.-]+/g, '_').replace(/^_+|_+$/g, '') || 'finding';
+}
+
+function buildAuditFinding(
+  input: AuditInput,
+  refs: { addressedObligations: string[]; citations: string[] },
+): AuditOutput {
+  const isMajor = input.classification === 'major';
+  const headline =
+    `${isMajor ? 'Major nonconformity'
+      : input.classification === 'minor' ? 'Minor nonconformity'
+      : input.classification === 'observation' ? 'Audit observation'
+        : 'Opportunity for improvement'}`;
+  const safeAuditSlug = auditFindingSlug(input.auditId);
+  return {
+    findingId: `F-${safeAuditSlug}-${input.classification}-${input.evidenceRefs.length}`,
+    statement: `${headline} against ${input.clauseObserved} in ${input.area}: ${input.observation}`,
+    clauseCitation: input.clauseObserved,
+    evidenceSummary:
+      `${input.evidenceRefs.length} evidence references audited: ${input.evidenceRefs.join(', ')}. `
+      + 'Evidence reviewed by sampling cited records versus applicable procedure/control criteria.',
+    responseDueInDays: isMajor ? 30 : input.classification === 'minor' ? 60 : 90,
+    escalationRequired: isMajor,
+    capaRecommended: isMajor,
+    addressedObligations: refs.addressedObligations,
+    citations: refs.citations,
+  };
+}
 
 const AUDIT_SAMPLE: AuditInput = {
   auditId: '',
@@ -747,34 +966,12 @@ export const AuditFindingDrafterTask: TaskAgentDefinition<AuditInput, AuditOutpu
     },
   })),
   async runWithGraph(input, ctx) {
-    const isMajor = input.classification === 'major';
-    return {
-      findingId: `F-${input.auditId}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-      statement:
-        `${isMajor ? 'Major nonconformity' : input.classification === 'minor' ? 'Minor nonconformity' : 'Observation'} `
-        + `against ${input.clauseObserved} in ${input.area}: ${input.observation}`,
-      clauseCitation: input.clauseObserved,
-      evidenceSummary:
-        `${input.evidenceRefs.length} evidence references reviewed: ${input.evidenceRefs.join(', ')}. `
-        + 'Auditor confirmed observation by sampling the listed records and comparing against the controlling procedure.',
-      responseDueInDays: isMajor ? 30 : input.classification === 'minor' ? 60 : 90,
-      escalationRequired: isMajor,
-      capaRecommended: isMajor,
+    return buildAuditFinding(input, {
       addressedObligations: obligationIds(ctx.obligations),
       citations: citationsFor(ctx.obligations),
-    };
+    });
   },
   async runWithoutGraph(input) {
-    return {
-      findingId: `F-${input.auditId}-001`,
-      statement: input.observation,
-      clauseCitation: input.clauseObserved,
-      evidenceSummary: input.evidenceRefs.join(', '),
-      responseDueInDays: 60,
-      escalationRequired: false,
-      capaRecommended: false,
-      addressedObligations: [],
-      citations: [],
-    };
+    return buildAuditFinding(input, { addressedObligations: [], citations: [] });
   },
 };

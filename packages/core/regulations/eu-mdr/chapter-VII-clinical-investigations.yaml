@@ -1,0 +1,1135 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Chapter VII — Clinical evaluation and clinical investigations (Articles 62-82)"
+jurisdiction: EU_MDR
+processType: CLINICAL_INVESTIGATION
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 62 — General requirements regarding clinical investigations
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.62.OBL.001"
+    kind: obligation
+    title: "Clinical investigation purpose — confirm conformity"
+    text: "Clinical investigations shall be designed, authorised, conducted, recorded and reported in accordance with this Article and Articles 63 to 80, where carried out for one or more of the following purposes: (a) to establish and verify that, under normal conditions of use, a device is designed, manufactured and packaged in such a way that it is suitable for one or more of the specific purposes of a medical device, and achieves the performance intended by its manufacturer; (b) to establish and verify the clinical benefits of a device as specified by its manufacturer; (c) to establish and verify the clinical safety profile of the device and to determine any undesirable side-effects and to assess whether they constitute acceptable risks when weighed against the benefits to be achieved by the device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 62(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+      - clinical_investigation_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.62.OBL.002"
+    kind: obligation
+    title: "Protect rights, safety, dignity and well-being of subjects"
+    text: "A clinical investigation shall be designed and conducted in such a way that the rights, safety, dignity and well-being of the subjects participating in a clinical investigation are protected and prevail over all other interests and the clinical data generated are scientifically valid, reliable and robust."
+    sourceCitation: "Regulation (EU) 2017/745 Article 62(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+      - risk_benefit_analysis
+      - ethics_committee_opinion
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.62.OBL.003"
+    kind: obligation
+    title: "Scientific soundness and ethical principles"
+    text: "Clinical investigations shall be subject to scientific and ethical review. The ethical review shall be performed by an ethics committee in accordance with national law. Member States shall ensure that the procedures for review by ethics committees are compatible with the procedures set out in this Regulation for the assessment of the application for the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 62(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ethics_committee_opinion
+      - scientific_review_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.62.OBL.004"
+    kind: obligation
+    title: "Compliance with Declaration of Helsinki"
+    text: "Clinical investigations shall be performed in accordance with the Declaration of Helsinki adopted by the 18th World Medical Assembly in Helsinki, Finland, in 1964, as last revised. The sponsor and investigator shall ensure that clinical investigations are conducted in accordance with the principles of the Declaration of Helsinki."
+    sourceCitation: "Regulation (EU) 2017/745 Article 62(4)(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+      - declaration_of_helsinki_compliance_statement
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.62.OBL.005"
+    kind: obligation
+    title: "Pre-clinical evidence prior to clinical investigation"
+    text: "A clinical investigation may be conducted only where an adequate pre-clinical evaluation has been carried out in accordance with the applicable requirements of this Regulation, in particular the general safety and performance requirements set out in Annex I, supporting the scientific rationale for the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 62(4)(c)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - preclinical_data
+      - risk_analysis
+      - bench_test_report
+      - biocompatibility_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.62.OBL.006"
+    kind: obligation
+    title: "Benefits outweigh risks for subjects"
+    text: "A clinical investigation may be conducted only where the risks to the subjects are proportionate to the potential clinical benefits. The sponsor shall continuously monitor relevant information from the clinical investigation and take any necessary measures to ensure the safety of the subjects."
+    sourceCitation: "Regulation (EU) 2017/745 Article 62(4)(d)-(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_benefit_analysis
+      - data_safety_monitoring_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.62.OBL.007"
+    kind: obligation
+    title: "Informed consent of subjects"
+    text: "A clinical investigation may be conducted only where the conditions set out in Article 63 regarding informed consent are met."
+    sourceCitation: "Regulation (EU) 2017/745 Article 62(4)(f)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - informed_consent_form
+      - informed_consent_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.62.OBL.008"
+    kind: obligation
+    title: "Sponsor established in the Union"
+    text: "The sponsor of a clinical investigation shall be established in the Union. The sponsor may designate a natural or legal person established in the Union as its legal representative. The natural or legal person referred to in this paragraph shall be the addressee for all communications with the sponsor provided for in this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 62(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sponsor_registration
+      - legal_representative_designation
+    applicability:
+      conditions:
+        - "Sponsor not established in the Union must designate a legal representative"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 63 — Informed consent
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.63.OBL.001"
+    kind: obligation
+    title: "Obtain informed consent from subjects"
+    text: "Informed consent shall be written, dated and signed by the person performing the interview referred to in point (c) of paragraph 2 and by the subject or, where the subject is not able to give informed consent, his or her legally designated representative, after having been duly informed in accordance with paragraph 2. Where the subject is unable to write, consent may be given and recorded through appropriate alternative means in the presence of at least one impartial witness."
+    sourceCitation: "Regulation (EU) 2017/745 Article 63(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - informed_consent_form
+      - informed_consent_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.63.OBL.002"
+    kind: obligation
+    title: "Information provided to subjects before consent"
+    text: "Information given to the subject or, where the subject is not able to give informed consent, his or her legally designated representative for the purposes of obtaining his or her informed consent shall: (a) enable the subject or legally designated representative to understand the nature, objectives, benefits, implications, risks and inconveniences of the clinical investigation; (b) enable the subject or legally designated representative to understand his or her rights and guarantees regarding his or her protection, in particular his or her right to refuse to participate and the right to withdraw from the investigation at any time without any resulting detriment."
+    sourceCitation: "Regulation (EU) 2017/745 Article 63(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - subject_information_sheet
+      - informed_consent_form
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.63.OBL.003"
+    kind: obligation
+    title: "Right to withdraw consent at any time"
+    text: "The subject shall be informed that he or she has the right to withdraw from the clinical investigation at any time and that the withdrawal of consent shall not affect any activities already carried out and use of data obtained based on informed consent before its withdrawal."
+    sourceCitation: "Regulation (EU) 2017/745 Article 63(2)(b)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - informed_consent_form
+      - withdrawal_procedure
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.63.OBL.004"
+    kind: obligation
+    title: "Adequate time for consent decision"
+    text: "The subject shall be given adequate time to consider his or her decision to participate in the clinical investigation. The information shall be kept comprehensive, concise, clear, relevant and understandable to the subject or legally designated representative."
+    sourceCitation: "Regulation (EU) 2017/745 Article 63(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - informed_consent_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.63.OBL.005"
+    kind: obligation
+    title: "Informed consent in emergency situations"
+    text: "Where the subject or, where applicable, his or her legally designated representative is not able to give informed consent prior to participation in the clinical investigation and the conditions for participation set out in Article 64 or Article 65 are not met, the subject may be enrolled in an emergency clinical investigation if specific conditions are met: (a) no prior informed consent is possible due to the urgency of the situation; (b) no prior objection is known; (c) the research relates directly to the emergency condition; (d) the clinical investigation poses a minimal risk and imposes a minimal burden."
+    sourceCitation: "Regulation (EU) 2017/745 Article 63(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - emergency_consent_procedure
+      - emergency_consent_records
+    applicability:
+      conditions:
+        - "Only applicable in emergency clinical investigation situations"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 64 — Clinical investigations on incapacitated subjects
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.64.OBL.001"
+    kind: obligation
+    title: "Additional safeguards for incapacitated subjects"
+    text: "A clinical investigation on incapacitated subjects who have not given, or have not refused to give, informed consent before the onset of their incapacity, may be conducted only where, in addition to the conditions set out in Article 62(4): (a) the informed consent of their legally designated representative has been obtained; (b) the incapacitated subjects have received the information referred to in Article 63(2) to the extent possible given their capacity to understand; (c) the explicit wish of an incapacitated subject who is capable of forming an opinion and assessing the information to refuse participation in, or to withdraw from, the clinical investigation at any time, is considered by the investigator."
+    sourceCitation: "Regulation (EU) 2017/745 Article 64(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - legally_designated_representative_consent
+      - incapacitated_subject_protection_record
+    applicability:
+      conditions:
+        - "Only applicable to clinical investigations involving incapacitated subjects"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.64.OBL.002"
+    kind: obligation
+    title: "Minimal risk and burden for incapacitated subjects"
+    text: "A clinical investigation on incapacitated subjects may only be conducted where it is essential with respect to incapacitated subjects and data of comparable validity cannot be obtained from clinical investigations on persons able to give informed consent, or from other research methods. The clinical investigation shall relate directly to a clinical condition from which the subject suffers and shall pose only minimal risk and minimal burden to the subject compared with standard treatment."
+    sourceCitation: "Regulation (EU) 2017/745 Article 64(1)(d)-(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - justification_for_incapacitated_subjects
+      - risk_benefit_analysis
+    applicability:
+      conditions:
+        - "Only applicable to clinical investigations involving incapacitated subjects"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 65 — Clinical investigations on minors
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.65.OBL.001"
+    kind: obligation
+    title: "Additional safeguards for minors"
+    text: "A clinical investigation on minors may be conducted only where, in addition to the conditions set out in Article 62(4): (a) the informed consent of their legally designated representative has been obtained; (b) the minors have received the information referred to in Article 63(2) in a way adapted to their age and mental maturity and from investigators or members of the investigating team who are trained or experienced in working with children; (c) the explicit wish of a minor who is capable of forming an opinion and assessing the information to refuse participation in, or to withdraw from, the clinical investigation at any time, is considered by the investigator."
+    sourceCitation: "Regulation (EU) 2017/745 Article 65(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - parental_or_guardian_consent
+      - minor_assent_records
+      - pediatric_investigation_justification
+    applicability:
+      conditions:
+        - "Only applicable to clinical investigations involving minors"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.65.OBL.002"
+    kind: obligation
+    title: "Minimal risk and direct benefit for minors"
+    text: "The clinical investigation shall either relate directly to a clinical condition from which the minor concerned suffers or be of such a nature that it can only be carried out on minors. The clinical investigation shall be designed to minimise pain, discomfort, fear and any other foreseeable risk in relation to the disease and the developmental stage of the minor. The risk threshold and the degree of distress shall be specifically defined and constantly monitored."
+    sourceCitation: "Regulation (EU) 2017/745 Article 65(1)(d)-(g)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pediatric_risk_assessment
+      - pediatric_investigation_justification
+    applicability:
+      conditions:
+        - "Only applicable to clinical investigations involving minors"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 66 — Clinical investigations on pregnant or breastfeeding women
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.66.OBL.001"
+    kind: obligation
+    title: "Additional requirements for pregnant or breastfeeding women"
+    text: "A clinical investigation on pregnant or breastfeeding women shall be conducted only where, in addition to the conditions set out in Article 62(4), all of the following conditions are met: (a) the clinical investigation has the potential to produce a direct benefit for the pregnant or breastfeeding woman concerned, or her embryo, foetus or the child after birth, outweighing the risks and burdens involved; (b) where research is undertaken on breastfeeding women, particular care is taken to avoid any adverse impact on the health of the child; (c) no incentives or financial inducements are given to the subject except for compensation for expenses and loss of earnings directly related to participation in the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 66"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pregnancy_specific_risk_assessment
+      - direct_benefit_justification
+      - ethics_committee_opinion
+    applicability:
+      conditions:
+        - "Only applicable to clinical investigations involving pregnant or breastfeeding women"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 67 — Additional national measures
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.67.OBL.001"
+    kind: obligation
+    title: "Member States may maintain additional national requirements"
+    text: "Member States may maintain additional measures regarding the aspects covered in Articles 64 and 65 in accordance with Union law. Member States that avail themselves of this provision shall notify the Commission of such additional measures and the reasons for introducing them."
+    sourceCitation: "Regulation (EU) 2017/745 Article 67"
+    mandatory: false
+    requiredEvidenceTypes:
+      - national_requirement_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 68 — Applications for clinical investigations
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.68.OBL.001"
+    kind: obligation
+    title: "Submit clinical investigation application to Member State"
+    text: "The sponsor of a clinical investigation shall submit an application to the Member State(s) in which the clinical investigation is to be conducted, accompanied by the documentation referred to in Annex XV. The sponsor shall submit the application by means of the electronic system referred to in Article 73."
+    sourceCitation: "Regulation (EU) 2017/745 Article 68(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_application
+      - investigational_device_dossier
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.68.OBL.002"
+    kind: obligation
+    title: "Application documentation requirements"
+    text: "The application for a clinical investigation shall be accompanied by the documentation set out in Chapter II of Annex XV, including the clinical investigation plan, the investigator's brochure, proof of insurance or indemnification, the instruments to be used to obtain informed consent, a description of arrangements for subject recruitment, and proof that the manufacturer of the investigational device complies with Annex XV Chapter I."
+    sourceCitation: "Regulation (EU) 2017/745 Article 68(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+      - investigator_brochure
+      - insurance_certificate
+      - informed_consent_form
+      - subject_recruitment_plan
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.68.OBL.003"
+    kind: obligation
+    title: "Validation of clinical investigation application"
+    text: "Within 10 days of receiving the application, the Member State concerned shall notify the sponsor as to whether the clinical investigation falls within the scope of this Regulation and whether the application is complete. Where the Member State has not notified the sponsor within those 10 days, the clinical investigation shall be deemed to fall within the scope of this Regulation and the application shall be deemed complete."
+    sourceCitation: "Regulation (EU) 2017/745 Article 68(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - application_validation_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 69 — Assessment by Member States
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.69.OBL.001"
+    kind: obligation
+    title: "Member State assessment within 45 days"
+    text: "The Member State concerned shall assess whether the clinical investigation complies with the requirements of this Regulation and shall within 45 days of the validation notify the sponsor of its decision whether or not it authorises the clinical investigation. The Member State may extend the 45-day period by a further 20 days for the purpose of consulting with experts."
+    sourceCitation: "Regulation (EU) 2017/745 Article 69(1)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - member_state_authorisation
+      - clinical_investigation_assessment_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.69.OBL.002"
+    kind: obligation
+    title: "Ethics committee favourable opinion required"
+    text: "The Member State concerned shall refuse to authorise the clinical investigation if the ethics committee has issued a negative opinion in relation to the clinical investigation which is valid, in accordance with national law, for the entire Member State concerned."
+    sourceCitation: "Regulation (EU) 2017/745 Article 69(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ethics_committee_opinion
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.69.OBL.003"
+    kind: obligation
+    title: "Tacit authorisation if no response"
+    text: "If the Member State concerned has not notified the sponsor of its authorisation or refusal within the time period referred to in paragraph 1, the clinical investigation shall be deemed to have been authorised."
+    sourceCitation: "Regulation (EU) 2017/745 Article 69(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - authorisation_timeline_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 70 — Conduct of a clinical investigation
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.70.OBL.001"
+    kind: obligation
+    title: "Sponsor responsibility for conduct of clinical investigation"
+    text: "The sponsor and the investigator shall ensure that the clinical investigation is conducted in accordance with the approved clinical investigation plan. The sponsor shall take all necessary measures to ensure that the conduct of a clinical investigation is in compliance with the clinical investigation plan."
+    sourceCitation: "Regulation (EU) 2017/745 Article 70(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+      - monitoring_reports
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.70.OBL.002"
+    kind: obligation
+    title: "Monitor and ensure data quality"
+    text: "The sponsor shall implement appropriate quality management systems and adequate monitoring strategies for clinical investigations. The extent and nature of monitoring shall be determined by the sponsor on the basis of an assessment that takes into account all characteristics of the clinical investigation including the objective, methodology, complexity, and relevant safety aspects."
+    sourceCitation: "Regulation (EU) 2017/745 Article 70(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - monitoring_plan
+      - monitoring_reports
+      - quality_management_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.70.OBL.003"
+    kind: obligation
+    title: "Record keeping for clinical investigations"
+    text: "The sponsor shall keep adequate and accurate records including the general file of the clinical investigation, the site files, and the source documents. Records shall be maintained and preserved as set out in Annex XV Chapter III and shall be available for inspection by competent authorities."
+    sourceCitation: "Regulation (EU) 2017/745 Article 70(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_master_file
+      - site_files
+      - source_documents
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 71 — Electronic system on clinical investigations
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.71.OBL.001"
+    kind: obligation
+    title: "EUDAMED electronic system for clinical investigations"
+    text: "The Commission shall, in collaboration with the Member States, set up and manage an electronic system on clinical investigations, which shall serve as a single entry point for the submission of data and information regarding clinical investigations in accordance with the relevant provisions of this Regulation. The electronic system shall include information on applications, authorisations, substantial modifications, serious adverse events, device deficiencies, and clinical investigation reports."
+    sourceCitation: "Regulation (EU) 2017/745 Article 71(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_submission_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.71.OBL.002"
+    kind: obligation
+    title: "Registration of clinical investigations in EUDAMED"
+    text: "The sponsor of a clinical investigation shall register the clinical investigation in the electronic system referred to in paragraph 1 and shall ensure that key elements of the clinical investigation are publicly accessible through the electronic system, unless confidentiality of subject data or commercially confidential information is at risk."
+    sourceCitation: "Regulation (EU) 2017/745 Article 71(2)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - public_disclosure_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 72 — Coordinated assessment procedure for multi-center
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.72.OBL.001"
+    kind: obligation
+    title: "Coordinated assessment for multi-national clinical investigations"
+    text: "By means of the electronic system referred to in Article 71, the sponsor of a clinical investigation to be conducted in more than one Member State shall submit, together with the application referred to in Article 68, a request for the coordinating Member State to be identified. The Member States concerned shall agree on one of them being the coordinating Member State within 6 days of the application."
+    sourceCitation: "Regulation (EU) 2017/745 Article 72(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - coordinated_assessment_request
+      - coordinating_member_state_designation
+    applicability:
+      conditions:
+        - "Only applicable to multi-national clinical investigations conducted in more than one Member State"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.72.OBL.002"
+    kind: obligation
+    title: "Common assessment report"
+    text: "The coordinating Member State shall prepare a draft assessment report and transmit it to the other Member States concerned within 26 days of the validation date. The other Member States concerned may submit comments within 12 days of receipt of the draft report. Due account shall be taken of such comments by the coordinating Member State in the final assessment report."
+    sourceCitation: "Regulation (EU) 2017/745 Article 72(3)-(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - coordinated_assessment_report
+      - member_state_comments
+    applicability:
+      conditions:
+        - "Only applicable to multi-national clinical investigations conducted in more than one Member State"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 73 — Substantial modifications to clinical investigations
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.73.OBL.001"
+    kind: obligation
+    title: "Notify substantial modifications"
+    text: "If the sponsor intends to introduce substantial modifications to a clinical investigation, the sponsor shall notify the Member State(s) in which the clinical investigation is being or is to be conducted of the reasons for and the nature of such substantial modifications. The notification shall be made by means of the electronic system referred to in Article 71."
+    sourceCitation: "Regulation (EU) 2017/745 Article 73(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - substantial_modification_notification
+      - modification_justification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.73.OBL.002"
+    kind: obligation
+    title: "Member State assessment of substantial modifications"
+    text: "The Member State shall assess any substantial modification to a clinical investigation and shall notify the sponsor of its decision regarding the modification within 38 days of submission. An absence of notification shall be regarded as approval."
+    sourceCitation: "Regulation (EU) 2017/745 Article 73(2)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - modification_assessment_record
+      - modification_authorisation
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 74 — Corrective measures by Member States
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.74.OBL.001"
+    kind: obligation
+    title: "Member State corrective measures for unacceptable risk"
+    text: "Where a Member State has grounds for considering that the requirements of this Regulation are not met, it may take corrective measures on its territory. The Member State shall immediately inform the sponsor of those corrective measures. Where a Member State suspends or terminates a clinical investigation, that Member State shall immediately inform the other Member States and the Commission through the electronic system referred to in Article 71."
+    sourceCitation: "Regulation (EU) 2017/745 Article 74(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - corrective_measure_notification
+      - corrective_measure_justification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.74.OBL.002"
+    kind: obligation
+    title: "Sponsor response to corrective measures"
+    text: "Before taking any corrective measure, the Member State concerned shall, except where immediate action is required, ask the sponsor and/or the investigator for their opinion, to be delivered within 7 days. Where the Member State takes interim protective measures, it shall communicate such measures to the other Member States concerned and to the Commission."
+    sourceCitation: "Regulation (EU) 2017/745 Article 74(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sponsor_response_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 75 — Recording and reporting of adverse events
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.75.OBL.001"
+    kind: obligation
+    title: "Record and report all adverse events"
+    text: "The investigator shall record and document all adverse events as defined in the clinical investigation plan. The investigator shall report all serious adverse events to the sponsor, including an assessment of whether the serious adverse event is related to the device under investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 75(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - adverse_event_record
+      - serious_adverse_event_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.75.OBL.002"
+    kind: obligation
+    title: "Sponsor reporting of serious adverse events to Member States"
+    text: "The sponsor shall report all serious adverse events that have a causal relationship with the investigational device, the comparator or the investigation procedure, or where such a causal relationship is reasonably possible, to the Member States in which the clinical investigation is being conducted, without delay and not later than specified timelines. The sponsor shall also report any device deficiency that might have led to a serious adverse event."
+    sourceCitation: "Regulation (EU) 2017/745 Article 75(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - serious_adverse_event_report
+      - device_deficiency_report
+      - member_state_notification_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.75.OBL.003"
+    kind: obligation
+    title: "SUSAR reporting timelines"
+    text: "The sponsor shall report any event referred to in paragraph 2 without delay and not later than: (a) 7 days after the sponsor has become aware of death or life-threatening serious adverse events; (b) 15 days after the sponsor has become aware of other serious adverse events. The report shall be followed up within appropriate timelines with subsequent reports."
+    sourceCitation: "Regulation (EU) 2017/745 Article 75(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - susar_report
+      - reporting_timeline_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.75.OBL.004"
+    kind: obligation
+    title: "Annual safety reporting"
+    text: "The sponsor shall also report to the Member States concerned, at least annually, a listing of all serious adverse events and any device deficiencies and an overall assessment of the benefit-risk balance of the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 75(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - annual_safety_report
+      - benefit_risk_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 76 — Clinical investigation reports
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.76.OBL.001"
+    kind: obligation
+    title: "Submit clinical investigation report"
+    text: "The sponsor shall submit a clinical investigation report, referred to in Chapter III of Annex XV, within one year of the end of the clinical investigation or within three months of the early termination or temporary halt of the investigation. The clinical investigation report shall be accompanied by a summary presented in terms easily understandable to the intended user."
+    sourceCitation: "Regulation (EU) 2017/745 Article 76(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_report
+      - lay_summary
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.76.OBL.002"
+    kind: obligation
+    title: "Clinical investigation report content"
+    text: "Where, for scientific reasons, it is not possible to submit the clinical investigation report within one year, it shall be submitted as soon as it is available. In such a case, the clinical investigation plan shall specify when the results of the clinical investigation will be available, together with an explanation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 76(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_report
+      - delayed_report_justification
+    applicability:
+      conditions:
+        - "Applicable when clinical investigation report cannot be submitted within one year"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 77 — End of clinical investigation and temporary halt
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.77.OBL.001"
+    kind: obligation
+    title: "Notify end of clinical investigation"
+    text: "The sponsor shall notify each Member State in which a clinical investigation is being conducted of the end of that clinical investigation in that Member State and provide the reasons in the event of an early termination. That notification shall be made within 15 days of the end of the clinical investigation with regard to that Member State."
+    sourceCitation: "Regulation (EU) 2017/745 Article 77(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - end_of_investigation_notification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.77.OBL.002"
+    kind: obligation
+    title: "Notify temporary halt of clinical investigation"
+    text: "The sponsor shall notify each Member State in which a clinical investigation is being conducted of the temporary halt of the clinical investigation with regard to that Member State or with regard to all Member States concerned and shall provide the reasons within 15 days. Where the sponsor temporarily halts a clinical investigation for safety reasons, it shall inform the Member States concerned within 24 hours."
+    sourceCitation: "Regulation (EU) 2017/745 Article 77(2)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - temporary_halt_notification
+      - halt_justification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 78 — Coordinating role of Commission
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.78.OBL.001"
+    kind: obligation
+    title: "Commission coordination for multi-national issues"
+    text: "Where a Member State has refused, suspended, or terminated a clinical investigation, or has requested a substantial modification or temporary halt of a clinical investigation, or has been notified by the sponsor of an early termination on safety grounds, that Member State shall communicate its decision and the grounds therefor to all Member States and to the Commission through the electronic system referred to in Article 71."
+    sourceCitation: "Regulation (EU) 2017/745 Article 78"
+    mandatory: true
+    requiredEvidenceTypes:
+      - member_state_decision_record
+      - commission_notification_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 79 — Implementing acts regarding clinical investigations
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.79.OBL.001"
+    kind: obligation
+    title: "Commission implementing acts for clinical investigation procedures"
+    text: "The Commission may, by means of implementing acts, establish the detailed arrangements and procedural aspects necessary for the implementation of this Chapter, including: (a) harmonised electronic application forms for clinical investigations; (b) the functioning of the electronic system referred to in Article 71; (c) harmonised electronic forms for the reporting of serious adverse events and device deficiencies."
+    sourceCitation: "Regulation (EU) 2017/745 Article 79"
+    mandatory: false
+    requiredEvidenceTypes:
+      - implementing_act_reference
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 80 — Other clinical investigations
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.80.OBL.001"
+    kind: obligation
+    title: "Requirements for other clinical investigations (PMCF)"
+    text: "Clinical investigations for devices bearing the CE marking that are undertaken for a purpose other than that referred to in Article 62(1) (including PMCF investigations) shall comply with Articles 62(2), (3), and (4)(b)-(k), and Articles 63 to 65, 67, 69, 71, 75, 76 and 77. Post-market clinical follow-up studies under Section 2 of Part B of Annex XIV shall comply with the applicable provisions of this Chapter."
+    sourceCitation: "Regulation (EU) 2017/745 Article 80(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pmcf_investigation_plan
+      - pmcf_report
+      - ce_marking_record
+    applicability:
+      conditions:
+        - "Applicable to clinical investigations of CE-marked devices for purposes other than conformity assessment"
+        - "Applicable to PMCF investigations"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.80.OBL.002"
+    kind: obligation
+    title: "Notification of other clinical investigations"
+    text: "The sponsor shall notify the Member State concerned of other clinical investigations by means of the electronic system referred to in Article 71 at least 30 days prior to the start. The documentation to be submitted shall include the clinical investigation plan, proof of insurance, ethics committee approval, and evidence of CE marking."
+    sourceCitation: "Regulation (EU) 2017/745 Article 80(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_notification
+      - clinical_investigation_plan
+      - insurance_certificate
+      - ethics_committee_opinion
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 81 — Investigations of companion diagnostics
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.81.OBL.001"
+    kind: obligation
+    title: "Companion diagnostic co-development requirements"
+    text: "Where a device is intended to be used as a companion diagnostic, the clinical investigation for that device shall be co-developed and, where feasible, conducted in conjunction with the development and assessment of the medicinal product for which the companion diagnostic is intended. The sponsor of the clinical investigation shall coordinate with the relevant medicinal product regulatory processes."
+    sourceCitation: "Regulation (EU) 2017/745 Article 81"
+    mandatory: true
+    requiredEvidenceTypes:
+      - companion_diagnostic_development_plan
+      - medicinal_product_coordination_record
+    applicability:
+      conditions:
+        - "Only applicable to devices intended as companion diagnostics"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 82 — Requirements for other clinical investigations
+  # ──────────────────────────────────────────────────────────────────────
+
+  - obligationId: "EUMDR.82.OBL.001"
+    kind: obligation
+    title: "Ongoing safety monitoring for other clinical investigations"
+    text: "For clinical investigations other than those referred to in Article 62(1), the sponsor shall ensure ongoing safety monitoring and shall report any serious adverse events or device deficiencies in accordance with Article 75. The sponsor shall take all necessary corrective measures to protect the safety of subjects."
+    sourceCitation: "Regulation (EU) 2017/745 Article 82(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - safety_monitoring_records
+      - serious_adverse_event_report
+      - corrective_action_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.82.OBL.002"
+    kind: obligation
+    title: "Compliance with general safety obligations for non-conformity investigations"
+    text: "The sponsor of a clinical investigation not falling within the scope of Article 62(1) shall ensure that the investigation complies with the general safety and performance requirements set out in Annex I, the provisions on informed consent in Article 63, and the provisions on vulnerable populations in Articles 64 to 66, as applicable."
+    sourceCitation: "Regulation (EU) 2017/745 Article 82(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - gspr_compliance_record
+      - informed_consent_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+# ════════════════════════════════════════════════════════════════════════
+# Constraints
+# ════════════════════════════════════════════════════════════════════════
+
+constraints:
+  - constraintId: "EUMDR.62.CON.001"
+    appliesTo: "EUMDR.62.OBL.002"
+    text: "The rights, safety, dignity and well-being of subjects shall prevail over all other interests, including commercial and scientific interests. No investigational procedure may be performed on a subject without proper risk-benefit justification."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.63.CON.001"
+    appliesTo: "EUMDR.63.OBL.001"
+    text: "Informed consent must be freely given. No undue influence, coercion or financial inducements, beyond compensation for expenses and loss of earnings, may be used to obtain consent."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.63.CON.002"
+    appliesTo: "EUMDR.63.OBL.005"
+    text: "Emergency consent procedures may only be used when: (a) no prior informed consent possible due to urgency; (b) no known prior objection; (c) research relates directly to the emergency condition; (d) minimal risk and burden. Informed consent must be sought as soon as possible after enrolment."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.64.CON.001"
+    appliesTo: "EUMDR.64.OBL.002"
+    text: "Clinical investigations on incapacitated subjects are only permitted when data of comparable validity cannot be obtained from investigations on persons able to give informed consent. The investigation must relate directly to a condition from which the subject suffers."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.65.CON.001"
+    appliesTo: "EUMDR.65.OBL.002"
+    text: "Clinical investigations on minors may only be carried out where it is essential with respect to minors and data of comparable validity cannot be obtained from investigations on adults. The investigation must either relate directly to a clinical condition from which the minor suffers or can only be carried out on minors."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.68.CON.001"
+    appliesTo: "EUMDR.68.OBL.003"
+    text: "The 10-day validation period is a hard deadline. If the Member State does not notify the sponsor within 10 days, the application is deemed validated by operation of law."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.69.CON.001"
+    appliesTo: "EUMDR.69.OBL.001"
+    text: "The 45-day assessment period starts from validated application date. Extension to 65 days (45+20) is only permitted for expert consultation. After this period, tacit authorisation applies."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.75.CON.001"
+    appliesTo: "EUMDR.75.OBL.003"
+    text: "Fatal or life-threatening serious adverse events must be reported within 7 days of sponsor awareness. All other serious adverse events must be reported within 15 days. These are maximum deadlines; reporting 'without delay' is the primary obligation."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.76.CON.001"
+    appliesTo: "EUMDR.76.OBL.001"
+    text: "The clinical investigation report must be submitted within 1 year of the end of the investigation or within 3 months of early termination or temporary halt. These deadlines are regulatory requirements and not discretionary."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.77.CON.001"
+    appliesTo: "EUMDR.77.OBL.002"
+    text: "Temporary halt for safety reasons requires notification to Member States within 24 hours. All other temporary halts require notification within 15 days."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+# ════════════════════════════════════════════════════════════════════════
+# Definitions
+# ════════════════════════════════════════════════════════════════════════
+
+definitions:
+  - definitionId: "EUMDR.DEF.CLINICAL_INVESTIGATION_CH7"
+    term: "Clinical Investigation"
+    text: "Any systematic investigation involving one or more human subjects, undertaken to assess the safety or performance of a device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(45)"
+
+  - definitionId: "EUMDR.DEF.SPONSOR_CH7"
+    term: "Sponsor"
+    text: "Any individual, company, institution or organisation which takes responsibility for the initiation, for the management and setting up of the financing of the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(49)"
+
+  - definitionId: "EUMDR.DEF.INVESTIGATOR"
+    term: "Investigator"
+    text: "An individual responsible for the conduct of a clinical investigation at a clinical investigation site."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(50)"
+
+  - definitionId: "EUMDR.DEF.INFORMED_CONSENT"
+    term: "Informed Consent"
+    text: "A subject's free and voluntary expression of his or her willingness to participate in a particular clinical investigation, after having been informed of all aspects of the clinical investigation that are relevant to the subject's decision to participate or, in the case of minors and of incapacitated subjects, an authorisation or agreement from their legally designated representative."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(47)"
+
+  - definitionId: "EUMDR.DEF.SERIOUS_ADVERSE_EVENT"
+    term: "Serious Adverse Event"
+    text: "Any adverse event that led to any of the following: (a) death; (b) serious deterioration in the health of the subject, that resulted in a life-threatening illness or injury, a permanent impairment of a body structure or a body function, hospitalisation or prolongation of patient hospitalisation, medical or surgical intervention to prevent a life-threatening illness or injury or a permanent impairment."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(58)"
+
+  - definitionId: "EUMDR.DEF.SUBSTANTIAL_MODIFICATION"
+    term: "Substantial Modification"
+    text: "Any change to any aspect of the clinical investigation which is made after notification by the Member State(s) of its/their decision and which is likely to have a substantial impact on the safety or rights of the subjects or on the robustness or reliability of the clinical data generated by the investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(61)"
+
+  - definitionId: "EUMDR.DEF.DEVICE_DEFICIENCY"
+    term: "Device Deficiency"
+    text: "Any inadequacy of a device with respect to its identity, quality, durability, reliability, safety or performance, or of the information supplied by the manufacturer, including inadequacies in the instructions for use."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(59)"
+
+# ════════════════════════════════════════════════════════════════════════
+# Relationships (cross-references)
+# ════════════════════════════════════════════════════════════════════════
+
+relationships:
+  # Article 62 → Article 61 (clinical evaluation)
+  - from: "EUMDR.62.OBL.001"
+    to: "EUMDR.61.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Clinical investigations confirm conformity established by clinical evaluation"
+
+  - from: "EUMDR.62.OBL.005"
+    to: "EUMDR.61.OBL.004"
+    type: CROSS_REFERENCES
+    props:
+      note: "Pre-clinical evidence requirement links to class III / implantable clinical investigation requirement"
+
+  # Article 63 → Article 62
+  - from: "EUMDR.63.OBL.001"
+    to: "EUMDR.62.OBL.007"
+    type: SATISFIES
+    props:
+      note: "Informed consent procedure satisfies the general requirement for informed consent in clinical investigations"
+
+  # Article 64 → Article 63
+  - from: "EUMDR.64.OBL.001"
+    to: "EUMDR.63.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Incapacitated subject safeguards extend the general informed consent requirements"
+
+  # Article 65 → Article 63
+  - from: "EUMDR.65.OBL.001"
+    to: "EUMDR.63.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Minor subject safeguards extend the general informed consent requirements"
+
+  # Article 66 → Article 62
+  - from: "EUMDR.66.OBL.001"
+    to: "EUMDR.62.OBL.006"
+    type: CROSS_REFERENCES
+    props:
+      note: "Pregnant/breastfeeding women requirements extend risk-benefit obligations"
+
+  # Article 68 → Article 62
+  - from: "EUMDR.68.OBL.001"
+    to: "EUMDR.62.OBL.001"
+    type: DEPENDS_ON
+    props:
+      note: "Application submission depends on complying with general clinical investigation requirements"
+
+  # Article 68 → Annex XV
+  - from: "EUMDR.68.OBL.002"
+    to: "EUMDR.XV.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Application documentation references Annex XV requirements"
+
+  # Article 69 → Article 68
+  - from: "EUMDR.69.OBL.001"
+    to: "EUMDR.68.OBL.003"
+    type: DEPENDS_ON
+    props:
+      note: "Assessment period begins after validation of application"
+
+  # Article 70 → Annex XV
+  - from: "EUMDR.70.OBL.003"
+    to: "EUMDR.XV.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Record keeping requirements reference Annex XV clinical investigation plan requirements"
+
+  # Article 71 → Article 68
+  - from: "EUMDR.71.OBL.001"
+    to: "EUMDR.68.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "EUDAMED electronic system is the submission channel for clinical investigation applications"
+
+  # Article 72 → Article 69
+  - from: "EUMDR.72.OBL.002"
+    to: "EUMDR.69.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Coordinated assessment aligns with single-Member-State assessment procedures"
+
+  # Article 73 → Article 71
+  - from: "EUMDR.73.OBL.001"
+    to: "EUMDR.71.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Substantial modification notifications use the EUDAMED electronic system"
+
+  # Article 75 → vigilance
+  - from: "EUMDR.75.OBL.002"
+    to: "EUMDR.87.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Adverse event reporting in clinical investigations aligns with post-market vigilance serious incident reporting"
+
+  # Article 76 → Annex XV
+  - from: "EUMDR.76.OBL.001"
+    to: "EUMDR.XV.OBL.004"
+    type: CROSS_REFERENCES
+    props:
+      note: "Clinical investigation report requirements reference Annex XV Chapter III"
+
+  # Article 76 → clinical evaluation
+  - from: "EUMDR.76.OBL.001"
+    to: "EUMDR.XIV.A.OBL.003"
+    type: SATISFIES
+    props:
+      note: "Clinical investigation report provides data for the clinical evaluation report"
+
+  # Article 77 → Article 71
+  - from: "EUMDR.77.OBL.001"
+    to: "EUMDR.71.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "End-of-investigation notifications go through the EUDAMED electronic system"
+
+  # Article 78 → Article 74
+  - from: "EUMDR.78.OBL.001"
+    to: "EUMDR.74.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Commission coordination follows Member State corrective measures"
+
+  # Article 80 → Article 62
+  - from: "EUMDR.80.OBL.001"
+    to: "EUMDR.62.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Other clinical investigations reference general requirements but apply a subset"
+
+  # Article 80 → PMCF (Annex XIV Part B)
+  - from: "EUMDR.80.OBL.001"
+    to: "EUMDR.XIV.B.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PMCF investigations are a key category of other clinical investigations under Article 80"
+
+  # Article 82 → Annex I GSPRs
+  - from: "EUMDR.82.OBL.002"
+    to: "EUMDR.62.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Other clinical investigations must still comply with subject protection requirements"

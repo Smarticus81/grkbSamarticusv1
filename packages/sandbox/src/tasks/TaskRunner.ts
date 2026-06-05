@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TaskRunner — executes a task agent in either lane (with-graph or
  * without-graph), streams the run as a TaskEvent vocabulary, and emits a
  * deterministic scorecard per lane.
@@ -50,10 +50,11 @@ export interface RunOptions {
   mode: 'with-graph' | 'without-graph' | 'compare';
   stream?: TaskEventStream;
   paceMs?: number;
-  /** Optional LLM abstraction. When present (and the agent declares a
-   *  systemPrompt), the with-graph lane prefers LLM-driven JSON generation
-   *  grounded on the loaded obligations, and falls back to the agent's
-   *  deterministic runWithGraph if the LLM call fails. */
+  /** Optional LLM abstraction. When present, every agent that declares a
+   *  systemPrompt runs LLM-driven (grounded on the loaded obligations). There
+   *  is no deterministic fallback for those agents: if the model cannot
+   *  produce schema-valid output the run fails honestly. Agents WITHOUT a
+   *  systemPrompt are deterministic-by-design (e.g. structural audits). */
   llm?: LLMAbstraction;
   /** Optional per-run agent persona/context (system prompt addendum). */
   agentContext?: string;
@@ -183,31 +184,27 @@ export class TaskRunner {
     try {
       if (lane === 'with-graph') {
         const ctx: import('./types.js').WithGraphContext = { obligations: fetched, llm, agentContext };
-        // Prefer LLM-driven generation when an LLM is available AND the agent
-        // declares a persona. Fall back to the deterministic body on any
-        // failure (LLM error, JSON parse error, schema violation).
-        if (llm && def.systemPrompt) {
+        if (def.systemPrompt) {
+          // Reasoning agents are LLM-driven by contract. There is NO
+          // deterministic fallback — the platform's value is the model's
+          // natural-language analysis and reasoning trace. If the model
+          // cannot produce schema-valid output, surface an honest error
+          // instead of a templated placeholder.
+          if (!llm) {
+            throw new Error(
+              'This agent is LLM-driven and requires a configured model provider, but none is available. Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or GOOGLE_API_KEY.',
+            );
+          }
           emit({
             type: 'agent.thinking',
             lane,
             atIso: nowIso(),
-            message: 'Using LLM-driven generation grounded on the obligation set.',
+            message: 'Reasoning over the case against the grounded obligation set (LLM-driven).',
           });
           await pace();
-          try {
-            output = await generateViaLLM(def, input, fetched, llm, def.systemPrompt, agentContext);
-          } catch (llmErr) {
-            const msg = llmErr instanceof Error ? llmErr.message : String(llmErr);
-            emit({
-              type: 'agent.thinking',
-              lane,
-              atIso: nowIso(),
-              message: `LLM path failed (${msg}). Falling back to deterministic body.`,
-            });
-            await pace();
-            output = await def.runWithGraph(input, ctx);
-          }
+          output = await generateViaLLM(def, input, fetched, llm, def.systemPrompt, agentContext);
         } else {
+          // Deterministic-by-design agents (e.g. structural document audits).
           output = await def.runWithGraph(input, ctx);
         }
       } else {
@@ -241,12 +238,31 @@ export class TaskRunner {
         }
         let ok = false;
         try { ok = check.satisfiedBy(output, ob); } catch { ok = false; }
+        // The decision-trail "why" is the agent's actual reasoning for this
+        // obligation (LLM-generated when the agent runs through the LLM path),
+        // falling back to the obligation title only when no reasoning exists.
+        let reasoning: string | undefined;
+        if (output != null && def.explainObligation) {
+          try { reasoning = def.explainObligation(output, ob); } catch { reasoning = undefined; }
+        }
         if (ok) {
           satisfiedIds.push(check.obligationId);
-          emit({ type: 'obligation.satisfied', lane, atIso: nowIso(), obligationId: check.obligationId, reason: ob.title ?? ob.sourceCitation });
+          emit({
+            type: 'obligation.satisfied',
+            lane,
+            atIso: nowIso(),
+            obligationId: check.obligationId,
+            reason: reasoning ?? ob.title ?? ob.sourceCitation,
+          });
         } else {
           unsatisfiedIds.push(check.obligationId);
-          emit({ type: 'obligation.missed', lane, atIso: nowIso(), obligationId: check.obligationId, reason: 'Output did not satisfy obligation check.' });
+          emit({
+            type: 'obligation.missed',
+            lane,
+            atIso: nowIso(),
+            obligationId: check.obligationId,
+            reason: reasoning ?? 'Output did not satisfy obligation check.',
+          });
         }
         await pace();
       }
@@ -263,12 +279,17 @@ export class TaskRunner {
       citations,
     });
 
+    let gateReason: string | undefined;
+    if (output != null && def.explainGate) {
+      try { gateReason = def.explainGate(output); } catch { gateReason = undefined; }
+    }
     emit({
       type: 'output.gated',
       lane,
       atIso: nowIso(),
       passed: score.strictGatePass,
       violations: score.violations,
+      reason: gateReason,
     });
     await pace();
 
@@ -360,7 +381,14 @@ async function generateViaLLM<TInput, TOutput>(
     systemPrompt.trim(),
     agentContext ? `\n## Agent Context\n${agentContext.trim()}` : '',
     `\n## Grounded Obligations (the ONLY citations you may use)\n${citationsBlock}`,
-    `\n## Rules\n- Return a single JSON object that exactly matches the output schema.\n- The "citations" array MUST be a subset of the listed source citations \u2014 do not invent.\n- The "addressedObligations" array MUST be a subset of: ${allowedObligationIds.join(', ') || '(none)'}.\n- Be specific, regulatorily precise, and avoid fluff.`,
+    [
+      '\n## How to answer',
+      '- Do the actual work. Analyse the SPECIFIC facts in the Input and reach concrete, substantive conclusions \u2014 the real technical/clinical finding for THIS case. Do NOT restate the input or merely describe the process.',
+      '- Where the evidence supports an inference, make it and explain the mechanism plainly. Do not retreat to "insufficient evidence" when the Input contains a clear signal.',
+      '- Ground every regulatory claim in the supplied obligations. The "citations" array MUST be a subset of the listed source citations \u2014 never invent one.',
+      `- The "addressedObligations" array MUST be a subset of: ${allowedObligationIds.join(', ') || '(none)'}.`,
+      '- Be specific and regulatorily precise. No filler, no boilerplate, no placeholders.',
+    ].join('\n'),
   ]
     .filter(Boolean)
     .join('\n');
@@ -380,7 +408,7 @@ async function generateViaLLM<TInput, TOutput>(
         { role: 'user', content: user },
       ],
       temperature: 0.2,
-      maxTokens: 2000,
+      maxTokens: 4096,
     },
     def.outputSchema,
     { structuredOutput: true, minContextTokens: obligations.length > 6 ? 32000 : undefined },

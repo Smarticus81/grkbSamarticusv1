@@ -30,8 +30,8 @@ export const AgentContextSchema = z.object({
 export type AgentContext = z.infer<typeof AgentContextSchema>;
 
 export interface SynthesizeInput {
-  jobTitle: string;
-  jobId: string;
+  processTitle: string;
+  processId: string;
   taskId?: string | null;
   regulations: string[];
   description?: string | null;
@@ -90,10 +90,10 @@ const ROLE_PRACTICES: Record<string, string[]> = {
   ],
 };
 
-function rolePracticeKey(jobId: string, jobTitle: string): string {
-  const key = jobId.toLowerCase();
+function rolePracticeKey(processId: string, processTitle: string): string {
+  const key = processId.toLowerCase();
   if (ROLE_PRACTICES[key]) return key;
-  const t = jobTitle.toLowerCase();
+  const t = processTitle.toLowerCase();
   if (t.includes('quality engineer')) return 'quality-engineer';
   if (t.includes('quality manager') || t.includes('qa manager')) return 'quality-manager';
   if (t.includes('regulatory')) return 'regulatory-affairs';
@@ -104,11 +104,11 @@ function rolePracticeKey(jobId: string, jobTitle: string): string {
 }
 
 function deterministicContext(input: SynthesizeInput): SynthesizedAgentContext {
-  const practiceKey = rolePracticeKey(input.jobId, input.jobTitle);
+  const practiceKey = rolePracticeKey(input.processId, input.processTitle);
   const practices = ROLE_PRACTICES[practiceKey] ?? ROLE_PRACTICES['quality-engineer']!;
   const regs = input.regulations.length ? input.regulations : ['ISO 13485', '21 CFR 820'];
   const sys = [
-    `You are a ${input.jobTitle} for a medical device manufacturer.`,
+    `You are a ${input.processTitle} for a medical device manufacturer.`,
     `Operate under the following regulations: ${regs.join(', ')}.`,
     `Risk posture: ${input.riskBand}.`,
     input.description ? `User intent for this agent: ${input.description.trim()}` : '',
@@ -123,7 +123,7 @@ function deterministicContext(input: SynthesizeInput): SynthesizedAgentContext {
 
   return {
     systemPrompt: sys,
-    personaSummary: `${input.jobTitle} grounded on ${regs.join(', ')}.`,
+    personaSummary: `${input.processTitle} grounded on ${regs.join(', ')}.`,
     regulatoryFocus: regs,
     practicesIncorporated: practices,
     generatedAt: new Date().toISOString(),
@@ -138,14 +138,14 @@ export async function synthesizeAgentContext(
   const llm = getLLM();
   if (!llm) return deterministicContext(input);
 
-  const practiceKey = rolePracticeKey(input.jobId, input.jobTitle);
+  const practiceKey = rolePracticeKey(input.processId, input.processTitle);
   const starterPractices = ROLE_PRACTICES[practiceKey] ?? [];
 
   const system = `You generate concise, regulatorily-precise system prompts for QMS AI agents. Return ONLY JSON matching the supplied schema. Do not invent regulations or clause numbers; only use those provided by the user. Keep systemPrompt under 2000 characters and grounded in the user-selected regulations.`;
 
   const user = [
-    `Job title: ${input.jobTitle}`,
-    `Job key: ${input.jobId}`,
+    `process title: ${input.processTitle}`,
+    `process key: ${input.processId}`,
     `Risk band: ${input.riskBand}`,
     `Selected regulations: ${input.regulations.join(', ') || '(none)'}`,
     `User description: ${input.description?.trim() || '(not provided)'}`,

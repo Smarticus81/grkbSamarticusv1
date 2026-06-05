@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Complaint Coder — classifies an inbound complaint per IMDRF AET annexes
  * (A medical-device problem, B cause-investigation, C clinical-signs,
  * E health-effect-impact, F event-investigation outcome) and tags it
@@ -37,6 +37,24 @@ const OutputSchema = z.object({
 
 type Input = z.infer<typeof InputSchema>;
 type Output = z.infer<typeof OutputSchema>;
+
+const SYSTEM_PROMPT = `You are a medical-device complaint coder on a QMS vigilance team.
+Given an inbound complaint, you must:
+1. Decide whether the complaint is reportable to regulators (the "reportable" boolean).
+2. Code it against the IMDRF Adverse Event Terminology (AET) annexes, using real codes
+   with their term text:
+   - annexA_problem            (medical device problem, e.g. "A0501 — Adhesion failure")
+   - annexB_cause              (cause investigation)
+   - annexC_clinicalSign       (clinical signs / symptoms observed in the patient)
+   - annexE_healthImpact       (health impact / severity)
+   - annexF_investigationOutcome (current investigation outcome)
+3. Write "rationale": 2-3 sentences stating WHY you reached the reportability decision and
+   the key coding, explicitly naming the governing regulation. For example:
+   "The patient suffered a serious injury requiring hospitalization. Under EU MDR Article 87
+   this is a reportable serious incident, so the complaint is flagged reportable and coded
+   A0501 / C1502 pending investigation."
+Base every judgement on the actual complaint description and patient-harm level provided.
+Cite only the source citations supplied to you.`;
 
 const SAMPLE: Input = {
   complaintId: '',
@@ -107,6 +125,21 @@ export const ComplaintCoderTask: TaskAgentDefinition<Input, Output> = {
   inputSchema: InputSchema,
   outputSchema: OutputSchema,
   sampleData: SAMPLE,
+  systemPrompt: SYSTEM_PROMPT,
+  explainObligation: (output, ob) => {
+    const parsed = OutputSchema.safeParse(output);
+    if (!parsed.success) return undefined;
+    const { rationale, reportable, imdrfCoding } = parsed.data;
+    // IMDRF coding obligation → lead with the codes; others → the reportability rationale.
+    if (ob.obligationId.startsWith('IMDRF')) {
+      return `${rationale} Coded ${imdrfCoding.annexA_problem}; ${imdrfCoding.annexC_clinicalSign}.`;
+    }
+    return `${rationale}${reportable ? '' : ' Not reportable on the facts provided.'}`;
+  },
+  explainGate: (output) => {
+    const parsed = OutputSchema.safeParse(output);
+    return parsed.success ? parsed.data.rationale : undefined;
+  },
   obligationChecks: [
     {
       obligationId: 'IMDRF.AET.OBL.001',

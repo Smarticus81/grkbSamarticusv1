@@ -189,7 +189,7 @@ slos:
 
 # === ProcessTrigger nodes ===================================================
 # The events that legitimately start a process. The AgentOS Scheduler reads
-# these and wires event-bus subscriptions and cron jobs at boot. This is
+# these and wires event-bus subscriptions and cron processs at boot. This is
 # what makes the system responsive without hardcoded triggers in TS.
 triggers:
   - triggerId: "Trigger.AdverseEvent.Received"

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Task agent registry. Single source of truth for the sandbox catalog.
  *
  * Tasks are deliberately narrow — each does ONE piece of real QMS work
@@ -11,7 +11,10 @@ import type { TaskAgentDefinition } from './types.js';
 import { ComplaintCoderTask } from './agents/complaint-coder.js';
 import { AeReportabilityTask } from './agents/ae-reportability.js';
 import { TrendDeterminationTask } from './agents/trend-determination.js';
-import { TemplateComplianceEvaluatorTask } from './agents/template-compliance-evaluator.js';
+import {
+  TemplateComplianceEvaluatorTask,
+  PsurTemplateReviewerTask,
+} from './agents/template-compliance-evaluator.js';
 import {
   RootCauseInvestigatorTask,
   CapaPlanDrafterTask,
@@ -35,7 +38,8 @@ export const TASK_AGENTS: ReadonlyArray<TaskAgentDefinition<any, any>> = [
   // Surveillance + governance
   TrendDeterminationTask,
   AuditFindingDrafterTask,
-  // Meta
+  // PSUR (EU MDR Art. 86 / MDCG 2022-21)
+  PsurTemplateReviewerTask,
   TemplateComplianceEvaluatorTask,
 ];
 

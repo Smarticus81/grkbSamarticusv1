@@ -13,6 +13,7 @@
     "db:push": "pnpm --filter @regground/core db:push",
     "seed:graph": "pnpm --filter @regground/core seed:graph",
     "seed:all": "pnpm seed:graph",
+    "embed:graph": "pnpm --filter @regground/core embed:graph",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"**/*.{ts,tsx,json,md,yaml,yml}\"",
     "eval": "pnpm --filter @regground/evals eval",

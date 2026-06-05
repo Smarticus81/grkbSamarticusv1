@@ -1,16 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { Link } from 'wouter';
 import { useAuthenticatedApi } from '../auth/useApi.js';
 
-/**
- * ProcessDesigner — chat-driven, KB-grounded process composer.
- *
- * Three panes:
- *   1) Templates rail (collapsible)      — shipped boilerplate processes; click to expand and load.
- *   2) Chat composer                     — describe the process; agent emits a WorkflowDraft.
- *   3) Workflow canvas (pan/zoom/fit)    — operational nodes with automation lanes and grounded refs.
- */
-
-// ─── Types mirrored from packages/core/src/process/builder ────────────────
+// ─── Types ────────────────────────────────────────────────────────────────
 
 type WorkflowNodeKind =
   | 'start'
@@ -38,6 +30,7 @@ type WorkflowRefKind =
   | 'None';
 
 type AutomationKind = 'system' | 'agent' | 'human' | 'hybrid';
+type PortSide = 'top' | 'bottom' | 'left' | 'right';
 
 interface WorkflowGroundingRef {
   refId: string;
@@ -58,6 +51,14 @@ interface WorkflowNode {
   groundedRefs: WorkflowGroundingRef[];
   rationale: string;
   jurisdiction?: string;
+  /** Canvas layout — persisted in saved drafts only. */
+  x?: number;
+  y?: number;
+}
+
+interface CanvasNode extends WorkflowNode {
+  x: number;
+  y: number;
 }
 
 interface WorkflowEdge {
@@ -88,6 +89,36 @@ interface DraftValidation {
   invalidDecisions: Array<{ nodeId: string; label: string; outboundCount: number }>;
 }
 
+interface SemanticContextInfo {
+  intent: {
+    processTypes: string[];
+    jurisdictions: string[];
+    riskLevel: string;
+    requestedOutput: string;
+    ambiguities: string[];
+    summary: string;
+  };
+  retrieval: {
+    totalConsidered: number;
+    totalAuthoritative: number;
+    totalCandidates: number;
+    embeddingsAvailable: boolean;
+    degradedReason?: string;
+    catalogCoverage: { total: number; covered: number; ratio: number };
+    timings: {
+      intentExtractionMs: number;
+      embeddingMs: number;
+      hybridRetrievalMs: number;
+      graphExpansionMs: number;
+      rerankMs: number;
+      totalMs: number;
+    };
+  };
+  groundedObligationIds: string[];
+  candidateObligationIds: string[];
+  ambiguities: string[];
+}
+
 interface BuildResult {
   draft: WorkflowDraft;
   validation: DraftValidation;
@@ -106,6 +137,7 @@ interface BuildResult {
   llmProvider: string;
   attempts: number;
   generatedAt: string;
+  semanticContext?: SemanticContextInfo;
 }
 
 interface ChatTurn {
@@ -148,1132 +180,790 @@ interface CatalogSnapshot {
   obligations: unknown[];
 }
 
+// ─── Palette config ───────────────────────────────────────────────────────
+
+const PALETTE_CATEGORIES = [
+  {
+    label: 'Flow',
+    nodes: [
+      { kind: 'start' as WorkflowNodeKind, label: 'Start', desc: 'Where the process begins' },
+      { kind: 'end_success' as WorkflowNodeKind, label: 'Complete', desc: 'Finished successfully' },
+      { kind: 'end_fail' as WorkflowNodeKind, label: 'Stopped', desc: 'Ended without completion' },
+      { kind: 'decision' as WorkflowNodeKind, label: 'Decision', desc: 'Choose what happens next' },
+      { kind: 'wait' as WorkflowNodeKind, label: 'Wait', desc: 'Pause until something happens' },
+    ],
+  },
+  {
+    label: 'Work',
+    nodes: [
+      { kind: 'task' as WorkflowNodeKind, label: 'Step', desc: 'A general work step' },
+      { kind: 'agent_task' as WorkflowNodeKind, label: 'AI step', desc: 'Handled by an AI agent' },
+      { kind: 'human_task' as WorkflowNodeKind, label: 'Manual step', desc: 'Done by a person' },
+      { kind: 'subprocess' as WorkflowNodeKind, label: 'Sub-process', desc: 'Run another workflow' },
+    ],
+  },
+  {
+    label: 'Compliance',
+    nodes: [
+      { kind: 'evidence_capture' as WorkflowNodeKind, label: 'Collect evidence', desc: 'Gather a required record' },
+      { kind: 'hitl_gate' as WorkflowNodeKind, label: 'Approval', desc: 'Someone must sign off' },
+      { kind: 'compliance_check' as WorkflowNodeKind, label: 'Check compliance', desc: 'Verify regulatory rules' },
+      { kind: 'notification' as WorkflowNodeKind, label: 'Send notice', desc: 'Notify the right people' },
+    ],
+  },
+];
+
 // ─── Visual constants ─────────────────────────────────────────────────────
 
-const KIND_GLYPH: Record<WorkflowNodeKind, string> = {
-  start: '▶',
-  task: '◻',
-  agent_task: '✦',
-  human_task: '☻',
-  decision: '◇',
-  evidence_capture: '🗎',
-  hitl_gate: '🔒',
-  notification: '✉',
-  wait: '⏳',
-  subprocess: '⊟',
-  compliance_check: '✓',
-  end_success: '●',
-  end_fail: '✕',
+const AUTOMATION_LABEL: Record<AutomationKind, string> = {
+  system: 'Automated',
+  agent: 'AI agent',
+  human: 'Manual review',
+  hybrid: 'Mixed',
 };
 
-const KIND_LABEL: Record<WorkflowNodeKind, string> = {
-  start: 'Start',
-  task: 'Task',
-  agent_task: 'Agent Task',
-  human_task: 'Human Task',
-  decision: 'Decision',
-  evidence_capture: 'Evidence',
-  hitl_gate: 'HITL Gate',
-  notification: 'Notify',
-  wait: 'Wait',
-  subprocess: 'Subprocess',
-  compliance_check: 'Compliance',
-  end_success: 'End — OK',
-  end_fail: 'End — Fail',
+function workflowFingerprint(
+  name: string,
+  meta: { jurisdiction: string; processType: string; regulations: string[] },
+  nodes: CanvasNode[],
+  edges: WorkflowEdge[],
+): string {
+  return JSON.stringify({ name, meta, nodes, edges });
+}
+
+const AUTOMATION_COLORS: Record<AutomationKind, { bg: string; border: string; accent: string; glow: string }> = {
+  system: { bg: '#0d1117', border: '#1e2a36', accent: '#3eb0f2', glow: 'rgba(62,176,242,0.3)' },
+  agent:  { bg: '#0f1220', border: '#1e2540', accent: '#818cf8', glow: 'rgba(129,140,248,0.3)' },
+  human:  { bg: '#1a1012', border: '#3a2024', accent: '#f87171', glow: 'rgba(248,113,113,0.3)' },
+  hybrid: { bg: '#160f1e', border: '#30203c', accent: '#c084fc', glow: 'rgba(192,132,252,0.3)' },
 };
 
-// SOTA palette — high-contrast accent stripe + low-key card body so labels pop.
-const AUTOMATION_COLOR: Record<AutomationKind, { bg: string; border: string; ink: string; lane: string; accent: string }> = {
-  system: { bg: '#10161d', border: '#1f2a36', ink: '#eaf3ff', lane: 'System',  accent: '#3eb0f2' },
-  agent:  { bg: '#121524', border: '#222a40', ink: '#eef0ff', lane: 'Agent',   accent: '#8aa6ff' },
-  human:  { bg: '#1d1416', border: '#3a2326', ink: '#ffe7e7', lane: 'Human',   accent: '#ff8a8a' },
-  hybrid: { bg: '#1a1322', border: '#33233f', ink: '#f3e6ff', lane: 'Hybrid',  accent: '#c98aff' },
-};
+const NODE_W = 260;
+const NODE_H = 104;
+const GRID_SIZE = 20;
+const PORT_R = 6;
+const SNAP_THRESHOLD = 12;
 
-// Brighter, screen-friendly inks (we don't trust the global CSS vars to have enough contrast).
-const INK = {
-  primary: '#f3f5f7',
-  secondary: '#b8c0cc',
-  muted: '#7a8492',
-  faint: '#525a66',
-  rule: '#1f242c',
-  bg0: '#08090b',
-  bg1: '#0d1014',
-  bg2: '#12161c',
-  accent: '#3eb0f2',
-} as const;
+function WorkflowIcon({ kind, color = 'currentColor', size = 18 }: { kind: WorkflowNodeKind; color?: string; size?: number }) {
+  const common = {
+    stroke: color,
+    strokeWidth: 1.8,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    fill: 'none',
+  };
+  const body: Record<WorkflowNodeKind, React.ReactNode> = {
+    start: <><circle cx="12" cy="12" r="8" {...common} /><path d="M10 8.8 15 12l-5 3.2V8.8Z" fill={color} stroke="none" /></>,
+    task: <><rect x="5" y="6" width="14" height="12" rx="3" {...common} /><path d="M8 10h8M8 14h5" {...common} /></>,
+    agent_task: <><path d="M12 3v3M12 18v3M4.6 7.5l2.6 1.5M16.8 15l2.6 1.5M4.6 16.5 7.2 15M16.8 9l2.6-1.5" {...common} /><circle cx="12" cy="12" r="4.2" {...common} /></>,
+    human_task: <><circle cx="12" cy="8" r="3.2" {...common} /><path d="M5.5 19c1.2-3.4 3.3-5 6.5-5s5.3 1.6 6.5 5" {...common} /></>,
+    decision: <><path d="M12 3.5 20.5 12 12 20.5 3.5 12 12 3.5Z" {...common} /><path d="M9.5 10a2.6 2.6 0 1 1 4.1 2.1c-.9.6-1.1 1-1.1 1.9M12.5 17h.01" {...common} /></>,
+    evidence_capture: <><path d="M8 4h7l3 3v13H8V4Z" {...common} /><path d="M15 4v4h4M11 12h5M11 16h4" {...common} /></>,
+    hitl_gate: <><rect x="5" y="10" width="14" height="10" rx="2.5" {...common} /><path d="M8 10V8a4 4 0 0 1 8 0v2M12 14v2" {...common} /></>,
+    notification: <><path d="M4 7.5 12 13l8-5.5" {...common} /><rect x="4" y="6" width="16" height="12" rx="3" {...common} /></>,
+    wait: <><circle cx="12" cy="12" r="8" {...common} /><path d="M12 7v5l3 2" {...common} /></>,
+    subprocess: <><rect x="4" y="7" width="9" height="10" rx="2" {...common} /><rect x="11" y="7" width="9" height="10" rx="2" {...common} /><path d="M8 12h8" {...common} /></>,
+    compliance_check: <><circle cx="12" cy="12" r="8" {...common} /><path d="m8.5 12 2.3 2.3 4.8-5" {...common} /></>,
+    end_success: <><circle cx="12" cy="12" r="8" {...common} /><path d="m8.5 12 2.3 2.3 4.8-5" {...common} /></>,
+    end_fail: <><circle cx="12" cy="12" r="8" {...common} /><path d="m9 9 6 6M15 9l-6 6" {...common} /></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">{body[kind]}</svg>;
+}
 
-const AUTOMATION_ORDER: AutomationKind[] = ['system', 'agent', 'human', 'hybrid'];
+function snapToGrid(v: number): number {
+  return Math.round(v / GRID_SIZE) * GRID_SIZE;
+}
 
-const REFKIND_COLOR: Record<WorkflowRefKind, string> = {
-  Obligation:       '#ff5c7a',
-  AgentRole:        '#8aa6ff',
-  EvidenceType:     '#6cd98a',
-  GovernancePolicy: '#c98aff',
-  HITLGate:         '#ff9b6c',
-  ObservabilitySLO: '#6cd9d9',
-  ProcessTrigger:   '#3eb0f2',
-  None:             '#525a66',
-};
+let _nextId = 1;
+function genId(): string {
+  return `node_${Date.now()}_${_nextId++}`;
+}
 
-const REFKIND_LABEL: Record<WorkflowRefKind, string> = {
-  Obligation:       'Obligation',
-  AgentRole:        'Agent',
-  EvidenceType:     'Evidence',
-  GovernancePolicy: 'Policy',
-  HITLGate:         'Gate',
-  ObservabilitySLO: 'SLO',
-  ProcessTrigger:   'Trigger',
-  None:             '—',
-};
+function defaultAutomation(kind: WorkflowNodeKind): AutomationKind {
+  if (kind === 'agent_task') return 'agent';
+  if (kind === 'human_task' || kind === 'hitl_gate') return 'human';
+  if (kind === 'compliance_check' || kind === 'evidence_capture') return 'hybrid';
+  return 'system';
+}
+
+function makeNode(kind: WorkflowNodeKind, label: string, x: number, y: number): CanvasNode {
+  return {
+    id: genId(), kind, label, description: label, automation: defaultAutomation(kind),
+    responsible: [], inputs: [], outputs: [], groundedRefs: [], rationale: '',
+    x: snapToGrid(x), y: snapToGrid(y),
+  };
+}
+
+function resolveWorkflowMeta(meta: { jurisdiction: string; processType: string }) {
+  return {
+    jurisdiction: meta.jurisdiction.trim() || 'GLOBAL',
+    processType: meta.processType.trim() || 'GENERIC',
+  };
+}
+
+function buildDraftFromCanvas(
+  name: string,
+  meta: { jurisdiction: string; processType: string; regulations: string[] },
+  nodes: CanvasNode[],
+  edges: WorkflowEdge[],
+): WorkflowDraft {
+  const { jurisdiction, processType } = resolveWorkflowMeta(meta);
+  return {
+    name: name.trim(),
+    description: '',
+    jurisdiction,
+    processType,
+    regulations: meta.regulations,
+    nodes: nodes.map(({ x, y, description, ...rest }) => ({
+      ...rest,
+      description: description.trim() || rest.label,
+      x,
+      y,
+    })),
+    edges,
+    rationale: '',
+    openQuestions: [],
+  };
+}
+
+function draftToCanvasNodes(draft: WorkflowDraft): CanvasNode[] {
+  const positioned =
+    draft.nodes.length > 0 &&
+    draft.nodes.every(
+      (n) => typeof n.x === 'number' && typeof n.y === 'number' && Number.isFinite(n.x) && Number.isFinite(n.y),
+    );
+  if (positioned) {
+    return draft.nodes.map((n) => ({
+      id: n.id,
+      kind: n.kind,
+      label: n.label,
+      description: n.description,
+      automation: n.automation,
+      responsible: n.responsible,
+      inputs: n.inputs,
+      outputs: n.outputs,
+      durationEstimate: n.durationEstimate,
+      groundedRefs: n.groundedRefs,
+      rationale: n.rationale,
+      jurisdiction: n.jurisdiction,
+      x: n.x!,
+      y: n.y!,
+    }));
+  }
+  return autoLayout(draft.nodes, draft.edges);
+}
 
 // ─── Component ────────────────────────────────────────────────────────────
 
 export function ProcessDesigner() {
   const { api } = useAuthenticatedApi();
 
-  // Chat state
+  // ── Core canvas state ──
+  const [nodes, setNodes] = useState<CanvasNode[]>([]);
+  const [edges, setEdges] = useState<WorkflowEdge[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [workflowName, setWorkflowName] = useState('Untitled workflow');
+  const [workflowMeta, setWorkflowMeta] = useState({ jurisdiction: '', processType: '', regulations: [] as string[] });
+
+  // ── Interaction state ──
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 60, y: 60 });
+  const [dragState, setDragState] = useState<null | {
+    type: 'node' | 'pan' | 'edge';
+    nodeId?: string;
+    startX: number; startY: number;
+    origX?: number; origY?: number;
+    panX?: number; panY?: number;
+    fromPort?: string;
+  }>(null);
+  const [pendingEdge, setPendingEdge] = useState<null | { fromId: string; mx: number; my: number }>(null);
+  const [hoverPort, setHoverPort] = useState<null | { nodeId: string; side: 'top' | 'bottom' | 'left' | 'right' }>(null);
+  const [dropPreview, setDropPreview] = useState<null | { kind: WorkflowNodeKind; x: number; y: number }>(null);
+  const [editingLabel, setEditingLabel] = useState<string | null>(null);
+  const [justDropped, setJustDropped] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // ── Chat state (secondary) ──
+  const [chatOpen, setChatOpen] = useState(false);
   const [chat, setChat] = useState<ChatTurn[]>([
-    {
-      role: 'assistant',
-      content:
-        'Describe a regulated process — or pick a template on the left.',
-      ts: new Date().toISOString(),
-    },
+    { role: 'assistant', content: 'Pick a starter template on the left, describe a process here, or add steps directly on the canvas.', ts: new Date().toISOString() },
   ]);
-  const [input, setInput] = useState('');
-  const [jurisdiction, setJurisdiction] = useState<string>('');
-  const [processType, setProcessType] = useState<string>('');
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<BuildResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [chatInput, setChatInput] = useState('');
+  const [chatBusy, setChatBusy] = useState(false);
+  const [jurisdiction, setJurisdiction] = useState('');
+  const [processType, setProcessType] = useState('');
 
-  // Catalog (for picker dropdowns)
+  // ── Catalog (for chat pickers) ──
   const [catalog, setCatalog] = useState<CatalogSnapshot | null>(null);
-
-  // Templates
   const [templates, setTemplates] = useState<TemplateSummary[] | null>(null);
-  const [railOpen, setRailOpen] = useState(true);
-  const [expandedTemplateId, setExpandedTemplateId] = useState<string | null>(null);
 
-  // Saved workflows
-  type SavedWorkflowRow = {
-    id: string;
-    name: string;
-    processType: string;
-    jurisdiction: string;
-    description: string | null;
-    source: string;
-    sourceTemplateId: string | null;
-    updatedAt: string;
-  };
+  // ── Saved workflows ──
   const [savedWorkflows, setSavedWorkflows] = useState<SavedWorkflowRow[] | null>(null);
   const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
-  const [savingWorkflow, setSavingWorkflow] = useState(false);
-  const [savedToast, setSavedToast] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const [toastError, setToastError] = useState(false);
+  const [lastSavedFingerprint, setLastSavedFingerprint] = useState<string | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(true);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const currentFingerprint = useMemo(
+    () => workflowFingerprint(workflowName, workflowMeta, nodes, edges),
+    [workflowName, workflowMeta, nodes, edges],
+  );
+  const isDirty = nodes.length > 0 && currentFingerprint !== lastSavedFingerprint;
 
   const refreshWorkflows = useCallback(async () => {
-    try {
-      const rows = await api<SavedWorkflowRow[]>('/api/builder/workflows');
-      setSavedWorkflows(rows);
-    } catch {
-      setSavedWorkflows([]);
-    }
+    try { setSavedWorkflows(await api<SavedWorkflowRow[]>('/api/builder/workflows')); } catch { setSavedWorkflows([]); }
   }, [api]);
+
+  const showToast = useCallback((message: string, isError = false) => {
+    setToast(message);
+    setToastError(isError);
+    setTimeout(() => {
+      setToast(null);
+      setToastError(false);
+    }, isError ? 4000 : 2500);
+  }, []);
+
+  const applyLoadedWorkflow = useCallback((
+    row: { id: string; name: string; processType: string; jurisdiction: string; draft: WorkflowDraft },
+  ) => {
+    const loadedNodes = draftToCanvasNodes(row.draft);
+    setNodes(loadedNodes);
+    setEdges([...row.draft.edges]);
+    setWorkflowName(row.name || row.draft.name || 'Untitled workflow');
+    setWorkflowMeta({
+      jurisdiction: row.jurisdiction || row.draft.jurisdiction,
+      processType: row.processType || row.draft.processType,
+      regulations: row.draft.regulations ?? [],
+    });
+    setJurisdiction(row.jurisdiction || row.draft.jurisdiction || '');
+    setProcessType(row.processType || row.draft.processType || '');
+    setActiveWorkflowId(row.id);
+    setSelectedId(null);
+    setEditingLabel(null);
+    setLastSavedFingerprint(workflowFingerprint(
+      row.name || row.draft.name || 'Untitled workflow',
+      {
+        jurisdiction: row.jurisdiction || row.draft.jurisdiction,
+        processType: row.processType || row.draft.processType,
+        regulations: row.draft.regulations ?? [],
+      },
+      loadedNodes,
+      [...row.draft.edges],
+    ));
+    setTimeout(() => fitView(loadedNodes, canvasRef, setZoom, setPan), 50);
+  }, []);
+
+  const loadDraft = useCallback((draft: WorkflowDraft) => {
+    const loadedNodes = draftToCanvasNodes(draft);
+    setNodes(loadedNodes);
+    setEdges([...draft.edges]);
+    setWorkflowName(draft.name || 'Untitled workflow');
+    setWorkflowMeta({
+      jurisdiction: draft.jurisdiction,
+      processType: draft.processType,
+      regulations: draft.regulations,
+    });
+    setJurisdiction(draft.jurisdiction || '');
+    setProcessType(draft.processType || '');
+    setActiveWorkflowId(null);
+    setSelectedId(null);
+    setEditingLabel(null);
+    setLastSavedFingerprint(null);
+    setTimeout(() => fitView(loadedNodes, canvasRef, setZoom, setPan), 50);
+  }, []);
 
   const loadedOnce = useRef(false);
   useEffect(() => {
     if (loadedOnce.current) return;
     loadedOnce.current = true;
     void (async () => {
-      try {
-        const c = await api<{ snapshot: CatalogSnapshot }>('/api/builder/catalog');
-        setCatalog(c.snapshot);
-      } catch {
-        /* silent */
-      }
-      try {
-        const t = await api<{ templates: TemplateSummary[] }>('/api/builder/templates');
-        setTemplates(t.templates);
-      } catch {
-        setTemplates([]);
-      }
+      try { const c = await api<{ snapshot: CatalogSnapshot }>('/api/builder/catalog'); setCatalog(c.snapshot); } catch { /* */ }
+      try { const t = await api<{ templates: TemplateSummary[] }>('/api/builder/templates'); setTemplates(t.templates); } catch { setTemplates([]); }
       void refreshWorkflows();
-      // Auto-load workflow from ?workflow=:id
       try {
         const params = new URLSearchParams(window.location.search);
         const wfId = params.get('workflow');
         const tplId = params.get('template');
         if (wfId) {
-          const row = await api<{
-            id: string;
-            name: string;
-            processType: string;
-            jurisdiction: string;
-            description: string | null;
-            source: string;
-            sourceTemplateId: string | null;
-            draft: WorkflowDraft;
-          }>(`/api/builder/workflows/${wfId}`);
-          const fake: BuildResult = {
-            draft: row.draft,
-            validation: {
-              valid: true,
-              unknownRefs: [],
-              danglingEdges: [],
-              missingStart: false,
-              missingEnd: false,
-              ungroundedSteps: [],
-              invalidDecisions: [],
-            },
-            catalogSummary: {
-              obligations: 0,
-              agentRoles: 0,
-              hitlGates: 0,
-              policies: 0,
-              slos: 0,
-              triggers: 0,
-              evidenceTypes: 0,
-              jurisdictionUsed: row.jurisdiction,
-              processTypeUsed: row.processType,
-            },
-            llmModel: 'saved',
-            llmProvider: 'saved',
-            attempts: 0,
-            generatedAt: new Date().toISOString(),
-          };
-          setResult(fake);
-          setActiveWorkflowId(row.id);
+          const row = await api<{ id: string; name: string; processType: string; jurisdiction: string; draft: WorkflowDraft }>(`/api/builder/workflows/${wfId}`);
+          applyLoadedWorkflow(row);
         } else if (tplId) {
-          // delegated below via loadTemplate after definition
-          void (async () => {
-            try {
-              const r = await api<TemplateDraftResponse>(`/api/builder/templates/${tplId}/draft`);
-              setResult({
-                draft: r.draft,
-                validation: {
-                  valid: true,
-                  unknownRefs: [],
-                  danglingEdges: [],
-                  missingStart: false,
-                  missingEnd: false,
-                  ungroundedSteps: [],
-                  invalidDecisions: [],
-                },
-                catalogSummary: {
-                  obligations: 0,
-                  agentRoles: 0,
-                  hitlGates: 0,
-                  policies: 0,
-                  slos: 0,
-                  triggers: 0,
-                  evidenceTypes: 0,
-                  jurisdictionUsed: r.draft.jurisdiction,
-                  processTypeUsed: r.draft.processType,
-                },
-                llmModel: 'template',
-                llmProvider: 'template',
-                attempts: 0,
-                generatedAt: r.generatedAt,
-              });
-            } catch {
-              /* ignore */
-            }
-          })();
+          const r = await api<TemplateDraftResponse>(`/api/builder/templates/${tplId}/draft`);
+          loadDraft(r.draft);
         }
-      } catch {
-        /* ignore */
-      }
+      } catch { /* */ }
     })();
-  }, [api, refreshWorkflows]);
+  }, [api, applyLoadedWorkflow, loadDraft, refreshWorkflows]);
 
-  const saveWorkflow = useCallback(async () => {
-    if (!result) return;
-    setSavingWorkflow(true);
-    setSavedToast(null);
+  // ── Save ──
+  const saveCurrent = useCallback(async () => {
+    if (nodes.length === 0) {
+      showToast('Add at least one step before saving.', true);
+      return;
+    }
+    setSaving(true);
     try {
-      const defaultName = result.draft.name?.trim() || 'Untitled workflow';
-      const name = window.prompt('Save workflow as:', defaultName) ?? '';
-      if (!name.trim()) {
-        setSavingWorkflow(false);
+      let name = workflowName.trim();
+      if (!activeWorkflowId && (!name || name === 'Untitled workflow')) {
+        const prompted = window.prompt('Name this workflow:', name || 'Untitled workflow') ?? '';
+        if (!prompted.trim()) return;
+        name = prompted.trim();
+      }
+      if (!name) {
+        showToast('Workflow name is required.', true);
         return;
       }
-      const body = {
-        name: name.trim(),
-        processType: result.draft.processType,
-        jurisdiction: result.draft.jurisdiction,
-        description: result.draft.rationale?.slice(0, 1000) ?? null,
-        draft: result.draft as unknown as Record<string, unknown>,
-        source: result.llmProvider === 'template' ? 'template' : result.llmProvider === 'saved' ? 'manual' : 'chat',
+
+      const { jurisdiction, processType } = resolveWorkflowMeta(workflowMeta);
+      const draft = buildDraftFromCanvas(name, workflowMeta, nodes, edges);
+      const payload = {
+        name,
+        processType,
+        jurisdiction,
+        draft,
+        source: 'canvas' as const,
       };
-      const saved = await api<SavedWorkflowRow>('/api/builder/workflows', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
+
+      const saved = activeWorkflowId
+        ? await api<SavedWorkflowRow>(`/api/builder/workflows/${activeWorkflowId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(payload),
+          })
+        : await api<SavedWorkflowRow>('/api/builder/workflows', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+          });
+
       setActiveWorkflowId(saved.id);
-      setSavedToast(`Saved "${saved.name}"`);
+      setWorkflowName(saved.name);
+      setWorkflowMeta((prev) => ({ ...prev, jurisdiction, processType }));
+      setLastSavedFingerprint(workflowFingerprint(saved.name, { ...workflowMeta, jurisdiction, processType }, nodes, edges));
+      showToast(`Saved "${saved.name}"`);
       void refreshWorkflows();
-      window.setTimeout(() => setSavedToast(null), 2500);
     } catch (e) {
-      setSavedToast(e instanceof Error ? `Save failed: ${e.message}` : 'Save failed.');
+      showToast(e instanceof Error ? e.message : 'Save failed', true);
     } finally {
-      setSavingWorkflow(false);
+      setSaving(false);
     }
-  }, [api, refreshWorkflows, result]);
+  }, [activeWorkflowId, api, edges, nodes, refreshWorkflows, showToast, workflowMeta, workflowName]);
 
-  const loadSavedWorkflow = useCallback(
-    async (id: string) => {
-      setError(null);
-      setBusy(true);
-      try {
-        const row = await api<{
-          id: string;
-          name: string;
-          processType: string;
-          jurisdiction: string;
-          description: string | null;
-          source: string;
-          draft: WorkflowDraft;
-        }>(`/api/builder/workflows/${id}`);
-        setResult({
-          draft: row.draft,
-          validation: {
-            valid: true,
-            unknownRefs: [],
-            danglingEdges: [],
-            missingStart: false,
-            missingEnd: false,
-            ungroundedSteps: [],
-            invalidDecisions: [],
-          },
-          catalogSummary: {
-            obligations: 0,
-            agentRoles: 0,
-            hitlGates: 0,
-            policies: 0,
-            slos: 0,
-            triggers: 0,
-            evidenceTypes: 0,
-            jurisdictionUsed: row.jurisdiction,
-            processTypeUsed: row.processType,
-          },
-          llmModel: 'saved',
-          llmProvider: 'saved',
-          attempts: 0,
-          generatedAt: new Date().toISOString(),
-        });
-        setActiveWorkflowId(row.id);
-        setChat((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: `Loaded saved workflow "${row.name}".`,
-            ts: new Date().toISOString(),
-          },
-        ]);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        setBusy(false);
-      }
-    },
-    [api],
-  );
-
-  const deleteSavedWorkflow = useCallback(
-    async (id: string) => {
-      if (!window.confirm('Delete this saved workflow?')) return;
-      try {
-        await api<void>(`/api/builder/workflows/${id}`, { method: 'DELETE' });
-        if (activeWorkflowId === id) setActiveWorkflowId(null);
-        void refreshWorkflows();
-      } catch (e) {
-        setSavedToast(e instanceof Error ? e.message : 'Delete failed.');
-      }
-    },
-    [api, activeWorkflowId, refreshWorkflows],
-  );
-
-  const send = useCallback(async () => {
-    const text = input.trim();
-    if (!text || busy) return;
-    setError(null);
-    setBusy(true);
+  // ── Chat send ──
+  const sendChat = useCallback(async () => {
+    const text = chatInput.trim();
+    if (!text || chatBusy) return;
+    setChatBusy(true);
     const userTurn: ChatTurn = { role: 'user', content: text, ts: new Date().toISOString() };
     const nextChat = [...chat, userTurn];
     setChat(nextChat);
-    setInput('');
+    setChatInput('');
     try {
-      const conversation = nextChat
-        .filter((t) => t.role === 'user' || t.role === 'assistant')
+      // Build conversation history for multi-turn context (exclude system/initial messages)
+      const conversationHistory = nextChat
+        .filter((t) => t.role === 'user' || (t.role === 'assistant' && !t.content.startsWith('How can I help')))
+        .slice(0, -1) // exclude the current message (it's the description)
         .map((t) => ({ role: t.role, content: t.content }));
+
       const r = await api<BuildResult>('/api/builder/draft', {
-        method: 'POST',
-        body: JSON.stringify({
+        method: 'POST', body: JSON.stringify({
           description: text,
           jurisdiction: jurisdiction || undefined,
           processType: processType || undefined,
-          conversation: conversation.slice(0, -1),
+          conversation: conversationHistory.length > 0 ? conversationHistory : undefined,
         }),
       });
-      setResult(r);
-      setChat([
-        ...nextChat,
-        {
-          role: 'assistant',
-          content:
-            `Drafted "${r.draft.name}" — ${r.draft.nodes.length} nodes, ${r.draft.edges.length} edges (attempt ${r.attempts}).\n\n${r.draft.rationale}` +
-            (r.draft.openQuestions.length
-              ? `\n\nOpen questions:\n• ${r.draft.openQuestions.join('\n• ')}`
-              : ''),
-          ts: new Date().toISOString(),
-        },
-      ]);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setError(msg);
-      setChat([
-        ...nextChat,
-        {
-          role: 'assistant',
-          content: `I couldn't ground this in the KB: ${msg}`,
-          ts: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setBusy(false);
-    }
-  }, [api, busy, chat, input, jurisdiction, processType]);
+      loadDraft(r.draft);
+      setWorkflowMeta({
+        jurisdiction: r.draft.jurisdiction || jurisdiction || 'GLOBAL',
+        processType: r.draft.processType || processType || 'GENERIC',
+        regulations: r.draft.regulations,
+      });
+      setJurisdiction(r.draft.jurisdiction || jurisdiction || '');
+      setProcessType(r.draft.processType || processType || '');
 
-  const loadTemplate = useCallback(
-    async (templateId: string) => {
-      setError(null);
-      setBusy(true);
-      try {
-        const r = await api<TemplateDraftResponse>(`/api/builder/templates/${templateId}/draft`);
-        const fakeResult: BuildResult = {
-          draft: r.draft,
-          validation: {
-            valid: true,
-            unknownRefs: [],
-            danglingEdges: [],
-            missingStart: false,
-            missingEnd: false,
-            ungroundedSteps: [],
-            invalidDecisions: [],
-          },
-          catalogSummary: {
-            obligations: 0,
-            agentRoles: 0,
-            hitlGates: 0,
-            policies: 0,
-            slos: 0,
-            triggers: 0,
-            evidenceTypes: 0,
-            jurisdictionUsed: r.draft.jurisdiction,
-            processTypeUsed: r.draft.processType,
-          },
-          llmModel: 'template',
-          llmProvider: 'template',
-          attempts: 0,
-          generatedAt: r.generatedAt,
-        };
-        setResult(fakeResult);
-        setChat((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: `Loaded shipped template "${r.template.name}" (${r.template.steps.length} steps). Ask me to extend, branch, swap obligations, or restrict to a jurisdiction.`,
-            ts: new Date().toISOString(),
-          },
-        ]);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      } finally {
-        setBusy(false);
+      // Build a richer assistant response when semantic context is available
+      const sc = r.semanticContext;
+      let assistantMsg = `Built "${r.draft.name}" with ${r.draft.nodes.length} steps.`;
+      if (sc) {
+        const mode = sc.retrieval.embeddingsAvailable ? 'semantic+structural' : 'structural-only';
+        assistantMsg += ` Grounded against ${sc.retrieval.totalAuthoritative} obligations (${mode}).`;
+        if (sc.ambiguities.length > 0) {
+          assistantMsg += `\n\nOpen questions: ${sc.ambiguities.map((a) => `• ${a}`).join('\n')}`;
+        }
+        if (sc.retrieval.degradedReason) {
+          assistantMsg += `\n⚠ ${sc.retrieval.degradedReason}`;
+        }
       }
-    },
-    [api],
-  );
+      assistantMsg += ' Rearrange on the canvas, then save when you are ready.';
 
-  const railWidth = railOpen ? 280 : 44;
+      setChat([...nextChat, {
+        role: 'assistant',
+        content: assistantMsg,
+        ts: new Date().toISOString(),
+      }]);
+    } catch (e) {
+      setChat([...nextChat, { role: 'assistant', content: `Error: ${e instanceof Error ? e.message : e}`, ts: new Date().toISOString() }]);
+    } finally { setChatBusy(false); }
+  }, [api, chat, chatBusy, chatInput, jurisdiction, loadDraft, processType]);
 
-  return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: `${railWidth}px 360px 1fr`,
-        gap: 0,
-        height: 'calc(100vh - 56px)',
-        background: INK.bg0,
-        color: INK.primary,
-      }}
-    >
-      {/* ── Templates rail ─────────────────────────────────────────────── */}
-      <TemplatesRail
-        open={railOpen}
-        onToggle={() => setRailOpen((v) => !v)}
-        templates={templates}
-        expandedId={expandedTemplateId}
-        onExpand={(id) => setExpandedTemplateId((v) => (v === id ? null : id))}
-        onLoad={loadTemplate}
-        busy={busy}
-        savedWorkflows={savedWorkflows}
-        activeWorkflowId={activeWorkflowId}
-        onLoadSaved={loadSavedWorkflow}
-        onDeleteSaved={deleteSavedWorkflow}
-      />
+  // ── Template load ──
+  const loadTemplate = useCallback(async (id: string) => {
+    try {
+      const r = await api<TemplateDraftResponse>(`/api/builder/templates/${id}/draft`);
+      loadDraft(r.draft);
+    } catch { /* */ }
+  }, [api, loadDraft]);
 
-      {/* ── Chat composer ──────────────────────────────────────────────── */}
-      <ChatComposer
-        chat={chat}
-        input={input}
-        setInput={setInput}
-        send={send}
-        busy={busy}
-        error={error}
-        jurisdiction={jurisdiction}
-        setJurisdiction={setJurisdiction}
-        processType={processType}
-        setProcessType={setProcessType}
-        catalog={catalog}
-        result={result}
-      />
+  // ── Canvas → screen coordinate helpers ──
+  const canvasToScreen = useCallback((cx: number, cy: number) => ({
+    x: cx * zoom + pan.x, y: cy * zoom + pan.y,
+  }), [zoom, pan]);
 
-      {/* ── Canvas ─────────────────────────────────────────────────────── */}
-      <CanvasPane
-        result={result}
-        selectedNodeId={selectedNodeId}
-        onSelect={setSelectedNodeId}
-        onSave={saveWorkflow}
-        savingWorkflow={savingWorkflow}
-        savedToast={savedToast}
-        activeWorkflowId={activeWorkflowId}
-      />
-    </div>
-  );
-}
+  const screenToCanvas = useCallback((sx: number, sy: number) => {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    const rx = rect ? sx - rect.left : sx;
+    const ry = rect ? sy - rect.top : sy;
+    return { x: (rx - pan.x) / zoom, y: (ry - pan.y) / zoom };
+  }, [zoom, pan]);
 
-// ─── Templates rail ───────────────────────────────────────────────────────
+  const deleteNode = useCallback((nodeId: string) => {
+    setNodes(prev => prev.filter(n => n.id !== nodeId));
+    setEdges(prev => prev.filter(e => e.from !== nodeId && e.to !== nodeId));
+    setSelectedId(prev => (prev === nodeId ? null : prev));
+    setEditingLabel(prev => (prev === nodeId ? null : prev));
+  }, []);
 
-function TemplatesRail(props: {
-  open: boolean;
-  onToggle: () => void;
-  templates: TemplateSummary[] | null;
-  expandedId: string | null;
-  onExpand: (id: string) => void;
-  onLoad: (id: string) => void;
-  busy: boolean;
-  savedWorkflows: Array<{
-    id: string;
-    name: string;
-    processType: string;
-    jurisdiction: string;
-    updatedAt: string;
-  }> | null;
-  activeWorkflowId: string | null;
-  onLoadSaved: (id: string) => void;
-  onDeleteSaved: (id: string) => void;
-}) {
-  const {
-    open,
-    onToggle,
-    templates,
-    expandedId,
-    onExpand,
-    onLoad,
-    busy,
-    savedWorkflows,
-    activeWorkflowId,
-    onLoadSaved,
-    onDeleteSaved,
-  } = props;
-  return (
-    <div
-      style={{
-        borderRight: `1px solid ${INK.rule}`,
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: 0,
-        background: INK.bg1,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: open ? 'space-between' : 'center',
-          padding: open ? '14px 14px' : '12px 6px',
-          borderBottom: `1px solid ${INK.rule}`,
-        }}
-      >
-        {open && (
-          <div>
-            <div style={{ fontSize: 10, color: INK.muted, letterSpacing: '0.12em', fontWeight: 600 }}>
-              TEMPLATES
-            </div>
-            <div style={{ fontSize: 14, marginTop: 4, color: INK.primary, fontWeight: 500 }}>
-              {templates ? `${templates.length} shipped processes` : 'Loading…'}
-            </div>
-          </div>
-        )}
-        <button
-          onClick={onToggle}
-          title={open ? 'Collapse' : 'Expand templates'}
-          style={{
-            background: INK.bg2,
-            border: `1px solid ${INK.rule}`,
-            color: INK.secondary,
-            borderRadius: 6,
-            cursor: 'pointer',
-            width: 28,
-            height: 28,
-            fontSize: 14,
-            lineHeight: 1,
-          }}
-        >
-          {open ? '‹' : '›'}
-        </button>
-      </div>
+  const deleteEdge = useCallback((from: string, to: string) => {
+    setEdges(prev => prev.filter(e => !(e.from === from && e.to === to)));
+  }, []);
 
-      {open && (
-        <div style={{ flex: 1, overflowY: 'auto', padding: 10 }}>
-          {/* ── Saved workflows ── */}
-          {savedWorkflows && savedWorkflows.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <div
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.12em',
-                  fontWeight: 600,
-                  color: INK.muted,
-                  padding: '4px 4px 8px',
-                }}
-              >
-                MY WORKFLOWS · {savedWorkflows.length}
-              </div>
-              {savedWorkflows.map((w) => {
-                const isActive = activeWorkflowId === w.id;
-                return (
-                  <div
-                    key={w.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'stretch',
-                      marginBottom: 6,
-                      border: `1px solid ${isActive ? '#198754' : INK.rule}`,
-                      borderRadius: 6,
-                      background: isActive ? '#0b3a25' : INK.bg1,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <button
-                      onClick={() => onLoadSaved(w.id)}
-                      disabled={busy}
-                      style={{
-                        flex: 1,
-                        background: 'transparent',
-                        border: 0,
-                        color: INK.primary,
-                        textAlign: 'left',
-                        padding: '8px 10px',
-                        cursor: busy ? 'wait' : 'pointer',
-                        fontSize: 12,
-                      }}
-                    >
-                      <div style={{ fontWeight: 600 }}>{w.name}</div>
-                      <div style={{ fontSize: 10, color: INK.muted, marginTop: 2 }}>
-                        {w.processType} · {w.jurisdiction}
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => onDeleteSaved(w.id)}
-                      title="Delete"
-                      style={{
-                        background: 'transparent',
-                        border: 0,
-                        color: INK.muted,
-                        cursor: 'pointer',
-                        padding: '0 8px',
-                        fontSize: 14,
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })}
-              <div
-                style={{
-                  height: 1,
-                  background: INK.rule,
-                  margin: '14px 0 10px',
-                }}
-              />
-              <div
-                style={{
-                  fontSize: 10,
-                  letterSpacing: '0.12em',
-                  fontWeight: 600,
-                  color: INK.muted,
-                  padding: '0 4px 8px',
-                }}
-              >
-                SHIPPED TEMPLATES
-              </div>
-            </div>
-          )}
-          {templates === null && (
-            <div style={{ padding: 12, fontSize: 12, color: INK.muted }}>Loading templates…</div>
-          )}
-          {templates && templates.length === 0 && (
-            <div style={{ padding: 12, fontSize: 12, color: INK.muted }}>
-              No templates registered.
-            </div>
-          )}
-          {templates?.map((t) => {
-            const expanded = expandedId === t.id;
-            return (
-              <div
-                key={t.id}
-                style={{
-                  marginBottom: 8,
-                  border: `1px solid ${expanded ? '#2a3340' : INK.rule}`,
-                  borderRadius: 8,
-                  background: expanded ? INK.bg2 : INK.bg1,
-                  overflow: 'hidden',
-                  transition: 'border-color 120ms',
-                }}
-              >
-                <button
-                  onClick={() => onExpand(t.id)}
-                  style={{
-                    width: '100%',
-                    background: 'transparent',
-                    color: INK.primary,
-                    border: 0,
-                    padding: '12px 12px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    fontSize: 13,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 8,
-                    }}
-                  >
-                    <span style={{ fontWeight: 600, color: INK.primary }}>{t.name}</span>
-                    <span style={{ fontSize: 10, color: INK.muted }}>{expanded ? '▾' : '▸'}</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: INK.secondary, marginTop: 4 }}>
-                    {t.steps.length} step{t.steps.length === 1 ? '' : 's'}
-                    {t.hitlGates.length > 0 ? ` · ${t.hitlGates.length} gate${t.hitlGates.length === 1 ? '' : 's'}` : ''}
-                  </div>
-                </button>
-                {expanded && (
-                  <div style={{ padding: '0 12px 12px', fontSize: 12 }}>
-                    <div style={{ marginBottom: 10, lineHeight: 1.5, color: INK.secondary }}>
-                      {t.description}
-                    </div>
-                    <ol style={{ paddingLeft: 18, margin: 0, fontSize: 12, lineHeight: 1.6, color: INK.secondary }}>
-                      {t.steps.map((s) => (
-                        <li key={s.id} style={{ marginBottom: 2 }}>
-                          {s.name}
-                          {s.hitlGateId ? <span style={{ color: '#ff9b6c' }}> · gate</span> : null}
-                        </li>
-                      ))}
-                    </ol>
-                    {t.regulations.length > 0 && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 10 }}>
-                        {t.regulations.slice(0, 6).map((r) => (
-                          <span
-                            key={r}
-                            style={{
-                              fontSize: 10,
-                              padding: '2px 6px',
-                              background: INK.bg0,
-                              border: `1px solid ${INK.rule}`,
-                              color: INK.secondary,
-                              borderRadius: 4,
-                            }}
-                          >
-                            {r}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <button
-                      disabled={busy}
-                      onClick={() => onLoad(t.id)}
-                      style={{
-                        marginTop: 12,
-                        width: '100%',
-                        background: busy ? INK.bg2 : INK.accent,
-                        color: busy ? INK.muted : '#001018',
-                        border: 0,
-                        padding: '8px 10px',
-                        borderRadius: 6,
-                        fontSize: 12,
-                        cursor: busy ? 'not-allowed' : 'pointer',
-                        fontWeight: 600,
-                        letterSpacing: '0.02em',
-                      }}
-                    >
-                      Load into canvas
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+  const startNewWorkflow = useCallback(() => {
+    if (nodes.length > 0 && !window.confirm('Start a new workflow? Unsaved changes will be lost.')) return;
+    setNodes([]);
+    setEdges([]);
+    setWorkflowName('Untitled workflow');
+    setWorkflowMeta({ jurisdiction: '', processType: '', regulations: [] });
+    setJurisdiction('');
+    setProcessType('');
+    setActiveWorkflowId(null);
+    setSelectedId(null);
+    setEditingLabel(null);
+    setLastSavedFingerprint(null);
+    showToast('Started a new workflow');
+  }, [nodes.length, showToast]);
 
-// ─── Chat composer ────────────────────────────────────────────────────────
-
-function ChatComposer(props: {
-  chat: ChatTurn[];
-  input: string;
-  setInput: (v: string) => void;
-  send: () => void;
-  busy: boolean;
-  error: string | null;
-  jurisdiction: string;
-  setJurisdiction: (v: string) => void;
-  processType: string;
-  setProcessType: (v: string) => void;
-  catalog: CatalogSnapshot | null;
-  result: BuildResult | null;
-}) {
-  const { chat, input, setInput, send, busy, error, jurisdiction, setJurisdiction, processType, setProcessType, catalog, result } = props;
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        borderRight: `1px solid ${INK.rule}`,
-        minHeight: 0,
-        background: INK.bg0,
-      }}
-    >
-      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${INK.rule}` }}>
-        <div style={{ fontSize: 10, color: INK.muted, letterSpacing: '0.12em', fontWeight: 600 }}>
-          DESIGNER
-        </div>
-        <div style={{ fontSize: 16, marginTop: 4, color: INK.primary, fontWeight: 500 }}>
-          Compose a process
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12 }}>
-          <select value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)} style={selectStyle}>
-            <option value="">Any jurisdiction</option>
-            {catalog?.jurisdictions.map((j) => <option key={j} value={j}>{j}</option>)}
-          </select>
-          <select value={processType} onChange={(e) => setProcessType(e.target.value)} style={selectStyle}>
-            <option value="">Any process type</option>
-            {catalog?.processTypes.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-        </div>
-      </div>
-
-      <div
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '14px 18px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-        }}
-      >
-        {chat.map((t, i) => (
-          <div
-            key={i}
-            style={{
-              alignSelf: t.role === 'user' ? 'flex-end' : 'flex-start',
-              maxWidth: '92%',
-              padding: '10px 12px',
-              borderRadius: 10,
-              background: t.role === 'user' ? '#1a2c40' : INK.bg2,
-              border: `1px solid ${t.role === 'user' ? '#2a4060' : INK.rule}`,
-              color: INK.primary,
-              fontSize: 13,
-              lineHeight: 1.5,
-              whiteSpace: 'pre-wrap',
-            }}
-          >
-            {t.content}
-          </div>
-        ))}
-        {busy && (
-          <div style={{ fontSize: 12, color: INK.muted, fontStyle: 'italic' }}>
-            Composing workflow against the live obligation graph…
-          </div>
-        )}
-      </div>
-
-      <div style={{ borderTop: `1px solid ${INK.rule}`, padding: '10px 12px' }}>
-        {error && (
-          <div
-            style={{
-              fontSize: 12,
-              color: '#ff9b9b',
-              background: '#2a1010',
-              border: '1px solid #5a2020',
-              borderRadius: 6,
-              padding: '6px 8px',
-              marginBottom: 8,
-            }}
-          >
-            {error}
-          </div>
-        )}
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-              e.preventDefault();
-              send();
-            }
-          }}
-          placeholder="Describe the process… (⌘/Ctrl+Enter)"
-          rows={3}
-          style={{
-            width: '100%',
-            background: INK.bg1,
-            border: `1px solid ${INK.rule}`,
-            color: INK.primary,
-            borderRadius: 8,
-            padding: '10px 12px',
-            fontSize: 13,
-            resize: 'vertical',
-            fontFamily: 'inherit',
-            outline: 'none',
-          }}
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-          <span style={{ fontSize: 11, color: INK.muted }}>
-            {result
-              ? `${result.catalogSummary.obligations} obligations · ${result.catalogSummary.agentRoles} agents`
-              : 'Live KB grounding'}
-          </span>
-          <button
-            onClick={send}
-            disabled={busy || !input.trim()}
-            style={{
-              background: busy || !input.trim() ? INK.bg2 : INK.accent,
-              color: busy || !input.trim() ? INK.muted : '#001018',
-              border: 0,
-              padding: '8px 16px',
-              borderRadius: 6,
-              fontSize: 13,
-              cursor: busy || !input.trim() ? 'not-allowed' : 'pointer',
-              fontWeight: 600,
-              letterSpacing: '0.02em',
-            }}
-          >
-            {busy ? 'Drafting…' : 'Draft'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Canvas pane ──────────────────────────────────────────────────────────
-
-function CanvasPane(props: {
-  result: BuildResult | null;
-  selectedNodeId: string | null;
-  onSelect: (id: string | null) => void;
-  onSave: () => void;
-  savingWorkflow: boolean;
-  savedToast: string | null;
-  activeWorkflowId: string | null;
-}) {
-  const { result, selectedNodeId, onSelect, onSave, savingWorkflow, savedToast, activeWorkflowId } = props;
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
-  const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 });
-  const containerRef = useRef<HTMLDivElement | null>(null);
-
-  const layout = useMemo(() => (result ? buildLayout(result.draft) : null), [result]);
-
-  const fitToView = useCallback(() => {
-    if (!layout || !containerRef.current) return;
-    const cw = containerRef.current.clientWidth - 24;
-    const ch = containerRef.current.clientHeight - 24;
-    const sx = cw / layout.width;
-    const sy = ch / layout.height;
-    const z = Math.min(1.5, Math.max(0.2, Math.min(sx, sy)));
-    setZoom(z);
-    setPan({
-      x: (cw - layout.width * z) / 2 + 12,
-      y: (ch - layout.height * z) / 2 + 12,
-    });
-  }, [layout]);
-
-  // Auto-fit on new result
+  // ── Keyboard shortcuts ──
   useEffect(() => {
-    if (result) {
-      // wait one frame so container has measured
-      requestAnimationFrame(fitToView);
-    }
-  }, [result, fitToView]);
+    const handler = (e: KeyboardEvent) => {
+      if (editingLabel) return;
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        e.preventDefault();
+        deleteNode(selectedId);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        void saveCurrent();
+      }
+      if (e.key === 'Escape') {
+        setSelectedId(null);
+        setPendingEdge(null);
+        setEditingLabel(null);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [selectedId, editingLabel, saveCurrent, deleteNode]);
 
-  const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const dz = e.deltaY < 0 ? 1.1 : 0.9;
-    setZoom((z) => Math.min(2.5, Math.max(0.15, z * dz)));
-  };
-
-  const onMouseDown = (e: React.MouseEvent) => {
+  // ── Mouse handlers for canvas ──
+  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button !== 0) return;
-    setDragging(true);
-    dragStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y };
-  };
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!dragging) return;
-    setPan({
-      x: dragStart.current.panX + (e.clientX - dragStart.current.x),
-      y: dragStart.current.panY + (e.clientY - dragStart.current.y),
-    });
-  };
-  const onMouseUp = () => setDragging(false);
+    // Only pan if clicking on empty canvas
+    const target = e.target as HTMLElement;
+    if (target === canvasRef.current || target.tagName === 'svg' || target.classList.contains('canvas-bg')) {
+      setDragState({ type: 'pan', startX: e.clientX, startY: e.clientY, panX: pan.x, panY: pan.y });
+      setSelectedId(null);
+      setPendingEdge(null);
+    }
+  }, [pan]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!dragState) {
+      // Drop preview while dragging from palette
+      if (dropPreview) {
+        const pos = screenToCanvas(e.clientX, e.clientY);
+        setDropPreview(prev => prev ? { ...prev, x: snapToGrid(pos.x - NODE_W / 2), y: snapToGrid(pos.y - NODE_H / 2) } : null);
+      }
+      return;
+    }
+
+    if (dragState.type === 'pan') {
+      setPan({
+        x: (dragState.panX ?? 0) + (e.clientX - dragState.startX),
+        y: (dragState.panY ?? 0) + (e.clientY - dragState.startY),
+      });
+    } else if (dragState.type === 'node' && dragState.nodeId) {
+      const dx = (e.clientX - dragState.startX) / zoom;
+      const dy = (e.clientY - dragState.startY) / zoom;
+      const nx = snapToGrid((dragState.origX ?? 0) + dx);
+      const ny = snapToGrid((dragState.origY ?? 0) + dy);
+      setNodes(prev => prev.map(n => n.id === dragState.nodeId ? { ...n, x: nx, y: ny } : n));
+    } else if (dragState.type === 'edge' && dragState.fromPort) {
+      const pos = screenToCanvas(e.clientX, e.clientY);
+      setPendingEdge({ fromId: dragState.fromPort, mx: pos.x, my: pos.y });
+    }
+  }, [dragState, dropPreview, screenToCanvas, zoom]);
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+    if (dragState?.type === 'edge' && dragState.fromPort && hoverPort) {
+      // Complete edge connection
+      const fromId = dragState.fromPort;
+      const toId = hoverPort.nodeId;
+      if (fromId !== toId && !edges.some(ed => ed.from === fromId && ed.to === toId)) {
+        setEdges(prev => [...prev, { from: fromId, to: toId }]);
+      }
+    }
+    setDragState(null);
+    setPendingEdge(null);
+
+    // Handle palette drop
+    if (dropPreview) {
+      const pos = screenToCanvas(e.clientX, e.clientY);
+      const node = makeNode(dropPreview.kind, dropPreview.kind.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), pos.x - NODE_W / 2, pos.y - NODE_H / 2);
+      setNodes(prev => [...prev, node]);
+      setDropPreview(null);
+      setJustDropped(node.id);
+      setTimeout(() => setJustDropped(null), 400);
+      setSelectedId(node.id);
+    }
+  }, [dragState, dropPreview, edges, hoverPort, screenToCanvas]);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const factor = e.deltaY < 0 ? 1.08 : 0.92;
+    setZoom(z => Math.min(3, Math.max(0.1, z * factor)));
+  }, []);
+
+  // ── Double-click to add node at position ──
+  const handleDoubleClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target !== canvasRef.current && !target.classList.contains('canvas-bg') && target.tagName !== 'svg') return;
+    const pos = screenToCanvas(e.clientX, e.clientY);
+    const node = makeNode('task', 'New Task', pos.x - NODE_W / 2, pos.y - NODE_H / 2);
+    setNodes(prev => [...prev, node]);
+    setSelectedId(node.id);
+    setEditingLabel(node.id);
+    setJustDropped(node.id);
+    setTimeout(() => setJustDropped(null), 400);
+  }, [screenToCanvas]);
+
+  const selectedNode = nodes.find(n => n.id === selectedId) ?? null;
+
+  // ─── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: INK.bg0 }}>
-      <div
-        style={{
-          padding: '14px 22px',
-          borderBottom: `1px solid ${INK.rule}`,
-          display: 'flex',
-          alignItems: 'baseline',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 10, color: INK.muted, letterSpacing: '0.12em', fontWeight: 600 }}>
-            CANVAS
-          </div>
-          <div style={{ fontSize: 16, marginTop: 4, color: INK.primary, fontWeight: 500 }}>
-            {result?.draft.name ?? 'No workflow loaded'}
-          </div>
-          {result && (
-            <div style={{ fontSize: 12, color: INK.secondary, marginTop: 2 }}>
-              {result.draft.processType} · {result.draft.jurisdiction}
-              {result.draft.regulations.length > 0 && (
-                <> · {result.draft.regulations.slice(0, 2).join(', ')}{result.draft.regulations.length > 2 ? ` +${result.draft.regulations.length - 2}` : ''}</>
-              )}
-            </div>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {result && <ValidationBadge validation={result.validation} />}
-          {result && (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '100vh', background: 'var(--paper)', color: 'var(--ink)' }}>
+      {/* Header */}
+      <DesignerHeader
+        name={workflowName}
+        onNameChange={setWorkflowName}
+        stepCount={nodes.length}
+        isDirty={isDirty}
+        zoom={zoom}
+        onZoom={setZoom}
+        onFit={() => fitView(nodes, canvasRef, setZoom, setPan)}
+        onSave={() => { void saveCurrent(); }}
+        saving={saving}
+        toast={toast}
+        toastError={toastError}
+        chatOpen={chatOpen}
+        onToggleChat={() => setChatOpen(v => !v)}
+        detailsOpen={detailsOpen}
+        onToggleDetails={() => setDetailsOpen(v => !v)}
+        catalog={catalog}
+        jurisdiction={workflowMeta.jurisdiction}
+        processType={workflowMeta.processType}
+        onJurisdictionChange={(v) => setWorkflowMeta(prev => ({ ...prev, jurisdiction: v }))}
+        onProcessTypeChange={(v) => setWorkflowMeta(prev => ({ ...prev, processType: v }))}
+        onNewWorkflow={startNewWorkflow}
+      />
+
+      <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        {paletteOpen && (
+          <NodePalette
+            onCollapse={() => setPaletteOpen(false)}
+            onDragStart={(kind) => setDropPreview({ kind, x: 0, y: 0 })}
+            onDragEnd={() => setDropPreview(null)}
+            templates={templates}
+            onLoadTemplate={loadTemplate}
+            savedWorkflows={savedWorkflows}
+            onNewWorkflow={startNewWorkflow}
+            onLoadSaved={async (id) => {
+              try {
+                const row = await api<{ id: string; name: string; processType: string; jurisdiction: string; draft: WorkflowDraft }>(`/api/builder/workflows/${id}`);
+                applyLoadedWorkflow(row);
+                showToast(`Opened "${row.name}"`);
+              } catch (e) {
+                showToast(e instanceof Error ? e.message : 'Could not open workflow', true);
+              }
+            }}
+            onDeleteSaved={async (id) => {
+              if (!window.confirm('Delete this workflow?')) return;
+              try {
+                await api<void>(`/api/builder/workflows/${id}`, { method: 'DELETE' });
+                if (activeWorkflowId === id) setActiveWorkflowId(null);
+                void refreshWorkflows();
+                showToast('Workflow deleted');
+              } catch (e) {
+                showToast(e instanceof Error ? e.message : 'Delete failed', true);
+              }
+            }}
+          />
+        )}
+
+        {/* Canvas */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative' }}>
+          {!paletteOpen && (
             <button
-              onClick={onSave}
-              disabled={savingWorkflow}
+              type="button"
+              onClick={() => setPaletteOpen(true)}
+              title="Show sidebar"
               style={{
-                background: activeWorkflowId ? INK.bg2 : '#0f5132',
-                color: activeWorkflowId ? INK.primary : '#e6ffec',
-                border: `1px solid ${activeWorkflowId ? INK.rule : '#198754'}`,
-                borderRadius: 6,
-                padding: '6px 12px',
-                fontSize: 12,
-                fontWeight: 600,
-                cursor: savingWorkflow ? 'wait' : 'pointer',
-                opacity: savingWorkflow ? 0.6 : 1,
+                position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)',
+                zIndex: 5, background: 'var(--paper)', border: '1px solid var(--rule)',
+                borderLeft: 0, borderRadius: '0 8px 8px 0', padding: '10px 6px',
+                cursor: 'pointer', color: 'var(--ink-3)', fontSize: 12,
               }}
-              title={activeWorkflowId ? 'Save as new name (or overwrite)' : 'Save this workflow'}
             >
-              {savingWorkflow ? 'Saving…' : activeWorkflowId ? 'Save as…' : '+ Save workflow'}
+              {'\u2039'}
             </button>
           )}
-          {savedToast && (
-            <span
-              style={{
-                fontSize: 11,
-                color: INK.secondary,
-                background: INK.bg2,
-                border: `1px solid ${INK.rule}`,
-                borderRadius: 4,
-                padding: '4px 8px',
-              }}
-            >
-              {savedToast}
-            </span>
-          )}
-          {result && (
-            <div style={{ display: 'flex', gap: 4 }}>
-              <CanvasButton onClick={() => setZoom((z) => Math.max(0.15, z * 0.9))}>−</CanvasButton>
-              <span style={{ fontSize: 11, color: INK.secondary, alignSelf: 'center', minWidth: 36, textAlign: 'center' }}>
-                {Math.round(zoom * 100)}%
-              </span>
-              <CanvasButton onClick={() => setZoom((z) => Math.min(2.5, z * 1.1))}>+</CanvasButton>
-              <CanvasButton onClick={fitToView}>Fit</CanvasButton>
-              <CanvasButton onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}>1:1</CanvasButton>
-            </div>
-          )}
-        </div>
-      </div>
 
-      <div style={{ flex: 1, display: 'grid', gridTemplateRows: '1fr auto', minHeight: 0 }}>
-        <div
-          ref={containerRef}
-          onWheel={onWheel}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
-          style={{
-            position: 'relative',
-            overflow: 'hidden',
-            background:
-              'radial-gradient(circle at 1px 1px, #1a1f26 1px, transparent 0) 0 0/22px 22px, #06080b',
-            cursor: dragging ? 'grabbing' : 'grab',
-            minHeight: 0,
-          }}
-        >
-          {result && layout ? (
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                transformOrigin: '0 0',
-              }}
-            >
-              <WorkflowCanvas
-                draft={result.draft}
-                layout={layout}
-                selectedNodeId={selectedNodeId}
-                onSelect={onSelect}
+          <div
+            ref={canvasRef}
+            className="canvas-bg"
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={() => { setDragState(null); setPendingEdge(null); }}
+            onWheel={handleWheel}
+            onDoubleClick={handleDoubleClick}
+            style={{
+              flex: 1, position: 'relative', overflow: 'hidden',
+              background: 'var(--paper-deep)',
+              cursor: dragState?.type === 'pan' ? 'grabbing' : dragState?.type === 'edge' ? 'crosshair' : dropPreview ? 'copy' : 'default',
+            }}
+          >
+          {/* Grid dots */}
+          <GridBackground zoom={zoom} pan={pan} />
+
+          {/* Transform layer */}
+          <div style={{ position: 'absolute', top: 0, left: 0, transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '0 0', willChange: 'transform' }}>
+            {/* SVG edges */}
+            <EdgeLayer
+              nodes={nodes}
+              edges={edges}
+              pendingEdge={pendingEdge}
+              onDeleteEdge={deleteEdge}
+            />
+
+            {/* Nodes */}
+            {nodes.map(n => (
+              <CanvasNodeCard
+                key={n.id}
+                node={n}
+                selected={selectedId === n.id}
+                editing={editingLabel === n.id}
+                justDropped={justDropped === n.id}
+                onSelect={() => { setSelectedId(n.id); setEditingLabel(null); }}
+                onStartDrag={(e) => {
+                  e.stopPropagation();
+                  setDragState({ type: 'node', nodeId: n.id, startX: e.clientX, startY: e.clientY, origX: n.x, origY: n.y });
+                  setSelectedId(n.id);
+                }}
+                onStartEdge={(e) => {
+                  e.stopPropagation();
+                  setDragState({ type: 'edge', startX: e.clientX, startY: e.clientY, fromPort: n.id });
+                }}
+                onPortHover={(side) => setHoverPort(side ? { nodeId: n.id, side } : null)}
+                portGlow={hoverPort?.nodeId === n.id ? hoverPort.side : null}
+                onDoubleClick={() => { setSelectedId(n.id); setEditingLabel(n.id); }}
+                onEdit={() => { setSelectedId(n.id); setEditingLabel(n.id); }}
+                onDelete={() => deleteNode(n.id)}
+                onLabelChange={(label) => {
+                  setNodes(prev => prev.map(nd => nd.id === n.id ? { ...nd, label } : nd));
+                }}
+                onLabelCommit={() => setEditingLabel(null)}
               />
+            ))}
+
+            {/* Drop preview ghost */}
+            {dropPreview && (
+              <div style={{
+                position: 'absolute', left: dropPreview.x, top: dropPreview.y,
+                width: NODE_W, height: NODE_H,
+                border: '2px dashed color-mix(in srgb, var(--ink) 32%, transparent)', borderRadius: 18,
+                opacity: 0.72, pointerEvents: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                background: 'color-mix(in srgb, var(--paper) 80%, transparent)',
+                color: 'var(--ink-3)', fontSize: 12,
+              }}>
+                <WorkflowIcon kind={dropPreview.kind} size={16} /> Drop here
+              </div>
+            )}
+          </div>
+
+          {/* Empty state */}
+          {nodes.length === 0 && (
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              pointerEvents: 'none',
+            }}>
+              <div style={{ textAlign: 'center', color: 'var(--ink-3)', maxWidth: 420, padding: 24 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: 'var(--ink-2)' }}>Start here</div>
+                <div style={{ fontSize: 13, lineHeight: 1.7 }}>
+                  Open a starter template from the sidebar, use Build with AI, or double-click anywhere to add your first step.
+                </div>
+              </div>
             </div>
-          ) : (
-            <EmptyState />
           )}
+
+          {selectedNode && (
+            <NodeInspector
+              node={selectedNode}
+              onChange={(updates) => setNodes(prev => prev.map(n => n.id === selectedId ? { ...n, ...updates } : n))}
+              onClose={() => setSelectedId(null)}
+              onDelete={() => deleteNode(selectedNode.id)}
+              onRename={() => setEditingLabel(selectedNode.id)}
+              onDeleteEdge={deleteEdge}
+              edges={edges}
+              nodes={nodes}
+            />
+          )}
+          </div>
         </div>
 
-        {/* Detail / rationale rail */}
-        {result && (
-          <DetailFooter
-            draft={result.draft}
-            selectedNodeId={selectedNodeId}
-            onClose={() => onSelect(null)}
+        {/* Chat panel (optional) */}
+        {chatOpen && (
+          <ChatPanel
+            chat={chat}
+            input={chatInput}
+            setInput={setChatInput}
+            send={sendChat}
+            busy={chatBusy}
+            jurisdiction={jurisdiction}
+            setJurisdiction={(v) => {
+              setJurisdiction(v);
+              setWorkflowMeta((prev) => ({ ...prev, jurisdiction: v }));
+            }}
+            processType={processType}
+            setProcessType={(v) => {
+              setProcessType(v);
+              setWorkflowMeta((prev) => ({ ...prev, processType: v }));
+            }}
+            catalog={catalog}
+            onClose={() => setChatOpen(false)}
           />
         )}
       </div>
@@ -1281,559 +971,930 @@ function CanvasPane(props: {
   );
 }
 
-function CanvasButton({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: INK.bg2,
-        border: `1px solid ${INK.rule}`,
-        color: INK.secondary,
-        borderRadius: 6,
-        padding: '5px 10px',
-        fontSize: 11,
-        cursor: 'pointer',
-        minWidth: 30,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+// ─── Header ───────────────────────────────────────────────────────────────
 
-function DetailFooter({
-  draft,
-  selectedNodeId,
-  onClose,
-}: {
-  draft: WorkflowDraft;
-  selectedNodeId: string | null;
-  onClose: () => void;
+function DesignerHeader(props: {
+  name: string; onNameChange: (v: string) => void;
+  stepCount: number;
+  isDirty: boolean;
+  zoom: number; onZoom: (z: number) => void; onFit: () => void;
+  onSave: () => void; saving: boolean; toast: string | null; toastError?: boolean;
+  chatOpen: boolean; onToggleChat: () => void;
+  detailsOpen: boolean; onToggleDetails: () => void;
+  catalog: CatalogSnapshot | null;
+  jurisdiction: string;
+  processType: string;
+  onJurisdictionChange: (v: string) => void;
+  onProcessTypeChange: (v: string) => void;
+  onNewWorkflow: () => void;
 }) {
-  const node = selectedNodeId ? draft.nodes.find((n) => n.id === selectedNodeId) : null;
+  const [editingName, setEditingName] = useState(false);
   return (
-    <div
-      style={{
-        borderTop: `1px solid ${INK.rule}`,
-        padding: '14px 22px',
-        fontSize: 12,
-        color: INK.secondary,
-        maxHeight: 240,
-        overflowY: 'auto',
-        background: INK.bg1,
-      }}
-    >
-      {node ? (
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: AUTOMATION_COLOR[node.automation].accent, fontSize: 14 }}>
-                {KIND_GLYPH[node.kind]}
-              </span>
-              <strong style={{ color: INK.primary, fontSize: 14 }}>{node.label}</strong>
-              <span style={{ fontSize: 10, color: INK.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                {KIND_LABEL[node.kind]}
-              </span>
-            </div>
-            <button
-              onClick={onClose}
+    <div style={{
+      display: 'flex', flexDirection: 'column', flexShrink: 0,
+      background: 'var(--paper)', borderBottom: '1px solid var(--rule)',
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 20px', height: 56, gap: 16,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
+          <Link href="/app" style={{ color: 'var(--ink-3)', textDecoration: 'none', fontSize: 13, flexShrink: 0 }}>{'\u2190'} Home</Link>
+          <div style={{ width: 1, height: 20, background: 'var(--rule)', flexShrink: 0 }} />
+          {editingName ? (
+            <input
+              autoFocus
+              value={props.name}
+              onChange={e => props.onNameChange(e.target.value)}
+              onBlur={() => setEditingName(false)}
+              onKeyDown={e => { if (e.key === 'Enter') setEditingName(false); }}
               style={{
-                background: 'transparent',
-                color: INK.muted,
-                border: 0,
-                cursor: 'pointer',
-                fontSize: 12,
+                background: 'transparent', border: '1px solid var(--rule)', borderRadius: 6,
+                color: 'var(--ink)', fontSize: 16, fontWeight: 600, padding: '4px 8px', outline: 'none',
+                minWidth: 180, maxWidth: 360,
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setEditingName(true)}
+              title="Rename workflow"
+              style={{
+                background: 'transparent', border: 0, padding: 0, cursor: 'text',
+                fontSize: 16, fontWeight: 600, color: 'var(--ink)', textAlign: 'left',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}
             >
-              ✕
+              {props.name}
             </button>
-          </div>
-          <div style={{ marginTop: 6, color: INK.secondary, lineHeight: 1.5 }}>{node.description}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 12 }}>
-            <FooterColumn label="Responsible" items={node.responsible} />
-            <FooterColumn label="Inputs" items={node.inputs} />
-            <FooterColumn label="Outputs" items={node.outputs} />
-            <FooterColumn label="Automation" items={[node.automation + (node.durationEstimate ? ` · ${node.durationEstimate}` : '')]} />
-          </div>
-          {node.groundedRefs.length > 0 && (
-            <div style={{ marginTop: 12 }}>
-              <div style={{ fontSize: 10, color: INK.muted, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-                KB grounding
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 6 }}>
-                {node.groundedRefs.map((r, i) => (
-                  <RefChip key={i} groundedRef={r} />
-                ))}
-              </div>
-            </div>
           )}
-          {node.rationale && (
-            <div style={{ marginTop: 10, fontStyle: 'italic', color: INK.muted, lineHeight: 1.5 }}>
-              {node.rationale}
-            </div>
+          {props.isDirty && (
+            <span style={{
+              fontSize: 11, color: 'var(--warn, #b45309)', background: 'var(--signal-soft, #fff7ed)',
+              border: '1px solid var(--rule)', borderRadius: 999, padding: '3px 10px', flexShrink: 0,
+            }}>
+              Unsaved changes
+            </span>
+          )}
+          {props.stepCount > 0 && (
+            <span style={{ fontSize: 12, color: 'var(--ink-3)', flexShrink: 0 }}>
+              {props.stepCount} {props.stepCount === 1 ? 'step' : 'steps'}
+            </span>
           )}
         </div>
-      ) : (
-        <div>
-          <div style={{ fontSize: 10, color: INK.muted, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-            Rationale
-          </div>
-          <div style={{ marginTop: 6, whiteSpace: 'pre-wrap', lineHeight: 1.5, color: INK.secondary }}>
-            {draft.rationale || 'Click any node to see its detail.'}
-          </div>
-          {draft.openQuestions.length > 0 && (
-            <>
-              <div style={{ fontSize: 10, color: INK.muted, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600, marginTop: 10 }}>
-                Open questions
-              </div>
-              <ul style={{ margin: '6px 0 0 18px', color: INK.secondary }}>
-                {draft.openQuestions.map((q, i) => <li key={i}>{q}</li>)}
-              </ul>
-            </>
-          )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <HdrBtn onClick={props.onToggleDetails} active={props.detailsOpen} title="Jurisdiction and process type">
+            Details
+          </HdrBtn>
+          <HdrBtn onClick={props.onToggleChat} active={props.chatOpen} title="Describe a process in plain language">
+            Build with AI
+          </HdrBtn>
+          <div style={{ width: 1, height: 24, background: 'var(--rule)' }} />
+          <HdrBtn onClick={() => props.onZoom(Math.max(0.1, props.zoom * 0.9))} title="Zoom out">{'\u2212'}</HdrBtn>
+          <span style={{ fontSize: 12, color: 'var(--ink-3)', minWidth: 42, textAlign: 'center' }}>
+            {Math.round(props.zoom * 100)}%
+          </span>
+          <HdrBtn onClick={() => props.onZoom(Math.min(3, props.zoom * 1.1))} title="Zoom in">+</HdrBtn>
+          <HdrBtn onClick={props.onFit} title="Fit workflow to screen">Fit</HdrBtn>
+          <button
+            onClick={props.onSave}
+            disabled={props.saving || props.stepCount === 0}
+            title={props.stepCount === 0 ? 'Add at least one step before saving' : 'Save workflow (Ctrl+S)'}
+            style={{
+              background: 'var(--ink)', color: 'var(--paper)', border: 0, borderRadius: 8,
+              padding: '8px 16px', fontSize: 13, fontWeight: 600, marginLeft: 4,
+              cursor: props.saving ? 'wait' : props.stepCount === 0 ? 'not-allowed' : 'pointer',
+              opacity: props.saving || props.stepCount === 0 ? 0.55 : 1,
+            }}
+          >
+            {props.saving ? 'Saving\u2026' : 'Save workflow'}
+          </button>
+        </div>
+      </div>
+
+      {props.detailsOpen && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, padding: '0 20px 12px',
+          borderTop: '1px solid var(--rule)', paddingTop: 12,
+        }}>
+          <span style={{ fontSize: 12, color: 'var(--ink-3)' }}>Applies to</span>
+          <select
+            value={props.jurisdiction}
+            onChange={e => props.onJurisdictionChange(e.target.value)}
+            style={{ ...hdrSelectStyle, minWidth: 140 }}
+          >
+            <option value="">Any jurisdiction</option>
+            {props.catalog?.jurisdictions.map(j => <option key={j} value={j}>{j}</option>)}
+          </select>
+          <select
+            value={props.processType}
+            onChange={e => props.onProcessTypeChange(e.target.value)}
+            style={{ ...hdrSelectStyle, minWidth: 140 }}
+          >
+            <option value="">Any process type</option>
+            {props.catalog?.processTypes.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+          <HdrBtn onClick={props.onNewWorkflow} title="Start a blank workflow">New workflow</HdrBtn>
+        </div>
+      )}
+
+      {props.toast && (
+        <div style={{
+          padding: '8px 20px', fontSize: 12,
+          color: props.toastError ? 'var(--err)' : 'var(--ok)',
+          background: props.toastError ? 'rgba(220,38,38,0.06)' : 'rgba(22,163,74,0.06)',
+          borderTop: '1px solid var(--rule)',
+        }}>
+          {props.toast}
         </div>
       )}
     </div>
   );
 }
 
-function FooterColumn({ label, items }: { label: string; items: string[] }) {
+const hdrSelectStyle: React.CSSProperties = {
+  background: 'var(--paper-deep)', color: 'var(--ink)', border: '1px solid var(--rule)',
+  borderRadius: 6, padding: '4px 6px', fontSize: 11, outline: 'none',
+};
+
+function HdrBtn({ onClick, children, active, title }: { onClick: () => void; children: React.ReactNode; active?: boolean; title?: string }) {
   return (
-    <div>
-      <div style={{ fontSize: 10, color: INK.muted, textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-        {label}
+    <button onClick={onClick} title={title} style={{
+      background: active ? 'var(--ink)' : 'var(--paper-deep)', color: active ? 'var(--paper)' : 'var(--ink-2)',
+      border: '1px solid var(--rule)', borderRadius: 6,
+      padding: '5px 10px', fontSize: 11, cursor: 'pointer', fontWeight: active ? 600 : 400,
+    }}>{children}</button>
+  );
+}
+
+// ─── Node Palette ─────────────────────────────────────────────────────────
+
+type SavedWorkflowRow = { id: string; name: string; processType: string; jurisdiction: string; description: string | null; source: string; sourceTemplateId: string | null; updatedAt: string };
+
+function NodePalette(props: {
+  onCollapse: () => void;
+  onDragStart: (kind: WorkflowNodeKind) => void;
+  onDragEnd: () => void;
+  templates: TemplateSummary[] | null;
+  onLoadTemplate: (id: string) => void;
+  savedWorkflows: SavedWorkflowRow[] | null;
+  onLoadSaved: (id: string) => void;
+  onDeleteSaved: (id: string) => void;
+  onNewWorkflow: () => void;
+}) {
+  const [section, setSection] = useState<'templates' | 'nodes' | 'saved'>('templates');
+
+  const tabs = [
+    { id: 'templates' as const, label: 'Starters' },
+    { id: 'nodes' as const, label: 'Add steps' },
+    { id: 'saved' as const, label: 'Saved' },
+  ];
+
+  return (
+    <div style={{
+      width: 260, borderRight: '1px solid var(--rule)', display: 'flex', flexDirection: 'column',
+      background: 'var(--paper)', flexShrink: 0,
+    }}>
+      <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid var(--rule)', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>Start building</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4, lineHeight: 1.45 }}>
+            Pick a starter, add steps, or reopen a saved workflow.
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={props.onCollapse}
+          title="Hide sidebar"
+          style={{
+            background: 'transparent', border: '1px solid var(--rule)', borderRadius: 6,
+            color: 'var(--ink-3)', cursor: 'pointer', width: 28, height: 28, flexShrink: 0,
+          }}
+        >
+          {'\u203A'}
+        </button>
       </div>
-      <div style={{ marginTop: 4, color: INK.secondary, fontSize: 12, lineHeight: 1.4 }}>
-        {items.length === 0 ? <span style={{ color: INK.faint }}>—</span> : items.join(', ')}
+
+      <div style={{ display: 'flex', gap: 4, padding: '10px 12px 0' }}>
+        {tabs.map(tab => (
+          <button key={tab.id} onClick={() => setSection(tab.id)} style={{
+            flex: 1, padding: '8px 6px', fontSize: 12, fontWeight: section === tab.id ? 600 : 500,
+            cursor: 'pointer', border: '1px solid var(--rule)', borderRadius: 8,
+            background: section === tab.id ? 'var(--ink)' : 'var(--paper)',
+            color: section === tab.id ? 'var(--paper)' : 'var(--ink-2)',
+          }}>{tab.label}</button>
+        ))}
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 12 }}>
+        {section === 'nodes' && (
+          <>
+            <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 12, lineHeight: 1.5 }}>
+              Drag a step onto the canvas, or double-click the canvas to add one.
+            </div>
+            {PALETTE_CATEGORIES.map(cat => (
+              <div key={cat.label} style={{ marginBottom: 18 }}>
+                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink-2)', marginBottom: 8 }}>
+                  {cat.label}
+                </div>
+                {cat.nodes.map(n => (
+                  <div
+                    key={n.kind}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', n.kind);
+                      props.onDragStart(n.kind);
+                    }}
+                    onDragEnd={props.onDragEnd}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '10px 11px', marginBottom: 6, borderRadius: 12,
+                      border: '1px solid var(--rule)', cursor: 'grab',
+                      background: 'var(--paper)',
+                      transition: 'transform 100ms, box-shadow 100ms',
+                    }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = ''; }}
+                  >
+                    <span style={{
+                      width: 34, height: 34, borderRadius: 10,
+                      background: AUTOMATION_COLORS[defaultAutomation(n.kind)].accent + '18',
+                      color: AUTOMATION_COLORS[defaultAutomation(n.kind)].accent,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0,
+                    }}>
+                      <WorkflowIcon kind={n.kind} color={AUTOMATION_COLORS[defaultAutomation(n.kind)].accent} size={18} />
+                    </span>
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 600 }}>{n.label}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{n.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </>
+        )}
+        {section === 'templates' && (
+          <>
+            {!props.templates && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Loading starters...</div>}
+            {props.templates?.length === 0 && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>No starters available.</div>}
+            {props.templates?.map(t => (
+              <button key={t.id} onClick={() => props.onLoadTemplate(t.id)} style={{
+                width: '100%', textAlign: 'left', padding: '12px 14px', marginBottom: 8,
+                background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 10,
+                cursor: 'pointer', color: 'var(--ink)',
+              }}>
+                <div style={{ fontWeight: 600, fontSize: 13 }}>{t.name}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4, lineHeight: 1.45 }}>{t.description}</div>
+                <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 6 }}>
+                  {t.steps.length} steps{t.hitlGates.length > 0 ? ` · ${t.hitlGates.length} approvals` : ''}
+                </div>
+              </button>
+            ))}
+          </>
+        )}
+        {section === 'saved' && (
+          <>
+            <button
+              type="button"
+              onClick={props.onNewWorkflow}
+              style={{
+                width: '100%', marginBottom: 10, padding: '10px 12px',
+                background: 'var(--paper-deep)', border: '1px solid var(--rule)', borderRadius: 8,
+                color: 'var(--ink-2)', fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              Start a blank workflow
+            </button>
+            {!props.savedWorkflows && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Loading...</div>}
+            {props.savedWorkflows?.length === 0 && (
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+                Nothing saved yet. Build a workflow on the canvas, then click Save workflow.
+              </div>
+            )}
+            {props.savedWorkflows?.map(w => (
+              <div key={w.id} style={{
+                display: 'flex', marginBottom: 6, border: '1px solid var(--rule)', borderRadius: 8, overflow: 'hidden', background: 'var(--paper)',
+              }}>
+                <div style={{ flex: 1, padding: '10px 12px', minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 12, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{w.name}</div>
+                  <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>{w.processType} {'\u00B7'} {w.jurisdiction}</div>
+                </div>
+                <button
+                  onClick={() => props.onLoadSaved(w.id)}
+                  title="Open this workflow"
+                  style={{
+                    background: 'var(--ink)', color: 'var(--paper)', border: 0, cursor: 'pointer',
+                    padding: '0 12px', fontSize: 11, fontWeight: 600, flexShrink: 0,
+                  }}
+                >
+                  Open
+                </button>
+                <button
+                  onClick={() => props.onDeleteSaved(w.id)}
+                  title="Delete saved workflow"
+                  style={{
+                    background: 'transparent', border: 0, color: 'var(--err)', cursor: 'pointer',
+                    padding: '0 10px', fontSize: 12, flexShrink: 0,
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function RefChip({ groundedRef: r }: { groundedRef: WorkflowGroundingRef }) {
-  const color = REFKIND_COLOR[r.refKind];
+// ─── Grid Background ──────────────────────────────────────────────────────
+
+function GridBackground({ zoom, pan }: { zoom: number; pan: { x: number; y: number } }) {
+  const spacing = GRID_SIZE * zoom;
+  const ox = pan.x % spacing;
+  const oy = pan.y % spacing;
   return (
-    <span
-      title={r.note ?? `${r.refKind}: ${r.refId}`}
+    <svg style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+      <defs>
+        <pattern id="grid" width={spacing} height={spacing} patternUnits="userSpaceOnUse" x={ox} y={oy}>
+          <circle cx={1} cy={1} r={0.8} fill="var(--ink-4)" opacity={0.4} />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+    </svg>
+  );
+}
+
+// ─── Edge Layer ───────────────────────────────────────────────────────────
+
+function nodeCenter(node: CanvasNode) {
+  return { x: node.x + NODE_W / 2, y: node.y + NODE_H / 2 };
+}
+
+function anchorPoint(node: CanvasNode, side: PortSide) {
+  if (side === 'top') return { x: node.x + NODE_W / 2, y: node.y, side };
+  if (side === 'bottom') return { x: node.x + NODE_W / 2, y: node.y + NODE_H, side };
+  if (side === 'left') return { x: node.x, y: node.y + NODE_H / 2, side };
+  return { x: node.x + NODE_W, y: node.y + NODE_H / 2, side };
+}
+
+function anchorTowardPoint(node: CanvasNode, x: number, y: number) {
+  const c = nodeCenter(node);
+  const dx = x - c.x;
+  const dy = y - c.y;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    return anchorPoint(node, dx >= 0 ? 'right' : 'left');
+  }
+  return anchorPoint(node, dy >= 0 ? 'bottom' : 'top');
+}
+
+function edgeRoute(from: CanvasNode, to: CanvasNode) {
+  const a = nodeCenter(from);
+  const b = nodeCenter(to);
+  const start = anchorTowardPoint(from, b.x, b.y);
+  const end = anchorTowardPoint(to, a.x, a.y);
+  const startVertical = start.side === 'top' || start.side === 'bottom';
+  const endVertical = end.side === 'top' || end.side === 'bottom';
+  const startSign = start.side === 'right' || start.side === 'bottom' ? 1 : -1;
+  const endSign = end.side === 'right' || end.side === 'bottom' ? 1 : -1;
+  const bend = Math.max(70, Math.min(150, Math.hypot(end.x - start.x, end.y - start.y) * 0.32));
+  const c1 = {
+    x: start.x + (startVertical ? 0 : bend * startSign),
+    y: start.y + (startVertical ? bend * startSign : 0),
+  };
+  const c2 = {
+    x: end.x + (endVertical ? 0 : bend * endSign),
+    y: end.y + (endVertical ? bend * endSign : 0),
+  };
+  return {
+    path: `M ${start.x} ${start.y} C ${c1.x} ${c1.y}, ${c2.x} ${c2.y}, ${end.x} ${end.y}`,
+    labelX: (start.x + end.x) / 2,
+    labelY: (start.y + end.y) / 2,
+  };
+}
+
+function EdgeLayer(props: {
+  nodes: CanvasNode[];
+  edges: WorkflowEdge[];
+  pendingEdge: null | { fromId: string; mx: number; my: number };
+  onDeleteEdge: (from: string, to: string) => void;
+}) {
+  const nodeMap = useMemo(() => new Map(props.nodes.map(n => [n.id, n])), [props.nodes]);
+  const bounds = useMemo(() => {
+    if (props.nodes.length === 0) return { w: 800, h: 600 };
+    const maxX = Math.max(...props.nodes.map(n => n.x + NODE_W)) + 200;
+    const maxY = Math.max(...props.nodes.map(n => n.y + NODE_H)) + 200;
+    return { w: Math.max(800, maxX), h: Math.max(600, maxY) };
+  }, [props.nodes]);
+
+  return (
+    <svg width={bounds.w} height={bounds.h} style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none', overflow: 'visible' }}>
+      <defs>
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="color-mix(in srgb, var(--ink) 42%, transparent)" />
+        </marker>
+        <marker id="arrowhead-active" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--orange)" />
+        </marker>
+      </defs>
+      {props.edges.map((e, i) => {
+        const a = nodeMap.get(e.from);
+        const b = nodeMap.get(e.to);
+        if (!a || !b) return null;
+        const route = edgeRoute(a, b);
+        return (
+          <g key={i} style={{ pointerEvents: 'stroke', cursor: 'pointer' }} onClick={() => props.onDeleteEdge(e.from, e.to)}>
+            <title>Click to remove connection</title>
+            <path d={route.path}
+              stroke="transparent" strokeWidth={12} fill="none" />
+            <path d={route.path}
+              stroke="color-mix(in srgb, var(--ink) 38%, transparent)" strokeWidth={1.8} fill="none" markerEnd="url(#arrowhead)"
+              style={{ transition: 'stroke 150ms', filter: 'drop-shadow(0 1px 0 rgba(255,255,255,0.7))' }} />
+            {e.label && (
+              <text x={route.labelX} y={route.labelY - 8} fontSize={10} fill="var(--ink-3)" textAnchor="middle">{e.label}</text>
+            )}
+          </g>
+        );
+      })}
+      {/* Pending edge preview */}
+      {props.pendingEdge && (() => {
+        const from = nodeMap.get(props.pendingEdge.fromId);
+        if (!from) return null;
+        const start = anchorTowardPoint(from, props.pendingEdge.mx, props.pendingEdge.my);
+        const mx = props.pendingEdge.mx;
+        const my = props.pendingEdge.my;
+        const vertical = start.side === 'top' || start.side === 'bottom';
+        const dx = vertical ? 0 : Math.max(60, Math.abs(mx - start.x) * 0.35) * (start.side === 'right' ? 1 : -1);
+        const dy = vertical ? Math.max(60, Math.abs(my - start.y) * 0.35) * (start.side === 'bottom' ? 1 : -1) : 0;
+        return (
+          <path d={`M ${start.x} ${start.y} C ${start.x + dx} ${start.y + dy}, ${mx - dx} ${my - dy}, ${mx} ${my}`}
+            stroke="var(--orange)" strokeWidth={2} fill="none" strokeDasharray="6 4"
+            markerEnd="url(#arrowhead-active)" style={{ pointerEvents: 'none' }} />
+        );
+      })()}
+    </svg>
+  );
+}
+
+// ─── Canvas Node Card ─────────────────────────────────────────────────────
+
+function CanvasNodeCard(props: {
+  node: CanvasNode;
+  selected: boolean;
+  editing: boolean;
+  justDropped: boolean;
+  onSelect: () => void;
+  onStartDrag: (e: React.MouseEvent) => void;
+  onStartEdge: (e: React.MouseEvent) => void;
+  onPortHover: (side: PortSide | null) => void;
+  portGlow: PortSide | null;
+  onDoubleClick: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+  onLabelChange: (label: string) => void;
+  onLabelCommit: () => void;
+}) {
+  const { node, selected, editing, justDropped } = props;
+  const c = AUTOMATION_COLORS[node.automation];
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus();
+  }, [editing]);
+
+  return (
+    <div
+      onMouseDown={props.onStartDrag}
+      onClick={(e) => { e.stopPropagation(); props.onSelect(); }}
+      onDoubleClick={(e) => { e.stopPropagation(); props.onDoubleClick(); }}
       style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        fontSize: 10,
-        padding: '3px 8px 3px 6px',
-        background: INK.bg0,
-        border: `1px solid ${INK.rule}`,
-        color: INK.secondary,
-        borderRadius: 999,
-        fontFamily: 'ui-monospace, monospace',
+        position: 'absolute', left: node.x, top: node.y, width: NODE_W, height: NODE_H,
+        background: 'color-mix(in srgb, var(--paper) 96%, white)',
+        border: `1.5px solid ${selected ? c.accent : 'var(--rule)'}`,
+        borderRadius: 18, cursor: 'grab', userSelect: 'none',
+        boxShadow: selected
+          ? `0 0 0 4px ${c.glow}, 0 18px 42px rgba(15,23,42,0.16)`
+          : '0 10px 24px rgba(15,23,42,0.08)',
+        transition: 'box-shadow 150ms, border-color 150ms, transform 300ms cubic-bezier(0.34,1.56,0.64,1)',
+        transform: justDropped ? 'scale(1.05)' : 'scale(1)',
+        display: 'flex', overflow: 'visible',
       }}
     >
-      <span style={{ width: 6, height: 6, borderRadius: 999, background: color, display: 'inline-block' }} />
-      <span style={{ color: INK.primary }}>{REFKIND_LABEL[r.refKind]}</span>
-      <span style={{ color: INK.muted }}>{r.refId}</span>
-    </span>
+      {selected && !editing && (
+        <div style={{
+          position: 'absolute', top: 8, right: 8, display: 'flex', gap: 4, zIndex: 3,
+        }}>
+          <button
+            type="button"
+            title="Rename step"
+            onClick={(e) => { e.stopPropagation(); props.onEdit(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={nodeActionBtnStyle}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            title="Delete step"
+            onClick={(e) => { e.stopPropagation(); props.onDelete(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{ ...nodeActionBtnStyle, color: 'var(--err)', borderColor: 'var(--err)' }}
+          >
+            Delete
+          </button>
+        </div>
+      )}
+
+      {(['top', 'right', 'bottom', 'left'] as const).map((side) => (
+        <ConnectionPort
+          key={side}
+          side={side}
+          accent={c.accent}
+          glow={c.glow}
+          active={props.portGlow === side}
+          onStartEdge={props.onStartEdge}
+          onHover={props.onPortHover}
+        />
+      ))}
+
+      {/* Body */}
+      <div style={{ flex: 1, padding: '16px 18px', display: 'grid', gridTemplateColumns: '42px 1fr', alignItems: 'center', gap: 12, minWidth: 0 }}>
+        <div style={{
+          width: 42, height: 42, borderRadius: 14,
+          background: `${c.accent}14`, color: c.accent,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          boxShadow: `inset 0 0 0 1px ${c.accent}2a`,
+        }}>
+          <WorkflowIcon kind={node.kind} color={c.accent} size={21} />
+        </div>
+        <div style={{ minWidth: 0 }}>
+        {editing ? (
+          <input
+            ref={inputRef}
+            value={node.label}
+            onChange={e => props.onLabelChange(e.target.value)}
+            onBlur={props.onLabelCommit}
+            onKeyDown={e => { if (e.key === 'Enter') props.onLabelCommit(); }}
+            onClick={e => e.stopPropagation()}
+            onMouseDown={e => e.stopPropagation()}
+            style={{
+              background: 'transparent', border: '1px solid var(--rule)', borderRadius: 4,
+              color: 'var(--ink)', fontSize: 13, fontWeight: 600, padding: '1px 4px', outline: 'none', width: '100%',
+            }}
+          />
+        ) : (
+          <div style={{
+            fontWeight: 650, fontSize: 14, color: 'var(--ink)',
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden', lineHeight: 1.28,
+          }}>
+            {node.label}
+          </div>
+        )}
+        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 7 }}>
+          {AUTOMATION_LABEL[node.automation]}
+        </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConnectionPort(props: {
+  side: PortSide;
+  accent: string;
+  glow: string;
+  active: boolean;
+  onStartEdge: (e: React.MouseEvent) => void;
+  onHover: (side: PortSide | null) => void;
+}) {
+  const position: Record<PortSide, React.CSSProperties> = {
+    top: { top: -PORT_R, left: NODE_W / 2 - PORT_R },
+    right: { right: -PORT_R, top: NODE_H / 2 - PORT_R },
+    bottom: { bottom: -PORT_R, left: NODE_W / 2 - PORT_R },
+    left: { left: -PORT_R, top: NODE_H / 2 - PORT_R },
+  };
+  return (
+    <div
+      onMouseDown={(e) => { e.stopPropagation(); props.onStartEdge(e); }}
+      onMouseEnter={() => props.onHover(props.side)}
+      onMouseLeave={() => props.onHover(null)}
+      title="Drag to connect steps"
+      style={{
+        position: 'absolute',
+        ...position[props.side],
+        width: PORT_R * 2,
+        height: PORT_R * 2,
+        borderRadius: '50%',
+        background: props.active ? props.accent : 'var(--paper)',
+        border: `2px solid ${props.active ? props.accent : 'color-mix(in srgb, var(--ink) 22%, transparent)'}`,
+        cursor: 'crosshair',
+        zIndex: 2,
+        transition: 'background 150ms, border-color 150ms, transform 150ms, opacity 150ms',
+        transform: props.active ? 'scale(1.35)' : 'scale(1)',
+        opacity: props.active ? 1 : 0.58,
+        boxShadow: props.active ? `0 0 10px ${props.glow}` : '0 1px 4px rgba(15,23,42,0.1)',
+      }}
+    />
+  );
+}
+
+// ─── Node Inspector ───────────────────────────────────────────────────────
+
+function NodeInspector(props: {
+  node: CanvasNode;
+  onChange: (updates: Partial<CanvasNode>) => void;
+  onClose: () => void;
+  onDelete: () => void;
+  onRename: () => void;
+  onDeleteEdge: (from: string, to: string) => void;
+  edges: WorkflowEdge[];
+  nodes: CanvasNode[];
+}) {
+  const { node, onChange, onClose, onDelete, onRename, onDeleteEdge } = props;
+  const c = AUTOMATION_COLORS[node.automation];
+  const inboundEdges = props.edges.filter(e => e.to === node.id);
+  const outboundEdges = props.edges.filter(e => e.from === node.id);
+
+  return (
+    <div style={{
+      position: 'absolute', top: 16, right: 16, bottom: 16, width: 320,
+      background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 12,
+      boxShadow: '0 12px 40px rgba(0,0,0,0.12)', zIndex: 4,
+      display: 'flex', flexDirection: 'column', overflow: 'hidden',
+    }}>
+      <div style={{
+        padding: '14px 16px', borderBottom: '1px solid var(--rule)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10,
+      }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginBottom: 4 }}>Selected step</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: c.accent, flexShrink: 0, display: 'inline-flex' }}>
+              <WorkflowIcon kind={node.kind} color={c.accent} size={18} />
+            </span>
+            <strong style={{ fontSize: 15, lineHeight: 1.3 }}>{node.label}</strong>
+          </div>
+        </div>
+        <button type="button" onClick={onClose} style={{ background: 'transparent', border: 0, color: 'var(--ink-3)', cursor: 'pointer', fontSize: 16 }}>{'\u2715'}</button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div>
+            <div style={inspLabelStyle}>Step name</div>
+            <input
+              value={node.label}
+              onChange={e => onChange({ label: e.target.value })}
+              style={inspInputStyle}
+            />
+          </div>
+          <div>
+            <div style={inspLabelStyle}>What happens here</div>
+            <textarea
+              value={node.description}
+              onChange={e => onChange({ description: e.target.value })}
+              rows={3}
+              style={{ ...inspInputStyle, resize: 'vertical', fontFamily: 'inherit' }}
+            />
+          </div>
+          <div>
+            <div style={inspLabelStyle}>Handled by</div>
+            <select value={node.automation} onChange={e => onChange({ automation: e.target.value as AutomationKind })} style={inspInputStyle}>
+              <option value="system">Automated</option>
+              <option value="agent">AI agent</option>
+              <option value="human">Manual review</option>
+              <option value="hybrid">Mixed</option>
+            </select>
+          </div>
+          {(inboundEdges.length > 0 || outboundEdges.length > 0) && (
+            <div>
+              <div style={inspLabelStyle}>Connections</div>
+              <div style={{ color: 'var(--ink-2)', lineHeight: 1.6, fontSize: 12 }}>
+                {inboundEdges.map(e => {
+                  const from = props.nodes.find(n => n.id === e.from);
+                  return (
+                    <div key={`in-${e.from}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                      <span>From: {from?.label ?? e.from}</span>
+                      <button type="button" onClick={() => onDeleteEdge(e.from, e.to)} style={inspLinkBtnStyle}>Remove</button>
+                    </div>
+                  );
+                })}
+                {outboundEdges.map(e => {
+                  const to = props.nodes.find(n => n.id === e.to);
+                  return (
+                    <div key={`out-${e.to}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+                      <span>To: {to?.label ?? e.to}</span>
+                      <button type="button" onClick={() => onDeleteEdge(e.from, e.to)} style={inspLinkBtnStyle}>Remove</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {node.rationale && (
+          <div style={{ marginTop: 14, color: 'var(--ink-3)', lineHeight: 1.5, fontSize: 12 }}>
+            {node.rationale}
+          </div>
+        )}
+      </div>
+
+      <div style={{
+        padding: '12px 16px', borderTop: '1px solid var(--rule)',
+        display: 'flex', gap: 8,
+      }}>
+        <button type="button" onClick={onRename} style={{ ...inspActionBtnStyle, flex: 1 }}>Rename on canvas</button>
+        <button
+          type="button"
+          onClick={() => {
+            if (window.confirm(`Delete step "${node.label}"?`)) onDelete();
+          }}
+          style={{ ...inspActionBtnStyle, color: 'var(--err)', borderColor: 'var(--err)' }}
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const inspLabelStyle: React.CSSProperties = {
+  fontSize: 12, fontWeight: 600, color: 'var(--ink-2)', marginBottom: 6,
+};
+const inspInputStyle: React.CSSProperties = {
+  width: '100%', background: 'var(--paper-deep)', border: '1px solid var(--rule)',
+  borderRadius: 6, color: 'var(--ink)', padding: '6px 8px', fontSize: 12, outline: 'none',
+};
+const inspActionBtnStyle: React.CSSProperties = {
+  background: 'var(--paper-deep)', border: '1px solid var(--rule)', borderRadius: 6,
+  color: 'var(--ink)', padding: '5px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+};
+const inspLinkBtnStyle: React.CSSProperties = {
+  background: 'transparent', border: 0, color: 'var(--err)', cursor: 'pointer',
+  fontSize: 11, padding: 0, flexShrink: 0,
+};
+const nodeActionBtnStyle: React.CSSProperties = {
+  background: 'var(--paper)', border: '1px solid var(--rule)', borderRadius: 6,
+  color: 'var(--ink-2)', padding: '2px 6px', fontSize: 10, fontWeight: 600, cursor: 'pointer',
+};
+
+// ─── Chat Panel ───────────────────────────────────────────────────────────
+
+function ChatPanel(props: {
+  chat: ChatTurn[]; input: string; setInput: (v: string) => void;
+  send: () => void; busy: boolean;
+  jurisdiction: string; setJurisdiction: (v: string) => void;
+  processType: string; setProcessType: (v: string) => void;
+  catalog: CatalogSnapshot | null;
+  onClose: () => void;
+}) {
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [props.chat]);
+
+  return (
+    <div style={{
+      width: 360, borderLeft: '1px solid var(--rule)', display: 'flex', flexDirection: 'column',
+      background: 'var(--paper)', flexShrink: 0,
+    }}>
+      <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--rule)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Build with AI</div>
+          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 4 }}>Describe the process in plain language.</div>
+        </div>
+        <button onClick={props.onClose} style={{ background: 'transparent', border: 0, color: 'var(--ink-3)', cursor: 'pointer', fontSize: 16 }}>{'\u2715'}</button>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: '8px 12px', borderBottom: '1px solid var(--rule)' }}>
+        <select value={props.jurisdiction} onChange={e => props.setJurisdiction(e.target.value)} style={selectStyle}>
+          <option value="">Any jurisdiction</option>
+          {props.catalog?.jurisdictions.map(j => <option key={j} value={j}>{j}</option>)}
+        </select>
+        <select value={props.processType} onChange={e => props.setProcessType(e.target.value)} style={selectStyle}>
+          <option value="">Any process type</option>
+          {props.catalog?.processTypes.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {props.chat.map((t, i) => (
+          <div key={i} style={{
+            alignSelf: t.role === 'user' ? 'flex-end' : 'flex-start',
+            maxWidth: '90%', padding: '8px 12px', borderRadius: 10,
+            background: t.role === 'user' ? 'var(--ink)' : 'var(--paper-deep)',
+            color: t.role === 'user' ? 'var(--paper)' : 'var(--ink)',
+            fontSize: 12, lineHeight: 1.5, whiteSpace: 'pre-wrap',
+            border: t.role === 'user' ? 'none' : '1px solid var(--rule)',
+          }}>{t.content}</div>
+        ))}
+        {props.busy && <div style={{ fontSize: 12, color: 'var(--ink-3)', fontStyle: 'italic' }}>Building your workflow...</div>}
+        <div ref={chatEndRef} />
+      </div>
+
+      <div style={{ borderTop: '1px solid var(--rule)', padding: '10px 12px' }}>
+        <textarea
+          value={props.input}
+          onChange={e => props.setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); props.send(); } }}
+          placeholder="Example: EU MDR adverse event reportability with vigilance officer approval..."
+          rows={3}
+          style={{ ...selectStyle, resize: 'vertical', fontFamily: 'inherit', width: '100%' }}
+        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8, gap: 8 }}>
+          <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>Ctrl+Enter to build</span>
+          <button onClick={props.send} disabled={props.busy || !props.input.trim()} style={{
+            background: props.busy || !props.input.trim() ? 'var(--paper-deep)' : 'var(--ink)',
+            color: props.busy || !props.input.trim() ? 'var(--ink-3)' : 'var(--paper)',
+            border: 0, borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600,
+            cursor: props.busy || !props.input.trim() ? 'not-allowed' : 'pointer',
+          }}>{props.busy ? 'Building\u2026' : 'Build workflow'}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 const selectStyle: React.CSSProperties = {
-  background: INK.bg1,
-  color: INK.primary,
-  border: `1px solid ${INK.rule}`,
-  borderRadius: 6,
-  padding: '7px 9px',
-  fontSize: 12,
-  outline: 'none',
+  background: 'var(--paper-deep)', color: 'var(--ink)', border: '1px solid var(--rule)',
+  borderRadius: 6, padding: '6px 8px', fontSize: 12, outline: 'none',
 };
 
-function ValidationBadge({ validation }: { validation: DraftValidation }) {
-  if (validation.valid) {
-    return (
-      <div
-        style={{
-          fontSize: 11,
-          padding: '4px 10px',
-          borderRadius: 999,
-          background: '#103018',
-          color: '#7fdc9a',
-          border: '1px solid #225a32',
-        }}
-      >
-        ● KB-grounded
-      </div>
-    );
-  }
-  const issues =
-    validation.unknownRefs.length +
-    validation.danglingEdges.length +
-    validation.ungroundedSteps.length +
-    validation.invalidDecisions.length +
-    (validation.missingStart ? 1 : 0) +
-    (validation.missingEnd ? 1 : 0);
-  return (
-    <div
-      style={{
-        fontSize: 11,
-        padding: '4px 10px',
-        borderRadius: 999,
-        background: '#301010',
-        color: '#f99',
-        border: '1px solid #5a2222',
-      }}
-      title={JSON.stringify(validation, null, 2)}
-    >
-      ● {issues} validation issue{issues === 1 ? '' : 's'}
-    </div>
-  );
-}
+// ─── Auto-layout ──────────────────────────────────────────────────────────
 
-function EmptyState() {
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        inset: 0,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: INK.muted,
-        fontSize: 13,
-        textAlign: 'center',
-      }}
-    >
-      <div style={{ maxWidth: 360 }}>
-        <div style={{ fontSize: 32, marginBottom: 12, color: INK.faint }}>◇</div>
-        <div style={{ color: INK.secondary, marginBottom: 4 }}>Empty canvas</div>
-        <div>Pick a template on the left or describe a process in the chat.</div>
-      </div>
-    </div>
-  );
-}
+function autoLayout(workflowNodes: WorkflowNode[], edges: WorkflowEdge[]): CanvasNode[] {
+  if (workflowNodes.length === 0) return [];
 
-// ─── Layout engine ────────────────────────────────────────────────────────
-
-interface LaidOutNode {
-  node: WorkflowNode;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
-interface LayoutResult {
-  positioned: Record<string, LaidOutNode>;
-  width: number;
-  height: number;
-  laneBands: Array<{ y: number; h: number; label: string; automation: AutomationKind }>;
-}
-
-const NODE_W = 180;
-const NODE_H = 64;
-const COL_GAP = 70;
-const ROW_GAP = 22;
-const LANE_LABEL_W = 80;
-const LANE_PAD_TOP = 36;
-
-/**
- * Compute a left-to-right layered layout (longest-path topological columns)
- * with horizontal swimlanes by `automation`. Cycles are tolerated via a
- * fallback ordering.
- */
-function buildLayout(draft: WorkflowDraft): LayoutResult {
-  const nodes = draft.nodes;
-  const idIndex = new Map(nodes.map((n) => [n.id, n] as const));
+  const idIndex = new Map(workflowNodes.map(n => [n.id, n]));
   const adjOut = new Map<string, string[]>();
   const indeg = new Map<string, number>();
-  for (const n of nodes) {
-    adjOut.set(n.id, []);
-    indeg.set(n.id, 0);
-  }
-  for (const e of draft.edges) {
+  for (const n of workflowNodes) { adjOut.set(n.id, []); indeg.set(n.id, 0); }
+  for (const e of edges) {
     if (!idIndex.has(e.from) || !idIndex.has(e.to)) continue;
     adjOut.get(e.from)!.push(e.to);
     indeg.set(e.to, (indeg.get(e.to) ?? 0) + 1);
   }
 
-  // Longest-path layering (Kahn-ish; for cycles, just push to col 0).
+  // Longest-path layering
   const layer = new Map<string, number>();
   const queue: string[] = [];
   const tempIndeg = new Map(indeg);
-  for (const n of nodes) {
-    if ((tempIndeg.get(n.id) ?? 0) === 0) {
-      queue.push(n.id);
-      layer.set(n.id, 0);
-    }
+  for (const n of workflowNodes) {
+    if ((tempIndeg.get(n.id) ?? 0) === 0) { queue.push(n.id); layer.set(n.id, 0); }
   }
   while (queue.length) {
     const id = queue.shift()!;
     const l = layer.get(id) ?? 0;
     for (const nb of adjOut.get(id) ?? []) {
-      const nl = Math.max(layer.get(nb) ?? 0, l + 1);
-      layer.set(nb, nl);
+      layer.set(nb, Math.max(layer.get(nb) ?? 0, l + 1));
       tempIndeg.set(nb, (tempIndeg.get(nb) ?? 1) - 1);
       if ((tempIndeg.get(nb) ?? 0) === 0) queue.push(nb);
     }
   }
-  for (const n of nodes) {
-    if (!layer.has(n.id)) layer.set(n.id, 0);
-  }
+  for (const n of workflowNodes) { if (!layer.has(n.id)) layer.set(n.id, 0); }
 
-  // Group nodes by (column, automation lane)
-  const cols: Record<number, Record<AutomationKind, WorkflowNode[]>> = {};
-  let maxCol = 0;
-  for (const n of nodes) {
+  // Group by column
+  const cols = new Map<number, WorkflowNode[]>();
+  for (const n of workflowNodes) {
     const c = layer.get(n.id) ?? 0;
-    maxCol = Math.max(maxCol, c);
-    cols[c] ||= { system: [], agent: [], human: [], hybrid: [] };
-    cols[c][n.automation].push(n);
+    if (!cols.has(c)) cols.set(c, []);
+    cols.get(c)!.push(n);
   }
 
-  // Determine which lanes are populated
-  const usedLanes = AUTOMATION_ORDER.filter((a) =>
-    Object.values(cols).some((col) => col[a].length > 0),
-  );
-  if (usedLanes.length === 0) usedLanes.push('system');
-
-  // Compute max nodes per (col,lane) to size rows in that lane
-  const lanePeak: Record<AutomationKind, number> = { system: 1, agent: 1, human: 1, hybrid: 1 };
-  for (const a of usedLanes) {
-    for (let c = 0; c <= maxCol; c++) {
-      const count = cols[c]?.[a].length ?? 0;
-      if (count > lanePeak[a]) lanePeak[a] = count;
-    }
-  }
-
-  // Compute lane Y bands
-  const laneBands: LayoutResult['laneBands'] = [];
-  let cursorY = LANE_PAD_TOP;
-  for (const a of usedLanes) {
-    const h = lanePeak[a] * NODE_H + (lanePeak[a] - 1) * ROW_GAP + 32;
-    laneBands.push({ y: cursorY, h, label: AUTOMATION_COLOR[a].lane, automation: a });
-    cursorY += h + 8;
-  }
-  const totalHeight = cursorY + 16;
-  const totalWidth = LANE_LABEL_W + (maxCol + 1) * NODE_W + maxCol * COL_GAP + 32;
-
-  // Position nodes
-  const positioned: Record<string, LaidOutNode> = {};
-  for (let c = 0; c <= maxCol; c++) {
-    for (const a of usedLanes) {
-      const arr = cols[c]?.[a] ?? [];
-      const band = laneBands.find((b) => b.automation === a)!;
-      const baseY = band.y + 16;
-      arr.forEach((n, idx) => {
-        positioned[n.id] = {
-          node: n,
-          x: LANE_LABEL_W + 16 + c * (NODE_W + COL_GAP),
-          y: baseY + idx * (NODE_H + ROW_GAP),
-          w: NODE_W,
-          h: NODE_H,
-        };
+  const result: CanvasNode[] = [];
+  for (const [col, group] of cols) {
+    group.forEach((n, row) => {
+      result.push({
+        ...n,
+        x: snapToGrid(100 + col * (NODE_W + 80)),
+        y: snapToGrid(80 + row * (NODE_H + 40)),
       });
-    }
+    });
   }
-
-  return { positioned, width: totalWidth, height: totalHeight, laneBands };
+  return result;
 }
 
-// ─── Canvas renderer ──────────────────────────────────────────────────────
-
-function WorkflowCanvas(props: {
-  draft: WorkflowDraft;
-  layout: LayoutResult;
-  selectedNodeId: string | null;
-  onSelect: (id: string | null) => void;
-}) {
-  const { draft, layout, selectedNodeId, onSelect } = props;
-  const { positioned, width, height, laneBands } = layout;
-
-  return (
-    <div style={{ position: 'relative', width, height }}>
-      {/* Lane bands */}
-      <svg width={width} height={height} style={{ position: 'absolute', top: 0, left: 0 }}>
-        {laneBands.map((band) => (
-          <g key={band.label}>
-            <rect
-              x={0}
-              y={band.y}
-              width={width}
-              height={band.h}
-              fill={AUTOMATION_COLOR[band.automation].accent}
-              opacity={0.04}
-            />
-            <line
-              x1={0}
-              x2={width}
-              y1={band.y + band.h}
-              y2={band.y + band.h}
-              stroke={INK.rule}
-              strokeDasharray="3 5"
-            />
-            <text
-              x={12}
-              y={band.y + 18}
-              fontSize={10}
-              fill={AUTOMATION_COLOR[band.automation].accent}
-              fontWeight={600}
-              style={{ letterSpacing: '0.12em', textTransform: 'uppercase' }}
-            >
-              {band.label}
-            </text>
-          </g>
-        ))}
-      </svg>
-
-      {/* Edges */}
-      <svg
-        width={width}
-        height={height}
-        style={{ position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
-      >
-        <defs>
-          <marker
-            id="arrow"
-            viewBox="0 0 10 10"
-            refX="9"
-            refY="5"
-            markerWidth="6"
-            markerHeight="6"
-            orient="auto-start-reverse"
-          >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7888" />
-          </marker>
-        </defs>
-        {draft.edges.map((e, i) => {
-          const a = positioned[e.from];
-          const b = positioned[e.to];
-          if (!a || !b) return null;
-          const ax = a.x + a.w;
-          const ay = a.y + a.h / 2;
-          const bx = b.x;
-          const by = b.y + b.h / 2;
-          // If b is to the left of a (back-edge), route around with a downward dip
-          const sameOrBack = bx <= ax;
-          const mx = sameOrBack ? Math.min(ax, bx) - 40 : (ax + bx) / 2;
-          const my = (ay + by) / 2 + (sameOrBack ? 60 : 0);
-          const path = sameOrBack
-            ? `M ${ax} ${ay} C ${ax + 40} ${ay}, ${mx} ${my}, ${bx - 40} ${by} S ${bx} ${by}, ${bx} ${by}`
-            : `M ${ax} ${ay} C ${mx} ${ay}, ${mx} ${by}, ${bx} ${by}`;
-          return (
-            <g key={i}>
-              <path d={path} stroke="#6b7888" strokeWidth={1.5} fill="none" markerEnd="url(#arrow)" />
-              {e.label && (
-                <text
-                  x={(ax + bx) / 2}
-                  y={(ay + by) / 2 - 6}
-                  fontSize={10}
-                  fill="#b8c0cc"
-                  textAnchor="middle"
-                  style={{ paintOrder: 'stroke', stroke: '#06080b', strokeWidth: 3 }}
-                >
-                  {e.label}
-                </text>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-
-      {/* Node cards */}
-      {draft.nodes.map((n) => {
-        const p = positioned[n.id];
-        if (!p) return null;
-        const c = AUTOMATION_COLOR[n.automation];
-        const selected = selectedNodeId === n.id;
-        // Distinct ref kinds (color dots only)
-        const distinctRefKinds = Array.from(new Set(n.groundedRefs.map((r) => r.refKind)));
-        return (
-          <div
-            key={n.id}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={() => onSelect(selected ? null : n.id)}
-            title={n.description || n.label}
-            style={{
-              position: 'absolute',
-              left: p.x,
-              top: p.y,
-              width: p.w,
-              height: p.h,
-              background: c.bg,
-              border: `1px solid ${selected ? c.accent : c.border}`,
-              boxShadow: selected
-                ? `0 0 0 2px ${c.accent}33, 0 8px 24px rgba(0,0,0,0.5)`
-                : '0 2px 8px rgba(0,0,0,0.35)',
-              borderRadius: 8,
-              color: c.ink,
-              fontSize: 12,
-              display: 'flex',
-              overflow: 'hidden',
-              cursor: 'pointer',
-              transition: 'box-shadow 120ms, border-color 120ms',
-            }}
-          >
-            {/* Accent stripe */}
-            <div style={{ width: 4, background: c.accent, flexShrink: 0 }} />
-
-            {/* Body */}
-            <div
-              style={{
-                flex: 1,
-                padding: '8px 10px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                minWidth: 0,
-              }}
-            >
-              <div
-                style={{
-                  fontWeight: 600,
-                  fontSize: 13,
-                  color: c.ink,
-                  lineHeight: 1.2,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <span style={{ color: c.accent, marginRight: 6 }}>{KIND_GLYPH[n.kind]}</span>
-                {n.label}
-              </div>
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: 10,
-                  color: INK.muted,
-                }}
-              >
-                <span style={{ textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                  {KIND_LABEL[n.kind]}
-                  {n.durationEstimate ? ` · ${n.durationEstimate}` : ''}
-                </span>
-                {distinctRefKinds.length > 0 && (
-                  <span style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
-                    {distinctRefKinds.slice(0, 5).map((k) => (
-                      <span
-                        key={k}
-                        title={k}
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: 999,
-                          background: REFKIND_COLOR[k],
-                        }}
-                      />
-                    ))}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+function fitView(
+  nodes: CanvasNode[],
+  canvasRef: React.RefObject<HTMLDivElement | null>,
+  setZoom: (z: number) => void,
+  setPan: (p: { x: number; y: number }) => void,
+) {
+  if (nodes.length === 0 || !canvasRef.current) return;
+  const cw = canvasRef.current.clientWidth;
+  const ch = canvasRef.current.clientHeight;
+  const minX = Math.min(...nodes.map(n => n.x));
+  const minY = Math.min(...nodes.map(n => n.y));
+  const maxX = Math.max(...nodes.map(n => n.x + NODE_W));
+  const maxY = Math.max(...nodes.map(n => n.y + NODE_H));
+  const w = maxX - minX + 120;
+  const h = maxY - minY + 120;
+  const z = Math.min(1.5, Math.max(0.15, Math.min(cw / w, ch / h)));
+  setZoom(z);
+  setPan({ x: (cw - w * z) / 2 - minX * z + 60 * z, y: (ch - h * z) / 2 - minY * z + 60 * z });
 }
 
 export default ProcessDesigner;

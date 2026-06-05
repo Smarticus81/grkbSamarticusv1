@@ -87,7 +87,7 @@ deploy to Railway. See `RAILWAY.md` for full setup. Key points:
 - Build context is the repo root so pnpm workspace resolution works.
 - Neo4j is external (Aura, `neo4j+s://` scheme). Postgres can be Railway-provisioned.
 - The API binds to Railway's injected `PORT`. The MCP server uses `MCP_TRANSPORT=http`.
-- Seed the graph (`pnpm seed:graph`) locally or as a one-off job against the production Neo4j.
+- Seed the graph (`pnpm seed:graph`) locally or as a one-off process against the production Neo4j.
 
 ## Architecture
 

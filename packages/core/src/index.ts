@@ -28,7 +28,23 @@ export type {
 } from './graph/KBCatalog.js';
 export * from './process/builder/index.js';
 export { GraphVersioning } from './graph/GraphVersioning.js';
-export { ObligationDiscovery, type DiscoveredScope } from './graph/ObligationDiscovery.js';
+export {
+  ObligationDiscovery,
+  type DiscoveredScope,
+  type HybridDiscoveredScope,
+  type ScoredObligation,
+  type MatchSource,
+} from './graph/ObligationDiscovery.js';
+export {
+  SemanticContextBroker,
+  ExtractedIntentSchema,
+  type ExtractedIntent,
+  type RankedObligation,
+  type RetrievedDefinition,
+  type SemanticContextBundle,
+  type RetrievalMetadata,
+  type SemanticContextBrokerOptions,
+} from './graph/SemanticContextBroker.js';
 export { ALL_RELATION_TYPES, isValidRelationType } from './graph/relationships.js';
 export {
   ProcessNodeSchema,
@@ -68,6 +84,7 @@ export { LLMAbstraction } from './llm/LLMAbstraction.js';
 export { CapabilityNegotiator } from './llm/CapabilityNegotiator.js';
 export { FallbackChain } from './llm/FallbackChain.js';
 export { ModelBenchmark, type BenchmarkResult } from './llm/ModelBenchmark.js';
+export { EmbeddingClient, type EmbeddingProviderConfig, type EmbeddingResult } from './llm/EmbeddingClient.js';
 export { OpenAIProvider, type OpenAIProviderConfig } from './llm/providers/OpenAIProvider.js';
 export {
   AnthropicProvider,
@@ -75,6 +92,7 @@ export {
 } from './llm/providers/AnthropicProvider.js';
 export { GoogleProvider, type GoogleProviderConfig } from './llm/providers/GoogleProvider.js';
 export { GenericProvider, type GenericProviderConfig } from './llm/providers/GenericProvider.js';
+export { DeepSeekProvider, type DeepSeekProviderConfig } from './llm/providers/DeepSeekProvider.js';
 
 // agents
 export * from './agents/types.js';

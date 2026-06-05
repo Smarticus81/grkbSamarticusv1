@@ -1,0 +1,759 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Annexes IV-VII — EU DoC, CE marking, registration, safety features"
+jurisdiction: EU_MDR
+processType: CONFORMITY_ASSESSMENT
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ── Annex IV — EU Declaration of Conformity ──
+
+  - obligationId: "EUMDR.AIV.OBL.001"
+    kind: obligation
+    title: "EU Declaration of Conformity — content requirements"
+    text: "The EU declaration of conformity shall contain the following information: the name, registered trade name or registered trade mark, and address of the registered place of business of the manufacturer and, if applicable, the authorised representative; the trade name, product or device model, and the product, catalogue or reference number allowing identification and traceability of the device, and a clear identification of the device including its intended purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IV"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - manufacturer_identification_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIV.OBL.002"
+    kind: obligation
+    title: "EU DoC — device identification and classification"
+    text: "The EU declaration of conformity shall state the product, catalogue, or reference number and a clear identification of the device (including UDI-DI, intended purpose, risk class, and a reference to any previous generation or variants of the device)."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IV"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - udi_assignment_record
+      - classification_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIV.OBL.003"
+    kind: obligation
+    title: "EU DoC — reference to conformity assessment procedure"
+    text: "The EU declaration of conformity shall contain a reference to the conformity assessment procedure followed (Annex IX, X, or XI), a reference to the relevant harmonised standards, common specifications, or other solutions applied, and where applicable, the name, address, and identification number of the notified body, a reference to the relevant certificate(s) issued, and the date of issue of the certificate(s)."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IV"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - conformity_assessment_record
+      - notified_body_certificate
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIV.OBL.004"
+    kind: obligation
+    title: "EU DoC — statement of conformity and signature"
+    text: "The EU declaration of conformity shall contain a statement that the device is in conformity with this Regulation and, if applicable, with any other relevant Union legislation that provides for the issuing of an EU declaration of conformity. The declaration shall be signed by or on behalf of the manufacturer, with name and function of the signatory, date and place of issue."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IV"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - authorised_signatory_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIV.OBL.005"
+    kind: obligation
+    title: "EU DoC — combined declaration for multiple directives"
+    text: "Where a device is subject to other Union legislation which also provides for an EU declaration of conformity, a single EU declaration of conformity shall be drawn up in respect of all such Union legislation. That declaration shall contain the identification of the Union legislation concerned, including publication references."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IV"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - applicable_legislation_register
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "Applicable when device is subject to multiple Union harmonisation directives"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIV.OBL.006"
+    kind: obligation
+    title: "EU DoC — translation requirements"
+    text: "The EU declaration of conformity shall be translated into an official Union language or languages required by the Member State(s) in which the device is or is to be made available."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IV"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - translation_records
+      - language_coverage_matrix
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIV.OBL.007"
+    kind: obligation
+    title: "EU DoC — kept up to date"
+    text: "The manufacturer shall keep the EU declaration of conformity up to date. It shall be revised when changes to the device, its intended purpose, or the conformity assessment procedure require updating, and shall reflect the latest applicable harmonised standards or common specifications."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IV"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - document_revision_history
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Annex V — CE marking of conformity ──
+
+  - obligationId: "EUMDR.AV.OBL.001"
+    kind: obligation
+    title: "CE marking — form and dimensions"
+    text: "The CE marking of conformity shall consist of the initials 'CE' in the following form. If the CE marking is reduced or enlarged, the proportions given in the graduated drawing shall be respected. The CE marking shall have a height of at least 5 mm. For small devices, the minimum dimension requirement may be waived."
+    sourceCitation: "Regulation (EU) 2017/745 Annex V"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - label_artwork
+      - packaging_artwork
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AV.OBL.002"
+    kind: obligation
+    title: "CE marking — placement on device or packaging"
+    text: "The CE marking shall be affixed visibly, legibly, and indelibly to the device or its sterile packaging. Where such affixing is not possible or not warranted on account of the nature of the device, the CE marking shall be affixed to the packaging. The CE marking shall also appear in the instructions for use and on the sales packaging."
+    sourceCitation: "Regulation (EU) 2017/745 Annex V"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - label_artwork
+      - packaging_artwork
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AV.OBL.003"
+    kind: obligation
+    title: "CE marking — notified body identification number"
+    text: "Where a notified body is involved in the conformity assessment procedure in accordance with Annexes IX to XI, the identification number of that notified body shall be affixed next to the CE marking. The identification number shall also be indicated in any promotional material which mentions that the device fulfils the conditions for CE marking."
+    sourceCitation: "Regulation (EU) 2017/745 Annex V"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - notified_body_certificate
+      - label_artwork
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "Also applicable to class I devices with measuring, sterile, or reprocessing functions"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AV.OBL.004"
+    kind: obligation
+    title: "CE marking — prohibition of misleading marks"
+    text: "No marks or inscriptions which are likely to mislead third parties with regard to the meaning or the form of the CE marking shall be affixed to the device. Any other mark may be affixed to the device, its packaging, or to the document accompanying the device, provided that the visibility, legibility, and meaning of the CE marking is not thereby reduced."
+    sourceCitation: "Regulation (EU) 2017/745 Annex V"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - label_artwork
+      - labeling_review_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Annex VI — Information to be submitted upon the registration of devices and economic operators ──
+
+  - obligationId: "EUMDR.AVI.OBL.001"
+    kind: obligation
+    title: "Annex VI Part A — manufacturer registration data elements"
+    text: "Manufacturers and, where applicable, authorised representatives shall provide the following information to the UDI database and to EUDAMED: type and SRN of the economic operator, name, address, and contact details of the manufacturer, the UDI-DI and any additional UDI-DIs, the GMDN code or equivalent recognised nomenclature, the device risk class, where applicable the name and identification number of the notified body, and the clinical investigation references (if any)."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VI Part A"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - udi_assignment_record
+      - economic_operator_registration
+      - manufacturer_identification_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVI.OBL.002"
+    kind: obligation
+    title: "Annex VI Part A — device-specific core data"
+    text: "The core data for each device shall include: basic UDI-DI, trade name, manufacturer name, single registration number (SRN), device description including intended purpose, risk class, conditions of use (single use, reusable, etc.), sterility status, MRI compatibility, whether the device contains or incorporates a medicinal substance, tissues or cells of human or animal origin, and the device status (on the market, no longer placed on the market, recalled, field safety corrective action)."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VI Part A Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - udi_assignment_record
+      - device_description_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVI.OBL.003"
+    kind: obligation
+    title: "Annex VI Part A — certificate and conformity assessment data"
+    text: "For devices requiring notified body involvement, the manufacturer shall submit information regarding: the certificate type (EU type-examination, QMS, product verification), the certificate number, the name and identification number of the notified body, the conformity assessment procedure used (Annex IX, X, or XI), and the certificate expiry date."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VI Part A Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - notified_body_certificate
+      - conformity_assessment_record
+      - certificate_validity_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "Also applicable to class I devices with measuring, sterile, or reprocessing functions"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVI.OBL.004"
+    kind: obligation
+    title: "Annex VI Part B — information from importers and distributors"
+    text: "Importers and distributors shall submit the following information to EUDAMED: type of economic operator (importer or distributor), name, address, and contact details, the SRN of the manufacturer and, where applicable, the authorised representative, the Member State(s) in which the device is or is to be made available, and the role and activity of the economic operator in the supply chain."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VI Part B"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - economic_operator_registration
+      - supply_chain_traceability_record
+    applicability:
+      operatorRoles:
+        - importer
+        - distributor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVI.OBL.005"
+    kind: obligation
+    title: "Annex VI — EUDAMED data submission and updates"
+    text: "Economic operators shall enter the information referred to in this Annex into EUDAMED before placing the device on the market and shall keep that information up to date. Data shall be verified and updated at least annually and whenever a change occurs that affects the information already submitted."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VI"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - data_verification_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Annex VII — Requirements to be met by notified bodies ──
+
+  - obligationId: "EUMDR.AVII.OBL.001"
+    kind: obligation
+    title: "Annex VII Part A — organisational and general requirements"
+    text: "A notified body shall be established under the national law of a Member State as a legal entity. It shall be organised and operated so as to safeguard the independence, objectivity, and impartiality of its activities. The organisational structure, allocation of responsibilities, reporting lines, and operation of the notified body shall ensure confidence in the performance and results of its conformity assessment activities."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part A Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - legal_establishment_record
+      - notified_body_organisational_chart
+      - independence_declaration
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.002"
+    kind: obligation
+    title: "Annex VII Part A — independence and impartiality"
+    text: "The notified body, its top-level management, and the personnel responsible for carrying out the conformity assessment tasks shall not be the designer, manufacturer, supplier, installer, purchaser, owner, user, or maintainer of the devices which they assess, nor the authorised representative of any of those parties. This shall not preclude the use of assessed devices that are necessary for the operations of the notified body or the use of such devices for personal purposes."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part A Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - independence_declaration
+      - conflict_of_interest_policy
+      - impartiality_assessment
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.003"
+    kind: obligation
+    title: "Annex VII Part A — quality management system of the notified body"
+    text: "The notified body shall establish, document, implement, maintain, and continually improve a quality management system that ensures the consistent application of conformity assessment procedures. The QMS shall address policies and procedures for conformity assessment, assignment and management of personnel, process control, internal auditing, management review, complaint handling, and document control."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part A Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_qms_manual
+      - notified_body_qms_certificate
+      - internal_audit_records
+      - management_review_records
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.004"
+    kind: obligation
+    title: "Annex VII Part A — resources and financial requirements"
+    text: "The notified body shall have sufficient financial resources to conduct its conformity assessment activities, maintain adequate liability insurance appropriate to the scope of its activities and geographic reach, and ensure continuity of services. The notified body shall maintain records demonstrating adequacy of its financial resources."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part A Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - financial_standing_evidence
+      - liability_insurance_certificate
+      - resource_adequacy_assessment
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.005"
+    kind: obligation
+    title: "Annex VII Part B — personnel qualifications and experience"
+    text: "The notified body shall employ a sufficient number of competent personnel with the relevant scientific, technical, and regulatory knowledge and experience for the conformity assessment of medical devices. Personnel involved in conformity assessment shall have a relevant university degree or equivalent qualification in relevant disciplines (medicine, pharmacy, engineering, or other relevant sciences) and at least four years of professional experience in the field of healthcare products or related activities."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part B Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - personnel_competence_records
+      - qualification_records
+      - professional_experience_records
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.006"
+    kind: obligation
+    title: "Annex VII Part B — ongoing training and competence management"
+    text: "The notified body shall establish procedures for the initial and ongoing training of all personnel involved in conformity assessment activities. Training shall cover applicable regulatory requirements, relevant harmonised standards, guidance documents, conformity assessment procedures, and relevant device technologies. Competence shall be periodically verified and documented."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part B Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - training_records
+      - competence_assessment_records
+      - training_programme
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.007"
+    kind: obligation
+    title: "Annex VII Part B — clinical expertise requirements"
+    text: "The notified body shall have sufficient clinical expertise and, where necessary, have access to external clinical experts. Clinical expertise shall be available for assessment of clinical evaluations, clinical investigations, and post-market clinical follow-up, and shall cover the specific medical fields relevant to the devices under assessment."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part B Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_expert_records
+      - expert_panel_composition
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.008"
+    kind: obligation
+    title: "Annex VII Part C — conformity assessment process requirements"
+    text: "The notified body shall have documented procedures for the conduct of each conformity assessment activity for which it is designated, including procedures for application review, planning and conduct of audits, technical documentation assessment, type examination, and production quality assurance verification. Procedures shall ensure a systematic, transparent, and reproducible assessment."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part C Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_procedures
+      - audit_procedures
+      - technical_documentation_assessment_procedures
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.009"
+    kind: obligation
+    title: "Annex VII Part C — audit and certification requirements"
+    text: "The notified body shall carry out announced and, where necessary, unannounced audits at the manufacturer's premises and, where applicable, at the premises of suppliers and subcontractors. Audit teams shall include members with relevant expertise for the device technology under assessment. The notified body shall document its audit findings and conclusions and communicate them to the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part C Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - audit_reports
+      - audit_team_composition_records
+      - audit_findings_communication
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.010"
+    kind: obligation
+    title: "Annex VII Part C — surveillance and ongoing assessment"
+    text: "The notified body shall carry out ongoing surveillance activities to verify that the manufacturer continues to fulfil the requirements of the approved quality management system and applicable technical documentation. Surveillance shall include periodic audits, review of changes to the QMS, review of complaints and vigilance data, and assessment of corrective and preventive actions."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part C Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - surveillance_audit_reports
+      - surveillance_programme
+      - corrective_action_review_records
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AVII.OBL.011"
+    kind: obligation
+    title: "Annex VII Part C — documentation and record keeping"
+    text: "The notified body shall maintain a systematic record of all conformity assessment activities, including applications received, audits conducted, assessments performed, certificates issued, suspended, restricted, or withdrawn, and any changes to the above. Records shall be kept for a period appropriate to the lifetime and risk of the device, and in any case for not less than 15 years after the last certificate is issued."
+    sourceCitation: "Regulation (EU) 2017/745 Annex VII Part C Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_register
+      - certificate_register
+      - record_retention_policy
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  # ── Annex IV constraints ──
+
+  - constraintId: "EUMDR.AIV.CON.001"
+    appliesTo: "EUMDR.AIV.OBL.001"
+    text: "The EU declaration of conformity must contain all elements prescribed by Annex IV. An incomplete declaration is not valid and the device may not be placed on the market based on it."
+    severity: hard
+
+  - constraintId: "EUMDR.AIV.CON.002"
+    appliesTo: "EUMDR.AIV.OBL.004"
+    text: "The declaration must be signed by a person authorised to bind the manufacturer. An unsigned or improperly signed declaration is void."
+    severity: hard
+
+  - constraintId: "EUMDR.AIV.CON.003"
+    appliesTo: "EUMDR.AIV.OBL.006"
+    text: "The translation must cover every official language required by each Member State where the device is made available. Partial translation does not satisfy this obligation."
+    severity: hard
+
+  - constraintId: "EUMDR.AIV.CON.004"
+    appliesTo: "EUMDR.AIV.OBL.007"
+    text: "The EU DoC must be kept up to date at all times. A DoC referencing expired or withdrawn harmonised standards or certificates is invalid."
+    severity: hard
+
+  # ── Annex V constraints ──
+
+  - constraintId: "EUMDR.AV.CON.001"
+    appliesTo: "EUMDR.AV.OBL.001"
+    text: "The CE marking must maintain the proportions of the graduated drawing specified in Annex V. Distorted or non-proportional CE marks are non-compliant."
+    severity: hard
+
+  - constraintId: "EUMDR.AV.CON.002"
+    appliesTo: "EUMDR.AV.OBL.002"
+    text: "The CE marking must be affixed before the device is placed on the market. Affixing the CE marking after market placement is a regulatory violation."
+    severity: hard
+
+  - constraintId: "EUMDR.AV.CON.003"
+    appliesTo: "EUMDR.AV.OBL.004"
+    text: "Marks such as 'CE' variants, 'China Export' marks, or similar-looking markings that could be confused with the CE marking of conformity are strictly prohibited."
+    severity: hard
+
+  # ── Annex VI constraints ──
+
+  - constraintId: "EUMDR.AVI.CON.001"
+    appliesTo: "EUMDR.AVI.OBL.001"
+    text: "All mandatory data fields specified in Annex VI Part A must be populated in EUDAMED before the device may be placed on the market. Missing fields constitute a registration deficiency."
+    severity: hard
+
+  - constraintId: "EUMDR.AVI.CON.002"
+    appliesTo: "EUMDR.AVI.OBL.005"
+    text: "EUDAMED data must be verified and updated at least annually. Failure to verify within 12 months constitutes non-compliance with registration obligations."
+    severity: hard
+
+  # ── Annex VII constraints ──
+
+  - constraintId: "EUMDR.AVII.CON.001"
+    appliesTo: "EUMDR.AVII.OBL.002"
+    text: "Any involvement of notified body personnel in the design, manufacture, marketing, or use of the devices they assess constitutes a conflict of interest and disqualifies the assessment."
+    severity: hard
+
+  - constraintId: "EUMDR.AVII.CON.002"
+    appliesTo: "EUMDR.AVII.OBL.005"
+    text: "Conformity assessment personnel must hold a relevant university degree or equivalent and have at least four years of relevant professional experience. Unqualified personnel may not conduct assessments independently."
+    severity: hard
+
+  - constraintId: "EUMDR.AVII.CON.003"
+    appliesTo: "EUMDR.AVII.OBL.011"
+    text: "Records of conformity assessment activities must be retained for not less than 15 years after the last certificate is issued. Early disposal of records is a non-conformity."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.EU_DECLARATION_OF_CONFORMITY"
+    term: "EU Declaration of Conformity"
+    text: "A document drawn up by the manufacturer in which the manufacturer states that the device fulfils the provisions of this Regulation. The declaration shall contain the information set out in Annex IV and shall be kept up to date."
+    sourceCitation: "Regulation (EU) 2017/745 Article 19(1), Annex IV"
+
+  - definitionId: "EUMDR.DEF.CE_MARKING_ANNEX"
+    term: "CE Marking of Conformity"
+    text: "A marking consisting of the initials 'CE' in the form specified in Annex V, by which the manufacturer indicates that the device is in conformity with the applicable requirements of this Regulation and other applicable Union harmonisation legislation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 20, Annex V"
+
+  - definitionId: "EUMDR.DEF.EUDAMED"
+    term: "EUDAMED"
+    text: "The European database on medical devices established by the Commission, containing information on devices placed on the Union market, economic operators, certificates, clinical investigations, vigilance, and market surveillance. It shall serve as the portal for submission of information required by Annex VI."
+    sourceCitation: "Regulation (EU) 2017/745 Article 33"
+
+  - definitionId: "EUMDR.DEF.SRN"
+    term: "Single Registration Number (SRN)"
+    text: "A unique number issued to each economic operator by the competent authority or EUDAMED, enabling unambiguous identification of the operator in the UDI database and EUDAMED."
+    sourceCitation: "Regulation (EU) 2017/745 Article 31(2)"
+
+relationships:
+  # Internal Annex IV relationships
+  - from: "EUMDR.AIV.OBL.002"
+    to: "EUMDR.AIV.OBL.001"
+    type: PART_OF
+    props:
+      note: "Device identification details are a required component of the DoC content"
+
+  - from: "EUMDR.AIV.OBL.003"
+    to: "EUMDR.AIV.OBL.001"
+    type: PART_OF
+    props:
+      note: "Conformity assessment references are a required component of the DoC content"
+
+  - from: "EUMDR.AIV.OBL.004"
+    to: "EUMDR.AIV.OBL.001"
+    type: PART_OF
+    props:
+      note: "Statement of conformity and signature are required components of the DoC content"
+
+  # Annex IV → Annex V chain
+  - from: "EUMDR.AIV.OBL.004"
+    to: "EUMDR.AV.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Signed EU DoC is a prerequisite for affixing the CE marking"
+
+  # Annex V internal relationships
+  - from: "EUMDR.AV.OBL.003"
+    to: "EUMDR.AV.OBL.002"
+    type: PART_OF
+    props:
+      note: "NB identification number is an additional CE marking element when NB is involved"
+
+  # Annex VI internal relationships
+  - from: "EUMDR.AVI.OBL.002"
+    to: "EUMDR.AVI.OBL.001"
+    type: PART_OF
+    props:
+      note: "Device-specific core data is a subset of the Part A registration data"
+
+  - from: "EUMDR.AVI.OBL.003"
+    to: "EUMDR.AVI.OBL.001"
+    type: PART_OF
+    props:
+      note: "Certificate and conformity assessment data is a subset of the Part A registration data"
+
+  # Annex VII internal relationships
+  - from: "EUMDR.AVII.OBL.002"
+    to: "EUMDR.AVII.OBL.001"
+    type: PART_OF
+    props:
+      note: "Independence and impartiality are part of general organisational requirements"
+
+  - from: "EUMDR.AVII.OBL.003"
+    to: "EUMDR.AVII.OBL.001"
+    type: PART_OF
+    props:
+      note: "QMS is part of general organisational requirements for the notified body"
+
+  - from: "EUMDR.AVII.OBL.006"
+    to: "EUMDR.AVII.OBL.005"
+    type: PART_OF
+    props:
+      note: "Ongoing training is part of personnel competence management"
+
+  - from: "EUMDR.AVII.OBL.009"
+    to: "EUMDR.AVII.OBL.008"
+    type: PART_OF
+    props:
+      note: "Audit and certification are part of conformity assessment process requirements"
+
+  - from: "EUMDR.AVII.OBL.010"
+    to: "EUMDR.AVII.OBL.008"
+    type: PART_OF
+    props:
+      note: "Surveillance is part of conformity assessment process requirements"
+
+  # Cross-references to other EU MDR files
+  - from: "EUMDR.AIV.OBL.001"
+    to: "EUMDR.19.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex IV specifies the content requirements for the EU DoC required by Article 19"
+
+  - from: "EUMDR.AV.OBL.001"
+    to: "EUMDR.20.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex V specifies the form and rules for the CE marking required by Article 20"
+
+  - from: "EUMDR.AV.OBL.003"
+    to: "EUMDR.20.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex V NB number requirement implements Article 20(3)"
+
+  - from: "EUMDR.AVI.OBL.001"
+    to: "EUMDR.29.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex VI Part A specifies the registration data required by Article 29"
+
+  - from: "EUMDR.AVI.OBL.001"
+    to: "EUMDR.28.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex VI data elements support the EUDAMED UDI database registration under Article 28"
+
+  - from: "EUMDR.AVII.OBL.001"
+    to: "EUMDR.31.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex VII organisational requirements elaborate on Article 31 NB requirements"
+
+  - from: "EUMDR.AVII.OBL.002"
+    to: "EUMDR.31.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex VII independence requirements elaborate on Article 31 impartiality requirements"
+
+  - from: "EUMDR.AVII.OBL.005"
+    to: "EUMDR.31.OBL.004"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex VII personnel requirements elaborate on Article 31 personnel competence"
+
+  - from: "EUMDR.AVII.OBL.010"
+    to: "EUMDR.32.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex VII surveillance requirements support the monitoring activities under Article 32"
+
+  - from: "EUMDR.AIV.OBL.003"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "DoC must reference the conformity assessment procedure from Article 52"
+
+  - from: "EUMDR.AIV.OBL.003"
+    to: "EUMDR.56.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "DoC must reference certificates issued per Article 56"
+
+  - from: "EUMDR.AVI.OBL.002"
+    to: "EUMDR.27.OBL.001"
+    type: DEPENDS_ON
+    props:
+      note: "Registration core data includes UDI-DI, which requires UDI assignment"

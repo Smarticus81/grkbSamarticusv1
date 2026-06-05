@@ -1,0 +1,595 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Chapter III-IV — Identification, traceability and notified bodies (Articles 25-26, 30-34)"
+jurisdiction: EU_MDR
+processType: NOTIFIED_BODY
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ── Article 25 — Identification within the supply chain ──
+
+  - obligationId: "EUMDR.25.OBL.001"
+    kind: obligation
+    title: "Supply chain identification — downstream and upstream traceability"
+    text: "Economic operators shall, on request, identify any economic operator to whom they have directly supplied a device, any economic operator who has directly supplied them with a device, and any health institution or healthcare professional to which they have directly supplied a device. Economic operators shall be able to provide this information for a period of at least 10 years after the last device has been supplied."
+    sourceCitation: "Regulation (EU) 2017/745 Article 25(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supply_chain_traceability_record
+      - distribution_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.25.OBL.002"
+    kind: obligation
+    title: "Extended record retention for implantable devices"
+    text: "For implantable devices, the period referred to in paragraph 1 shall be at least 15 years after the last device has been placed on the market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 25(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supply_chain_traceability_record
+      - record_retention_policy
+    applicability:
+      deviceTypes:
+        - implantable
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 26 — Summary of safety and clinical performance ──
+
+  - obligationId: "EUMDR.26.OBL.001"
+    kind: obligation
+    title: "Draw up summary of safety and clinical performance"
+    text: "For class III devices and implantable devices, other than custom-made or investigational devices, the manufacturer shall draw up a summary of safety and clinical performance. The summary of safety and clinical performance shall be written in a way that is clear to the intended user and, if relevant, to the patient, and it shall be made available to the public via EUDAMED."
+    sourceCitation: "Regulation (EU) 2017/745 Article 26(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - summary_safety_clinical_performance
+      - clinical_evaluation_report
+      - eudamed_registration_record
+    applicability:
+      deviceClasses:
+        - III
+      deviceTypes:
+        - implantable
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "Not applicable to custom-made or investigational devices"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.26.OBL.002"
+    kind: obligation
+    title: "Notified body validation of safety and clinical performance summary"
+    text: "The summary of safety and clinical performance shall be validated by the notified body and shall be uploaded by the manufacturer to EUDAMED. The notified body shall confirm that the summary is consistent with the technical documentation and the clinical evaluation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 26(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - summary_safety_clinical_performance
+      - notified_body_validation_record
+    applicability:
+      deviceClasses:
+        - III
+      deviceTypes:
+        - implantable
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.26.OBL.003"
+    kind: obligation
+    title: "Language requirements for safety and clinical performance summary"
+    text: "The summary of safety and clinical performance shall be available in the languages accepted by the Member States where the device is or is to be made available. The language requirements shall be determined by the Member State concerned."
+    sourceCitation: "Regulation (EU) 2017/745 Article 26(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - summary_safety_clinical_performance
+      - translation_records
+      - language_coverage_matrix
+    applicability:
+      deviceClasses:
+        - III
+      deviceTypes:
+        - implantable
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 30 — Designation of notified bodies ──
+
+  - obligationId: "EUMDR.30.OBL.001"
+    kind: obligation
+    title: "Application for notified body designation"
+    text: "A conformity assessment body may apply to be designated as a notified body. The application shall be submitted to the national authority responsible for notified bodies of the Member State in which the body is established and shall specify the conformity assessment activities, the conformity assessment procedures, and the types of devices for which the body seeks designation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 30(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_application
+      - scope_of_designation
+    applicability:
+      operatorRoles:
+        - conformity_assessment_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.30.OBL.002"
+    kind: obligation
+    title: "Assessment of notified body application"
+    text: "The national authority responsible for notified bodies shall assess the applicant conformity assessment body against the requirements of Article 31 and shall draw up an assessment report. The assessment shall include an on-site assessment of the applicant body's premises and, where relevant, of any subsidiary or subcontractor. The assessment team shall include at least two experts with experience in conformity assessment of medical devices."
+    sourceCitation: "Regulation (EU) 2017/745 Article 30(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_assessment_report
+      - on_site_assessment_record
+    applicability:
+      operatorRoles:
+        - notifying_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.30.OBL.003"
+    kind: obligation
+    title: "Notification and publication of designated notified bodies"
+    text: "The Member State shall notify the Commission and the other Member States of the conformity assessment bodies it has designated as notified bodies. The notification shall clearly specify the scope of designation, the conformity assessment activities and procedures, the type of devices covered, and the relevant competence of the notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Article 30(6)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notification_record
+      - scope_of_designation
+    applicability:
+      operatorRoles:
+        - notifying_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 31 — Requirements relating to notified bodies ──
+
+  - obligationId: "EUMDR.31.OBL.001"
+    kind: obligation
+    title: "Notified body establishment and legal personality"
+    text: "A notified body shall be established under the national law of a Member State, or under the law of a third country with which the Union has concluded an appropriate agreement. It shall be a legal person and shall have legal personality."
+    sourceCitation: "Regulation (EU) 2017/745 Article 31(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - legal_establishment_record
+      - notified_body_organisational_chart
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.31.OBL.002"
+    kind: obligation
+    title: "Notified body independence and impartiality"
+    text: "A notified body shall be a third-party body independent of the manufacturer of the device in relation to which it carries out conformity assessment activities. A notified body, its top-level management and the personnel responsible for carrying out the conformity assessment tasks shall not be the designer, manufacturer, supplier, installer, purchaser, owner, user or maintainer of the devices, nor the authorised representative of any such party. This shall not preclude the use of devices that are necessary for the operations of the conformity assessment body."
+    sourceCitation: "Regulation (EU) 2017/745 Article 31(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - independence_declaration
+      - conflict_of_interest_policy
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.31.OBL.003"
+    kind: obligation
+    title: "Notified body quality management system"
+    text: "A notified body shall establish, implement, document and maintain a quality management system appropriate to the nature, area and scale of its conformity assessment activities and capable of supporting and demonstrating the consistent fulfilment of the requirements of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 31(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_qms_manual
+      - notified_body_qms_certificate
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.31.OBL.004"
+    kind: obligation
+    title: "Notified body personnel competence and resources"
+    text: "A notified body shall have the necessary competent personnel, including sufficient scientific personnel with adequate experience and knowledge, for the performance of its conformity assessment activities having regard to the devices, processes and technologies covered. The notified body shall have the ability to identify the knowledge and experience required, ensure that adequate personnel are available, manage the competence of its individual personnel, and take corrective actions."
+    sourceCitation: "Regulation (EU) 2017/745 Article 31(4)-(6)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - personnel_competence_records
+      - staffing_plan
+      - training_records
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.31.OBL.005"
+    kind: obligation
+    title: "Notified body financial and liability requirements"
+    text: "A notified body shall have adequate financial resources to carry out its conformity assessment activities and shall maintain appropriate liability insurance. The notified body shall have adequate financial resources to cover business activities and, where required, sufficient liability insurance commensurate with its activities and the geographic scope of its operations."
+    sourceCitation: "Regulation (EU) 2017/745 Article 31(8)-(9)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - financial_standing_evidence
+      - liability_insurance_certificate
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.31.OBL.006"
+    kind: obligation
+    title: "Notified body transparency and confidentiality"
+    text: "A notified body shall operate in accordance with a set of consistent, fair and reasonable terms and conditions. A notified body shall make publicly available information on its terms and conditions, including its fees. The notified body shall ensure the confidentiality of the information it obtains in the course of its conformity assessment activities, except where disclosure is required by law."
+    sourceCitation: "Regulation (EU) 2017/745 Article 31(10)-(11)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - fee_schedule
+      - confidentiality_policy
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 32 — Monitoring and reassessment of notified bodies ──
+
+  - obligationId: "EUMDR.32.OBL.001"
+    kind: obligation
+    title: "Ongoing monitoring of notified body compliance"
+    text: "The national authority responsible for notified bodies shall continuously monitor notified bodies to verify that they continue to satisfy the requirements set out in Article 31. The authority responsible for notified bodies shall set up mechanisms and procedures to monitor on an ongoing basis the competence, scope of activities, and compliance with the requirements of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 32(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_monitoring_report
+      - surveillance_programme
+    applicability:
+      operatorRoles:
+        - notifying_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.32.OBL.002"
+    kind: obligation
+    title: "Reassessment of notified bodies at least every three years"
+    text: "The authority responsible for notified bodies shall carry out a reassessment of each notified body at least every three years to verify that the notified body continues to satisfy the requirements set out in Annex VII. The reassessment shall include an on-site assessment."
+    sourceCitation: "Regulation (EU) 2017/745 Article 32(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - reassessment_report
+      - on_site_assessment_record
+    applicability:
+      operatorRoles:
+        - notifying_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.32.OBL.003"
+    kind: obligation
+    title: "Notified body cooperation with monitoring activities"
+    text: "Notified bodies shall, without delay, provide the national authority responsible for notified bodies with any relevant information upon request and shall cooperate fully with the monitoring and reassessment activities, including permitting on-site audits and witnessed assessments."
+    sourceCitation: "Regulation (EU) 2017/745 Article 32(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - authority_correspondence_log
+      - monitoring_cooperation_record
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 33 — Subsidiaries and subcontracting ──
+
+  - obligationId: "EUMDR.33.OBL.001"
+    kind: obligation
+    title: "Inform authority of subcontracting and subsidiary use"
+    text: "Where a notified body subcontracts specific tasks connected with conformity assessment or has recourse to a subsidiary for specific conformity assessment tasks, it shall inform the authority responsible for notified bodies accordingly."
+    sourceCitation: "Regulation (EU) 2017/745 Article 33(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - subcontracting_notification_record
+      - subsidiary_notification_record
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.33.OBL.002"
+    kind: obligation
+    title: "Ensure subcontractor and subsidiary competence"
+    text: "A notified body shall take full responsibility for the tasks performed by subcontractors or subsidiaries. Conformity assessment activities may only be subcontracted or carried out by a subsidiary with the agreement of the client. The notified body shall ensure that the subcontractor or subsidiary meets the applicable requirements and shall verify and monitor their competence on an ongoing basis."
+    sourceCitation: "Regulation (EU) 2017/745 Article 33(2)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - subcontractor_competence_assessment
+      - subcontractor_agreement
+      - subsidiary_competence_assessment
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.33.OBL.003"
+    kind: obligation
+    title: "Maintain register of subcontracted activities"
+    text: "The notified body shall keep a register of all subcontracting and subsidiary activities, including details of the tasks subcontracted or carried out by subsidiaries, and shall make this register available to the authority responsible for notified bodies upon request."
+    sourceCitation: "Regulation (EU) 2017/745 Article 33(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - subcontracting_register
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 34 — Changes to designations and notifications ──
+
+  - obligationId: "EUMDR.34.OBL.001"
+    kind: obligation
+    title: "Restriction, suspension, or withdrawal of notified body designation"
+    text: "Where the authority responsible for notified bodies has ascertained or has been informed that a notified body no longer meets the requirements set out in Annex VII or that it is failing to fulfil its obligations, the authority shall restrict, suspend or withdraw the designation, as appropriate, depending on the seriousness of the failure, and shall without delay inform the Commission and the other Member States."
+    sourceCitation: "Regulation (EU) 2017/745 Article 34(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - designation_change_decision
+      - non_compliance_evidence
+      - notification_to_commission
+    applicability:
+      operatorRoles:
+        - notifying_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.34.OBL.002"
+    kind: obligation
+    title: "Impact on certificates following designation change"
+    text: "In the event of restriction, suspension or withdrawal of a notified body designation, the authority responsible for notified bodies shall take appropriate steps to ensure that the files of that notified body are kept and made available to another notified body or to the authority responsible for notified bodies. Certificates issued by the notified body prior to the restriction, suspension, or withdrawal of its designation shall remain valid for a defined transitional period to allow manufacturers to transfer to another notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Article 34(2)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - certificate_transition_plan
+      - file_transfer_record
+    applicability:
+      operatorRoles:
+        - notifying_authority
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.34.OBL.003"
+    kind: obligation
+    title: "Notified body notification of changes affecting designation"
+    text: "The notified body shall inform the authority responsible for notified bodies of any changes to its organisation, structure, ownership, personnel, equipment, facilities, scope of activity, or any other circumstance that may affect its ability to fulfil the requirements set out in Annex VII or its conformity assessment obligations under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 34(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - change_notification_record
+      - updated_organisational_documentation
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  - constraintId: "EUMDR.25.CON.001"
+    appliesTo: "EUMDR.25.OBL.001"
+    text: "The minimum record retention period is 10 years after the last device was supplied. Economic operators must not dispose of supply chain records before this period has elapsed."
+    severity: hard
+
+  - constraintId: "EUMDR.25.CON.002"
+    appliesTo: "EUMDR.25.OBL.002"
+    text: "For implantable devices, the minimum record retention period is extended to 15 years after the last device was placed on the market. This longer period takes precedence over the general 10-year requirement."
+    severity: hard
+
+  - constraintId: "EUMDR.26.CON.001"
+    appliesTo: "EUMDR.26.OBL.001"
+    text: "The summary of safety and clinical performance shall not include commercially sensitive information. It must be written in clear, non-technical language comprehensible to the intended user and, where relevant, to the patient."
+    severity: hard
+
+  - constraintId: "EUMDR.26.CON.002"
+    appliesTo: "EUMDR.26.OBL.002"
+    text: "The notified body must validate the summary before the manufacturer uploads it to EUDAMED. The manufacturer may not publish an unvalidated summary."
+    severity: hard
+
+  - constraintId: "EUMDR.31.CON.001"
+    appliesTo: "EUMDR.31.OBL.002"
+    text: "A notified body and its personnel shall not engage in any activity, including consultancy, that may conflict with their independence of judgement or integrity in relation to conformity assessment activities. Any potential conflict of interest must be declared and managed."
+    severity: hard
+
+  - constraintId: "EUMDR.31.CON.002"
+    appliesTo: "EUMDR.31.OBL.004"
+    text: "Personnel involved in the conformity assessment of specific device types must have documented knowledge of the applicable regulatory requirements, relevant harmonised standards, and adequate clinical and technical expertise for the device categories concerned."
+    severity: hard
+
+  - constraintId: "EUMDR.32.CON.001"
+    appliesTo: "EUMDR.32.OBL.002"
+    text: "The reassessment of a notified body must occur at least once every three years. Failure to complete a reassessment within this interval is a non-compliance by the notifying authority."
+    severity: hard
+
+  - constraintId: "EUMDR.33.CON.001"
+    appliesTo: "EUMDR.33.OBL.002"
+    text: "Core conformity assessment audit activities and the final review and decision-making on the conformity of a device shall not be subcontracted. The notified body must retain responsibility for all outsourced activities."
+    severity: hard
+
+  - constraintId: "EUMDR.34.CON.001"
+    appliesTo: "EUMDR.34.OBL.001"
+    text: "The authority must act proportionately: minor deficiencies may warrant restriction or conditional measures, while systematic failures or fraud shall lead to suspension or withdrawal. The authority may not ignore substantiated findings of non-compliance."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.ECONOMIC_OPERATOR"
+    term: "Economic Operator"
+    text: "A manufacturer, authorised representative, importer, or distributor."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(35)"
+
+  - definitionId: "EUMDR.DEF.SUMMARY_SAFETY_CLINICAL_PERFORMANCE"
+    term: "Summary of Safety and Clinical Performance"
+    text: "A summary that addresses the identification of the device and the manufacturer, the intended purpose of the device and any indications, contraindications and target populations, a description of the device including reference to previous generation(s) or variants, possible diagnostic or therapeutic alternatives, a summary of clinical evaluation and relevant post-market clinical follow-up information, suggested profile and training for users, and harmonised standards and common specifications applied."
+    sourceCitation: "Regulation (EU) 2017/745 Article 26(1)"
+
+  - definitionId: "EUMDR.DEF.NOTIFYING_AUTHORITY"
+    term: "Notifying Authority"
+    text: "The national authority responsible for the designation, notification, monitoring, and reassessment of conformity assessment bodies (notified bodies) under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 30"
+
+  - definitionId: "EUMDR.DEF.SUBCONTRACTING_NB"
+    term: "Subcontracting (Notified Body)"
+    text: "The practice of a notified body outsourcing specific conformity assessment tasks to an external organisation, while the notified body retains full responsibility for the work performed."
+    sourceCitation: "Regulation (EU) 2017/745 Article 33"
+
+relationships:
+  # PART_OF relationships within this file
+  - from: "EUMDR.25.OBL.002"
+    to: "EUMDR.25.OBL.001"
+    type: PART_OF
+    props:
+      note: "Extended 15-year retention for implantables is a specialisation of the general supply chain identification obligation"
+
+  - from: "EUMDR.26.OBL.002"
+    to: "EUMDR.26.OBL.001"
+    type: PART_OF
+    props:
+      note: "Notified body validation is a required step within the SSCP obligation"
+
+  - from: "EUMDR.26.OBL.003"
+    to: "EUMDR.26.OBL.001"
+    type: PART_OF
+    props:
+      note: "Language requirements are a component of the SSCP obligation"
+
+  - from: "EUMDR.33.OBL.002"
+    to: "EUMDR.33.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "When subcontracting is notified, the NB must ensure subcontractor competence"
+
+  - from: "EUMDR.34.OBL.001"
+    to: "EUMDR.34.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Restriction, suspension, or withdrawal of designation triggers certificate transition requirements"
+
+  # Internal trigger chains
+  - from: "EUMDR.30.OBL.001"
+    to: "EUMDR.30.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Application for designation triggers assessment by the national authority"
+
+  - from: "EUMDR.30.OBL.002"
+    to: "EUMDR.30.OBL.003"
+    type: TRIGGERS
+    props:
+      note: "Successful assessment leads to notification and publication"
+
+  - from: "EUMDR.30.OBL.003"
+    to: "EUMDR.32.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Once designated and notified, ongoing monitoring obligations apply"
+
+  # CROSS_REFERENCES to other EU MDR files
+  - from: "EUMDR.26.OBL.001"
+    to: "EUMDR.52.OBL.004"
+    type: CROSS_REFERENCES
+    props:
+      note: "SSCP requirement applies to class III and implantable devices undergoing conformity assessment"
+
+  - from: "EUMDR.25.OBL.001"
+    to: "EUMDR.27.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Supply chain traceability is complemented by UDI-based device identification"
+
+  - from: "EUMDR.31.OBL.001"
+    to: "EUMDR.DEF.NOTIFIED_BODY"
+    type: CROSS_REFERENCES
+    props:
+      note: "NB requirements elaborate on the definition of a notified body"
+
+  - from: "EUMDR.32.OBL.001"
+    to: "EUMDR.31.OBL.001"
+    type: DEPENDS_ON
+    props:
+      note: "Monitoring verifies ongoing compliance with NB requirements from Article 31"
+
+  - from: "EUMDR.34.OBL.001"
+    to: "EUMDR.32.OBL.001"
+    type: DEPENDS_ON
+    props:
+      note: "Designation changes are triggered by findings from monitoring and reassessment"
+
+  - from: "EUMDR.34.OBL.002"
+    to: "EUMDR.56.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Certificate transition following NB designation change relates to certificate validity rules"

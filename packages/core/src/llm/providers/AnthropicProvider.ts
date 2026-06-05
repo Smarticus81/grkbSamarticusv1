@@ -6,6 +6,7 @@ import type {
   LLMChunk,
   LLMCapabilities,
 } from '../types.js';
+import { generateStructuredJson } from '../structuredJson.js';
 
 export interface AnthropicProviderConfig {
   apiKey: string;
@@ -30,7 +31,7 @@ export class AnthropicProvider implements LLMProvider {
   constructor(private readonly config: AnthropicProviderConfig) {}
 
   private get model(): string {
-    return this.config.model ?? 'claude-opus-4-6';
+    return this.config.model ?? 'claude-opus-4-8';
   }
 
   private get baseUrl(): string {
@@ -50,6 +51,7 @@ export class AnthropicProvider implements LLMProvider {
         'x-api-key': this.config.apiKey,
         'anthropic-version': '2023-06-01',
       },
+      signal: AbortSignal.timeout(120_000), // 2 min timeout per call
       body: JSON.stringify({
         model: request.model ?? this.model,
         system: systemMessages || undefined,
@@ -80,16 +82,7 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   async completeJSON<T>(request: LLMRequest, schema: ZodSchema<T>): Promise<T> {
-    const augmented: LLMRequest = {
-      ...request,
-      messages: [
-        ...request.messages,
-        { role: 'system', content: 'Respond with strictly valid JSON only. No prose, no fences.' },
-      ],
-    };
-    const res = await this.complete(augmented);
-    const cleaned = res.content.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
-    return schema.parse(JSON.parse(cleaned));
+    return generateStructuredJson<T>((req) => this.complete(req), request, schema);
   }
 
   async *stream(request: LLMRequest): AsyncIterable<LLMChunk> {

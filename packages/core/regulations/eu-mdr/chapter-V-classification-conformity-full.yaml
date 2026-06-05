@@ -1,0 +1,804 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Chapter V — Classification and conformity assessment (Articles 35-50)"
+jurisdiction: EU_MDR
+processType: CONFORMITY_ASSESSMENT
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ── Article 35 — Conformity assessment activities by notified bodies ──
+
+  - obligationId: "EUMDR.35.OBL.001"
+    kind: obligation
+    title: "NB conformity assessment scope"
+    text: "Notified bodies shall carry out the conformity assessment activities for which they are designated in accordance with the conformity assessment procedures set out in Annexes IX, X and XI. The scope of the assessment shall cover the manufacturer's quality management system, the technical documentation including clinical evaluation, and, where applicable, type-examination, production quality assurance, and product verification."
+    sourceCitation: "Regulation (EU) 2017/745 Article 35(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_designation_scope
+      - conformity_assessment_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.35.OBL.002"
+    kind: obligation
+    title: "NB competence for assigned activities"
+    text: "Notified bodies shall ensure that they have the necessary competence, including sufficient and appropriately qualified personnel, to carry out the conformity assessment activities for which they are designated. Personnel performing assessments shall have documented competence in the relevant device technology, regulatory requirements, and clinical evaluation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 35(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_personnel_competence_record
+      - nb_designation_scope
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.35.OBL.003"
+    kind: obligation
+    title: "NB transparency on assessment activities"
+    text: "Notified bodies shall make publicly available a summary of the conformity assessment activities they have carried out, including information on the type and number of applications received, assessments performed, certificates issued, refused, suspended, or withdrawn, within the framework of the applicable conformity assessment procedures."
+    sourceCitation: "Regulation (EU) 2017/745 Article 35(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_activity_summary_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 36 — NB auditing of manufacturer's QMS ──
+
+  - obligationId: "EUMDR.36.OBL.001"
+    kind: obligation
+    title: "QMS audit by notified body"
+    text: "The notified body shall audit the manufacturer's quality management system to determine whether it meets the requirements set out in Annex IX. The audit shall cover the manufacturer's processes for design and development, manufacturing, quality control, post-market surveillance, and corrective and preventive actions."
+    sourceCitation: "Regulation (EU) 2017/745 Article 36(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - qms_audit_report
+      - qms_certificate
+      - nb_audit_plan
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.36.OBL.002"
+    kind: obligation
+    title: "Unannounced audits"
+    text: "The notified body shall carry out unannounced audits of the manufacturer and, where relevant, of key suppliers and/or subcontractors. At least one unannounced on-site audit shall be conducted within every five-year certification period. The unannounced audit shall include product testing or equivalent checks to verify the manufactured product conforms to the technical documentation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 36(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - unannounced_audit_report
+      - product_sample_test_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.36.OBL.003"
+    kind: obligation
+    title: "Surveillance audit frequency"
+    text: "The notified body shall carry out periodic surveillance audits to ensure that the manufacturer continues to apply and maintain the approved quality management system. Surveillance audits shall be carried out at least once a year and shall cover the manufacturer's post-market surveillance system, vigilance reporting, and corrective actions."
+    sourceCitation: "Regulation (EU) 2017/745 Article 36(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - surveillance_audit_report
+      - surveillance_audit_schedule
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 37 — Assessment of technical documentation ──
+
+  - obligationId: "EUMDR.37.OBL.001"
+    kind: obligation
+    title: "Technical documentation assessment"
+    text: "The notified body shall assess the technical documentation as set out in Annexes II and III, including the clinical evaluation documentation prepared in accordance with Annex XIV, to verify that the device meets the relevant general safety and performance requirements set out in Annex I."
+    sourceCitation: "Regulation (EU) 2017/745 Article 37(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - technical_documentation
+      - clinical_evaluation_report
+      - nb_td_assessment_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.37.OBL.002"
+    kind: obligation
+    title: "Sampling-based TD assessment for non-class III"
+    text: "For devices classified other than class III, the notified body may use a representative sample basis for the assessment of the technical documentation. The sampling shall be based on a documented rationale taking into account the novelty of the technology, the similarities in design, technology, manufacturing, and sterilisation methods, the intended purpose, and the results of any previous relevant assessment."
+    sourceCitation: "Regulation (EU) 2017/745 Article 37(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - td_sampling_rationale
+      - nb_td_assessment_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.37.OBL.003"
+    kind: obligation
+    title: "Full TD review for class III devices"
+    text: "For class III devices, the notified body shall review the technical documentation for every device. The assessment shall verify every aspect of the device, including clinical data, risk management, and biological safety evaluation, and shall not rely on sampling."
+    sourceCitation: "Regulation (EU) 2017/745 Article 37(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - technical_documentation
+      - nb_td_assessment_report
+      - clinical_evaluation_report
+      - risk_management_file
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 38 — Type-examination (batch verification) ──
+
+  - obligationId: "EUMDR.38.OBL.001"
+    kind: obligation
+    title: "EU type-examination"
+    text: "Where a manufacturer applies for an EU type-examination in accordance with Annex X, the notified body shall examine a specimen representative of the production envisaged (type) and shall assess whether the type meets the provisions of this Regulation that apply to it. The examination shall include a review of the technical documentation and adequate tests on the type or a review of the tests carried out."
+    sourceCitation: "Regulation (EU) 2017/745 Article 38(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - type_examination_certificate
+      - type_test_report
+      - technical_documentation
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.38.OBL.002"
+    kind: obligation
+    title: "EU type-examination certificate content"
+    text: "The EU type-examination certificate issued by the notified body shall contain a reference to this Regulation, a clear identification of the design examined including its intended purpose, the conclusions of the examination, conditions of validity, and the data needed for identification of the approved design."
+    sourceCitation: "Regulation (EU) 2017/745 Article 38(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - type_examination_certificate
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 39 — Verification of devices ──
+
+  - obligationId: "EUMDR.39.OBL.001"
+    kind: obligation
+    title: "Product conformity verification"
+    text: "The notified body shall carry out the appropriate examinations and tests in order to verify the conformity of the device with the requirements of this Regulation by examining and testing every product or on a statistical basis, as specified in Annex XI. Product verification shall confirm that manufactured devices conform to the approved type described in the EU type-examination certificate or to the technical documentation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 39(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - product_verification_report
+      - batch_test_records
+      - type_examination_certificate
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.39.OBL.002"
+    kind: obligation
+    title: "Statistical verification for batch release"
+    text: "Where verification is carried out on a statistical basis, the notified body shall apply appropriate statistical methods and sampling plans in accordance with the latest version of the relevant harmonised standards or equivalent methods. Statistical verification shall ensure with adequate confidence that the production batch conforms to the provisions of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 39(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - statistical_sampling_plan
+      - batch_test_records
+      - product_verification_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 40 — Declaration of interests of NB personnel ──
+
+  - obligationId: "EUMDR.40.OBL.001"
+    kind: obligation
+    title: "NB personnel declaration of interests"
+    text: "The notified body shall require its personnel involved in conformity assessment activities to declare all direct and indirect interests, including financial interests, that could be considered prejudicial to their impartiality. Declarations of interest shall be documented and updated whenever there is a change of circumstance."
+    sourceCitation: "Regulation (EU) 2017/745 Article 40(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - declaration_of_interests
+      - nb_impartiality_policy
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.40.OBL.002"
+    kind: obligation
+    title: "Impartiality safeguards"
+    text: "The notified body shall have documented procedures to identify, record, and manage all conflicts of interest. Where a conflict of interest is identified, the notified body shall take appropriate action to ensure that the impartiality of its conformity assessment activities is not compromised, including exclusion of the relevant personnel from the specific assessment."
+    sourceCitation: "Regulation (EU) 2017/745 Article 40(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conflict_of_interest_procedure
+      - nb_impartiality_policy
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 41 — Specific procedures for class III and class IIb implantable devices ──
+
+  - obligationId: "EUMDR.41.OBL.001"
+    kind: obligation
+    title: "Clinical evaluation consultation procedure for high-risk devices"
+    text: "For class III implantable devices and class IIb active devices intended to administer and/or remove a medicinal product, the notified body shall, having verified the quality of clinical data and the clinical evaluation, prepare a clinical evaluation assessment report and submit it to the Commission, together with the manufacturer's clinical evaluation report and supporting documentation, for review by an expert panel designated in accordance with Article 106."
+    sourceCitation: "Regulation (EU) 2017/745 Article 41(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - nb_clinical_evaluation_assessment
+      - expert_panel_opinion
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.41.OBL.002"
+    kind: obligation
+    title: "Expert panel opinion consideration"
+    text: "The notified body shall give due consideration to the views expressed in the scientific opinion of the expert panel. The notified body shall not issue the certificate if the scientific opinion is unfavourable, unless the notified body provides a full and detailed justification for not following the opinion and the justification is documented in the certification decision."
+    sourceCitation: "Regulation (EU) 2017/745 Article 41(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - expert_panel_opinion
+      - nb_certification_decision_justification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.41.OBL.003"
+    kind: obligation
+    title: "Additional scrutiny for certain class IIb implantable devices"
+    text: "For class IIb implantable devices other than sutures, staples, dental fillings, dental braces, tooth crowns, screws, wedges, plates, wires, pins, clips, and connectors, the notified body shall apply additional scrutiny procedures. The notified body shall verify that sufficient clinical evidence has been generated for the conformity assessment."
+    sourceCitation: "Regulation (EU) 2017/745 Article 41(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - nb_td_assessment_report
+      - implantable_device_clinical_evidence
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 42 — Certificates ──
+
+  - obligationId: "EUMDR.42.OBL.001"
+    kind: obligation
+    title: "Certificate content requirements"
+    text: "Certificates issued by notified bodies in accordance with Annexes IX, X, and XI shall be in an official Union language determined by the Member State in which the notified body is established or in an official Union language otherwise acceptable to the notified body. As a minimum, certificates shall contain the elements set out in Annex XII."
+    sourceCitation: "Regulation (EU) 2017/745 Article 42(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_certificate
+      - certificate_content_checklist
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.42.OBL.002"
+    kind: obligation
+    title: "Certificate validity period"
+    text: "Certificates shall be valid for the period they indicate, which shall not exceed five years. On application by the manufacturer, the validity of the certificate may be extended for further periods, each not exceeding five years, based on a re-assessment in accordance with the applicable conformity assessment procedures."
+    sourceCitation: "Regulation (EU) 2017/745 Article 42(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_certificate
+      - certificate_validity_record
+      - certificate_renewal_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.42.OBL.003"
+    kind: obligation
+    title: "Certificate supplements and addenda"
+    text: "Any supplement to a certificate shall remain valid as long as the certificate it supplements is valid. Addenda to certificates may be issued to cover modifications or extensions to the certification scope and shall explicitly reference the main certificate."
+    sourceCitation: "Regulation (EU) 2017/745 Article 42(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_certificate
+      - certificate_supplement_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 43 — Restrictions, suspensions, withdrawal of certificates ──
+
+  - obligationId: "EUMDR.43.OBL.001"
+    kind: obligation
+    title: "NB restriction or suspension of certificates"
+    text: "The notified body shall restrict, suspend, or withdraw the certificate issued if it finds that the manufacturer no longer meets the requirements of this Regulation, or when the notified body discovers that the conditions for issuing the certificate were not met. The notified body shall give the manufacturer the opportunity to submit corrective actions within a defined period."
+    sourceCitation: "Regulation (EU) 2017/745 Article 43(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - certificate_restriction_notice
+      - non_conformity_report
+      - corrective_action_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.43.OBL.002"
+    kind: obligation
+    title: "Manufacturer corrective actions upon certificate suspension"
+    text: "Where the notified body has restricted, suspended, or withdrawn a certificate, the manufacturer shall implement appropriate corrective actions to restore compliance within the timeframe specified. The manufacturer shall inform the notified body and the competent authority of the corrective actions taken. If corrective actions are not adequate, the notified body shall withdraw the certificate."
+    sourceCitation: "Regulation (EU) 2017/745 Article 43(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - corrective_action_record
+      - compliance_restoration_evidence
+      - competent_authority_notification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.43.OBL.003"
+    kind: obligation
+    title: "Notification of certificate changes to competent authority"
+    text: "The notified body shall inform the competent authority of any restrictions, suspensions, or withdrawals of certificates. The notified body shall also enter the information in the electronic system referred to in Article 57, including the reasons for any restriction, suspension, or withdrawal."
+    sourceCitation: "Regulation (EU) 2017/745 Article 43(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - competent_authority_notification
+      - eudamed_certificate_update
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 44 — Changes to issued certificates ──
+
+  - obligationId: "EUMDR.44.OBL.001"
+    kind: obligation
+    title: "Manufacturer notification of planned changes"
+    text: "The manufacturer shall inform the notified body that issued the certificate of any planned change to the approved quality management system, the approved type, or the approved device or its intended purpose which could affect conformity with the requirements of this Regulation or the conditions prescribed for use of the device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 44(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - change_notification_to_nb
+      - change_impact_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.44.OBL.002"
+    kind: obligation
+    title: "NB assessment and decision on changes"
+    text: "The notified body shall examine the planned change, take into account the manufacturer's reasons, and decide whether the planned change requires a new conformity assessment or whether it can be addressed through a supplement to the existing certificate. The notified body shall notify the manufacturer of its decision, including any conditions or limitations."
+    sourceCitation: "Regulation (EU) 2017/745 Article 44(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_change_assessment_report
+      - certificate_supplement_record
+      - notified_body_certificate
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 45 — Voluntary change of notified body ──
+
+  - obligationId: "EUMDR.45.OBL.001"
+    kind: obligation
+    title: "Manufacturer procedure for changing NB"
+    text: "Where a manufacturer terminates its agreement with a notified body and enters into an agreement with another notified body in respect of the conformity assessment of the same device, the detailed arrangements for the change of notified body shall be clearly defined in an agreement between the manufacturer, the incoming notified body and, where practicable, the outgoing notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Article 45(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_transfer_agreement
+      - incoming_nb_acceptance_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.45.OBL.002"
+    kind: obligation
+    title: "File transfer between notified bodies"
+    text: "The outgoing notified body shall transfer to the incoming notified body all relevant documents relating to the conformity assessment in question, including records of certificates issued, supplemented, modified, suspended, restored, or withdrawn, and outstanding issues identified during the most recent assessment. The incoming notified body shall review the transferred documentation before accepting the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 45(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_file_transfer_record
+      - incoming_nb_review_report
+      - certificate_history_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.45.OBL.003"
+    kind: obligation
+    title: "Competent authority notification of NB change"
+    text: "The outgoing notified body shall inform the competent authority and the Commission of the transfer and shall specify the date on which it ceases to be responsible for the supervision of the manufacturer's conformity with this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 45(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - competent_authority_notification
+      - nb_transfer_confirmation
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 46 — Challenge to decisions of notified bodies ──
+
+  - obligationId: "EUMDR.46.OBL.001"
+    kind: obligation
+    title: "NB internal review mechanism"
+    text: "Notified bodies shall have a documented and accessible process to enable manufacturers or other applicants to challenge decisions made by the notified body regarding conformity assessment activities, including refusals to issue, restrictions, suspensions, or withdrawals of certificates. The process shall be transparent and free from conflicts of interest."
+    sourceCitation: "Regulation (EU) 2017/745 Article 46(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_appeals_procedure
+      - challenge_decision_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.46.OBL.002"
+    kind: obligation
+    title: "Manufacturer right to challenge NB decisions"
+    text: "Manufacturers shall have the right to request a review of any decision made by the notified body that adversely affects their conformity assessment application or existing certification. The notified body shall provide a reasoned response within a defined timeframe and shall ensure that the personnel reviewing the challenge were not involved in the original decision."
+    sourceCitation: "Regulation (EU) 2017/745 Article 46(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - challenge_request_record
+      - nb_review_response
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 47 — Peer review and exchange of experience ──
+
+  - obligationId: "EUMDR.47.OBL.001"
+    kind: obligation
+    title: "NB participation in peer review"
+    text: "Notified bodies shall participate in peer review activities as organised by the MDCG coordination group or the Commission. Peer reviews shall be carried out by joint assessment teams including assessors from other Member States and Commission representatives. Notified bodies shall make available relevant documentation and cooperate fully with the peer review process."
+    sourceCitation: "Regulation (EU) 2017/745 Article 47(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - peer_review_participation_record
+      - joint_assessment_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.47.OBL.002"
+    kind: obligation
+    title: "Exchange of experience between notified bodies"
+    text: "Notified bodies shall participate in the exchange of experience and knowledge of best practices relating to conformity assessment activities, including sharing of lessons learned from non-conformities identified. The outcomes of experience exchanges shall be taken into account in the notified body's internal procedures and training programmes."
+    sourceCitation: "Regulation (EU) 2017/745 Article 47(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - experience_exchange_record
+      - nb_procedure_update_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 48 — Coordination of notified bodies ──
+
+  - obligationId: "EUMDR.48.OBL.001"
+    kind: obligation
+    title: "Participation in MDCG NB coordination sub-group"
+    text: "Notified bodies shall participate in the coordination activities of the MDCG sub-group for notified bodies. The coordination group shall work on harmonisation of assessment practices, development of guidance documents, and resolution of issues arising from divergent assessment approaches among notified bodies."
+    sourceCitation: "Regulation (EU) 2017/745 Article 48(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - mdcg_participation_record
+      - harmonisation_activity_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.48.OBL.002"
+    kind: obligation
+    title: "Common specifications compliance"
+    text: "Notified bodies shall take due account of common specifications adopted by the Commission when carrying out conformity assessments. Notified bodies shall apply common specifications unless they can demonstrate that an alternative approach provides at least an equivalent level of compliance with the applicable requirements."
+    sourceCitation: "Regulation (EU) 2017/745 Article 48(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - common_specifications_compliance_record
+      - alternative_approach_justification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 49 — NB fees ──
+
+  - obligationId: "EUMDR.49.OBL.001"
+    kind: obligation
+    title: "Transparency and proportionality of NB fees"
+    text: "Notified bodies shall establish and make publicly available their fee structures for conformity assessment activities. Fees shall be reasonable and proportionate, taking into account the scope and complexity of the conformity assessment. The fee schedule shall be accessible on the notified body's website and provided to manufacturers upon request."
+    sourceCitation: "Regulation (EU) 2017/745 Article 49(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_fee_schedule
+      - fee_transparency_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.49.OBL.002"
+    kind: obligation
+    title: "Fee structure notification to competent authority"
+    text: "Notified bodies shall provide their fee structures and the level of fees to the designating authority. Member States shall ensure oversight of the reasonableness and proportionality of fees charged by notified bodies established on their territory."
+    sourceCitation: "Regulation (EU) 2017/745 Article 49(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - nb_fee_schedule
+      - competent_authority_fee_notification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 50 — EU reference laboratories ──
+
+  - obligationId: "EUMDR.50.OBL.001"
+    kind: obligation
+    title: "Designation of EU reference laboratories"
+    text: "The Commission, following consultation with the MDCG, may designate EU reference laboratories in areas where specific expertise and testing capacity is needed. EU reference laboratories shall be designated on the basis of their proven expertise, appropriate staffing, equipment, and the availability of relevant scientific methods."
+    sourceCitation: "Regulation (EU) 2017/745 Article 50(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_ref_lab_designation_record
+      - ref_lab_competence_evidence
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.50.OBL.002"
+    kind: obligation
+    title: "EU reference laboratory tasks"
+    text: "EU reference laboratories shall perform the following tasks: verify the performance of devices by notified bodies through batch testing and review of notified body testing methodologies; provide scientific and technical assistance to the Commission, the MDCG, the competent authorities, and the notified bodies; contribute to the development of common specifications and international standards."
+    sourceCitation: "Regulation (EU) 2017/745 Article 50(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ref_lab_batch_test_report
+      - ref_lab_methodology_review
+      - ref_lab_technical_assistance_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.50.OBL.003"
+    kind: obligation
+    title: "EU reference laboratory independence"
+    text: "EU reference laboratories shall be independent from manufacturers and other economic operators in the device sector. They shall maintain documented procedures to ensure impartiality and freedom from conflicts of interest in the performance of their tasks."
+    sourceCitation: "Regulation (EU) 2017/745 Article 50(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ref_lab_independence_declaration
+      - ref_lab_conflict_of_interest_procedure
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  - constraintId: "EUMDR.36.CON.001"
+    appliesTo: "EUMDR.36.OBL.002"
+    text: "Unannounced audits must be conducted at least once within every five-year certification period. The notified body may not substitute unannounced audits with announced surveillance audits."
+    severity: hard
+
+  - constraintId: "EUMDR.36.CON.002"
+    appliesTo: "EUMDR.36.OBL.003"
+    text: "Surveillance audits shall be conducted at least once per year. An interval exceeding 12 months between consecutive surveillance audits constitutes non-compliance with surveillance requirements."
+    severity: hard
+
+  - constraintId: "EUMDR.37.CON.001"
+    appliesTo: "EUMDR.37.OBL.003"
+    text: "For class III devices, sampling-based technical documentation review is not permitted. Every device file must be individually reviewed by the notified body."
+    severity: hard
+
+  - constraintId: "EUMDR.41.CON.001"
+    appliesTo: "EUMDR.41.OBL.001"
+    text: "The clinical evaluation consultation procedure is mandatory for class III implantable devices and certain class IIb active devices. The notified body may not bypass the expert panel consultation for these device categories."
+    severity: hard
+
+  - constraintId: "EUMDR.41.CON.002"
+    appliesTo: "EUMDR.41.OBL.002"
+    text: "If the expert panel scientific opinion is unfavourable, the notified body shall not issue the certificate unless a full justification for departure from the opinion is documented. Absence of documented justification renders the certificate invalid."
+    severity: hard
+
+  - constraintId: "EUMDR.42.CON.001"
+    appliesTo: "EUMDR.42.OBL.002"
+    text: "Certificate validity shall not exceed five years. Certificates issued for a period exceeding five years are invalid. Renewal requires full re-assessment against applicable conformity assessment procedures."
+    severity: hard
+
+  - constraintId: "EUMDR.43.CON.001"
+    appliesTo: "EUMDR.43.OBL.001"
+    text: "The notified body must provide the manufacturer a defined corrective action period before withdrawal. Immediate withdrawal without opportunity for corrective action is only justified where there is an unacceptable risk to health and safety."
+    severity: hard
+
+  - constraintId: "EUMDR.44.CON.001"
+    appliesTo: "EUMDR.44.OBL.001"
+    text: "The manufacturer must notify the notified body of changes before implementation. Retrospective notification of already-implemented changes constitutes a non-conformity and may lead to certificate suspension."
+    severity: hard
+
+  - constraintId: "EUMDR.45.CON.001"
+    appliesTo: "EUMDR.45.OBL.002"
+    text: "The incoming notified body shall not issue a new certificate until it has obtained and reviewed the complete conformity assessment files from the outgoing notified body. Issuing a certificate without complete documentation constitutes a violation."
+    severity: hard
+
+  - constraintId: "EUMDR.49.CON.001"
+    appliesTo: "EUMDR.49.OBL.001"
+    text: "Fee schedules must be publicly available. A notified body that charges undisclosed fees or fees not aligned with its published fee schedule is in breach of transparency requirements."
+    severity: hard
+
+  - constraintId: "EUMDR.50.CON.001"
+    appliesTo: "EUMDR.50.OBL.003"
+    text: "EU reference laboratories must maintain independence from all economic operators. Any financial relationship, consultancy, or advisory role with a manufacturer, authorised representative, or distributor in the device sector disqualifies the laboratory from its designation."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.TYPE_EXAMINATION"
+    term: "EU Type-Examination"
+    text: "The procedure whereby a notified body ascertains and certifies that a representative sample of the production envisaged meets the relevant provisions of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X"
+
+  - definitionId: "EUMDR.DEF.SURVEILLANCE_AUDIT"
+    term: "Surveillance Audit"
+    text: "A periodic assessment carried out by a notified body to verify that the manufacturer continues to fulfil the requirements of the approved quality management system."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Section 3"
+
+  - definitionId: "EUMDR.DEF.UNANNOUNCED_AUDIT"
+    term: "Unannounced Audit"
+    text: "An audit carried out by the notified body without prior notification to the manufacturer, for the purpose of verifying ongoing compliance with the approved quality management system and the conformity of manufactured devices with the technical documentation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Section 3.4"
+
+  - definitionId: "EUMDR.DEF.EU_REFERENCE_LABORATORY"
+    term: "EU Reference Laboratory"
+    text: "A laboratory designated by the Commission to provide scientific and technical assistance to notified bodies, competent authorities, and the Commission, including through batch testing verification and methodology review."
+    sourceCitation: "Regulation (EU) 2017/745 Article 100"
+
+  - definitionId: "EUMDR.DEF.EXPERT_PANEL"
+    term: "Expert Panel"
+    text: "Panels of advisors designated by the Commission to provide views on clinical evaluation assessment reports in the framework of the clinical evaluation consultation procedure for certain high-risk devices."
+    sourceCitation: "Regulation (EU) 2017/745 Article 106"
+
+  - definitionId: "EUMDR.DEF.PEER_REVIEW"
+    term: "Peer Review"
+    text: "A systematic evaluation of the performance of a notified body carried out by a joint assessment team in order to verify continued compliance with the designation requirements and to harmonise assessment practices."
+    sourceCitation: "Regulation (EU) 2017/745 Article 47"
+
+relationships:
+  - from: "EUMDR.35.OBL.001"
+    to: "EUMDR.36.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "NB conformity assessment scope defines the QMS audit requirements"
+
+  - from: "EUMDR.35.OBL.001"
+    to: "EUMDR.37.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "NB conformity assessment scope includes technical documentation assessment"
+
+  - from: "EUMDR.36.OBL.001"
+    to: "EUMDR.36.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "QMS audit programme includes unannounced audit requirements"
+
+  - from: "EUMDR.36.OBL.001"
+    to: "EUMDR.36.OBL.003"
+    type: TRIGGERS
+    props:
+      note: "Initial QMS audit establishes the basis for ongoing surveillance audits"
+
+  - from: "EUMDR.37.OBL.001"
+    to: "EUMDR.41.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "TD assessment for high-risk devices triggers the clinical evaluation consultation procedure"
+
+  - from: "EUMDR.41.OBL.001"
+    to: "EUMDR.41.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Clinical evaluation consultation produces expert panel opinion that NB must consider"
+
+  - from: "EUMDR.37.OBL.001"
+    to: "EUMDR.42.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Successful TD assessment leads to certificate issuance"
+
+  - from: "EUMDR.38.OBL.001"
+    to: "EUMDR.39.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "EU type-examination certificate is a prerequisite for product verification under Annex XI"
+
+  - from: "EUMDR.42.OBL.001"
+    to: "EUMDR.43.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Certificate issuance requirements are linked to conditions for restriction, suspension, or withdrawal"
+
+  - from: "EUMDR.44.OBL.001"
+    to: "EUMDR.44.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Manufacturer change notification triggers NB assessment and decision"
+
+  - from: "EUMDR.43.OBL.001"
+    to: "EUMDR.43.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Certificate suspension triggers manufacturer corrective action obligation"
+
+  - from: "EUMDR.45.OBL.001"
+    to: "EUMDR.45.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "NB change agreement triggers file transfer between notified bodies"
+
+  - from: "EUMDR.47.OBL.001"
+    to: "EUMDR.48.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Peer review activities feed into MDCG coordination of notified bodies"
+
+  - from: "EUMDR.50.OBL.002"
+    to: "EUMDR.38.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "EU reference laboratory batch testing supports type-examination verification"
+
+  # Cross-references to existing obligations in classification-conformity.yaml
+  - from: "EUMDR.42.OBL.002"
+    to: "EUMDR.56.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Certificate validity requirements in Article 42 align with certificate of conformity provisions in Article 56"
+
+  - from: "EUMDR.35.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "NB conformity assessment activities support the manufacturer's conformity assessment procedures per Article 52"
+
+  - from: "EUMDR.37.OBL.003"
+    to: "EUMDR.52.OBL.004"
+    type: CROSS_REFERENCES
+    props:
+      note: "Full TD review requirement for class III devices supports the class III conformity assessment procedure"

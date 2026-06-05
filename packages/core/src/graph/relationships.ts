@@ -10,6 +10,12 @@ export const ALL_RELATION_TYPES: RelationType[] = [
   'TRIGGERS',
   'SATISFIES',
   'CONFLICTS_WITH',
+  // === Cross-regulation edges ===
+  'IMPLEMENTS',
+  'HARMONIZED_BY',
+  'DERIVED_FROM',
+  'DEPENDS_ON',
+  'EXEMPTS',
   // === AgentOS extensions (Phase 0) ===
   'EXECUTES',
   'REQUIRES_HITL',

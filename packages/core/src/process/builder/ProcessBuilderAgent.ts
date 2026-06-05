@@ -1,6 +1,12 @@
 import type { LLMAbstraction } from '../../llm/LLMAbstraction.js';
 import type { KBCatalog, KBCatalogSnapshot } from '../../graph/KBCatalog.js';
 import {
+  SemanticContextBroker,
+  type SemanticContextBundle,
+  type ExtractedIntent,
+  type RetrievalMetadata,
+} from '../../graph/SemanticContextBroker.js';
+import {
   WorkflowDraftSchema,
   type WorkflowDraft,
   type WorkflowDraftValidation,
@@ -36,11 +42,22 @@ export interface ProcessBuilderResult {
   llmModel: string;
   llmProvider: string;
   attempts: number;
+  /** Semantic retrieval metadata — present when broker is available */
+  semanticContext?: {
+    intent: ExtractedIntent;
+    retrieval: RetrievalMetadata;
+    /** Top-ranked authoritative obligation IDs used for grounding */
+    groundedObligationIds: string[];
+    /** Semantic-only candidate IDs (not used for grounding) */
+    candidateObligationIds: string[];
+    /** Unresolved ambiguities from intent extraction */
+    ambiguities: string[];
+  };
 }
 
 const SYSTEM_PROMPT = `You are the Regulatory Ground Process Builder.
 
-Your job: produce a PRACTICAL, OPERATIONAL workflow — the actual end-to-end set of steps a quality team and its agents would perform — that satisfies the user's natural-language process description for a regulated medical-device QMS, using ONLY KB artifacts that exist in the snapshot provided.
+Your process: produce a PRACTICAL, OPERATIONAL workflow — the actual end-to-end set of steps a quality team and its agents would perform — that satisfies the user's natural-language process description for a regulated medical-device QMS, using ONLY KB artifacts that exist in the snapshot provided.
 
 This is NOT a list of regulations connected to evidence. It is a real workflow with start/end events, human and agent tasks, decisions with branches, evidence capture, HITL approvals, notifications, waits, and compliance checkpoints. Every regulated step has compliance grounding ATTACHED to it via groundedRefs[], rather than being represented as its own node.
 
@@ -55,6 +72,14 @@ Hard rules:
 8. Use "compliance_check" right before a terminal node to validate that the obligations bound to the workflow have been satisfied.
 9. If you don't have enough KB artifacts to cover a need, add an entry to openQuestions rather than fabricate.
 10. responsible[] names the role/agent doing the work. inputs[] and outputs[] list concrete artifacts (e.g. "complaint payload", "investigation record", "MDR report draft"). description explains what actually happens at the step.
+
+SEMANTIC CONTEXT INSTRUCTIONS (when semantic retrieval metadata is present):
+11. The obligations are RANKED by relevance — prioritize the top-ranked obligations for grounding. Obligations marked with matchedBy="both" are the strongest matches.
+12. Constraints listed under each obligation are BINDING — the workflow must satisfy them. Hard constraints are mandatory; soft constraints are recommended.
+13. Cross-references indicate related obligations — use them to create comprehensive workflows that don't miss related requirements.
+14. Explanation chains provide the regulatory reasoning — use them to write better rationale fields.
+15. Candidates (semantic-only) are listed for awareness but MUST NOT be used as grounded refs unless they also appear in the authoritative obligations list.
+16. The inferredIntent section shows what the system understood from the user's request — verify it matches and flag discrepancies in openQuestions.
 
 OUTPUT FORMAT — return ONLY a JSON object (no prose, no markdown fences, no wrapper key) that matches this exact shape:
 {
@@ -238,18 +263,172 @@ function summarizeCatalog(catalog: KBCatalogSnapshot, maxObligations = 80): stri
  * Its grounding comes from the structural rule that every refId in its output
  * must exist in the live Neo4j catalog supplied at call time.
  *
- * Strategy: single-shot structured-output call, with one automatic re-prompt
- * if the validator finds unknown refs or dangling edges. The error report is
- * fed back so the LLM can self-correct, capped at 3 attempts to bound cost.
+ * When a SemanticContextBroker is provided, the builder uses ranked semantic
+ * context (intent extraction, hybrid retrieval, graph expansion) instead of
+ * a raw catalog dump. Falls back to catalog-only mode when no broker is set.
  */
 export class ProcessBuilderAgent {
+  private broker: SemanticContextBroker | null = null;
+
   constructor(
     private readonly llm: LLMAbstraction,
     private readonly catalog: KBCatalog,
     private readonly maxAttempts = 3,
   ) {}
 
+  /**
+   * Attach a semantic context broker. When set, build() uses intent-aware
+   * hybrid retrieval instead of raw catalog dump.
+   */
+  withBroker(broker: SemanticContextBroker): this {
+    this.broker = broker;
+    return this;
+  }
+
   async build(input: ProcessBuilderInput): Promise<ProcessBuilderResult> {
+    // ── Semantic path: use broker for intent + ranked retrieval ──
+    if (this.broker) {
+      return this.buildWithBroker(input);
+    }
+
+    // ── Legacy path: catalog-only ──
+    return this.buildWithCatalog(input);
+  }
+
+  private async buildWithBroker(input: ProcessBuilderInput): Promise<ProcessBuilderResult> {
+    const conversation = (input.conversation ?? []).map((t) => ({
+      role: t.role,
+      content: t.content,
+    }));
+
+    // Resolve semantic context
+    const bundle = await this.broker!.resolve(
+      conversation,
+      input.description,
+      { jurisdiction: input.jurisdiction, processType: input.processType },
+    );
+
+    const snapshot = bundle.catalogSnapshot;
+
+    if (snapshot.obligations.length === 0 && bundle.obligations.length === 0) {
+      throw new Error(
+        `KB catalog is empty for jurisdiction=${input.jurisdiction ?? 'ANY'} ` +
+          `processType=${input.processType ?? 'ANY'}. Seed regulations first.`,
+      );
+    }
+
+    // Summarize the semantic bundle for the LLM prompt
+    const contextJson = SemanticContextBroker.summarizeForPrompt(bundle);
+
+    let lastError:
+      | { kind: 'validation'; report: WorkflowDraftValidation }
+      | { kind: 'parse'; message: string; rawSnippet: string }
+      | null = null;
+    let attempts = 0;
+    let provider = '';
+    let model = '';
+
+    while (attempts < this.maxAttempts) {
+      attempts += 1;
+      const errorBlock = lastError
+        ? lastError.kind === 'validation'
+          ? `\n\nPREVIOUS DRAFT WAS REJECTED. Fix these structural issues:\n${JSON.stringify(lastError.report, null, 2)}`
+          : `\n\nPREVIOUS DRAFT FAILED TO PARSE. Reason: ${lastError.message}\nReturn a single JSON object that matches the OUTPUT FORMAT exactly. Do NOT wrap it in another key. Do NOT include markdown fences. Snippet of last response:\n${lastError.rawSnippet}`
+        : '';
+
+      const userMessages = [
+        {
+          role: 'user' as const,
+          content:
+            `SEMANTIC CONTEXT (ranked obligations, constraints, definitions, and KB artifacts — the only IDs you may reference):\n` +
+            `\`\`\`json\n${contextJson}\n\`\`\`\n\n` +
+            `USER REQUEST:\n${input.description}\n\n` +
+            (input.jurisdiction ? `Jurisdiction filter: ${input.jurisdiction}\n` : '') +
+            (input.processType ? `Process type filter: ${input.processType}\n` : '') +
+            errorBlock,
+        },
+      ];
+
+      const res = await this.llm.complete(
+        {
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            ...conversation,
+            ...userMessages,
+          ],
+          temperature: 0.2,
+          maxTokens: 32768,
+          metadata: { agent: 'ProcessBuilderAgent', attempt: attempts, semanticMode: true },
+        },
+        { structuredOutput: true, reasoningTrace: true, minContextTokens: 32_000 },
+      );
+
+      let draft: WorkflowDraft;
+      try {
+        draft = parseDraft(res.content);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        lastError = {
+          kind: 'parse',
+          message: msg,
+          rawSnippet: res.content.slice(0, 1000),
+        };
+        continue;
+      }
+
+      // Validate against the full catalog snapshot (not just retrieved obligations)
+      const validation = validateDraftAgainstCatalog(draft, snapshot);
+
+      if (validation.valid) {
+        const providers = this.llm.listProviders();
+        provider = providers[0]?.name ?? 'unknown';
+        model = res.model ?? 'auto-selected';
+        return {
+          draft,
+          validation,
+          catalogSummary: {
+            obligations: snapshot.obligations.length,
+            agentRoles: snapshot.agentRoles.length,
+            hitlGates: snapshot.hitlGates.length,
+            policies: snapshot.policies.length,
+            slos: snapshot.slos.length,
+            triggers: snapshot.triggers.length,
+            evidenceTypes: snapshot.evidenceTypes.length,
+            jurisdictionUsed: input.jurisdiction ?? null,
+            processTypeUsed: input.processType ?? null,
+          },
+          llmModel: model,
+          llmProvider: provider,
+          attempts,
+          semanticContext: {
+            intent: bundle.intent,
+            retrieval: bundle.retrieval,
+            groundedObligationIds: bundle.obligations.map((r) => r.obligation.obligationId),
+            candidateObligationIds: bundle.candidates.map((r) => r.obligation.obligationId),
+            ambiguities: bundle.intent.ambiguities,
+          },
+        };
+      }
+
+      lastError = { kind: 'validation', report: validation };
+    }
+
+    throw Object.assign(
+      new Error(
+        `ProcessBuilderAgent failed after ${this.maxAttempts} attempts: ` +
+          (lastError?.kind === 'parse'
+            ? `last error was a parse failure: ${lastError.message}`
+            : 'last draft did not pass KB validation'),
+      ),
+      {
+        validation: lastError?.kind === 'validation' ? lastError.report : undefined,
+        parseError: lastError?.kind === 'parse' ? lastError : undefined,
+        attempts,
+      },
+    );
+  }
+
+  private async buildWithCatalog(input: ProcessBuilderInput): Promise<ProcessBuilderResult> {
     const snapshot = await this.catalog.snapshot({
       jurisdiction: input.jurisdiction,
       processType: input.processType,
@@ -306,10 +485,10 @@ export class ProcessBuilderAgent {
             ...userMessages,
           ],
           temperature: 0.2,
-          maxTokens: 8192,
+          maxTokens: 32768,
           metadata: { agent: 'ProcessBuilderAgent', attempt: attempts },
         },
-        { structuredOutput: true, minContextTokens: 32_000 },
+        { structuredOutput: true, reasoningTrace: true, minContextTokens: 32_000 },
       );
 
       let draft: WorkflowDraft;
@@ -371,3 +550,4 @@ export class ProcessBuilderAgent {
     );
   }
 }
+

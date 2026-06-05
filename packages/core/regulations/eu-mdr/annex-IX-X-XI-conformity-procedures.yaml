@@ -1,0 +1,964 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Annexes IX-XI — Conformity assessment procedures"
+jurisdiction: EU_MDR
+processType: CONFORMITY_ASSESSMENT
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ══════════════════════════════════════════════════════════════════
+  # Annex IX — Conformity assessment based on a quality management
+  #            system and on assessment of technical documentation
+  # ══════════════════════════════════════════════════════════════════
+
+  # ── Chapter I: Quality management system ──
+
+  - obligationId: "EUMDR.AIX.I.OBL.001"
+    kind: obligation
+    title: "QMS conformity assessment — manufacturer application"
+    text: "The manufacturer shall lodge an application for assessment of its quality management system with a notified body. The application shall include a description of the manufacturer's quality management system, the documentation on the manufacturer's quality management system (quality manual, quality planning, quality procedures, quality records), documentation of the devices covered by the quality management system, and a written declaration that no application for the same QMS assessment has been lodged with any other notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter I Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - qms_application_record
+      - quality_manual
+      - quality_system_procedures
+      - quality_system_records
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.I.OBL.002"
+    kind: obligation
+    title: "QMS — scope and documentation requirements"
+    text: "The quality management system shall address the manufacturer's organisational structure, responsibilities, procedures, processes, and resources required to ensure that the relevant provisions of this Regulation are complied with. The QMS documentation shall include quality objectives, organisational structure, manufacturing and quality control techniques, design control procedures, product traceability and identification procedures, complaint handling and CAPA processes, and procedures for monitoring and measurement of output."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter I Section 2.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_manual
+      - quality_system_procedures
+      - design_control_procedures
+      - capa_procedure
+      - complaint_handling_procedure
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.I.OBL.003"
+    kind: obligation
+    title: "QMS — notified body audit and assessment"
+    text: "The notified body shall audit the manufacturer's quality management system to determine whether it meets the requirements referred to in Section 2. The audit team shall include at least one member with past experience of assessment of the technology concerned. The audit shall include an on-site audit of the manufacturer's premises and, where appropriate, of the manufacturer's suppliers and subcontractors to verify the manufacturing processes."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter I Section 2.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - qms_audit_report
+      - audit_team_composition_records
+      - on_site_assessment_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.I.OBL.004"
+    kind: obligation
+    title: "QMS — notified body decision and certification"
+    text: "The notified body shall notify the manufacturer of the result of the audit and shall issue an EU quality management system certificate if the QMS meets the applicable requirements. The certificate shall contain the conclusions of the audit, the conditions of validity, and the data needed for identification of the approved QMS. The manufacturer shall inform the notified body of any plan for substantial changes to the quality management system."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter I Section 2.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - qms_certificate
+      - audit_findings_communication
+      - certificate_validity_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.I.OBL.005"
+    kind: obligation
+    title: "QMS — ongoing surveillance by notified body"
+    text: "The purpose of surveillance is to make sure that the manufacturer duly fulfils the obligations arising from the approved quality management system. The notified body shall periodically carry out appropriate audits and assessments to make sure that the manufacturer applies the approved quality management system and the post-market surveillance plan, and may carry out unannounced visits to the manufacturer. The notified body shall carry out at least one surveillance audit per year."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter I Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - surveillance_audit_reports
+      - surveillance_programme
+      - post_market_surveillance_plan
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.I.OBL.006"
+    kind: obligation
+    title: "QMS — manufacturer obligations during surveillance"
+    text: "The manufacturer shall authorise the notified body to carry out all necessary audits, including unannounced audits, and shall supply the notified body with all relevant information, including data on any changes to the quality management system, new device types, changes to marketed devices, complaints, and vigilance reports. The manufacturer shall ensure that the quality management system produces adequate and up-to-date documentation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter I Section 3.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - surveillance_cooperation_record
+      - vigilance_report
+      - complaint_records
+      - change_notification_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Chapter II: Assessment of technical documentation ──
+
+  - obligationId: "EUMDR.AIX.II.OBL.001"
+    kind: obligation
+    title: "Technical documentation assessment — scope and applicability"
+    text: "In addition to the obligations resulting from Chapter I, the manufacturer shall submit an application to the notified body for the assessment of the technical documentation relating to the device it intends to place on the market or put into service and which is covered by the quality management system referred to in Chapter I. This assessment is mandatory for all class III devices and for class IIb implantable devices."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter II Section 4.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - technical_documentation
+      - technical_documentation_assessment_application
+    applicability:
+      deviceClasses:
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "Mandatory for all class III devices"
+        - "Mandatory for class IIb implantable devices"
+        - "May be required for other class IIb devices per Article 52(4)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.II.OBL.002"
+    kind: obligation
+    title: "Technical documentation assessment — NB review"
+    text: "The notified body shall examine the application and, where the relevant product meets the applicable requirements of this Regulation, issue an EU technical documentation assessment certificate. The notified body shall include in the certificate the conclusions of the assessment, the conditions of validity, the data needed for identification of the approved design, and a description of the intended purpose of the device."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter II Section 4.3-4.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - technical_documentation_assessment
+      - notified_body_certificate
+      - certificate_validity_record
+    applicability:
+      deviceClasses:
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.II.OBL.003"
+    kind: obligation
+    title: "Technical documentation assessment — clinical evaluation review"
+    text: "As part of the technical documentation assessment, the notified body shall assess the clinical evidence presented, in particular the clinical evaluation and its outcome, including the clinical evaluation report, the PMCF plan, and the PMCF evaluation report. The notified body shall employ device reviewers and clinical experts with sufficient clinical and medical knowledge and experience for the assessment of the clinical evaluation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter II Section 4.5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - pmcf_plan
+      - pmcf_evaluation_report
+      - clinical_expert_records
+    applicability:
+      deviceClasses:
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.II.OBL.004"
+    kind: obligation
+    title: "Technical documentation assessment — changes to approved device"
+    text: "The manufacturer shall inform the notified body of any planned changes to the approved device or its intended purpose. The notified body shall examine the planned changes and decide whether the planned changes require a new assessment or an addendum to the EU technical documentation assessment certificate. The manufacturer shall not implement changes that adversely affect conformity before approval by the notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter II Section 4.9"
+    mandatory: true
+    requiredEvidenceTypes:
+      - change_notification_record
+      - change_assessment_record
+      - notified_body_certificate
+    applicability:
+      deviceClasses:
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Chapter III: Administrative provisions ──
+
+  - obligationId: "EUMDR.AIX.III.OBL.001"
+    kind: obligation
+    title: "Administrative provisions — document retention and accessibility"
+    text: "The manufacturer shall, for a period ending no sooner than 10 years after the last device covered by the EU declaration of conformity has been placed on the market, keep at the disposal of the competent authorities: the EU declaration of conformity, the documentation referred to in Section 2 (QMS documentation), data on changes referred to in Section 2.4, the documentation referred to in Section 4 (technical documentation), the decisions and reports of the notified body as referred to in this Annex."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter III Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_retention_record
+      - eu_declaration_of_conformity
+      - quality_system_records
+      - notified_body_certificate
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.III.OBL.002"
+    kind: obligation
+    title: "Administrative provisions — implantable device retention period"
+    text: "For implantable devices, the retention period referred to in Section 5 shall be at least 15 years after the last device has been placed on the market."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter III Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_retention_record
+      - record_retention_policy
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      deviceTypes:
+        - implantable
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AIX.III.OBL.003"
+    kind: obligation
+    title: "Administrative provisions — NB record retention"
+    text: "Each notified body shall make available to the national authority responsible for notified bodies its records relating to the quality management system assessments, technical documentation assessments, and certificates issued, modified, supplemented, suspended, withdrawn, or refused. The notified body shall retain its records for the period specified in Section 5."
+    sourceCitation: "Regulation (EU) 2017/745 Annex IX Chapter III Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_register
+      - certificate_register
+      - record_retention_policy
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ══════════════════════════════════════════════════════════════════
+  # Annex X — Conformity assessment based on type-examination
+  # ══════════════════════════════════════════════════════════════════
+
+  # ── Chapter I: Type-examination procedure ──
+
+  - obligationId: "EUMDR.AX.I.OBL.001"
+    kind: obligation
+    title: "Type-examination — manufacturer application"
+    text: "The manufacturer shall lodge an application for EU type-examination with a notified body. The application shall include a description of the device, the intended purpose, the risk class, the design specifications, the technical documentation as required by Annexes II and III, a declaration that no application for the same device type has been lodged with another notified body (or a statement of any previous unsuccessful applications), and a representative sample of the production envisaged."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter I Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - type_examination_application
+      - technical_documentation
+      - design_specifications
+      - device_samples
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AX.I.OBL.002"
+    kind: obligation
+    title: "Type-examination — NB assessment and testing"
+    text: "The notified body shall examine the application and assess the technical documentation to verify that the type has been designed and manufactured in conformity with the requirements of this Regulation. The notified body shall carry out or arrange for the appropriate examinations and physical or laboratory tests to verify whether the solutions adopted by the manufacturer meet the essential requirements, including review of clinical evidence. The notified body shall carry out or arrange for tests on a representative sample."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter I Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - type_examination_report
+      - test_reports
+      - clinical_evaluation_report
+      - on_site_assessment_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AX.I.OBL.003"
+    kind: obligation
+    title: "Type-examination — EU type-examination certificate"
+    text: "Where the type conforms to the provisions of this Regulation, the notified body shall issue an EU type-examination certificate. The certificate shall contain the name and address of the manufacturer, the conclusions of the examination, the conditions of validity, and the data needed for identification of the approved type. The certificate shall be valid for a maximum of five years and may be renewed."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter I Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - type_examination_certificate
+      - certificate_validity_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AX.I.OBL.004"
+    kind: obligation
+    title: "Type-examination — changes to approved type"
+    text: "The manufacturer shall inform the notified body of any change to the approved type. Changes to the approved type shall receive additional approval from the notified body that issued the EU type-examination certificate where such changes could affect conformity with the general safety and performance requirements or the conditions prescribed for use of the device. The additional approval shall be issued in the form of a supplement to the original EU type-examination certificate."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter I Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - change_notification_record
+      - change_assessment_record
+      - type_examination_certificate
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Chapter II: Production quality assurance ──
+
+  - obligationId: "EUMDR.AX.II.OBL.001"
+    kind: obligation
+    title: "Production quality assurance — manufacturer QMS for production"
+    text: "The manufacturer shall operate an approved quality management system for the manufacture and final inspection of the devices concerned as specified in Section 6, and shall be subject to the surveillance referred to in Section 7. The manufacturer shall lodge an application for assessment of its quality management system with a notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter II Section 6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - production_qms_application
+      - quality_manual
+      - production_quality_records
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AX.II.OBL.002"
+    kind: obligation
+    title: "Production quality assurance — NB assessment and surveillance"
+    text: "The notified body shall assess the manufacturer's quality management system to determine whether it ensures that the products are manufactured in conformity with the EU type-examination certificate. The notified body shall carry out periodic surveillance audits to make sure that the manufacturer maintains and applies the quality management system, and shall issue a surveillance report."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter II Section 6-7"
+    mandatory: true
+    requiredEvidenceTypes:
+      - production_qms_audit_report
+      - surveillance_audit_reports
+      - production_quality_records
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Chapter III: Product verification ──
+
+  - obligationId: "EUMDR.AX.III.OBL.001"
+    kind: obligation
+    title: "Product verification — statistical or individual verification"
+    text: "The manufacturer shall take all measures necessary to ensure that the manufacturing process produces devices in conformity with the type described in the EU type-examination certificate and with the applicable provisions of this Regulation. Before the start of manufacture, the manufacturer shall prepare documents defining the manufacturing process, in particular as regards sterilisation, together with all routine provisions for ensuring manufacturing homogeneity. Verification shall be performed by examination and testing of every product or on a statistical basis."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter III Section 8"
+    mandatory: true
+    requiredEvidenceTypes:
+      - product_verification_records
+      - manufacturing_process_documentation
+      - batch_testing_records
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AX.III.OBL.002"
+    kind: obligation
+    title: "Product verification — NB verification activities"
+    text: "The notified body shall carry out the appropriate examinations and tests in order to verify conformity of the device with the requirements of this Regulation by examining and testing every product or on a statistical basis. In the case of statistical verification, the manufacturer shall present the manufactured devices in the form of homogeneous lots and the notified body shall take an appropriate sample. The notified body shall issue a certificate of conformity in respect of the examinations and tests carried out."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter III Section 8"
+    mandatory: true
+    requiredEvidenceTypes:
+      - product_verification_certificate
+      - test_reports
+      - statistical_sampling_records
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ══════════════════════════════════════════════════════════════════
+  # Annex XI — Conformity assessment based on product conformity
+  #             verification
+  # ══════════════════════════════════════════════════════════════════
+
+  # ── Part A: Product quality assurance ──
+
+  - obligationId: "EUMDR.AXI.A.OBL.001"
+    kind: obligation
+    title: "Product quality assurance — manufacturer QMS application"
+    text: "The manufacturer shall lodge an application with a notified body for assessment of its quality management system. The application shall include a description of the quality management system for manufacture and final inspection of the devices, the quality manual, quality procedures, quality records, and a written declaration that no application has been lodged with any other notified body for the same quality management system assessment."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XI Part A Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - qms_application_record
+      - quality_manual
+      - quality_system_procedures
+      - quality_system_records
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXI.A.OBL.002"
+    kind: obligation
+    title: "Product quality assurance — QMS scope for production and final inspection"
+    text: "The quality management system under this Part shall ensure that the devices are manufactured in conformity with the technical documentation that describes the design and that the quality management system covers: manufacturing processes, incoming material control, device traceability, process validation procedures where applicable (including sterilisation processes), final device testing, and packaging and labelling verification."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XI Part A Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - quality_manual
+      - production_quality_records
+      - process_validation_records
+      - incoming_inspection_records
+      - final_inspection_records
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXI.A.OBL.003"
+    kind: obligation
+    title: "Product quality assurance — NB audit and certification"
+    text: "The notified body shall audit the manufacturer's quality management system to determine whether it meets the requirements referred to in Section 2. The notified body shall issue an EU product quality assurance certificate. The certificate shall contain the conclusions of the audit, the conditions of validity, and the data needed for identification of the approved QMS. The notified body shall carry out periodic surveillance audits to ensure the manufacturer maintains and applies the QMS."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XI Part A Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - qms_audit_report
+      - qms_certificate
+      - surveillance_audit_reports
+      - certificate_validity_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXI.A.OBL.004"
+    kind: obligation
+    title: "Product quality assurance — manufacturer ongoing obligations"
+    text: "The manufacturer shall authorise the notified body to carry out all necessary audits, including unannounced audits, and shall supply the notified body with all relevant information. The manufacturer shall inform the notified body of any planned substantial changes to the quality management system or the device range covered. The notified body shall evaluate the changes and decide whether the modified quality management system still satisfies the requirements."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XI Part A Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - surveillance_cooperation_record
+      - change_notification_record
+      - change_assessment_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Part B: Product verification ──
+
+  - obligationId: "EUMDR.AXI.B.OBL.001"
+    kind: obligation
+    title: "Product verification — manufacturer obligations"
+    text: "The manufacturer shall ensure the application of the approved quality management system for manufacture and shall draw up a statement of conformity in respect of the device and make it available to the national competent authority for a period ending no sooner than 10 years, or 15 years for implantable devices, after the last device has been placed on the market. The manufacturer shall present the manufactured devices in the form of homogeneous lots for NB verification."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XI Part B Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - product_verification_records
+      - manufacturing_process_documentation
+      - batch_records
+      - document_retention_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXI.B.OBL.002"
+    kind: obligation
+    title: "Product verification — NB verification of each device or statistical sample"
+    text: "The notified body shall carry out the appropriate examinations and tests in order to verify the conformity of the device with the requirements of this Regulation, by examining and testing every device or by examining and testing devices on a statistical basis. In the case of verification on a statistical basis, the notified body shall decide on the size of the statistical sample, the sampling procedure, and the test plan. The notified body shall affix, or have affixed, its identification number to each approved device and shall draw up a written certificate of conformity."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XI Part B Section 6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - product_verification_certificate
+      - test_reports
+      - statistical_sampling_records
+      - certificate_validity_record
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXI.B.OBL.003"
+    kind: obligation
+    title: "Product verification — administrative provisions and record keeping"
+    text: "The manufacturer shall, for a period ending no sooner than 10 years after the last device has been placed on the market, or 15 years for implantable devices, keep at the disposal of the national competent authorities: the technical documentation, the EU declaration of conformity, certificates issued by the notified body, and any changes approved by the notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XI Part B Section 7"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_retention_record
+      - eu_declaration_of_conformity
+      - technical_documentation
+      - notified_body_certificate
+      - record_retention_policy
+    applicability:
+      deviceClasses:
+        - IIa
+        - IIb
+        - III
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  # ── Annex IX constraints ──
+
+  - constraintId: "EUMDR.AIX.I.CON.001"
+    appliesTo: "EUMDR.AIX.I.OBL.001"
+    text: "The manufacturer shall not lodge the same QMS assessment application with more than one notified body. A declaration to this effect must be included in the application."
+    severity: hard
+
+  - constraintId: "EUMDR.AIX.I.CON.002"
+    appliesTo: "EUMDR.AIX.I.OBL.003"
+    text: "The audit team must include at least one member with past experience of assessment of the technology concerned. Audit teams lacking relevant technological expertise are not qualified to conduct the assessment."
+    severity: hard
+
+  - constraintId: "EUMDR.AIX.I.CON.003"
+    appliesTo: "EUMDR.AIX.I.OBL.005"
+    text: "At least one surveillance audit must be conducted per year. The notified body may conduct additional audits, including unannounced visits, at any time."
+    severity: hard
+
+  - constraintId: "EUMDR.AIX.II.CON.001"
+    appliesTo: "EUMDR.AIX.II.OBL.001"
+    text: "Technical documentation assessment is mandatory for all class III devices and class IIb implantable devices. Class IIa devices assessed via Annex IX may have a sampled technical documentation assessment."
+    severity: hard
+
+  - constraintId: "EUMDR.AIX.II.CON.002"
+    appliesTo: "EUMDR.AIX.II.OBL.004"
+    text: "The manufacturer shall not implement changes that could adversely affect conformity with the general safety and performance requirements or the prescribed conditions of use without prior approval by the notified body."
+    severity: hard
+
+  - constraintId: "EUMDR.AIX.III.CON.001"
+    appliesTo: "EUMDR.AIX.III.OBL.001"
+    text: "The minimum document retention period is 10 years after the last device has been placed on the market. For implantable devices, this is extended to 15 years."
+    severity: hard
+
+  # ── Annex X constraints ──
+
+  - constraintId: "EUMDR.AX.I.CON.001"
+    appliesTo: "EUMDR.AX.I.OBL.003"
+    text: "The EU type-examination certificate shall be valid for a maximum of five years and may be extended for further periods of up to five years each upon application by the manufacturer. The notified body must reassess the type before renewal."
+    severity: hard
+
+  - constraintId: "EUMDR.AX.I.CON.002"
+    appliesTo: "EUMDR.AX.I.OBL.004"
+    text: "Any modification to the approved type that could affect conformity requires additional approval from the notified body. Manufacturing a modified type without this approval is a regulatory violation."
+    severity: hard
+
+  - constraintId: "EUMDR.AX.III.CON.001"
+    appliesTo: "EUMDR.AX.III.OBL.001"
+    text: "In the case of statistical verification, devices must be presented in homogeneous lots. The notified body may reject non-homogeneous lots for statistical sampling purposes."
+    severity: hard
+
+  # ── Annex XI constraints ──
+
+  - constraintId: "EUMDR.AXI.A.CON.001"
+    appliesTo: "EUMDR.AXI.A.OBL.001"
+    text: "The manufacturer shall not lodge the same QMS assessment application with more than one notified body. Duplicate applications render both invalid."
+    severity: hard
+
+  - constraintId: "EUMDR.AXI.B.CON.001"
+    appliesTo: "EUMDR.AXI.B.OBL.002"
+    text: "In the case of individual verification, the notified body shall examine and test every device. In the case of statistical verification, the statistical sampling plan must be based on recognised statistical methodologies."
+    severity: hard
+
+  - constraintId: "EUMDR.AXI.B.CON.002"
+    appliesTo: "EUMDR.AXI.B.OBL.003"
+    text: "The minimum record retention period is 10 years after the last device has been placed on the market, or 15 years for implantable devices. Records may not be destroyed before the applicable period has elapsed."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.EU_TYPE_EXAMINATION"
+    term: "EU Type-Examination"
+    text: "The procedure whereby a notified body ascertains and certifies that a representative sample of the production envisaged meets the applicable provisions of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter I"
+
+  - definitionId: "EUMDR.DEF.PRODUCTION_QMS"
+    term: "Production Quality Management System"
+    text: "A quality management system applied by the manufacturer to the manufacture, final inspection, and testing of devices, ensuring that devices are manufactured in conformity with the applicable requirements and, where relevant, with the approved type."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter II, Annex XI Part A"
+
+  - definitionId: "EUMDR.DEF.PRODUCT_VERIFICATION"
+    term: "Product Verification"
+    text: "The procedure whereby a notified body examines and tests every device or a statistical sample of devices to verify conformity with the requirements of this Regulation and, where applicable, with the EU type-examination certificate."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter III, Annex XI Part B"
+
+  - definitionId: "EUMDR.DEF.HOMOGENEOUS_LOT"
+    term: "Homogeneous Lot"
+    text: "A batch of devices manufactured under uniform conditions and intended to have uniform characteristics. Homogeneous lots are the basis for statistical product verification sampling."
+    sourceCitation: "Regulation (EU) 2017/745 Annex X Chapter III Section 8, Annex XI Part B Section 6"
+
+relationships:
+  # ── Internal Annex IX relationships ──
+  - from: "EUMDR.AIX.I.OBL.001"
+    to: "EUMDR.AIX.I.OBL.003"
+    type: TRIGGERS
+    props:
+      note: "Manufacturer QMS application triggers NB audit and assessment"
+
+  - from: "EUMDR.AIX.I.OBL.003"
+    to: "EUMDR.AIX.I.OBL.004"
+    type: TRIGGERS
+    props:
+      note: "Successful QMS audit triggers NB certification decision"
+
+  - from: "EUMDR.AIX.I.OBL.004"
+    to: "EUMDR.AIX.I.OBL.005"
+    type: TRIGGERS
+    props:
+      note: "QMS certification triggers ongoing surveillance obligations"
+
+  - from: "EUMDR.AIX.I.OBL.002"
+    to: "EUMDR.AIX.I.OBL.001"
+    type: PART_OF
+    props:
+      note: "QMS scope and documentation requirements are part of the application requirements"
+
+  - from: "EUMDR.AIX.II.OBL.001"
+    to: "EUMDR.AIX.II.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Technical documentation application triggers NB review"
+
+  - from: "EUMDR.AIX.II.OBL.003"
+    to: "EUMDR.AIX.II.OBL.002"
+    type: PART_OF
+    props:
+      note: "Clinical evaluation review is part of the overall TD assessment"
+
+  - from: "EUMDR.AIX.III.OBL.002"
+    to: "EUMDR.AIX.III.OBL.001"
+    type: PART_OF
+    props:
+      note: "Implantable device extended retention is a specialisation of the general retention obligation"
+
+  # ── Internal Annex X relationships ──
+  - from: "EUMDR.AX.I.OBL.001"
+    to: "EUMDR.AX.I.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Type-examination application triggers NB assessment and testing"
+
+  - from: "EUMDR.AX.I.OBL.002"
+    to: "EUMDR.AX.I.OBL.003"
+    type: TRIGGERS
+    props:
+      note: "Successful assessment triggers issuance of EU type-examination certificate"
+
+  - from: "EUMDR.AX.I.OBL.003"
+    to: "EUMDR.AX.II.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Type-examination certificate triggers need for production quality assurance"
+
+  - from: "EUMDR.AX.II.OBL.001"
+    to: "EUMDR.AX.II.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Production QMS application triggers NB assessment and surveillance"
+
+  - from: "EUMDR.AX.I.OBL.003"
+    to: "EUMDR.AX.III.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Type-examination certificate triggers product verification against the approved type"
+
+  - from: "EUMDR.AX.III.OBL.001"
+    to: "EUMDR.AX.III.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Manufacturer verification preparations trigger NB verification activities"
+
+  # ── Internal Annex XI relationships ──
+  - from: "EUMDR.AXI.A.OBL.001"
+    to: "EUMDR.AXI.A.OBL.003"
+    type: TRIGGERS
+    props:
+      note: "QMS application triggers NB audit and certification"
+
+  - from: "EUMDR.AXI.A.OBL.002"
+    to: "EUMDR.AXI.A.OBL.001"
+    type: PART_OF
+    props:
+      note: "QMS scope requirements are part of the application"
+
+  - from: "EUMDR.AXI.B.OBL.001"
+    to: "EUMDR.AXI.B.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "Manufacturer presenting devices triggers NB verification"
+
+  - from: "EUMDR.AXI.B.OBL.003"
+    to: "EUMDR.AXI.B.OBL.001"
+    type: PART_OF
+    props:
+      note: "Record keeping is part of the manufacturer's product verification obligations"
+
+  # ── Cross-references between Annexes IX, X, XI ──
+  - from: "EUMDR.AIX.I.OBL.002"
+    to: "EUMDR.AXI.A.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex IX QMS requirements overlap with Annex XI Part A production QMS requirements"
+
+  - from: "EUMDR.AX.III.OBL.002"
+    to: "EUMDR.AXI.B.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex X product verification procedure parallels Annex XI Part B product verification"
+
+  # ── Cross-references to Article 52 conformity assessment routes ──
+  - from: "EUMDR.AIX.I.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex IX is one of the conformity assessment routes specified in Article 52"
+
+  - from: "EUMDR.AX.I.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex X type-examination is one of the conformity assessment routes specified in Article 52"
+
+  - from: "EUMDR.AXI.A.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XI Part A is one of the conformity assessment routes specified in Article 52"
+
+  - from: "EUMDR.AXI.B.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XI Part B is one of the conformity assessment routes specified in Article 52"
+
+  - from: "EUMDR.AIX.I.OBL.001"
+    to: "EUMDR.52.OBL.004"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex IX is the primary route for class IIb and III devices per Article 52(3)-(4)"
+
+  - from: "EUMDR.AIX.I.OBL.001"
+    to: "EUMDR.52.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex IX is an available route for class IIa devices per Article 52(6)"
+
+  - from: "EUMDR.AX.I.OBL.001"
+    to: "EUMDR.52.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex X + XI is an alternative route for class IIa devices per Article 52(6)"
+
+  # ── Cross-references to Annex IV-VII file ──
+  - from: "EUMDR.AIX.I.OBL.004"
+    to: "EUMDR.AIV.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "QMS certificate must be referenced in the EU DoC per Annex IV"
+
+  - from: "EUMDR.AX.I.OBL.003"
+    to: "EUMDR.AIV.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "EU type-examination certificate must be referenced in the EU DoC per Annex IV"
+
+  - from: "EUMDR.AIX.I.OBL.005"
+    to: "EUMDR.AVII.OBL.010"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex IX surveillance aligns with Annex VII notified body surveillance requirements"
+
+  - from: "EUMDR.AIX.I.OBL.003"
+    to: "EUMDR.AVII.OBL.009"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex IX audit requirements align with Annex VII audit and certification requirements"
+
+  # ── Cross-references to other EU MDR files ──
+  - from: "EUMDR.AIX.II.OBL.003"
+    to: "EUMDR.61.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Clinical evaluation review aligns with Article 61 clinical evaluation requirements"
+
+  - from: "EUMDR.AIX.III.OBL.001"
+    to: "EUMDR.AIV.OBL.007"
+    type: DEPENDS_ON
+    props:
+      note: "Document retention obligation includes keeping the EU DoC up to date"
+
+  - from: "EUMDR.AIX.I.OBL.004"
+    to: "EUMDR.56.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "QMS certificate validity aligns with Article 56 certificate requirements"
+
+  - from: "EUMDR.AX.I.OBL.003"
+    to: "EUMDR.56.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Type-examination certificate validity aligns with Article 56 certificate requirements"

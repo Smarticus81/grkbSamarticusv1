@@ -1,0 +1,757 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Chapters IX-X — Confidentiality, funding, penalties, final provisions (Articles 101-123)"
+jurisdiction: EU_MDR
+processType: GOVERNANCE
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ── Article 101 — Confidentiality ──
+
+  - obligationId: "EUMDR.101.OBL.001"
+    kind: obligation
+    title: "Protect commercially confidential information"
+    text: "Unless otherwise provided in this Regulation and without prejudice to existing national provisions and practices in the Member States on confidentiality, all parties involved in the application of this Regulation shall respect the confidentiality of information and data obtained in carrying out their tasks in order to protect commercial secrets and personal data."
+    sourceCitation: "Regulation (EU) 2017/745 Article 101(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - confidentiality_procedure
+      - information_security_policy
+    applicability:
+      operatorRoles:
+        - competent_authority
+        - notified_body
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.101.OBL.002"
+    kind: obligation
+    title: "Exceptions to confidentiality for public health"
+    text: "Confidentiality obligations shall not prevent the timely exchange of information between competent authorities and between competent authorities and the Commission where such exchange is necessary for the application of this Regulation, in particular for the purposes of market surveillance, vigilance and clinical investigations. Information exchanged for those purposes shall remain confidential."
+    sourceCitation: "Regulation (EU) 2017/745 Article 101(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - information_sharing_record
+      - public_health_justification
+    applicability:
+      operatorRoles:
+        - competent_authority
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 102 — Data protection ──
+
+  - obligationId: "EUMDR.102.OBL.001"
+    kind: obligation
+    title: "GDPR compliance for personal data processing"
+    text: "Member States shall apply Regulation (EU) 2016/679 to the processing of personal data carried out in the Member States pursuant to this Regulation. With regard to the processing of personal data by the Commission in the context of this Regulation, Regulation (EU) 2018/1725 shall apply."
+    sourceCitation: "Regulation (EU) 2017/745 Article 102(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - data_protection_impact_assessment
+      - gdpr_compliance_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.102.OBL.002"
+    kind: obligation
+    title: "Lawful basis for health data processing in vigilance and PMS"
+    text: "The collection and processing of personal data of patients, users and other natural persons, including health data, for the purposes of vigilance, post-market surveillance, market surveillance and clinical evaluation shall be necessary for reasons of public interest in the area of public health within the meaning of point (i) of Article 9(2) of Regulation (EU) 2016/679."
+    sourceCitation: "Regulation (EU) 2017/745 Article 102(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - lawful_basis_assessment
+      - data_processing_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - competent_authority
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 103 — Financing ──
+
+  - obligationId: "EUMDR.103.OBL.001"
+    kind: obligation
+    title: "Fee structures for NB designation and monitoring"
+    text: "Member States may charge fees for the designation and monitoring of notified bodies and for the market surveillance activities carried out under this Regulation. The level of those fees shall be set in a transparent manner and on the basis of cost-recovery principles."
+    sourceCitation: "Regulation (EU) 2017/745 Article 103(1)"
+    mandatory: false
+    requiredEvidenceTypes:
+      - fee_schedule
+      - cost_recovery_methodology
+    applicability:
+      operatorRoles:
+        - member_state
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.103.OBL.002"
+    kind: obligation
+    title: "Commission funding for MDCG activities"
+    text: "The Commission shall finance the activities related to the designation and monitoring of notified bodies, the Medical Device Coordination Group, expert panels, EU reference laboratories and implementation of this Regulation where those activities are performed at Union level."
+    sourceCitation: "Regulation (EU) 2017/745 Article 103(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - commission_budget_allocation
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 104 — Penalties ──
+
+  - obligationId: "EUMDR.104.OBL.001"
+    kind: obligation
+    title: "Establish rules on penalties"
+    text: "Member States shall lay down the rules on penalties applicable to infringements of this Regulation and shall take all measures necessary to ensure that they are implemented. The penalties provided for shall be effective, proportionate and dissuasive."
+    sourceCitation: "Regulation (EU) 2017/745 Article 104(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - national_penalty_legislation
+      - penalty_enforcement_record
+    applicability:
+      operatorRoles:
+        - member_state
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.104.OBL.002"
+    kind: obligation
+    title: "Notify Commission of penalty rules"
+    text: "Member States shall notify the Commission of the rules on penalties referred to in paragraph 1 by the date of application of this Regulation and shall notify it without delay of any subsequent amendment affecting them."
+    sourceCitation: "Regulation (EU) 2017/745 Article 104(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - commission_notification
+      - penalty_rules_submission
+    applicability:
+      operatorRoles:
+        - member_state
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 105 — Cooperation between Member States ──
+
+  - obligationId: "EUMDR.105.OBL.001"
+    kind: obligation
+    title: "Mutual assistance and information exchange"
+    text: "The competent authorities of the Member States shall cooperate with each other and with the Commission and shall exchange information on the results of any market surveillance and compliance activities, on emerging risks, on scientific opinions and on best practices to ensure effective and harmonised application of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 105(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - cooperation_agreement
+      - information_exchange_record
+    applicability:
+      operatorRoles:
+        - competent_authority
+        - member_state
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.105.OBL.002"
+    kind: obligation
+    title: "Joint inspections between Member States"
+    text: "Member States shall participate in coordinated and joint inspection programmes and other joint market surveillance activities. Competent authorities may request assistance from competent authorities of other Member States for the purpose of carrying out their tasks under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 105(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - joint_inspection_report
+      - mutual_assistance_request
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 106 — Conflicts of interest ──
+
+  - obligationId: "EUMDR.106.OBL.001"
+    kind: obligation
+    title: "Prevent conflicts of interest"
+    text: "Member States shall ensure that there are no conflicts of interest between the persons involved in conformity assessment activities, including notified body personnel, and the manufacturers, authorised representatives or other economic operators. This applies also to subcontractors. The persons carrying out conformity assessment activities shall make a declaration of interests."
+    sourceCitation: "Regulation (EU) 2017/745 Article 106"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conflict_of_interest_declaration
+      - independence_assessment
+    applicability:
+      operatorRoles:
+        - notified_body
+        - competent_authority
+        - member_state
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 107 — Medical Device Coordination Group (MDCG) ──
+
+  - obligationId: "EUMDR.107.OBL.001"
+    kind: obligation
+    title: "Establish Medical Device Coordination Group"
+    text: "A Medical Device Coordination Group (MDCG) is hereby established. The MDCG shall be composed of one member and one alternate appointed by each Member State on the basis of their expertise in medical devices and in vitro diagnostic medical devices. Members shall be chosen for their competence and experience."
+    sourceCitation: "Regulation (EU) 2017/745 Article 107(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - mdcg_membership_record
+      - member_state_appointment
+    applicability:
+      operatorRoles:
+        - member_state
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.107.OBL.002"
+    kind: obligation
+    title: "MDCG tasks and advisory role"
+    text: "The MDCG shall have the following tasks: contribute to the assessment of applicant conformity assessment bodies and notified bodies; advise the Commission on matters related to medical devices; assist competent authorities in their coordination activities; contribute to the development of guidance; contribute to the continuous monitoring of technical progress and assessment of common specifications."
+    sourceCitation: "Regulation (EU) 2017/745 Article 107(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - mdcg_guidance_document
+      - mdcg_meeting_minutes
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 108 — Expert panels and laboratories ──
+
+  - obligationId: "EUMDR.108.OBL.001"
+    kind: obligation
+    title: "Expert panels for clinical evaluation consultation"
+    text: "The Commission shall, by means of implementing acts, provide for the setting up of expert panels on the basis of the clinical and scientific expertise needed. Expert panels shall provide their views on the clinical evaluation and the clinical investigation of certain high-risk devices, including Class III implantable devices and Class IIb active devices intended to administer or remove a medicinal product."
+    sourceCitation: "Regulation (EU) 2017/745 Article 108(1)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - expert_panel_opinion
+      - clinical_evaluation_consultation
+    applicability:
+      deviceClasses:
+        - III
+        - IIb
+      operatorRoles:
+        - commission
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.108.OBL.002"
+    kind: obligation
+    title: "EU reference laboratories"
+    text: "The Commission shall designate EU reference laboratories where no such laboratories have been designated under other Union legislation. EU reference laboratories shall verify the performance claimed by the manufacturer for high-risk devices, provide scientific and technical assistance to the Commission, the MDCG and the Member States, and contribute to the development of common specifications and guidance."
+    sourceCitation: "Regulation (EU) 2017/745 Article 108(4)-(6)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - reference_laboratory_designation
+      - laboratory_verification_report
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 109 — Advisory procedure ──
+
+  - obligationId: "EUMDR.109.OBL.001"
+    kind: obligation
+    title: "Committee procedure for implementing acts"
+    text: "The Commission shall be assisted by the Medical Devices Committee. That committee shall be a committee within the meaning of Regulation (EU) No 182/2011. Where reference is made to this Article, Article 4 of Regulation (EU) No 182/2011 shall apply."
+    sourceCitation: "Regulation (EU) 2017/745 Article 109"
+    mandatory: true
+    requiredEvidenceTypes:
+      - committee_procedure_record
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 110 — Exercise of delegation ──
+
+  - obligationId: "EUMDR.110.OBL.001"
+    kind: obligation
+    title: "Delegated acts procedure"
+    text: "The power to adopt delegated acts is conferred on the Commission subject to the conditions laid down in this Article. The delegation of power shall be conferred for a period of five years from 25 May 2017 and shall be tacitly extended for periods of an identical duration, unless the European Parliament or the Council opposes such extension."
+    sourceCitation: "Regulation (EU) 2017/745 Article 110(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - delegated_act_record
+      - delegation_period_tracking
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.110.OBL.002"
+    kind: obligation
+    title: "Revocation and urgency procedure for delegated acts"
+    text: "The delegation of power may be revoked at any time by the European Parliament or by the Council. A decision to revoke shall put an end to the delegation of the power specified in that decision. On duly justified imperative grounds of urgency, the Commission may adopt delegated acts which shall apply immediately without prior notification."
+    sourceCitation: "Regulation (EU) 2017/745 Article 110(3)-(6)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - revocation_decision
+      - urgency_justification
+    applicability:
+      operatorRoles:
+        - commission
+        - european_parliament
+        - council
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Articles 111-113 — Committee and procedural articles ──
+
+  - obligationId: "EUMDR.111.OBL.001"
+    kind: obligation
+    title: "Examination procedure for implementing acts"
+    text: "Where reference is made to this Article, Article 5 of Regulation (EU) No 182/2011 on the examination procedure shall apply. Where the committee delivers no opinion, the Commission shall not adopt the draft implementing act and the third subparagraph of Article 5(4) of Regulation (EU) No 182/2011 shall apply."
+    sourceCitation: "Regulation (EU) 2017/745 Article 111"
+    mandatory: true
+    requiredEvidenceTypes:
+      - committee_opinion_record
+      - implementing_act_record
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.112.OBL.001"
+    kind: obligation
+    title: "Urgency procedure for implementing acts"
+    text: "On duly justified imperative grounds of urgency relating to the health and safety of persons, the Commission shall adopt immediately applicable implementing acts in accordance with the procedure referred to in Article 5(4) of Regulation (EU) No 182/2011. Those acts shall remain in force for a period not exceeding 6 months."
+    sourceCitation: "Regulation (EU) 2017/745 Article 112"
+    mandatory: true
+    requiredEvidenceTypes:
+      - urgency_justification
+      - implementing_act_record
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.113.OBL.001"
+    kind: obligation
+    title: "Commission guidance documents"
+    text: "The Commission shall issue guidance aimed at ensuring the effective and harmonised implementation of this Regulation, in particular in the areas of clinical evaluation, classification, post-market surveillance, vigilance, notified body designation and market surveillance."
+    sourceCitation: "Regulation (EU) 2017/745 Article 113"
+    mandatory: true
+    requiredEvidenceTypes:
+      - commission_guidance_document
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 114-116 — Transitional provisions ──
+
+  - obligationId: "EUMDR.114.OBL.001"
+    kind: obligation
+    title: "Transitional provisions for existing devices"
+    text: "By derogation from Article 5, a device with a valid EC certificate issued in accordance with Directive 93/42/EEC or Directive 90/385/EEC that is still valid may continue to be placed on the market or put into service, provided that from 26 May 2021 it continues to comply with the relevant directive, there are no significant changes in the design and intended purpose, and the device does not present an unacceptable risk."
+    sourceCitation: "Regulation (EU) 2017/745 Article 120(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - legacy_certificate_record
+      - transition_plan
+      - design_change_assessment
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "Device holds valid MDD/AIMDD certificate issued before 26 May 2021"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.114.OBL.002"
+    kind: obligation
+    title: "MDD/AIMDD certificate validity during transition"
+    text: "Certificates issued by notified bodies in accordance with Directive 93/42/EEC or Directive 90/385/EEC prior to 25 May 2017 shall remain valid until the end of the period indicated on the certificate, except for certificates which became void by 27 May 2024. Certificates issued from 25 May 2017 onwards under those directives shall remain valid until the end of the period indicated on the certificate, but shall become void no later than 27 May 2024."
+    sourceCitation: "Regulation (EU) 2017/745 Article 120(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - certificate_validity_record
+      - transition_timeline
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - notified_body
+      conditions:
+        - "Device covered by MDD or AIMDD certificate"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.115.OBL.001"
+    kind: obligation
+    title: "Legacy device sell-off period"
+    text: "Devices lawfully placed on the market pursuant to Directive 93/42/EEC or Directive 90/385/EEC prior to 26 May 2021, and devices placed on the market from 26 May 2021 under the transitional provisions, may continue to be made available on the market or put into service until 26 May 2025."
+    sourceCitation: "Regulation (EU) 2017/745 Article 120(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sell_off_inventory_record
+      - market_availability_tracking
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - importer
+        - distributor
+      conditions:
+        - "Device lawfully placed on market under MDD/AIMDD"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.116.OBL.001"
+    kind: obligation
+    title: "Transitional PMS and vigilance obligations"
+    text: "Notwithstanding the transitional provisions for device placement, the requirements of this Regulation relating to post-market surveillance, market surveillance, vigilance, and registration of economic operators and of devices shall apply to legacy devices from 26 May 2021. Manufacturers of legacy devices shall comply with Articles 83-92 (PMS and vigilance) regardless of whether the device was certified under MDD or AIMDD."
+    sourceCitation: "Regulation (EU) 2017/745 Article 120(3)(d)-(e)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+      - vigilance_compliance_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "Legacy devices on market under transitional provisions"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Articles 117-120 — Amendments to existing directives ──
+
+  - obligationId: "EUMDR.117.OBL.001"
+    kind: obligation
+    title: "Amendments to other Union acts"
+    text: "Directive 2001/83/EC is amended by adding references to devices falling within the scope of this Regulation. Regulation (EC) No 178/2002, Regulation (EC) No 1223/2009, and other relevant Union acts are amended to ensure consistency with this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Articles 117-120"
+    mandatory: true
+    requiredEvidenceTypes:
+      - regulatory_cross_reference_record
+    applicability:
+      operatorRoles:
+        - commission
+        - member_state
+      conditions:
+        - "Applies to regulatory harmonisation and cross-referencing between Union acts"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 121 — Repeal ──
+
+  - obligationId: "EUMDR.121.OBL.001"
+    kind: obligation
+    title: "Repeal of MDD and AIMDD"
+    text: "Directive 93/42/EEC (Medical Devices Directive) and Directive 90/385/EEC (Active Implantable Medical Devices Directive) are repealed with effect from 26 May 2021, without prejudice to the obligations of the Member States relating to the time-limits for transposition and the transitional provisions of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 121"
+    mandatory: true
+    requiredEvidenceTypes:
+      - regulatory_transition_record
+    applicability:
+      operatorRoles:
+        - member_state
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 122 — References ──
+
+  - obligationId: "EUMDR.122.OBL.001"
+    kind: obligation
+    title: "Construe references to repealed directives"
+    text: "References in other Union or national legislation to the repealed directives shall be construed as references to this Regulation and shall be read in accordance with the correlation table set out in Annex XVII."
+    sourceCitation: "Regulation (EU) 2017/745 Article 122"
+    mandatory: true
+    requiredEvidenceTypes:
+      - correlation_table_reference
+    applicability:
+      operatorRoles:
+        - member_state
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 123 — Entry into force and date of application ──
+
+  - obligationId: "EUMDR.123.OBL.001"
+    kind: obligation
+    title: "Entry into force and date of application"
+    text: "This Regulation shall enter into force on the twentieth day following that of its publication in the Official Journal of the European Union. It shall apply from 26 May 2021. However, Article 34 (EUDAMED) shall apply from a date set by the Commission by means of an implementing act once the conditions for full functionality of EUDAMED have been met, and Articles 29(4) and 56(5) relating to EUDAMED registration shall apply from 18 months after the date referred to above."
+    sourceCitation: "Regulation (EU) 2017/745 Article 123(1)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - application_date_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  - constraintId: "EUMDR.101.CON.001"
+    appliesTo: "EUMDR.101.OBL.001"
+    text: "Confidentiality protection must not impede the effective functioning of market surveillance, vigilance reporting or clinical investigation oversight. Public health protection takes precedence over commercial confidentiality."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.102.CON.001"
+    appliesTo: "EUMDR.102.OBL.001"
+    text: "Personal data processing must have a lawful basis under GDPR. The public health justification under Article 9(2)(i) of GDPR applies specifically to vigilance, PMS, and clinical evaluation purposes. It does not provide a blanket authorisation for commercial data processing."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.104.CON.001"
+    appliesTo: "EUMDR.104.OBL.001"
+    text: "Penalties must be effective, proportionate and dissuasive. They must take into account the severity and recurrence of the infringement, the economic benefit derived from the infringement, and the size of the economic operator."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.106.CON.001"
+    appliesTo: "EUMDR.106.OBL.001"
+    text: "Conflict of interest declarations must be updated whenever circumstances change. A person with a conflict of interest must be excluded from participation in conformity assessment activities for the relevant manufacturer or device."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.114.CON.001"
+    appliesTo: "EUMDR.114.OBL.001"
+    text: "Legacy devices may only remain on the market if there are no significant changes in design and intended purpose. Any significant change requires full conformity under the MDR."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.114.CON.002"
+    appliesTo: "EUMDR.114.OBL.002"
+    text: "Certificates issued under MDD/AIMDD shall become void no later than 27 May 2024 regardless of the expiry date printed on the certificate. After this date, only MDR certificates are valid."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.115.CON.001"
+    appliesTo: "EUMDR.115.OBL.001"
+    text: "The sell-off period ends 26 May 2025. After this date, legacy devices may no longer be made available on the market, even if previously lawfully placed."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+definitions:
+  - definitionId: "EUMDR.DEF.MDCG"
+    term: "Medical Device Coordination Group"
+    text: "The group established by Article 107, composed of members appointed by each Member State, tasked with advising the Commission and assisting Member States in ensuring harmonised implementation of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 107"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.DELEGATED_ACT"
+    term: "Delegated Act"
+    text: "A non-legislative act of general application adopted by the Commission to supplement or amend certain non-essential elements of a legislative act, within the limits set by the empowering legislation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 110, referencing Article 290 TFEU"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.IMPLEMENTING_ACT"
+    term: "Implementing Act"
+    text: "A legally binding act adopted by the Commission to ensure uniform conditions for the implementation of Union legislation, subject to control mechanisms by Member States."
+    sourceCitation: "Regulation (EU) 2017/745 Articles 109, 111, referencing Article 291 TFEU"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.EXPERT_PANEL"
+    term: "Expert Panel"
+    text: "A panel of clinical, scientific and technical experts established by the Commission to provide views on clinical evaluations and clinical investigations of certain high-risk devices."
+    sourceCitation: "Regulation (EU) 2017/745 Article 108(1)-(3)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.LEGACY_DEVICE"
+    term: "Legacy Device"
+    text: "A device that was lawfully placed on the market or put into service under Directive 93/42/EEC (MDD) or Directive 90/385/EEC (AIMDD) and benefits from transitional provisions under Article 120 of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 120"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+relationships:
+  # PART_OF relationships
+  - from: "EUMDR.101.OBL.002"
+    to: "EUMDR.101.OBL.001"
+    type: PART_OF
+    props:
+      note: "Public health exceptions are part of the overall confidentiality framework"
+
+  - from: "EUMDR.104.OBL.002"
+    to: "EUMDR.104.OBL.001"
+    type: PART_OF
+    props:
+      note: "Notification of penalty rules is part of the penalty establishment obligation"
+
+  - from: "EUMDR.105.OBL.002"
+    to: "EUMDR.105.OBL.001"
+    type: PART_OF
+    props:
+      note: "Joint inspections are a component of mutual assistance cooperation"
+
+  - from: "EUMDR.110.OBL.002"
+    to: "EUMDR.110.OBL.001"
+    type: PART_OF
+    props:
+      note: "Revocation and urgency mechanisms are part of the delegated acts procedure"
+
+  - from: "EUMDR.114.OBL.002"
+    to: "EUMDR.114.OBL.001"
+    type: PART_OF
+    props:
+      note: "Certificate validity rules govern the transitional period for existing devices"
+
+  # TRIGGERS relationships
+  - from: "EUMDR.121.OBL.001"
+    to: "EUMDR.114.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Repeal of MDD/AIMDD triggers transitional provisions for existing devices"
+
+  - from: "EUMDR.114.OBL.001"
+    to: "EUMDR.115.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Transitional placement triggers sell-off period obligations"
+
+  - from: "EUMDR.121.OBL.001"
+    to: "EUMDR.122.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Repeal triggers the correlation table for reference mapping"
+
+  # CROSS_REFERENCES — links to obligations in other files
+  - from: "EUMDR.116.OBL.001"
+    to: "EUMDR.83.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Transitional PMS obligations reference the main PMS system requirement"
+
+  - from: "EUMDR.116.OBL.001"
+    to: "EUMDR.87.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Transitional vigilance obligations reference the main vigilance reporting requirement"
+
+  - from: "EUMDR.105.OBL.001"
+    to: "EUMDR.93.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Member State cooperation supports market surveillance activities"
+
+  - from: "EUMDR.106.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Conflict of interest prevention applies to conformity assessment activities"
+
+  - from: "EUMDR.108.OBL.001"
+    to: "EUMDR.52.OBL.004"
+    type: CROSS_REFERENCES
+    props:
+      note: "Expert panel consultation applies to high-risk device conformity assessment"
+
+  - from: "EUMDR.102.OBL.002"
+    to: "EUMDR.87.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "GDPR lawful basis for health data processing is linked to vigilance reporting"
+
+  - from: "EUMDR.102.OBL.002"
+    to: "EUMDR.83.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "GDPR lawful basis for health data processing is linked to PMS data collection"

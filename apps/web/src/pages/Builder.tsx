@@ -1,19 +1,21 @@
 /**
- * Builder — minimalist single-agent canvas.
+ * Saved Agents — manage and re-run the agents you saved from a Sandbox run.
  *
- * - Left rail (240px): "My agents" list + "+ New agent".
- * - Center canvas (max-w 760px): one agent at a time.
- *     Job picker → Required data slots (attach text/JSON) → Controls → Run in Sandbox.
+ * This page does ONE thing: list your saved agents and let you re-run, rename,
+ * or delete them. Creating an agent happens in the Sandbox: run a process, then
+ * "Save as agent" — that captures the exact input you used. Re-running here
+ * replays that saved input in the Sandbox.
  *
- * No wizard, no stepper. Save persists to /api/builder/agents.
- * Attachments persist via PATCH /api/builder/agents/:id/attach (text/JSON only,
- * 2MB cap). Run in Sandbox calls POST /:id/launch and navigates to the sandbox
- * task page where the resolved input is pre-filled.
+ * (The `processS` catalog below is the single source the Sandbox uses to map a
+ * task to its regulations/risk when saving an agent — it is exported, not
+ * rendered here.)
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuthenticatedApi } from '../auth/useApi.js';
+import { PageHeader } from '../components/ui/PageHeader.js';
+import { EmptyState } from '../components/ui/EmptyState.js';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -21,18 +23,7 @@ type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
 type EvidenceRow = { label: string; required: boolean };
 
-type SavedWorkflowRow = {
-  id: string;
-  name: string;
-  processType: string;
-  jurisdiction: string;
-  description: string | null;
-  source: string;
-  sourceTemplateId: string | null;
-  updatedAt: string;
-};
-
-type Job = {
+export type process = {
   id: string;
   taskId: string;
   title: string;
@@ -43,11 +34,19 @@ type Job = {
   evidenceRows: EvidenceRow[];
 };
 
+type AttachedFile = {
+  filename: string;
+  sizeBytes: number;
+  content: string;
+  contentType: string;
+  attachedAt: string;
+};
+
 type SavedAgent = {
   id: string;
   name: string;
-  jobId: string;
-  jobTitle: string;
+  processId: string;
+  processTitle: string;
   taskId: string | null;
   regulations: string[];
   evidenceStatus: Record<string, string>;
@@ -60,30 +59,35 @@ type SavedAgent = {
   updatedAt: string;
 };
 
-type AttachedFile = {
-  filename: string;
-  sizeBytes: number;
-  content: string;
-  contentType: string;
-  attachedAt: string;
-};
+/* ── process catalog (shared with the Sandbox save-as-agent mapping) ─────── */
 
-/* ── Job catalog ───────────────────────────────────────────────────── */
-
-const JOBS: Job[] = [
+export const processS: process[] = [
   {
     id: 'psur-audit',
     taskId: 'template-compliance-evaluator',
-    title: 'PSUR Structural Audit',
-    blurb: 'Audit a PSUR draft against MDCG 2022-21 / EU MDR Art. 86.',
+    title: 'PSUR Content Review',
+    blurb: 'Review whether a PSUR draft\u2019s content satisfies each MDCG 2022-21 / EU MDR Art. 86 obligation.',
     regulations: ['EU MDR', 'MDCG 2022-21'],
     risk: 'HIGH',
     obligationCount: 13,
     evidenceRows: [
-      { label: 'PSUR draft outline', required: true },
-      { label: 'Post-market surveillance data', required: true },
-      { label: 'Clinical evaluation references', required: true },
+      { label: 'PSUR draft content', required: true },
+      { label: 'Post-market surveillance data', required: false },
+      { label: 'Clinical evaluation references', required: false },
       { label: 'Sales/distribution data', required: false },
+    ],
+  },
+  {
+    id: 'psur-template-review',
+    taskId: 'psur-template-reviewer',
+    title: 'PSUR Template Reviewer',
+    blurb: 'Cross-reference a proposed PSUR template (section outline) against the obligations before change control.',
+    regulations: ['EU MDR', 'MDCG 2022-21'],
+    risk: 'MEDIUM',
+    obligationCount: 13,
+    evidenceRows: [
+      { label: 'Proposed template section outline', required: true },
+      { label: 'Device context', required: false },
     ],
   },
   {
@@ -215,20 +219,6 @@ const JOBS: Job[] = [
   },
 ];
 
-const GUARDRAILS = [
-  { id: 'qualification', label: 'Readiness check', detail: 'Block runs that lack required data.' },
-  { id: 'compliance',    label: 'Compliance check', detail: 'Validate output against bound requirements.' },
-  { id: 'review-gate',   label: 'Human review gate', detail: 'Pause for sign-off before output is released.' },
-  { id: 'strict-schema', label: 'Structured output check', detail: 'Make sure the result is complete and readable.' },
-] as const;
-
-const OUTPUT_FORMATS = [
-  { id: 'draft-doc',       label: 'Draft document' },
-  { id: 'coverage-matrix', label: 'Coverage matrix' },
-  { id: 'json-api',        label: 'Structured response' },
-  { id: 'audit-pack',      label: 'Audit pack' },
-] as const;
-
 /* ── Tokens ────────────────────────────────────────────────────────── */
 
 const PILL: React.CSSProperties = {
@@ -246,11 +236,47 @@ const PILL: React.CSSProperties = {
   background: 'transparent',
 };
 
-const RISK_COLOR: Record<RiskLevel, string> = {
-  HIGH: 'var(--orange)',
-  MEDIUM: 'var(--ink-2)',
-  LOW: 'var(--ink-3)',
+const RISK_COLOR: Record<'low' | 'medium' | 'high', string> = {
+  high: 'var(--orange)',
+  medium: 'var(--ink-2)',
+  low: 'var(--ink-3)',
 };
+
+/* ── Helpers ───────────────────────────────────────────────────────── */
+
+function relTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const s = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (s < 60) return 'just now';
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return `${d}d ago`;
+}
+
+/** A short, human description of the input saved with this agent. */
+function inputSummary(a: SavedAgent): string | null {
+  const input = a.attachedData?.['__input'];
+  if (input && typeof input.content === 'string') {
+    try {
+      const obj = JSON.parse(input.content) as unknown;
+      if (obj && typeof obj === 'object' && !Array.isArray(obj)) {
+        const keys = Object.keys(obj as Record<string, unknown>);
+        if (keys.length) {
+          return `Saved input · ${keys.slice(0, 4).join(', ')}${keys.length > 4 ? '…' : ''}`;
+        }
+      }
+    } catch {
+      /* fall through */
+    }
+    return 'Saved input';
+  }
+  const slots = Object.keys(a.attachedData ?? {}).filter((k) => k !== '__input' && k !== '__context');
+  return slots.length ? `${slots.length} attached item${slots.length === 1 ? '' : 's'}` : null;
+}
 
 /* ── Component ─────────────────────────────────────────────────────── */
 
@@ -258,205 +284,53 @@ export function Builder() {
   const [, navigate] = useLocation();
   const { api } = useAuthenticatedApi();
 
-  const [agents, setAgents] = useState<SavedAgent[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  const [workflows, setWorkflows] = useState<SavedWorkflowRow[]>([]);
-
-  // Working draft (not yet saved). When activeId is set, this mirrors the saved agent.
-  const [name, setName] = useState('Untitled agent');
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [evidenceStatus, setEvidenceStatus] = useState<Record<string, string>>({});
-  const [attachedData, setAttachedData] = useState<Record<string, AttachedFile>>({});
-  const [guardrails, setGuardrails] = useState<Record<string, boolean>>({
-    qualification: true,
-    compliance: true,
-    'review-gate': false,
-    'strict-schema': true,
-  });
-  const [outputFormat, setOutputFormat] = useState<string | null>('draft-doc');
-
+  const [agents, setAgents] = useState<SavedAgent[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
 
-  const job = useMemo(() => JOBS.find((j) => j.id === jobId) ?? null, [jobId]);
-
-  /* ── load saved ── */
   const refresh = async () => {
     try {
-      const rows = await api<SavedAgent[]>('/api/builder/agents');
-      setAgents(rows);
+      setAgents(await api<SavedAgent[]>('/api/builder/agents'));
     } catch {
       setAgents([]);
     }
   };
 
-  const refreshWorkflows = async () => {
-    try {
-      const rows = await api<SavedWorkflowRow[]>('/api/builder/workflows');
-      setWorkflows(rows);
-    } catch {
-      setWorkflows([]);
-    }
-  };
-
-  const deleteWorkflow = async (id: string) => {
-    if (!window.confirm('Delete this process?')) return;
-    try {
-      await api(`/api/builder/workflows/${id}`, { method: 'DELETE' });
-      await refreshWorkflows();
-    } catch (err) {
-      setToast(`Delete failed: ${(err as Error).message}`);
-    }
-  };
-
   useEffect(() => {
     void refresh();
-    void refreshWorkflows();
   }, []);
 
-  function loadAgent(a: SavedAgent) {
-    setActiveId(a.id);
-    setName(a.name);
-    setJobId(a.jobId);
-    setEvidenceStatus(a.evidenceStatus ?? {});
-    setAttachedData(a.attachedData ?? {});
-    setGuardrails({
-      qualification: a.guardrails?.qualification ?? true,
-      compliance: a.guardrails?.compliance ?? true,
-      'review-gate': a.guardrails?.['review-gate'] ?? false,
-      'strict-schema': a.guardrails?.['strict-schema'] ?? true,
-    });
-    setOutputFormat(a.outputFormat ?? 'draft-doc');
-  }
-
-  function newAgent() {
-    setActiveId(null);
-    setName('Untitled agent');
-    setJobId(null);
-    setEvidenceStatus({});
-    setAttachedData({});
-    setGuardrails({
-      qualification: true,
-      compliance: true,
-      'review-gate': false,
-      'strict-schema': true,
-    });
-    setOutputFormat('draft-doc');
-  }
-
-  /* ── save ── */
-  async function save() {
-    if (!job) {
-      setToast('Pick a job first.');
+  async function runAgent(a: SavedAgent) {
+    if (!a.taskId) {
+      setToast('This agent has no runnable process mapped.');
       return;
     }
-    setBusy('save');
+    setBusy(`run:${a.id}`);
     try {
-      const riskBand: 'low' | 'medium' | 'high' =
-        job.risk === 'HIGH' ? 'high' : job.risk === 'LOW' ? 'low' : 'medium';
-      const payload = {
-        name: name.trim() || 'Untitled agent',
-        jobId: job.id,
-        jobTitle: job.title,
-        taskId: job.taskId,
-        regulations: job.regulations,
-        evidenceStatus,
-        guardrails,
-        outputFormat,
-        deployTarget: 'sandbox',
-        riskBand,
-        description: job.blurb,
-      };
-      const saved = await api<SavedAgent>('/api/builder/agents', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
-      setActiveId(saved.id);
-      // Pull canonical row so attachedData is in sync
-      const fresh = await api<SavedAgent>(`/api/builder/agents/${saved.id}`);
-      setAttachedData(fresh.attachedData ?? {});
-      await refresh();
-      setToast('Saved.');
-    } catch (e) {
-      setToast(e instanceof Error ? e.message : 'Save failed.');
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  /* ── attach data ── */
-  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
-
-  async function ensureAgentId(): Promise<string | null> {
-    if (activeId) return activeId;
-    // Auto-save first so we have an id to attach against.
-    await save();
-    return activeId; // Set by save()
-  }
-
-  async function attach(slot: string, file: File) {
-    if (file.size > 2_000_000) {
-      setToast('File too large (2 MB cap).');
-      return;
-    }
-    const id = activeId ?? (await new Promise<string | null>((r) => {
-      // Two-phase: save then resolve via state propagation.
-      void save().then(() => r(null));
-    }));
-    void id;
-    // Refetch the latest activeId after save
-    const currentId = activeId;
-    if (!currentId) {
-      setToast('Save the agent first, then attach data.');
-      return;
-    }
-    setBusy(`attach:${slot}`);
-    try {
-      const text = await file.text();
-      const updated = await api<SavedAgent>(`/api/builder/agents/${currentId}/attach`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          slot,
-          filename: file.name,
-          content: text,
-          contentType: file.type || (file.name.endsWith('.json') ? 'application/json' : 'text/plain'),
-        }),
-      });
-      setAttachedData(updated.attachedData ?? {});
-      setEvidenceStatus(updated.evidenceStatus ?? {});
-      setToast(`Attached ${file.name}.`);
-    } catch (e) {
-      setToast(e instanceof Error ? e.message : 'Attach failed.');
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function detach(slot: string) {
-    if (!activeId) return;
-    setBusy(`detach:${slot}`);
-    try {
-      const updated = await api<SavedAgent>(
-        `/api/builder/agents/${activeId}/attach/${encodeURIComponent(slot)}`,
-        { method: 'DELETE' },
+      const launch = await api<{ taskId: string; input: unknown }>(
+        `/api/builder/agents/${a.id}/launch`,
+        { method: 'POST' },
       );
-      setAttachedData(updated.attachedData ?? {});
-      setEvidenceStatus(updated.evidenceStatus ?? {});
+      try {
+        sessionStorage.setItem(`builder:input:${launch.taskId}`, JSON.stringify(launch.input ?? {}));
+      } catch {
+        /* sessionStorage may be blocked */
+      }
+      navigate(`/app/sandbox/${launch.taskId}`);
     } catch (e) {
-      setToast(e instanceof Error ? e.message : 'Remove failed.');
+      setToast(e instanceof Error ? e.message : 'Could not open agent.');
     } finally {
       setBusy(null);
     }
   }
 
-  /* ── delete saved agent ── */
-  async function remove(id: string) {
-    if (!confirm('Delete this agent?')) return;
-    setBusy(`del:${id}`);
+  async function remove(a: SavedAgent) {
+    if (!confirm(`Delete "${a.name}"? This can't be undone.`)) return;
+    setBusy(`del:${a.id}`);
     try {
-      await api<void>(`/api/builder/agents/${id}`, { method: 'DELETE' });
-      if (activeId === id) newAgent();
+      await api<void>(`/api/builder/agents/${a.id}`, { method: 'DELETE' });
       await refresh();
     } catch (e) {
       setToast(e instanceof Error ? e.message : 'Delete failed.');
@@ -465,683 +339,196 @@ export function Builder() {
     }
   }
 
-  /* ── launch ── */
-  const missingRequired = useMemo(() => {
-    if (!job) return [];
-    return job.evidenceRows.filter((r) => r.required && !attachedData[r.label]);
-  }, [job, attachedData]);
+  function startRename(a: SavedAgent) {
+    setRenamingId(a.id);
+    setRenameValue(a.name);
+  }
 
-  async function runInSandbox() {
-    if (!job) return;
-    if (missingRequired.length > 0) {
-      setToast(`Attach required data first: ${missingRequired.map((r) => r.label).join(', ')}`);
+  async function saveRename(a: SavedAgent) {
+    const name = renameValue.trim();
+    if (!name || name === a.name) {
+      setRenamingId(null);
       return;
     }
-    if (!activeId) {
-      await save();
-    }
-    const id = activeId;
-    if (!id) return;
-    setBusy('launch');
+    setBusy(`rename:${a.id}`);
     try {
-      const launch = await api<{ taskId: string; input: unknown }>(
-        `/api/builder/agents/${id}/launch`,
-        { method: 'POST' },
-      );
-      // Cache the merged input for Sandbox to pick up.
-      try {
-        sessionStorage.setItem(
-          `builder:input:${launch.taskId}`,
-          JSON.stringify(launch.input ?? {}),
-        );
-      } catch { /* sessionStorage may be blocked */ }
-      navigate(`/app/sandbox/${launch.taskId}`);
+      await api<SavedAgent>(`/api/builder/agents/${a.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
+      });
+      setRenamingId(null);
+      await refresh();
     } catch (e) {
-      setToast(e instanceof Error ? e.message : 'Launch failed.');
+      setToast(e instanceof Error ? e.message : 'Rename failed.');
     } finally {
       setBusy(null);
     }
   }
 
-  /* ── UI ──────────────────────────────────────────────────────────── */
-
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '240px 1fr',
-        minHeight: 'calc(100vh - 64px)',
-        background: 'var(--paper)',
-      }}
-    >
-      {/* ── Left rail: My agents ── */}
-      <aside
-        style={{
-          borderRight: '1px solid var(--rule)',
-          padding: '24px 16px',
-          background: 'var(--paper-deep)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 8,
-        }}
-      >
-        <div
-          style={{
-            fontFamily: 'var(--mono)',
-            fontSize: 11,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-3)',
-            padding: '0 8px 12px',
-          }}
-        >
-          My agents
-        </div>
+    <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
+      <PageHeader
+        eyebrow="Saved agents"
+        title="Your saved agents."
+        subtitle="An agent is a process saved with the exact input you used, so you can re-run it anytime. Create one by running a process in the sandbox and choosing 'Save as agent'."
+        actions={
+          <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')} style={{ fontSize: 13 }}>
+            Run a process
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </button>
+        }
+      />
 
-        <button
-          onClick={newAgent}
-          style={{
-            textAlign: 'left',
-            padding: '10px 12px',
-            background: activeId === null ? 'var(--ink)' : 'transparent',
-            color: activeId === null ? 'var(--paper)' : 'var(--ink-2)',
-            border: '1px solid var(--rule-strong)',
-            borderRadius: 8,
-            fontFamily: 'var(--sans)',
-            fontSize: 13,
-            cursor: 'pointer',
-          }}
-        >
-          + New agent
-        </button>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 4,
-            marginTop: 8,
-            overflowY: 'auto',
-          }}
-        >
-          {agents.length === 0 && (
-            <div
-              style={{
-                fontFamily: 'var(--mono)',
-                fontSize: 11,
-                color: 'var(--ink-4)',
-                padding: '12px 8px',
-                lineHeight: 1.5,
-              }}
-            >
-              No saved agents yet.
-            </div>
-          )}
-          {agents.map((a) => (
-            <div
-              key={a.id}
-              style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 4,
-                background: activeId === a.id ? 'var(--paper)' : 'transparent',
-                border: '1px solid',
-                borderColor: activeId === a.id ? 'var(--ink)' : 'transparent',
-                borderRadius: 8,
-              }}
-            >
-              <button
-                onClick={() => loadAgent(a)}
-                title={a.name}
-                style={{
-                  flex: 1,
-                  textAlign: 'left',
-                  padding: '8px 10px',
-                  background: 'transparent',
-                  color: 'var(--ink)',
-                  border: 'none',
-                  fontFamily: 'var(--sans)',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                <div style={{ fontWeight: 500 }}>{a.name}</div>
-                <div
-                  style={{
-                    fontFamily: 'var(--mono)',
-                    fontSize: 10,
-                    color: 'var(--ink-3)',
-                    marginTop: 2,
-                  }}
-                >
-                  {a.jobTitle}
-                </div>
-              </button>
-              <button
-                onClick={() => remove(a.id)}
-                disabled={busy === `del:${a.id}`}
-                title="Delete"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--ink-4)',
-                  cursor: 'pointer',
-                  padding: '6px 8px',
-                  fontSize: 14,
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      </aside>
-
-      {/* ── Center canvas ── */}
-      <main
-        style={{
-          padding: '40px 48px 80px',
-          maxWidth: 1040,
-          width: '100%',
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 24,
-        }}
-      >
-        {/* Header */}
-        <header
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 16,
-          }}
-        >
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Agent name"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              padding: '6px 0',
-              background: 'transparent',
-              border: 'none',
-              borderBottom: '1px dashed var(--rule-strong)',
-              color: 'var(--ink)',
-              fontFamily: 'var(--sans)',
-              fontSize: 22,
-              fontWeight: 600,
-              letterSpacing: '-0.02em',
-              outline: 'none',
-            }}
-          />
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button
-              onClick={save}
-              disabled={busy === 'save' || !job}
-              style={{
-                padding: '8px 14px',
-                background: 'transparent',
-                border: '1px solid var(--ink)',
-                color: 'var(--ink)',
-                borderRadius: 6,
-                fontFamily: 'var(--sans)',
-                fontSize: 13,
-                cursor: job ? 'pointer' : 'not-allowed',
-                opacity: !job ? 0.4 : 1,
-              }}
-            >
-              {busy === 'save' ? 'Saving…' : activeId ? 'Save' : 'Save as new'}
-            </button>
-            <button
-              onClick={runInSandbox}
-              disabled={!job || busy === 'launch' || missingRequired.length > 0}
-              style={{
-                padding: '8px 16px',
-                background: !job || missingRequired.length > 0 ? 'var(--paper-deep)' : 'var(--ink)',
-                border: '1px solid var(--ink)',
-                color: !job || missingRequired.length > 0 ? 'var(--ink-3)' : 'var(--paper)',
-                borderRadius: 6,
-                fontFamily: 'var(--sans)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: !job || missingRequired.length > 0 ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {busy === 'launch' ? 'Launching…' : 'Run in sandbox →'}
-            </button>
-          </div>
-        </header>
-
-        {/* ── My Processes (saved workflows from Designer) ── */}
-        <Section
-          label={`My processes · ${workflows.length}`}
-          subtitle="Multi-agent workflows you've designed. Open in the Process Designer to edit, or run in the Sandbox."
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <button
-              onClick={() => navigate('/app/designer')}
-              style={{
-                alignSelf: 'flex-start',
-                padding: '8px 14px',
-                background: 'transparent',
-                border: '1px dashed var(--rule-strong)',
-                color: 'var(--ink)',
-                borderRadius: 6,
-                fontFamily: 'var(--sans)',
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
-            >
-              + New process in Designer
-            </button>
-            {workflows.length === 0 && (
-              <div
-                style={{
-                  fontFamily: 'var(--mono)',
-                  fontSize: 11,
-                  color: 'var(--ink-4)',
-                  padding: '8px 0',
-                }}
-              >
-                No saved processes yet.
-              </div>
-            )}
-            {workflows.map((w) => (
-              <div
-                key={w.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 12,
-                  padding: '12px 14px',
-                  background: 'var(--paper-deep)',
-                  border: '1px solid var(--rule)',
-                  borderRadius: 8,
-                }}
-              >
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{w.name}</div>
-                  <div
-                    style={{
-                      fontFamily: 'var(--mono)',
-                      fontSize: 10,
-                      color: 'var(--ink-3)',
-                      marginTop: 3,
-                      letterSpacing: '0.04em',
-                    }}
-                  >
-                    {w.processType} · {w.jurisdiction} · {w.source}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    onClick={() => navigate(`/app/designer?workflow=${w.id}`)}
-                    style={{
-                      padding: '6px 12px',
-                      background: 'var(--ink)',
-                      color: 'var(--paper)',
-                      border: '1px solid var(--ink)',
-                      borderRadius: 6,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Open
-                  </button>
-                  <button
-                    onClick={() => void deleteWorkflow(w.id)}
-                    title="Delete"
-                    style={{
-                      padding: '6px 10px',
-                      background: 'transparent',
-                      color: 'var(--ink-3)',
-                      border: '1px solid var(--rule-strong)',
-                      borderRadius: 6,
-                      fontSize: 12,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Section>
-
+      <div style={{ padding: '24px 40px 80px', maxWidth: 1100, margin: '0 auto' }}>
         {toast && (
           <div
+            onClick={() => setToast(null)}
             style={{
               padding: '8px 12px',
+              marginBottom: 16,
               background: 'var(--paper-deep)',
               border: '1px solid var(--rule-strong)',
               borderRadius: 6,
               fontFamily: 'var(--mono)',
               fontSize: 11,
               color: 'var(--ink-2)',
+              cursor: 'pointer',
             }}
-            onClick={() => setToast(null)}
           >
             {toast}
           </div>
         )}
 
-        {/* Section: Job */}
-        <Section
-          label="Job"
-          subtitle={job ? job.blurb : 'Pick the review this agent performs.'}
-        >
-          {!job ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 10 }}>
-              {JOBS.map((j) => (
-                <button
-                  key={j.id}
-                  onClick={() => setJobId(j.id)}
-                  style={{
-                    textAlign: 'left',
-                    padding: 14,
-                    background: 'var(--paper)',
-                    border: '1px solid var(--rule-strong)',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 6,
-                  }}
-                >
-                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{j.title}</div>
-                  <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.4 }}>{j.blurb}</div>
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginTop: 4 }}>
-                    <span style={PILL}>{j.obligationCount} requirements</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: 14,
-                border: '1px solid var(--rule-strong)',
-                borderRadius: 8,
-                background: 'var(--paper-deep)',
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--ink)' }}>{job.title}</div>
-                <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                  {job.regulations.map((r) => (
-                    <span key={r} style={PILL}>{r}</span>
-                  ))}
-                  <span style={PILL}>{job.obligationCount} requirements</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setJobId(null)}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid var(--rule-strong)',
-                  borderRadius: 6,
-                  color: 'var(--ink-3)',
-                  fontFamily: 'var(--sans)',
-                  fontSize: 12,
-                  padding: '6px 10px',
-                  cursor: 'pointer',
-                }}
-              >
-                Change
-              </button>
-            </div>
-          )}
-        </Section>
+        {agents === null && (
+          <div style={{ color: 'var(--ink-3)', fontSize: 13 }}>Loading…</div>
+        )}
 
-        {/* Section: Required data */}
-        {job && (
-          <Section
-            label="Required data"
-            subtitle="Attach the data needed for the review. Required items must be present before a run."
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10 }}>
-                {job.evidenceRows.map((row) => {
-                const attached = attachedData[row.label];
-                const status = attached ? 'connected' : row.required ? 'missing' : 'optional';
-                const statusColor =
-                  status === 'connected' ? 'var(--ink)' :
-                  status === 'missing'   ? 'var(--orange)' :
-                                           'var(--ink-4)';
+        {agents !== null && agents.length === 0 && (
+          <EmptyState
+            eyebrow="No saved agents yet"
+            title="Save a process once, re-run it forever."
+            body="Run any process in the sandbox, fill in your data, then click 'Save as agent'. It will appear here so you can re-run it with one click."
+            primaryAction={{ label: 'Run a process', href: '/app/sandbox' }}
+          />
+        )}
+
+        {agents !== null && agents.length > 0 && (
+          <>
+            <div className="eyebrow" style={{ marginBottom: 14 }}>
+              {agents.length} agent{agents.length === 1 ? '' : 's'}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+              {agents.map((a) => {
+                const summary = inputSummary(a);
+                const renaming = renamingId === a.id;
+                const runnable = !!a.taskId;
                 return (
                   <div
-                    key={row.label}
+                    key={a.id}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      alignItems: 'stretch',
-                      justifyContent: 'space-between',
-                      padding: '10px 14px',
-                      border: '1px solid var(--rule-strong)',
-                      borderRadius: 8,
-                      gap: 12,
+                      gap: 10,
+                      padding: 16,
+                      border: '1px solid var(--rule)',
+                      borderRadius: 10,
+                      background: '#fff',
                     }}
                   >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span
+                    {/* Name / rename */}
+                    {renaming ? (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <input
+                          autoFocus
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') void saveRename(a);
+                            if (e.key === 'Escape') setRenamingId(null);
+                          }}
                           style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: statusColor,
-                            display: 'inline-block',
+                            flex: 1,
+                            minWidth: 0,
+                            fontFamily: 'var(--sans)',
+                            fontSize: 15,
+                            fontWeight: 600,
+                            color: 'var(--ink)',
+                            background: '#fff',
+                            border: '1px solid var(--rule-strong)',
+                            borderRadius: 6,
+                            padding: '6px 8px',
                           }}
                         />
-                        <span style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{row.label}</span>
-                        {row.required && (
-                          <span
-                            style={{
-                              fontFamily: 'var(--mono)',
-                              fontSize: 9,
-                              color: 'var(--ink-4)',
-                              letterSpacing: '0.08em',
-                              textTransform: 'uppercase',
-                            }}
-                          >
-                            required
-                          </span>
-                        )}
-                      </div>
-                      {attached && (
-                        <div
-                          style={{
-                            fontFamily: 'var(--mono)',
-                            fontSize: 10,
-                            color: 'var(--ink-3)',
-                            paddingLeft: 16,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {attached.filename} · {(attached.sizeBytes / 1024).toFixed(1)} KB
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginTop: 12 }}>
-                      <input
-                        ref={(el) => { fileRefs.current[row.label] = el; }}
-                        type="file"
-                        accept=".json,.txt,.md,.csv,application/json,text/plain,text/markdown,text/csv"
-                        style={{ display: 'none' }}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0];
-                          if (f) void attach(row.label, f);
-                          e.target.value = '';
-                        }}
-                      />
-                      <button
-                        onClick={() => fileRefs.current[row.label]?.click()}
-                        disabled={busy === `attach:${row.label}` || !activeId && !job}
-                        title={!activeId ? 'Save the agent first to enable attachments.' : ''}
-                        style={{
-                          padding: '5px 10px',
-                          background: 'transparent',
-                          border: '1px solid var(--rule-strong)',
-                          borderRadius: 5,
-                          fontFamily: 'var(--sans)',
-                          fontSize: 12,
-                          color: 'var(--ink-2)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {busy === `attach:${row.label}` ? '…' : attached ? 'Replace' : 'Attach'}
-                      </button>
-                      {attached && (
-                        <button
-                          onClick={() => detach(row.label)}
-                          style={{
-                            padding: '5px 8px',
-                            background: 'transparent',
-                            border: '1px solid var(--rule-strong)',
-                            borderRadius: 5,
-                            fontFamily: 'var(--sans)',
-                            fontSize: 12,
-                            color: 'var(--ink-3)',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          ×
+                        <button className="btn btn-ghost" onClick={() => void saveRename(a)} disabled={busy === `rename:${a.id}`} style={{ fontSize: 12 }}>
+                          Save
                         </button>
-                      )}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                        <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {a.name}
+                        </div>
+                        <button
+                          onClick={() => startRename(a)}
+                          title="Rename"
+                          style={{ background: 'none', border: 0, color: 'var(--ink-3)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                        >
+                          Rename
+                        </button>
+                      </div>
+                    )}
+
+                    <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>{a.processTitle}</div>
+
+                    {/* Regulations + risk */}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {a.regulations.slice(0, 4).map((r) => (
+                        <span key={r} style={PILL}>{r}</span>
+                      ))}
+                      <span style={{ ...PILL, color: RISK_COLOR[a.riskBand], borderColor: a.riskBand === 'high' ? 'var(--orange)' : 'var(--rule-strong)' }}>
+                        {a.riskBand} risk
+                      </span>
+                    </div>
+
+                    {summary && (
+                      <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.45 }}>{summary}</div>
+                    )}
+
+                    <div style={{ flex: 1 }} />
+
+                    {/* Footer: timestamp + actions */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: '1px solid var(--rule)', paddingTop: 12 }}>
+                      <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
+                        saved {relTime(a.updatedAt)}
+                      </span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          className="btn btn-ghost"
+                          onClick={() => void remove(a)}
+                          disabled={busy === `del:${a.id}`}
+                          style={{ fontSize: 12 }}
+                        >
+                          Delete
+                        </button>
+                        <button
+                          className="btn btn-orange"
+                          onClick={() => void runAgent(a)}
+                          disabled={!runnable || busy === `run:${a.id}`}
+                          title={runnable ? 'Re-run this agent with its saved input' : 'No runnable process mapped'}
+                          style={{ fontSize: 12, opacity: runnable ? 1 : 0.5 }}
+                        >
+                          {busy === `run:${a.id}` ? 'Opening…' : 'Run →'}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
-                })}
-              </div>
-              {!activeId && (
-                <div
-                  style={{
-                    fontFamily: 'var(--mono)',
-                    fontSize: 10,
-                    color: 'var(--ink-3)',
-                    padding: '4px 2px',
-                  }}
-                >
-                  Save the agent first — attachments are persisted against the saved record.
-                </div>
-              )}
-              <p style={{ fontSize: 11, color: 'var(--ink-4)', margin: '4px 2px 0', lineHeight: 1.5 }}>
-                Plain text, CSV, or Markdown · 2 MB cap per data item.
-              </p>
+              })}
             </div>
-          </Section>
-        )}
-
-        {/* Section: Controls */}
-        {job && (
-          <Section label="Review controls" subtitle="Gates the runtime applies on every run.">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {GUARDRAILS.map((g) => (
-                <label
-                  key={g.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 12,
-                    padding: '10px 14px',
-                    border: '1px solid var(--rule-strong)',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={!!guardrails[g.id]}
-                    onChange={(e) =>
-                      setGuardrails((s) => ({ ...s, [g.id]: e.target.checked }))
-                    }
-                    style={{ accentColor: 'var(--ink)' }}
-                  />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{g.label}</div>
-                    <div style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 2 }}>{g.detail}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {/* Section: Output format */}
-        {job && (
-          <Section label="Output" subtitle="Shape of the deliverable.">
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {OUTPUT_FORMATS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setOutputFormat(f.id)}
-                  style={{
-                    padding: '8px 14px',
-                    background: outputFormat === f.id ? 'var(--ink)' : 'transparent',
-                    color: outputFormat === f.id ? 'var(--paper)' : 'var(--ink-2)',
-                    border: '1px solid',
-                    borderColor: outputFormat === f.id ? 'var(--ink)' : 'var(--rule-strong)',
-                    borderRadius: 6,
-                    fontFamily: 'var(--sans)',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </Section>
-        )}
-      </main>
-    </div>
-  );
-}
-
-function Section({
-  label,
-  subtitle,
-  children,
-}: {
-  label: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-      <div>
-        <div
-          style={{
-            fontFamily: 'var(--mono)',
-            fontSize: 10,
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--ink-3)',
-          }}
-        >
-          {label}
-        </div>
-        {subtitle && (
-          <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 2, lineHeight: 1.5 }}>
-            {subtitle}
-          </div>
+          </>
         )}
       </div>
-      {children}
-    </section>
+    </div>
   );
 }
 

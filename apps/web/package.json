@@ -4,12 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm run build && pnpm run start",
-    "dev:local": "vite",
+    "dev": "vite",
+    "dev:static": "pnpm run build && pnpm run start",
     "build": "tsc -p tsconfig.json && vite build",
     "check": "tsc -p tsconfig.json --noEmit",
     "preview": "vite preview",
-    "start": "npx serve -s dist -l tcp://0.0.0.0:${PORT:-5173}",
+    "start": "npx serve -s dist -l tcp://0.0.0.0:5173",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {

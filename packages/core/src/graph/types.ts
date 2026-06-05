@@ -3,6 +3,24 @@ import { z } from 'zod';
 export const ObligationKindSchema = z.enum(['obligation', 'constraint', 'definition']);
 export type ObligationKind = z.infer<typeof ObligationKindSchema>;
 
+/**
+ * Structured applicability filter — allows discovery to filter obligations by
+ * device class, operator role, device type, and additional conditions rather
+ * than relying on free-text tags alone.  All fields are optional so existing
+ * obligations remain backward-compatible.
+ */
+export const ApplicabilitySchema = z.object({
+  /** MDR risk classes: I, IIa, IIb, III, AIMD, IVD-A/B/C/D, etc. */
+  deviceClasses: z.array(z.string()).optional(),
+  /** Economic operator roles: manufacturer, authorised_representative, importer, distributor, etc. */
+  operatorRoles: z.array(z.string()).optional(),
+  /** Device categories: implantable, active, software, in_vitro_diagnostic, etc. */
+  deviceTypes: z.array(z.string()).optional(),
+  /** Free-form conditions (e.g. "only when device incorporates medicinal substance"). */
+  conditions: z.array(z.string()).optional(),
+}).default({});
+export type Applicability = z.infer<typeof ApplicabilitySchema>;
+
 export const ObligationNodeSchema = z.object({
   obligationId: z.string().min(1),
   jurisdiction: z.string().min(1),
@@ -16,6 +34,7 @@ export const ObligationNodeSchema = z.object({
   effectiveFrom: z.coerce.date().optional(),
   mandatory: z.boolean().default(true),
   requiredEvidenceTypes: z.array(z.string()).default([]),
+  applicability: ApplicabilitySchema,
   metadata: z.record(z.unknown()).default({}),
 });
 export type ObligationNode = z.infer<typeof ObligationNodeSchema>;
@@ -56,6 +75,22 @@ export type RelationType =
   | 'TRIGGERS'
   | 'SATISFIES'
   | 'CONFLICTS_WITH'
+  // === Cross-regulation edges ===
+  // Source obligation implements a requirement in a target regulation/standard
+  // e.g. EU MDR Art. 10(9) QMS → ISO 13485 clause 4.1
+  | 'IMPLEMENTS'
+  // Source obligation is harmonized by a harmonized standard
+  // e.g. EU MDR Annex I GSPR → EN ISO 14971 risk management
+  | 'HARMONIZED_BY'
+  // Source obligation is derived from a higher-level requirement
+  // e.g. national implementing measure → EU MDR article
+  | 'DERIVED_FROM'
+  // Source obligation depends on another obligation being satisfied first
+  // e.g. CE marking depends on conformity assessment completion
+  | 'DEPENDS_ON'
+  // Source obligation grants an exemption from the target obligation
+  // e.g. class I self-certification exempts notified-body involvement
+  | 'EXEMPTS'
   // === AgentOS extensions (Phase 0) ===
   // AgentRole -> Process: this role is permitted to execute steps in this process
   | 'EXECUTES'

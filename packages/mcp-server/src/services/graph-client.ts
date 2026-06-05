@@ -416,6 +416,84 @@ export class GraphClient {
     }
   }
 
+  // ---- Semantic Search ----
+
+  /**
+   * Semantic vector search over obligation embeddings.
+   * Requires Neo4j vector index 'obligation_embedding' to be created
+   * (via ensureVectorIndexes in @regground/core).
+   */
+  async semanticSearch(
+    queryVector: number[],
+    k: number,
+    filters?: { jurisdiction?: string; processType?: string },
+  ): Promise<Array<{ obligation: ObligationNode; score: number }>> {
+    const session = this.session();
+    try {
+      let cypher = `
+        CALL db.index.vector.queryNodes('obligation_embedding', toInteger($k), $vec)
+        YIELD node AS o, score`;
+
+      const wheres: string[] = [];
+      if (filters?.jurisdiction) wheres.push('o.jurisdiction = $jurisdiction');
+      if (filters?.processType) wheres.push('o.processType = $processType');
+      if (wheres.length > 0) cypher += `\n        WHERE ${wheres.join(' AND ')}`;
+      cypher += `\n        RETURN o, score ORDER BY score DESC`;
+
+      const result = await session.run(cypher, {
+        k: Math.min(k * 3, 100),
+        vec: queryVector,
+        jurisdiction: filters?.jurisdiction ?? '',
+        processType: filters?.processType ?? '',
+      });
+
+      return result.records
+        .map((r) => ({
+          obligation: this.toObligation(r.get('o').properties),
+          score: r.get('score') as number,
+        }))
+        .slice(0, k);
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Look up a single definition by definitionId.
+   */
+  async getDefinition(definitionId: string): Promise<DefinitionNode | null> {
+    const session = this.session();
+    try {
+      const result = await session.run(
+        'MATCH (d:Definition { definitionId: $id }) RETURN d',
+        { id: definitionId },
+      );
+      if (result.records.length === 0) return null;
+      return this.toDefinition(result.records[0]!.get('d').properties);
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Search definitions by term (case-insensitive partial match).
+   */
+  async searchDefinitions(query: string, limit = 20): Promise<DefinitionNode[]> {
+    const session = this.session();
+    try {
+      const result = await session.run(
+        `MATCH (d:Definition)
+         WHERE toLower(d.term) CONTAINS toLower($query)
+            OR toLower(d.text) CONTAINS toLower($query)
+         RETURN d LIMIT $limit`,
+        { query, limit },
+      );
+      return result.records.map((r) => this.toDefinition(r.get('d').properties));
+    } finally {
+      await session.close();
+    }
+  }
+
   // ---- Helpers ----
 
   private toObligation(props: Record<string, unknown>): ObligationNode {

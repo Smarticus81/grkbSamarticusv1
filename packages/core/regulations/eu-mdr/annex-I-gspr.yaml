@@ -1,0 +1,1251 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Annex I — General safety and performance requirements (Chapters I-II, Sections 1-22)"
+jurisdiction: EU_MDR
+processType: DESIGN_CONTROL
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # CHAPTER I — GENERAL REQUIREMENTS (Sections 1–9)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # ── Section 1: Intended performance and safety ──────────────────────────────
+
+  - obligationId: "EUMDR.AI.1.OBL.001"
+    kind: obligation
+    title: "Devices shall achieve intended performance and be safe"
+    text: "Devices shall achieve the performance intended by their manufacturer, and shall be designed and manufactured in such a way that, during normal conditions of intended use, they are suitable for their intended purpose. They shall be safe and effective and shall not compromise the clinical condition or the safety of patients, or the safety and health of users or, where applicable, other persons, provided that any risks which may be associated with their use constitute acceptable risks when weighed against the benefits to the patient and are compatible with a high level of protection of health and safety."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_output
+      - risk_benefit_analysis
+      - clinical_evaluation_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.1.OBL.002"
+    kind: obligation
+    title: "Acceptable risk-benefit ratio"
+    text: "The requirement to reduce risks as far as possible means the reduction of risks as far as possible without adversely affecting the benefit-risk ratio. In establishing the most appropriate solution, manufacturers shall prioritise safety, taking into account the generally acknowledged state of the art, and shall integrate safety into the design and manufacture of the device."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_benefit_analysis
+      - risk_management_report
+      - state_of_the_art_review
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 2: Risk management ─────────────────────────────────────────────
+
+  - obligationId: "EUMDR.AI.2.OBL.001"
+    kind: obligation
+    title: "Risk management throughout the product lifecycle"
+    text: "Manufacturers shall establish, implement, document and maintain a system for risk management. Risk management shall be understood as a continuous iterative process throughout the entire lifecycle of a device, requiring regular systematic updating. In carrying out risk management, manufacturers shall establish and document a risk management plan for each device, identify and analyse known and foreseeable hazards, estimate and evaluate the associated risks, eliminate or control those risks, and evaluate the impact of information from the production phase and from the post-market surveillance system on hazards and frequency of occurrence thereof."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_plan
+      - risk_management_file
+      - risk_management_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.2.OBL.002"
+    kind: obligation
+    title: "Risk reduction hierarchy"
+    text: "Risk control measures adopted by manufacturers for the design and manufacture of the devices shall conform to safety principles, taking account of the generally acknowledged state of the art. To reduce risks, manufacturers shall manage risks so that the residual risk associated with each hazard as well as the overall residual risk is judged acceptable. In selecting the most appropriate solutions, manufacturers shall, in the following order of priority: (a) eliminate or reduce risks as far as possible through safe design and manufacture (inherent safety by design); (b) where appropriate, take adequate protection measures, including alarms if necessary, in relation to risks that cannot be eliminated; and (c) provide information for safety (warnings/precautions/contra-indications) and, where appropriate, training to users."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_control_record
+      - risk_control_option_analysis
+      - risk_management_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.2.OBL.003"
+    kind: obligation
+    title: "Inform users of residual risks"
+    text: "Manufacturers shall inform users of any residual risks. Manufacturers shall, as part of the risk management process, evaluate the impact of information from the production phase and, in particular, from the post-market surveillance system on hazards and the frequency of occurrence thereof, on estimates of their associated risks, as well as on the overall risk, benefit-risk ratio and risk acceptability."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - residual_risk_disclosure
+      - instructions_for_use
+      - risk_management_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 3: Intended performance achievement ────────────────────────────
+
+  - obligationId: "EUMDR.AI.3.OBL.001"
+    kind: obligation
+    title: "Device shall achieve intended performance"
+    text: "Devices shall achieve the performance intended by their manufacturer including, where applicable, the specified analytical sensitivity, analytical specificity, trueness, precision, accuracy, repeatability, reproducibility, including control of known relevant interferences, and limits of detection, as indicated by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - performance_test_report
+      - design_verification_record
+      - design_validation_record
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.3.OBL.002"
+    kind: obligation
+    title: "No compromise to clinical condition or patient safety"
+    text: "Devices shall be designed and manufactured in such a way that they do not compromise the clinical condition or the safety of patients, or the safety and health of users or, where applicable, other persons, during their intended lifetime, during transport and storage."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - shelf_life_study
+      - transport_validation
+      - safety_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 4: Foreseeable misuse and user considerations ──────────────────
+
+  - obligationId: "EUMDR.AI.4.OBL.001"
+    kind: obligation
+    title: "Foreseeable misuse considerations"
+    text: "Devices shall be designed and manufactured taking into account the foreseeable misuse of the device. The characteristics and performance of the device shall not be adversely affected to such a degree that the health or safety of the patient or user is compromised during the expected lifetime of the device, and when the device is subjected to the stresses which can occur during normal conditions of use and has been properly maintained."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - use_error_risk_analysis
+      - foreseeable_misuse_assessment
+      - risk_management_file
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.4.OBL.002"
+    kind: obligation
+    title: "Ergonomic design and intended user considerations"
+    text: "Devices shall be designed and manufactured in such a way as to reduce as far as possible risks linked to the ergonomic features of the device and the environment in which the device is intended to be used (design for patient safety), and shall consider the technical knowledge, experience, education, training and use environment of intended users, and where applicable, the medical and physical conditions of intended patients (design for lay, professional, disabled or other users)."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - human_factors_analysis
+      - usability_engineering_file
+      - intended_user_profile
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 5: Use error reduction ─────────────────────────────────────────
+
+  - obligationId: "EUMDR.AI.5.OBL.001"
+    kind: obligation
+    title: "Design to reduce use error risks"
+    text: "Devices shall be designed and manufactured in such a way as to reduce as far as possible the risks of use error due to the ergonomic features of the device and the environment in which the device is intended to be used. Such devices shall take account of the state of the art in ergonomic design principles, including information design, user interface design, and physical ergonomics."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - usability_engineering_file
+      - use_error_risk_analysis
+      - formative_usability_study
+      - summative_usability_study
+    metadata:
+      review: "needs-sme"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+      note: "Section 5 amended by (EU) 2025/2457 — verify current text against consolidated version"
+
+  # ── Section 6: Software as a medical device ────────────────────────────────
+
+  - obligationId: "EUMDR.AI.6.OBL.001"
+    kind: obligation
+    title: "Software development lifecycle per state of the art"
+    text: "Devices that incorporate electronic programmable systems, including software, or software that are devices in themselves, shall be designed to ensure repeatability, reliability and performance in line with their intended use. In the event of a single fault condition, appropriate means shall be adopted to eliminate or reduce as far as possible consequent risks or impairment of performance. For software that is a device in itself, the software shall be developed and manufactured in accordance with the state of the art taking into account the principles of development life cycle, risk management, including information security, verification and validation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 6"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - software
+        - active
+    requiredEvidenceTypes:
+      - software_development_plan
+      - software_architecture_document
+      - software_requirements_specification
+      - software_verification_report
+      - software_validation_report
+    metadata:
+      review: "needs-sme"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+      note: "Section 6 may be affected by amendment (EU) 2025/2457 — verify against consolidated text"
+
+  - obligationId: "EUMDR.AI.6.OBL.002"
+    kind: obligation
+    title: "Software validation including third-party software"
+    text: "Software referred to in this Section shall be developed and manufactured in accordance with the state of the art taking into account the principles of development life cycle, risk management, including information security, verification and validation. The manufacturer shall set out minimum requirements concerning hardware, IT networks characteristics and IT security measures, including protection against unauthorised access, necessary to run the software as intended."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 6"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - software
+        - active
+    requiredEvidenceTypes:
+      - software_validation_report
+      - it_security_requirements
+      - hardware_requirements_specification
+      - third_party_software_assessment
+    metadata:
+      review: "needs-sme"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+      note: "Section 6 may be affected by amendment (EU) 2025/2457 — verify IT security requirements against consolidated text"
+
+  # ── Section 7: Devices incorporating software / IT security ────────────────
+
+  - obligationId: "EUMDR.AI.7.OBL.001"
+    kind: obligation
+    title: "Electronic programmable systems and software-as-device design"
+    text: "Devices that incorporate electronic programmable systems and software that are devices in themselves shall be designed to ensure repeatability, reliability and performance in line with their intended use. In the event of a single fault condition, appropriate means shall be adopted to eliminate or reduce as far as possible consequent risks or impairment of performance."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 7"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - software
+        - active
+    requiredEvidenceTypes:
+      - software_architecture_document
+      - fault_analysis_report
+      - single_fault_condition_analysis
+    metadata:
+      review: "needs-sme"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+      note: "Section 7 revised by amendment (EU) 2025/2457 — cybersecurity requirements significantly expanded"
+
+  - obligationId: "EUMDR.AI.7.OBL.002"
+    kind: obligation
+    title: "Cybersecurity by design"
+    text: "Manufacturers shall set out minimum requirements concerning hardware, IT networks characteristics and IT security measures, including protection against unauthorised access, necessary to run the software as intended. Devices shall be designed and manufactured to protect against reasonably foreseeable cybersecurity threats. Cybersecurity measures shall be proportionate to the risk and shall be maintained and updated throughout the device lifecycle."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 7"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - software
+        - active
+        - connected
+    requiredEvidenceTypes:
+      - cybersecurity_risk_assessment
+      - cybersecurity_plan
+      - penetration_test_report
+      - vulnerability_assessment
+      - security_update_plan
+    metadata:
+      review: "needs-sme"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+      note: "Section 7 revised by amendment (EU) 2025/2457 — cybersecurity requirements significantly expanded. Verify full scope of new requirements against consolidated text."
+
+  # ── Section 8: Devices for self-testing / near-patient testing ─────────────
+
+  - obligationId: "EUMDR.AI.8.OBL.001"
+    kind: obligation
+    title: "Self-testing and near-patient testing device design"
+    text: "Devices intended for self-testing or near-patient testing shall be designed and manufactured in such a way that they perform appropriately for their intended purpose taking into account the skills and means available to the intended users and the influence resulting from variation that can reasonably be anticipated in the intended user's technique and environment. The information and instructions provided by the manufacturer shall be easy to understand and apply by the intended user."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 8"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - self_testing
+        - near_patient_testing
+    requiredEvidenceTypes:
+      - usability_engineering_file
+      - lay_user_study
+      - instructions_for_use
+      - summative_usability_study
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.8.OBL.002"
+    kind: obligation
+    title: "Self-testing device result presentation"
+    text: "Devices for self-testing shall be designed and manufactured to ensure that the device can be used easily by the intended lay user at all stages of the procedure, and that the risk of error by the user in the handling of the device and in the interpretation of the results is reduced as far as practicable. Devices for self-testing shall, where reasonably possible, include user control and a procedure by which the user can verify that, at the time of use, the product will perform as intended."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 8"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - self_testing
+    requiredEvidenceTypes:
+      - user_interface_specification
+      - lay_user_study
+      - result_interpretation_validation
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 9: Devices with energy source ──────────────────────────────────
+
+  - obligationId: "EUMDR.AI.9.OBL.001"
+    kind: obligation
+    title: "Energy source device safety"
+    text: "Devices that are connected to or equipped with an energy source shall be designed and manufactured in such a way that, in normal conditions and in single fault condition, the energy delivered is compatible with the safety of the patient, user and other persons. The design of the energy supply or energy transfer shall include appropriate insulation, leakage current, and overload protections."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 9"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - active
+    requiredEvidenceTypes:
+      - electrical_safety_test_report
+      - energy_source_risk_analysis
+      - iec_60601_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # CHAPTER II — REQUIREMENTS REGARDING DESIGN AND MANUFACTURE (Sections 10–22)
+  # ─────────────────────────────────────────────────────────────────────────────
+
+  # ── Section 10: Chemical, physical and biological properties ───────────────
+
+  - obligationId: "EUMDR.AI.10.OBL.001"
+    kind: obligation
+    title: "Biocompatibility of device materials"
+    text: "Devices shall be designed and manufactured in such a way as to ensure that the characteristics and performance requirements referred to in Chapter I are fulfilled. Particular attention shall be paid to the choice of materials and substances used, particularly as regards toxicity, including, where relevant, regarding materials in contact with the human body, the compatibility between the materials and substances used and biological tissues, cells and body fluids, taking account of the intended purpose of the device and, where relevant, absorption, distribution, metabolism and excretion."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 10.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - biocompatibility_evaluation_report
+      - material_characterization_report
+      - biological_evaluation_plan
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.10.OBL.002"
+    kind: obligation
+    title: "Substances of concern — CMR and endocrine disruptors"
+    text: "Devices, or parts thereof or materials used therein that are invasive and come into direct contact with the human body, that (re)administer medicines, body liquids or other substances, or that transport or store such substances, shall not contain substances which are carcinogenic, mutagenic or toxic to reproduction (CMR), in a concentration above 0.1% weight by weight, or substances having endocrine-disrupting properties for which there is scientific evidence of probable serious effects to human health and which are identified in accordance with the procedure described in Article 59 of Regulation (EC) No 1907/2006 (REACH), unless the inclusion of such substances is justified."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 10.4.1"
+    mandatory: true
+    applicability:
+      conditions:
+        - "invasive device or device in direct contact with human body"
+        - "device that (re)administers or transports medicines, body liquids or other substances"
+    requiredEvidenceTypes:
+      - cmr_substance_assessment
+      - endocrine_disruptor_assessment
+      - reach_compliance_declaration
+      - substance_justification_report
+    metadata:
+      review: "needs-sme"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+      note: "Section 10.4 amended by (EU) 2025/2457 — verify updated CMR/endocrine disruptor thresholds and justification requirements against consolidated text"
+
+  - obligationId: "EUMDR.AI.10.OBL.003"
+    kind: obligation
+    title: "Material characterization"
+    text: "Devices shall be designed and manufactured in such a way as to reduce as far as possible the risks posed by substances or particles, including wear debris, degradation products and processing residues, that may be released from the device. Particular attention shall be given to nanomaterials."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 10.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - material_characterization_report
+      - particulate_testing_report
+      - degradation_study
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.10.OBL.004"
+    kind: obligation
+    title: "Physical properties — ingress, leakage, ageing"
+    text: "Devices shall be designed and manufactured in such a way as to reduce risks linked to their physical properties, including volume-to-surface ratio, dimensional and where appropriate ergonomic features, the reliability of connections and fastenings, and the ageing of materials used."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 10.3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - physical_properties_test_report
+      - ageing_study
+      - reliability_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.10.OBL.005"
+    kind: obligation
+    title: "CMR substance justification and labeling"
+    text: "Where devices or parts thereof containing CMR or endocrine-disrupting substances above 0.1% w/w are justified, the manufacturer shall provide a justification for the use of those substances, including an analysis of possible alternative substances, materials or designs, information on residual risks, and appropriate labeling on the presence of such substances on the device or its packaging."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 10.4.2"
+    mandatory: true
+    applicability:
+      conditions:
+        - "device contains CMR or endocrine-disrupting substances above 0.1% w/w"
+    requiredEvidenceTypes:
+      - substance_justification_report
+      - alternative_substance_analysis
+      - label_artwork
+    metadata:
+      review: "needs-sme"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+      note: "Section 10.4.2 may be amended by (EU) 2025/2457 — verify justification requirements"
+
+  # ── Section 11: Infection and microbial contamination ──────────────────────
+
+  - obligationId: "EUMDR.AI.11.OBL.001"
+    kind: obligation
+    title: "Design to reduce infection risk"
+    text: "Devices and their manufacturing processes shall be designed in such a way as to eliminate or to reduce as far as possible the risk of infection to patients, users and, where applicable, other persons. The design shall allow easy and safe handling and, where necessary, minimise contamination of, and leakage from, the device during use, and in the case of reusable devices, during cleaning, disinfection and re-sterilisation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 11.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - infection_risk_assessment
+      - design_for_hygiene_assessment
+      - cleaning_validation_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.11.OBL.002"
+    kind: obligation
+    title: "Devices incorporating tissues, cells or biological substances"
+    text: "Where a device incorporates tissues, cells or substances of human or animal origin, or their derivatives, the sourcing, processing, testing, storage and distribution of such tissues, cells and substances shall be carried out so as to provide safety for patients, users and, where applicable, other persons. In particular, safety with regard to viruses and other transmissible agents shall be addressed by implementation of validated methods of elimination or inactivation in the course of the manufacturing process."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 11.6"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - tissue_based
+        - biological_origin
+      conditions:
+        - "device incorporates tissues, cells or substances of human or animal origin"
+    requiredEvidenceTypes:
+      - biological_safety_assessment
+      - viral_inactivation_validation
+      - tissue_sourcing_records
+      - transmissible_agent_risk_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.11.OBL.003"
+    kind: obligation
+    title: "Sterile device manufacturing controls"
+    text: "Devices labelled as having a specific microbial state shall be designed, manufactured and packaged to ensure that they remain in that state when placed on the market and remain so under the transport and storage conditions specified by the manufacturer. For devices delivered in a sterile state, the sterilisation method shall be appropriate and validated."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 11.5"
+    mandatory: true
+    applicability:
+      conditions:
+        - "device delivered in sterile condition or specific microbial state"
+    requiredEvidenceTypes:
+      - sterilisation_validation_report
+      - sterile_barrier_validation
+      - microbial_cleanliness_testing
+      - packaging_validation_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 12: Devices incorporating medicinal substances ─────────────────
+
+  - obligationId: "EUMDR.AI.12.OBL.001"
+    kind: obligation
+    title: "Devices incorporating medicinal substances"
+    text: "Where a device incorporates, as an integral part, a substance which, if used separately, may be considered to be a medicinal product within the meaning of Directive 2001/83/EC and which is liable to act on the human body with action ancillary to that of the device, the safety, quality and usefulness of that substance shall be verified by analogy with the methods specified in Annex I to Directive 2001/83/EC."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 12.1"
+    mandatory: true
+    applicability:
+      conditions:
+        - "device incorporates a substance considered to be a medicinal product"
+    requiredEvidenceTypes:
+      - medicinal_substance_assessment
+      - bioequivalence_study
+      - quality_verification_report
+      - notified_body_medicinal_opinion
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.12.OBL.002"
+    kind: obligation
+    title: "Devices derived from human blood or plasma"
+    text: "Where a device is manufactured utilising derivatives of tissues or cells of human origin which are non-viable or are rendered non-viable, or where a device incorporates, as an integral part, a substance derived from human blood or human plasma, the relevant provisions of Directive 2002/98/EC and Directive 2004/33/EC shall apply."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 12.2"
+    mandatory: true
+    applicability:
+      conditions:
+        - "device utilises non-viable human tissue derivatives or human blood/plasma derivatives"
+    requiredEvidenceTypes:
+      - blood_plasma_safety_assessment
+      - donor_screening_records
+      - quality_management_documentation
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 13: Devices incorporating biological materials ─────────────────
+
+  - obligationId: "EUMDR.AI.13.OBL.001"
+    kind: obligation
+    title: "Sourcing, processing and testing of biological materials"
+    text: "For devices manufactured utilising tissues or cells of animal origin, or their derivatives, which are non-viable or rendered non-viable, the tissues, cells and substances of animal origin shall originate from animals that have been subjected to veterinary controls and surveillance adapted to the intended use of the tissues. Manufacturers shall retain information on the geographical origin of the animals."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 13.1"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - biological_origin
+      conditions:
+        - "device manufactured utilising animal tissues, cells or derivatives"
+    requiredEvidenceTypes:
+      - animal_tissue_sourcing_records
+      - veterinary_control_certificates
+      - geographical_origin_documentation
+      - tse_risk_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.13.OBL.002"
+    kind: obligation
+    title: "Transmissible agent risk management for biological materials"
+    text: "Processing, preservation, testing and handling of tissues, cells and substances of animal origin shall be carried out so as to provide optimal safety. In particular, safety with regard to viruses and other transmissible agents shall be addressed by implementation of validated methods of elimination or inactivation in the course of the manufacturing process, except where the use of such methods would result in unacceptable degradation compromising the clinical benefit of the device."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 13.2"
+    mandatory: true
+    applicability:
+      conditions:
+        - "device manufactured utilising animal tissues, cells or derivatives"
+    requiredEvidenceTypes:
+      - viral_inactivation_validation
+      - transmissible_agent_risk_assessment
+      - biological_safety_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 14: Device construction and environmental interaction ──────────
+
+  - obligationId: "EUMDR.AI.14.OBL.001"
+    kind: obligation
+    title: "Environmental conditions — transport, storage, use"
+    text: "Devices shall be designed and manufactured in such a way as to reduce as far as possible the risks linked to reasonably foreseeable environmental conditions such as magnetic fields, external electrical influences, electrostatic discharge, pressure and variations in pressure, acceleration, thermal ignition sources, proximity to other devices, and the interaction between the device and its environment."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 14.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - environmental_testing_report
+      - transport_simulation_report
+      - storage_conditions_study
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.14.OBL.002"
+    kind: obligation
+    title: "Electromagnetic compatibility (EMC)"
+    text: "Devices shall be designed and manufactured in such a way as to remove or reduce as far as possible the risk of electromagnetic disturbances which could impair the operation of other devices or equipment in the usual environment, and shall be designed and manufactured in such a way as to provide an adequate level of intrinsic immunity to electromagnetic disturbance to enable them to operate as intended."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 14.5"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - active
+    requiredEvidenceTypes:
+      - emc_test_report
+      - iec_60601_1_2_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.14.OBL.003"
+    kind: obligation
+    title: "Non-interference with other devices and equipment"
+    text: "Devices shall be designed and manufactured in such a way as to reduce, as far as possible, risks associated with the possible negative interaction between software and the IT environment within which the software operates and interacts. Devices that are intended to be operated together with other devices or products shall be designed and manufactured in such a way that interoperability and compatibility are reliable and safe."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 14.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - interoperability_test_report
+      - compatibility_assessment
+      - integration_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.14.OBL.004"
+    kind: obligation
+    title: "Protection against environmental hazards during use"
+    text: "Devices shall be designed and manufactured in such a way as to reduce risks arising from the ageing of materials used, the accuracy and stability of any measuring or control mechanisms, and from the degradation of device properties under stress conditions."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 14.6-14.7"
+    mandatory: true
+    requiredEvidenceTypes:
+      - accelerated_ageing_study
+      - real_time_ageing_study
+      - stability_testing_report
+      - calibration_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 15: Diagnostic and measuring function ──────────────────────────
+
+  - obligationId: "EUMDR.AI.15.OBL.001"
+    kind: obligation
+    title: "Accuracy and precision of measuring devices"
+    text: "Devices with a diagnostic or measuring function shall be designed and manufactured in such a way as to provide sufficient accuracy, precision and stability for their intended purpose, based on appropriate scientific and technical methods. The limits of accuracy shall be indicated by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 15.1"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - diagnostic
+        - measuring
+    requiredEvidenceTypes:
+      - accuracy_verification_report
+      - precision_study
+      - measurement_uncertainty_analysis
+      - calibration_records
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.15.OBL.002"
+    kind: obligation
+    title: "Measurement traceability and calibration"
+    text: "Where values are expressed numerically, the measurements made by the device shall be expressed in legal units of measurement conforming to Council Directive 80/181/EEC. The measuring, monitoring or display scale shall be designed in line with ergonomic principles, taking into account the intended purpose, users and the environmental conditions. Measurement traceability to recognised standards shall be ensured."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 15.2-15.3"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - measuring
+    requiredEvidenceTypes:
+      - calibration_records
+      - metrological_traceability_documentation
+      - display_design_verification
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 16: Protection against radiation ───────────────────────────────
+
+  - obligationId: "EUMDR.AI.16.OBL.001"
+    kind: obligation
+    title: "Radiation protection — general"
+    text: "Devices shall be designed and manufactured in such a way that exposure of patients, users and other persons to radiation shall be reduced as far as possible consistent with the intended purpose, whilst not restricting the application of appropriate specified levels for therapeutic and diagnostic purposes. The operating instructions for devices emitting hazardous or potentially hazardous radiation shall contain detailed information as to the nature of the emitted radiation, means of protecting the patient and the user, and on ways of avoiding misuse and of reducing the risks inherent to installation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 16.1"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - radiation_emitting
+    requiredEvidenceTypes:
+      - radiation_safety_assessment
+      - dose_measurement_report
+      - radiation_protection_plan
+      - instructions_for_use
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.16.OBL.002"
+    kind: obligation
+    title: "Intended radiation emission — dose control and monitoring"
+    text: "Where devices are intended to emit hazardous, or potentially hazardous, levels of ionizing and/or non-ionizing radiation necessary for a specific medical purpose the benefit of which is considered to outweigh the risks inherent to the emission, it shall be possible for the user to control the emissions. Such devices shall be designed and manufactured to ensure reproducibility of relevant variable parameters within an acceptable tolerance. The dose delivered to the patient shall follow the ALARA (as low as reasonably achievable) principle."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 16.2-16.4"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - radiation_emitting
+        - diagnostic_imaging
+        - therapeutic_radiation
+    requiredEvidenceTypes:
+      - radiation_output_verification
+      - dose_control_validation
+      - alara_assessment
+      - reproducibility_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.16.OBL.003"
+    kind: obligation
+    title: "Unintended radiation — minimisation"
+    text: "Where devices are designed to emit potentially hazardous levels of radiation that is unintended, stray or scattered, the device shall be designed and manufactured to reduce exposure of patients, users and other persons to such radiation as far as possible."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 16.3"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - radiation_emitting
+    requiredEvidenceTypes:
+      - stray_radiation_assessment
+      - shielding_verification
+      - radiation_leakage_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 17: Electronic programmable systems (manufacturing) ────────────
+
+  - obligationId: "EUMDR.AI.17.OBL.001"
+    kind: obligation
+    title: "Electronic programmable systems — manufacturing requirements"
+    text: "Devices that incorporate electronic programmable systems, including software, shall be designed to ensure repeatability, reliability and performance in line with their intended use. In the event of a single fault condition in the system, appropriate means shall be adopted to eliminate or reduce as far as possible consequent risks or impairment of performance. The manufacturer shall demonstrate a systematic approach to software lifecycle management."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 17"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - active
+        - software
+    requiredEvidenceTypes:
+      - software_lifecycle_records
+      - configuration_management_records
+      - software_maintenance_plan
+      - anomaly_resolution_records
+    metadata:
+      review: "needs-sme"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+      note: "Section 17 overlaps with Sections 6/7; may be affected by amendment (EU) 2025/2457"
+
+  # ── Section 18: Active devices and connected devices ───────────────────────
+
+  - obligationId: "EUMDR.AI.18.OBL.001"
+    kind: obligation
+    title: "Active device failure mode safety"
+    text: "For active devices, in the event of a single fault condition, appropriate means shall be adopted to eliminate or reduce as far as possible consequent risks. In particular, devices shall be designed and manufactured so as to protect, as far as possible, against the risks of electric shocks, mechanical failure, and other hazards linked to an energy source, under both normal and single fault condition."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 18.1"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - active
+    requiredEvidenceTypes:
+      - failure_mode_effects_analysis
+      - single_fault_condition_analysis
+      - electrical_safety_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.18.OBL.002"
+    kind: obligation
+    title: "Alarm systems for active devices"
+    text: "Active devices shall, where appropriate, be equipped with alarm systems to alert users of situations which could lead to or are leading to patient or user harm. Alarm signals shall be visible and/or audible and shall be comprehensible to the user. The user shall be able to confirm that they have understood the alarm."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 18.6"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - active
+    requiredEvidenceTypes:
+      - alarm_system_specification
+      - alarm_validation_report
+      - usability_engineering_file
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.18.OBL.003"
+    kind: obligation
+    title: "Active device connection and power supply safety"
+    text: "Active devices connected to or equipped with an energy source shall be designed so that, in the event of a power supply failure or fluctuation, the device defaults to a safe state. Devices shall indicate the status of the power supply and any battery charge status where applicable."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 18.3-18.4"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - active
+    requiredEvidenceTypes:
+      - power_failure_test_report
+      - safe_state_analysis
+      - battery_performance_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 19: Active implantable devices ─────────────────────────────────
+
+  - obligationId: "EUMDR.AI.19.OBL.001"
+    kind: obligation
+    title: "Active implantable device safety"
+    text: "Active implantable devices shall be designed and manufactured in such a way as to remove or minimise as far as possible risks connected with the use of energy sources, with particular reference to insulation, leakage currents and overheating of the devices. The design shall address reliability of the source of energy and adequate warning where battery capacity is approaching the minimum needed for safe operation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 19.1"
+    mandatory: true
+    applicability:
+      deviceClasses:
+        - III
+      deviceTypes:
+        - active_implantable
+    requiredEvidenceTypes:
+      - implant_safety_assessment
+      - energy_source_reliability_report
+      - battery_life_study
+      - insulation_test_report
+      - leakage_current_test_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.19.OBL.002"
+    kind: obligation
+    title: "Active implantable device electromagnetic and external influence protection"
+    text: "Active implantable devices shall be designed and manufactured so as to remove or minimise as far as possible risks connected with reasonably foreseeable external influences or environmental conditions, including magnetic fields, external electrical effects, electrostatic discharge, radiated and conducted interference, pressure or variations in pressure, acceleration, temperature, humidity, and the proximity to other devices."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 19.2"
+    mandatory: true
+    applicability:
+      deviceClasses:
+        - III
+      deviceTypes:
+        - active_implantable
+    requiredEvidenceTypes:
+      - electromagnetic_immunity_test_report
+      - environmental_stress_test_report
+      - mri_conditional_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 20: Mechanical and thermal risks ───────────────────────────────
+
+  - obligationId: "EUMDR.AI.20.OBL.001"
+    kind: obligation
+    title: "Protection against mechanical risks"
+    text: "Devices shall be designed and manufactured in such a way as to protect patients and users against mechanical risks connected with, for example, resistance to movement, instability and moving parts. Devices shall be designed and manufactured in such a way as to reduce to the lowest possible level the risks arising from vibration generated by the devices, taking into account technical progress and the means available for limiting vibrations, in particular at source."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 20.1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - mechanical_safety_test_report
+      - vibration_test_report
+      - moving_parts_risk_analysis
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.20.OBL.002"
+    kind: obligation
+    title: "Noise emission reduction"
+    text: "Devices shall be designed and manufactured in such a way as to reduce to the lowest possible level the risks arising from the noise emitted, taking into account technical progress and the means available to reduce noise, particularly at source, unless the noise emitted is part of the intended performance."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 20.2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - noise_emission_test_report
+      - noise_reduction_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.20.OBL.003"
+    kind: obligation
+    title: "Protection against thermal risks"
+    text: "Devices shall be designed and manufactured in such a way that users and other persons are protected against thermal risks, including surfaces accessible to the user. Particular attention shall be given to the temperatures of the parts that the user or patient may come into contact with."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 20.4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - thermal_safety_test_report
+      - surface_temperature_measurement
+      - burn_risk_assessment
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 21: Devices for lay persons ────────────────────────────────────
+
+  - obligationId: "EUMDR.AI.21.OBL.001"
+    kind: obligation
+    title: "Lay person device usability"
+    text: "Devices intended by the manufacturer to be used by lay persons shall be designed and manufactured in such a way that they perform appropriately for their intended purpose taking into account the skills and the means available to lay persons and the influence resulting from variation that can reasonably be anticipated in the lay person's technique and environment. The information and instructions provided by the manufacturer shall be easy to understand and apply by the lay person."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 21.1"
+    mandatory: true
+    applicability:
+      conditions:
+        - "device intended for use by lay persons"
+    requiredEvidenceTypes:
+      - lay_user_study
+      - usability_engineering_file
+      - summative_usability_study
+      - instructions_for_use
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.21.OBL.002"
+    kind: obligation
+    title: "Self-diagnostic and verification for lay person devices"
+    text: "Devices for use by lay persons shall, where appropriate, include a procedure by which the lay person can verify that the device will perform as intended by the manufacturer and, if applicable, be warned if the device has failed to provide a valid result. The results shall be expressed and presented in such a way that the lay person can easily understand them."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 21.2"
+    mandatory: true
+    applicability:
+      conditions:
+        - "device intended for use by lay persons"
+    requiredEvidenceTypes:
+      - self_check_mechanism_specification
+      - result_interpretation_validation
+      - lay_user_comprehension_study
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Section 22: Devices for administering medicinal products ───────────────
+
+  - obligationId: "EUMDR.AI.22.OBL.001"
+    kind: obligation
+    title: "Compatibility with administered medicinal products"
+    text: "Devices intended for administering medicinal products shall be designed and manufactured in such a way that they are compatible with the medicinal products concerned in accordance with the provisions and restrictions governing those medicinal products and that the performance of both the medicinal products and of the devices is maintained in accordance with their respective indications and intended use."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 22.1"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - drug_delivery
+        - drug_administration
+      conditions:
+        - "device intended for administering medicinal products"
+    requiredEvidenceTypes:
+      - drug_device_compatibility_study
+      - material_compatibility_report
+      - extractables_leachables_study
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.22.OBL.002"
+    kind: obligation
+    title: "Dose accuracy and delivery control"
+    text: "Devices intended for administering medicinal products shall be designed and manufactured in such a way as to ensure accurate and reproducible dosing of the medicinal product, within tolerances specified by the manufacturer. Where a device is intended to be used in combination with a specific medicinal product, the combined performance shall be demonstrated."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 22.2"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - drug_delivery
+        - drug_administration
+      conditions:
+        - "device intended for administering medicinal products"
+    requiredEvidenceTypes:
+      - dose_accuracy_study
+      - dose_reproducibility_study
+      - combined_performance_report
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AI.22.OBL.003"
+    kind: obligation
+    title: "Identification and labeling for drug administration devices"
+    text: "Devices for administering medicinal products shall bear the name of the device and relevant information to identify the device and the content of its packaging, and where a device supplies energy or substances to the patient, the graduation and relevant information needed for the user to be informed of the nature and amount of energy or substance delivered."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 22.3"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - drug_delivery
+        - drug_administration
+      conditions:
+        - "device intended for administering medicinal products"
+    requiredEvidenceTypes:
+      - label_artwork
+      - graduation_verification_report
+      - instructions_for_use
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  # ── Chapter I constraints ──────────────────────────────────────────────────
+
+  - constraintId: "EUMDR.AI.1.CON.001"
+    appliesTo: "EUMDR.AI.1.OBL.002"
+    text: "The risk-benefit analysis must be documented and must demonstrate that each residual risk is acceptable. A general statement of acceptable risk is insufficient — each identified hazard must be individually assessed and its residual risk justified."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.2.CON.001"
+    appliesTo: "EUMDR.AI.2.OBL.002"
+    text: "The risk reduction hierarchy is mandatory and must be applied in order: (a) inherent safety by design, (b) protective measures, (c) information for safety. Lower-priority controls are not acceptable when a higher-priority measure is technically feasible. Justification is required when skipping a higher-priority option."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.2.CON.002"
+    appliesTo: "EUMDR.AI.2.OBL.001"
+    text: "Risk management must be continuous and iterative throughout the entire product lifecycle — not a one-time design-phase activity. Post-market surveillance data must feed back into the risk management process."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.4.CON.001"
+    appliesTo: "EUMDR.AI.4.OBL.001"
+    text: "Foreseeable misuse must be systematically identified through use error analysis, not merely acknowledged. Both intentional misuse and unintentional use errors must be considered, and the severity of harm from each reasonably foreseeable misuse scenario must be evaluated."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.5.CON.001"
+    appliesTo: "EUMDR.AI.5.OBL.001"
+    text: "The state of the art for usability/human factors engineering includes IEC 62366-1. The manufacturer must demonstrate that usability engineering was applied throughout the design process, not merely verified post-design."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.6.CON.001"
+    appliesTo: "EUMDR.AI.6.OBL.001"
+    text: "State of the art for software lifecycle is IEC 62304. Software classification (Class A/B/C) per IEC 62304 determines the rigour of lifecycle activities. Class C software (failure can cause death or serious injury) requires the most rigorous controls."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.7.CON.001"
+    appliesTo: "EUMDR.AI.7.OBL.002"
+    text: "Cybersecurity measures must cover the entire device lifecycle including post-market updates. Security by design, threat modelling, and a security update/patch management process are required. The manufacturer must maintain a vulnerability disclosure policy."
+    severity: hard
+
+  # ── Chapter II constraints ─────────────────────────────────────────────────
+
+  - constraintId: "EUMDR.AI.10.CON.001"
+    appliesTo: "EUMDR.AI.10.OBL.001"
+    text: "Biocompatibility evaluation must follow ISO 10993-1 systematic framework. Direct testing on the final product or representative samples is required — material supplier data alone is insufficient."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.10.CON.002"
+    appliesTo: "EUMDR.AI.10.OBL.002"
+    text: "CMR substance threshold of 0.1% w/w is a hard limit. If exceeded, justification must include (a) analysis of alternative substances, (b) estimation of possible patient/user exposure, (c) analysis of possible alternative treatments. Notified body must consult a competent authority on the justification."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.11.CON.001"
+    appliesTo: "EUMDR.AI.11.OBL.003"
+    text: "Sterilisation validation must comply with the appropriate ISO 11135 (EO), ISO 11137 (radiation), ISO 17665 (moist heat), or equivalent standards. SAL (sterility assurance level) of 10^-6 is required for devices labelled sterile."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.14.CON.001"
+    appliesTo: "EUMDR.AI.14.OBL.002"
+    text: "EMC testing must comply with IEC 60601-1-2 (or equivalent) for active medical devices. Testing must cover both emissions and immunity, at levels appropriate for the intended use environment (professional healthcare, home healthcare, etc.)."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.15.CON.001"
+    appliesTo: "EUMDR.AI.15.OBL.001"
+    text: "The manufacturer must specify and declare measurement accuracy and precision limits. These must be validated with appropriate reference standards and measurement uncertainty must be quantified per ISO/IEC 17025 or equivalent."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.16.CON.001"
+    appliesTo: "EUMDR.AI.16.OBL.002"
+    text: "Ionizing radiation devices must follow the ALARA principle (As Low As Reasonably Achievable). Dose-area product or equivalent dosimetry must be available. Compliance with IEC 60601-1-3 (radiological protection) is required."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.19.CON.001"
+    appliesTo: "EUMDR.AI.19.OBL.001"
+    text: "Active implantable devices are classified as class III by default (Rule 8, Annex VIII). All requirements for class III devices apply in addition to the specific Section 19 requirements. Clinical investigation is mandatory unless duly justified per Article 61(4)."
+    severity: hard
+
+  - constraintId: "EUMDR.AI.22.CON.001"
+    appliesTo: "EUMDR.AI.22.OBL.002"
+    text: "Dose accuracy must be validated across the entire claimed dose range and under anticipated use conditions. For pre-filled devices, compatibility with the specific medicinal product must be demonstrated over the claimed shelf life."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.GSPR"
+    term: "General Safety and Performance Requirements"
+    text: "The essential requirements that medical devices must fulfil as set out in Annex I of Regulation (EU) 2017/745, covering general requirements (Chapter I), requirements regarding design and manufacture (Chapter II), and requirements regarding the information supplied with the device (Chapter III)."
+    sourceCitation: "Regulation (EU) 2017/745 Article 5(1), Annex I"
+
+  - definitionId: "EUMDR.DEF.STATE_OF_THE_ART"
+    term: "State of the Art"
+    text: "The developed stage of technical capability at a given time as regards products, processes, and services, based on the relevant consolidated findings of science, technology and experience. The state of the art is not restricted to standards; it encompasses the current best practices recognised in the scientific and technical community."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I, as interpreted via harmonised standards guidance"
+
+  - definitionId: "EUMDR.DEF.RISK_BENEFIT"
+    term: "Benefit-Risk Determination"
+    text: "The analysis and evaluation of all assessments of benefit and risk of possible relevance for the use of the device for its intended purpose, when used in accordance with the intended purpose given by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(25)"
+
+  - definitionId: "EUMDR.DEF.SINGLE_FAULT"
+    term: "Single Fault Condition"
+    text: "A condition in which a single means for reducing a risk in a device is defective or a single abnormal condition is present. The device must remain safe or degrade to a safe state under a single fault condition."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 9, Section 18, as interpreted via IEC 60601-1"
+
+  - definitionId: "EUMDR.DEF.FORESEEABLE_MISUSE"
+    term: "Foreseeable Misuse"
+    text: "Use of a product or system in a way not intended by the manufacturer but which can result from readily predictable human behaviour. Foreseeable misuse includes both intentional misuse and unintentional use errors."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 4, as interpreted via ISO 14971"
+
+  - definitionId: "EUMDR.DEF.ALARA"
+    term: "ALARA Principle"
+    text: "As Low As Reasonably Achievable — the principle that radiation exposure should be kept as low as reasonably achievable, economic and social factors being taken into account. Applied to medical devices emitting ionizing radiation under Annex I Section 16."
+    sourceCitation: "Regulation (EU) 2017/745 Annex I Section 16, Council Directive 2013/59/Euratom"
+
+relationships:
+  # ── Internal Annex I relationships ─────────────────────────────────────────
+
+  - from: "EUMDR.AI.1.OBL.001"
+    to: "EUMDR.AI.2.OBL.001"
+    type: REQUIRES_EVIDENCE
+    props:
+      note: "Safety requirement fulfilled through risk management"
+
+  - from: "EUMDR.AI.2.OBL.002"
+    to: "EUMDR.AI.2.OBL.003"
+    type: TRIGGERS
+    props:
+      note: "Residual risks after hierarchy must be communicated to users"
+
+  - from: "EUMDR.AI.6.OBL.001"
+    to: "EUMDR.AI.7.OBL.001"
+    type: PART_OF
+    props:
+      note: "Software lifecycle (Section 6) and programmable system design (Section 7) are complementary requirements"
+
+  - from: "EUMDR.AI.7.OBL.002"
+    to: "EUMDR.AI.17.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Cybersecurity design requirements (Section 7) and manufacturing programmable system controls (Section 17)"
+
+  - from: "EUMDR.AI.8.OBL.001"
+    to: "EUMDR.AI.21.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Self-testing devices (Section 8) and lay person devices (Section 21) share usability requirements"
+
+  - from: "EUMDR.AI.9.OBL.001"
+    to: "EUMDR.AI.18.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Energy source (Section 9) and active device failure mode (Section 18) requirements overlap"
+
+  - from: "EUMDR.AI.18.OBL.001"
+    to: "EUMDR.AI.19.OBL.001"
+    type: PART_OF
+    props:
+      note: "Active implantable devices must satisfy active device requirements plus additional Section 19 requirements"
+
+  - from: "EUMDR.AI.10.OBL.002"
+    to: "EUMDR.AI.10.OBL.005"
+    type: TRIGGERS
+    props:
+      note: "If CMR substances exceed threshold, justification and labeling obligations are triggered"
+
+  # ── Cross-references to other EU MDR files ─────────────────────────────────
+
+  - from: "EUMDR.AI.1.OBL.001"
+    to: "EUMDR.61.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "GSPRs confirmed via clinical evaluation per Article 61"
+
+  - from: "EUMDR.AI.2.OBL.003"
+    to: "EUMDR.AI.23.OBL.007"
+    type: TRIGGERS
+    props:
+      note: "Residual risk information must appear in IFU warnings"
+
+  - from: "EUMDR.AI.22.OBL.003"
+    to: "EUMDR.AI.23.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Drug administration device labeling must satisfy Chapter III labeling requirements"
+
+  # ── Cross-references to ISO 14971 (risk management) ───────────────────────
+
+  - from: "EUMDR.AI.2.OBL.001"
+    to: "ISO14971.4.OBL.001"
+    type: HARMONIZED_BY
+    props:
+      note: "EU MDR Section 2 risk management requirement harmonised by ISO 14971"
+
+  - from: "EUMDR.AI.2.OBL.002"
+    to: "ISO14971.7.OBL.001"
+    type: HARMONIZED_BY
+    props:
+      note: "EU MDR risk reduction hierarchy maps to ISO 14971 risk control priority"
+
+  - from: "EUMDR.AI.2.OBL.002"
+    to: "ISO14971.7.1.OBL.002"
+    type: HARMONIZED_BY
+    props:
+      note: "Risk control priority hierarchy directly implements ISO 14971 §7.1"
+
+  - from: "EUMDR.AI.4.OBL.001"
+    to: "ISO14971.5.OBL.001"
+    type: HARMONIZED_BY
+    props:
+      note: "Foreseeable misuse analysis maps to ISO 14971 hazard identification"
+
+  # ── Cross-references to ISO 13485 (design controls) ───────────────────────
+
+  - from: "EUMDR.AI.1.OBL.001"
+    to: "ISO13485.7.3.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "GSPRs form part of design inputs per ISO 13485 §7.3.3"
+
+  - from: "EUMDR.AI.3.OBL.001"
+    to: "ISO13485.7.3.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "Performance verification maps to design verification per ISO 13485 §7.3.6"
+
+  # ── Harmonised standard relationships ──────────────────────────────────────
+
+  - from: "EUMDR.AI.6.OBL.001"
+    to: "IEC62304"
+    type: HARMONIZED_BY
+    props:
+      note: "Software development lifecycle harmonised by IEC 62304:2006+A1:2015 (EN 62304)"
+
+  - from: "EUMDR.AI.5.OBL.001"
+    to: "IEC62366"
+    type: HARMONIZED_BY
+    props:
+      note: "Usability engineering harmonised by IEC 62366-1:2015+A1:2020 (EN 62366-1)"
+
+  - from: "EUMDR.AI.10.OBL.001"
+    to: "ISO10993"
+    type: HARMONIZED_BY
+    props:
+      note: "Biocompatibility evaluation harmonised by ISO 10993-1:2018 (EN ISO 10993-1)"
+
+  - from: "EUMDR.AI.9.OBL.001"
+    to: "IEC60601"
+    type: HARMONIZED_BY
+    props:
+      note: "Electrical safety requirements harmonised by IEC 60601-1:2005+A1+A2 (EN 60601-1)"
+
+  - from: "EUMDR.AI.14.OBL.002"
+    to: "IEC60601_1_2"
+    type: HARMONIZED_BY
+    props:
+      note: "EMC requirements harmonised by IEC 60601-1-2:2014+A1:2020 (EN 60601-1-2)"
+
+  - from: "EUMDR.AI.16.OBL.002"
+    to: "IEC60601_1_3"
+    type: HARMONIZED_BY
+    props:
+      note: "Radiological protection harmonised by IEC 60601-1-3 (EN 60601-1-3)"

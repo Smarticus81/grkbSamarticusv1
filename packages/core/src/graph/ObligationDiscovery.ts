@@ -1,6 +1,14 @@
 import type { ObligationGraph } from './ObligationGraph.js';
 import type { ObligationNode, ConstraintNode, DefinitionNode } from './types.js';
 
+export type MatchSource = 'tag' | 'semantic' | 'both';
+
+export interface ScoredObligation {
+  obligation: ObligationNode;
+  matchedBy: MatchSource;
+  semanticScore?: number;
+}
+
 export interface DiscoveredScope {
   obligations: ObligationNode[];
   constraints: ConstraintNode[];
@@ -8,6 +16,13 @@ export interface DiscoveredScope {
   obligationIds: string[];
   requiredEvidenceTypes: string[];
   summary: string;
+}
+
+export interface HybridDiscoveredScope extends DiscoveredScope {
+  /** Obligations annotated with how they were found (tag/semantic/both). */
+  scored: ScoredObligation[];
+  /** Semantic-only candidates NOT in the GOVERNED_BY tether — for exploration, not agent grounding. */
+  candidates: ScoredObligation[];
 }
 
 /**
@@ -107,6 +122,83 @@ export class ObligationDiscovery {
     } catch {
       return [];
     }
+  }
+
+  /**
+   * Hybrid discovery: union of tag-based (processType × jurisdiction) results
+   * with semantic top-k, de-duped and annotated with provenance.
+   *
+   * The GOVERNED_BY scope tether is preserved: semantic-only hits that fall
+   * outside the process's tethered obligations are returned as `candidates`
+   * (for exploration/search surfaces) rather than mixed into the main scope.
+   */
+  async discoverHybrid(
+    processTypes: string[],
+    jurisdictions: string[],
+    queryVector: number[],
+    semanticK = 20,
+  ): Promise<HybridDiscoveredScope> {
+    // 1. Standard tag-based discovery
+    const tagScope = await this.discover(processTypes, jurisdictions);
+    const tagIds = new Set(tagScope.obligationIds);
+
+    // 2. Semantic search (unscoped — may return obligations from any process/jurisdiction)
+    const semanticHits = await this.graph.semanticSearch(queryVector, semanticK);
+
+    // 3. Merge: tag-matched obligations get 'tag' or 'both' provenance
+    const scored: ScoredObligation[] = tagScope.obligations.map((o) => ({
+      obligation: o,
+      matchedBy: 'tag' as MatchSource,
+    }));
+
+    const candidates: ScoredObligation[] = [];
+
+    for (const hit of semanticHits) {
+      const id = hit.obligation.obligationId;
+      if (tagIds.has(id)) {
+        // Upgrade tag match to 'both'
+        const existing = scored.find((s) => s.obligation.obligationId === id);
+        if (existing) {
+          existing.matchedBy = 'both';
+          existing.semanticScore = hit.score;
+        }
+      } else {
+        // Semantic-only — goes to candidates, NOT into main scope
+        candidates.push({
+          obligation: hit.obligation,
+          matchedBy: 'semantic',
+          semanticScore: hit.score,
+        });
+      }
+    }
+
+    return {
+      ...tagScope,
+      scored,
+      candidates,
+    };
+  }
+
+  /**
+   * Pure semantic search for obligations. Use this for search/discovery UIs
+   * rather than agent grounding.
+   */
+  async semanticSearch(
+    queryVector: number[],
+    k: number,
+    filters?: {
+      jurisdiction?: string;
+      processType?: string;
+      deviceClass?: string;
+      operatorRole?: string;
+    },
+  ): Promise<ScoredObligation[]> {
+    const hits = await this.graph.semanticSearch(queryVector, k, filters);
+    return hits.map((h) => ({
+      obligation: h.obligation,
+      matchedBy: 'semantic' as MatchSource,
+      semanticScore: h.score,
+    }));
   }
 
   private buildSummary(

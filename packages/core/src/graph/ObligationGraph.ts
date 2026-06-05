@@ -103,6 +103,7 @@ export class ObligationGraph {
           props: {
             ...validated,
             effectiveFrom: validated.effectiveFrom?.toISOString() ?? null,
+            applicability: JSON.stringify(validated.applicability),
             metadata: JSON.stringify(validated.metadata),
             requiredEvidenceTypes: validated.requiredEvidenceTypes,
           },
@@ -830,8 +831,22 @@ export class ObligationGraph {
       effectiveFrom: p.effectiveFrom ? new Date(p.effectiveFrom) : undefined,
       mandatory: p.mandatory ?? true,
       requiredEvidenceTypes: p.requiredEvidenceTypes ?? [],
+      applicability: this.parseJsonField(p.applicability, {}),
       metadata: this.parseMetadata(p.metadata),
     };
+  }
+
+  private parseJsonField<T>(raw: unknown, fallback: T): T {
+    if (!raw) return fallback;
+    if (typeof raw === 'object') return raw as T;
+    if (typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return fallback;
+      }
+    }
+    return fallback;
   }
 
   private parseMetadata(raw: unknown): Record<string, unknown> {
@@ -845,5 +860,245 @@ export class ObligationGraph {
       }
     }
     return {};
+  }
+
+  // === Vector / Semantic Search ===
+
+  /**
+   * Create Neo4j vector indexes for Obligation and Definition embeddings.
+   * Safe to call repeatedly (IF NOT EXISTS). Works on Aura 2025.x+.
+   */
+  async ensureVectorIndexes(dimensions = 3072): Promise<void> {
+    // Neo4j requires `vector.dimensions` to be an integer literal in the
+    // index config map. Cypher parameters are serialized as floats (3072.0)
+    // and rejected, so we inline a sanitized integer literal instead.
+    const dims = Math.trunc(dimensions);
+    if (!Number.isInteger(dims) || dims <= 0) {
+      throw new Error(`Invalid embedding dimensions: ${dimensions}`);
+    }
+    await this.ensureOneVectorIndex('obligation_embedding', 'Obligation', dims);
+    await this.ensureOneVectorIndex('definition_embedding', 'Definition', dims);
+  }
+
+  /**
+   * Create (or recreate, if the dimensionality changed) a single vector index.
+   * Switching embedding providers changes the vector size, so a stale index
+   * with the wrong `vector.dimensions` must be dropped and rebuilt.
+   *
+   * The label/index names are internal constants (never user input), so the
+   * Cypher interpolation here is safe.
+   */
+  private async ensureOneVectorIndex(
+    indexName: 'obligation_embedding' | 'definition_embedding',
+    label: 'Obligation' | 'Definition',
+    dims: number,
+  ): Promise<void> {
+    const session = this.session();
+    try {
+      const existingDims = await this.getVectorIndexDimensions(session, indexName);
+      if (existingDims !== null && existingDims !== dims) {
+        await session.run(`DROP INDEX ${indexName} IF EXISTS`);
+      }
+      await session.run(
+        `CREATE VECTOR INDEX ${indexName} IF NOT EXISTS
+         FOR (n:${label}) ON (n.embedding)
+         OPTIONS { indexConfig: {
+           \`vector.dimensions\`: ${dims},
+           \`vector.similarity_function\`: 'cosine'
+         }}`,
+      );
+    } finally {
+      await session.close();
+    }
+  }
+
+  /** Read the configured dimensionality of an existing vector index, or null if absent. */
+  private async getVectorIndexDimensions(
+    session: Session,
+    indexName: string,
+  ): Promise<number | null> {
+    try {
+      const res = await session.run(
+        `SHOW VECTOR INDEXES YIELD name, options WHERE name = $name RETURN options AS options`,
+        { name: indexName },
+      );
+      if (res.records.length === 0) return null;
+      const options = res.records[0]!.get('options') as Record<string, unknown> | null;
+      const cfg = (options?.['indexConfig'] ?? null) as Record<string, unknown> | null;
+      const raw = cfg?.['vector.dimensions'];
+      if (raw == null) return null;
+      const asNum =
+        typeof raw === 'object' && raw !== null && 'toNumber' in raw
+          ? (raw as { toNumber: () => number }).toNumber()
+          : Number(raw);
+      return Number.isFinite(asNum) ? asNum : null;
+    } catch {
+      // Older Neo4j without SHOW VECTOR INDEXES — fall back to CREATE IF NOT EXISTS.
+      return null;
+    }
+  }
+
+  /**
+   * Store an embedding vector on an Obligation or Definition node.
+   * Also records the model and timestamp for re-embed detection.
+   */
+  async upsertEmbedding(
+    nodeId: string,
+    vector: number[],
+    embeddingModel: string,
+  ): Promise<void> {
+    const session = this.session();
+    try {
+      // Try Obligation first, then Definition
+      const result = await session.run(
+        `MATCH (n:Obligation { obligationId: $id })
+         SET n.embedding = $vec, n.embeddingModel = $model, n.embeddedAt = $at
+         RETURN n.obligationId AS matched`,
+        { id: nodeId, vec: vector, model: embeddingModel, at: new Date().toISOString() },
+      );
+      if (result.records.length === 0) {
+        await session.run(
+          `MATCH (n:Definition { definitionId: $id })
+           SET n.embedding = $vec, n.embeddingModel = $model, n.embeddedAt = $at`,
+          { id: nodeId, vec: vector, model: embeddingModel, at: new Date().toISOString() },
+        );
+      }
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Semantic vector search over Obligation nodes using Neo4j vector index.
+   * Optionally filters by jurisdiction, processType, and applicability fields.
+   */
+  async semanticSearch(
+    queryVector: number[],
+    k: number,
+    filters?: {
+      jurisdiction?: string;
+      processType?: string;
+      deviceClass?: string;
+      operatorRole?: string;
+    },
+  ): Promise<{ obligation: ObligationNode; score: number }[]> {
+    const session = this.session();
+    try {
+      // Use db.index.vector.queryNodes (works on Aura 2025.x and 2026.x)
+      let cypher = `
+        CALL db.index.vector.queryNodes('obligation_embedding', toInteger($k), $vec)
+        YIELD node AS o, score`;
+
+      const whereClauses: string[] = [];
+      if (filters?.jurisdiction) {
+        whereClauses.push('o.jurisdiction = $jurisdiction');
+      }
+      if (filters?.processType) {
+        whereClauses.push('o.processType = $processType');
+      }
+      if (filters?.deviceClass) {
+        whereClauses.push('o.applicability CONTAINS $deviceClass');
+      }
+      if (filters?.operatorRole) {
+        whereClauses.push('o.applicability CONTAINS $operatorRole');
+      }
+
+      if (whereClauses.length > 0) {
+        cypher += `\n        WHERE ${whereClauses.join(' AND ')}`;
+      }
+
+      cypher += `\n        RETURN o, score ORDER BY score DESC`;
+
+      const result = await session.run(cypher, {
+        k: Math.min(k * 3, 100), // over-fetch to account for post-filters
+        vec: queryVector,
+        jurisdiction: filters?.jurisdiction ?? '',
+        processType: filters?.processType ?? '',
+        deviceClass: filters?.deviceClass ?? '',
+        operatorRole: filters?.operatorRole ?? '',
+      });
+
+      return result.records
+        .map((r) => ({
+          obligation: this.recordToObligation(r.get('o').properties),
+          score: r.get('score') as number,
+        }))
+        .slice(0, k);
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Semantic search over Definition nodes.
+   */
+  async semanticSearchDefinitions(
+    queryVector: number[],
+    k: number,
+  ): Promise<{ definition: DefinitionNode; score: number }[]> {
+    const session = this.session();
+    try {
+      const result = await session.run(
+        `CALL db.index.vector.queryNodes('definition_embedding', toInteger($k), $vec)
+         YIELD node AS d, score
+         RETURN d, score ORDER BY score DESC`,
+        { k, vec: queryVector },
+      );
+      return result.records.map((r) => ({
+        definition: {
+          definitionId: r.get('d').properties.definitionId,
+          term: r.get('d').properties.term,
+          text: r.get('d').properties.text,
+          sourceCitation: r.get('d').properties.sourceCitation,
+          metadata: this.parseMetadata(r.get('d').properties.metadata),
+        } as DefinitionNode,
+        score: r.get('score') as number,
+      }));
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Get all Obligation/Definition nodes that lack a current embedding
+   * (or were embedded with a different model).
+   */
+  async getNodesNeedingEmbedding(
+    currentModel: string,
+  ): Promise<{ id: string; label: 'Obligation' | 'Definition'; text: string }[]> {
+    const session = this.session();
+    try {
+      const obResult = await session.run(
+        `MATCH (o:Obligation)
+         WHERE o.embedding IS NULL OR o.embeddingModel <> $model
+         RETURN o.obligationId AS id, o.title AS title, o.text AS text`,
+        { model: currentModel },
+      );
+      const defResult = await session.run(
+        `MATCH (d:Definition)
+         WHERE d.embedding IS NULL OR d.embeddingModel <> $model
+         RETURN d.definitionId AS id, d.term AS title, d.text AS text`,
+        { model: currentModel },
+      );
+
+      const nodes: { id: string; label: 'Obligation' | 'Definition'; text: string }[] = [];
+      for (const r of obResult.records) {
+        nodes.push({
+          id: r.get('id'),
+          label: 'Obligation',
+          text: `${r.get('title')}: ${r.get('text')}`,
+        });
+      }
+      for (const r of defResult.records) {
+        nodes.push({
+          id: r.get('id'),
+          label: 'Definition',
+          text: `${r.get('title')}: ${r.get('text')}`,
+        });
+      }
+      return nodes;
+    } finally {
+      await session.close();
+    }
   }
 }

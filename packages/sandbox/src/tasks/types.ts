@@ -80,6 +80,8 @@ export type TaskEvent =
       atIso: string;
       passed: boolean;
       violations: string[];
+      /** Human reasoning for the overall release/withhold decision. */
+      reason?: string;
     }
   | {
       type: 'run.completed';
@@ -170,6 +172,21 @@ export interface TaskAgentDefinition<TInput = unknown, TOutput = unknown> {
    *  prompt + obligation citations + the user's per-agent context and asks
    *  for a JSON object matching `outputSchema`. */
   systemPrompt?: string;
+  /**
+   * Decision-trail reasoning for a single obligation. Given the agent output
+   * and the live ObligationNode, return the human "why" that explains the
+   * decision in terms of the facts AND the regulation — e.g. "Serious injury
+   * → reportable under EU MDR Article 87; 15-day clock applies." This is what
+   * the Decision Trail surfaces as the per-decision "why". When omitted, the
+   * runner falls back to the obligation title.
+   */
+  explainObligation?: (output: TOutput, obligation: ObligationNode) => string | undefined;
+  /**
+   * Decision-trail reasoning for the overall gate (release/withhold). Usually
+   * the output's summary/recommendation. When omitted, the runner uses a
+   * generic message.
+   */
+  explainGate?: (output: TOutput) => string | undefined;
   /** Run the agent with the graph (graph-fetched obligations injected). */
   runWithGraph: (input: TInput, ctx: WithGraphContext) => Promise<TOutput>;
   /** Run the agent without the graph (no obligations, no citations). */

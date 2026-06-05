@@ -20,6 +20,16 @@ obligations:
       - nonconformance_record
       - complaint_record
       - audit_finding
+    applicability:                # Optional: structured filters for discovery
+      deviceClasses:              #   MDR risk classes (I, IIa, IIb, III, etc.)
+        - IIb
+        - III
+      operatorRoles:              #   Economic operator roles
+        - manufacturer
+      deviceTypes:                #   Device categories
+        - active
+      conditions:                 #   Free-form conditions
+        - "only when device incorporates medicinal substance"
     metadata: {}                  # Optional free-form
 
 constraints:
@@ -43,16 +53,39 @@ relationships:
     type: CROSS_REFERENCES
     props:
       note: "Corrective links to preventive"
+  - from: "EUMDR.10.9.OBL.001"        # Cross-regulation edge example
+    to:   "ISO13485.4.1.OBL.001"
+    type: IMPLEMENTS
+    props:
+      note: "EU MDR QMS requirement implemented via ISO 13485 QMS clause"
 ```
 
 ## Field rules
 
 - `obligationId` is globally unique across all regulations. Convention:
   `<REG>.<SECTION>.<KIND>.<NNN>`.
+  - EU MDR convention: `EUMDR.<article>.OBL.<NNN>` for articles,
+    `EUMDR.ANNEX<N>.<sub>.OBL.<NNN>` for annexes,
+    `EUMDR.<...>.CON.<NNN>` for constraints, `EUMDR.DEF.<TERM>` for definitions.
 - `kind` must be `obligation`, `constraint`, or `definition`.
 - `mandatory` defaults to `true`. Set to `false` only when the regulator
   expressly says so.
 - `requiredEvidenceTypes` reference types registered with `EvidenceTypeRegistry`.
+- `applicability` is optional. When present, it provides structured filters so
+  `ObligationDiscovery` can filter by device class, operator role, device type,
+  or free-form conditions. All sub-fields are optional arrays. If omitted,
+  the obligation applies universally within its jurisdiction/processType scope.
 - `relationships.type` must be one of:
+
+  **Core regulatory relations:**
   `REQUIRES_EVIDENCE`, `CONSTRAINED_BY`, `SUPERSEDES`, `APPLIES_TO`,
   `PART_OF`, `CROSS_REFERENCES`, `TRIGGERS`, `SATISFIES`, `CONFLICTS_WITH`.
+
+  **Cross-regulation relations:**
+  | Type | Meaning | Example |
+  |---|---|---|
+  | `IMPLEMENTS` | Source implements a requirement in a target standard | EU MDR Art. 10(9) → ISO 13485 §4.1 |
+  | `HARMONIZED_BY` | Source is harmonized by a harmonized standard | EU MDR Annex I GSPR → EN ISO 14971 |
+  | `DERIVED_FROM` | Source is derived from a higher-level requirement | UK MDR reg → EU MDR article |
+  | `DEPENDS_ON` | Source depends on target being satisfied first | CE marking → conformity assessment |
+  | `EXEMPTS` | Source grants an exemption from the target | Class I self-cert → notified body |

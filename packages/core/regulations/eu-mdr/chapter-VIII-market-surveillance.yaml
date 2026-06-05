@@ -1,0 +1,567 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Chapter VIII — Market surveillance (Articles 93-100)"
+jurisdiction: EU_MDR
+processType: MARKET_SURVEILLANCE
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ── Article 93 — Market surveillance activities ──
+
+  - obligationId: "EUMDR.93.OBL.001"
+    kind: obligation
+    title: "Perform market surveillance activities"
+    text: "Member States shall perform appropriate market surveillance activities in respect of devices in accordance with Chapter III of Regulation (EU) 2019/1020. Market surveillance authorities shall carry out appropriate checks on the conformity characteristics of devices by way of documentary review and, where appropriate, physical or laboratory checks on the basis of adequate samples."
+    sourceCitation: "Regulation (EU) 2017/745 Article 93(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - market_surveillance_plan
+      - conformity_check_record
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.93.OBL.002"
+    kind: obligation
+    title: "Designate market surveillance authorities"
+    text: "Member States shall designate one or more market surveillance authorities to be responsible for the implementation of market surveillance activities. Member States shall equip their market surveillance authorities with adequate resources including sufficient budget, staff with appropriate competence and expertise, equipment and other resources."
+    sourceCitation: "Regulation (EU) 2017/745 Article 93(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - authority_designation_record
+    applicability:
+      operatorRoles:
+        - member_state
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.93.OBL.003"
+    kind: obligation
+    title: "Proportionate market surveillance"
+    text: "Market surveillance authorities shall carry out activities which are proportionate to the compliance level and the risk level associated with the devices under surveillance. They may take into account the principles and guidelines established at the level of the Union."
+    sourceCitation: "Regulation (EU) 2017/745 Article 93(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - market_surveillance_plan
+      - risk_based_sampling_rationale
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.93.OBL.004"
+    kind: obligation
+    title: "Inspection and testing of devices"
+    text: "Market surveillance authorities shall be empowered to carry out unannounced inspections and physical checks of devices, to enter the premises of economic operators, and to take samples for official testing by a designated EU reference laboratory or other competent laboratory."
+    sourceCitation: "Regulation (EU) 2017/745 Article 93(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - inspection_report
+      - laboratory_test_report
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 94 — Evaluation of devices suspected of presenting an unacceptable risk ──
+
+  - obligationId: "EUMDR.94.OBL.001"
+    kind: obligation
+    title: "Evaluate suspected non-compliant devices"
+    text: "Where the market surveillance authorities of a Member State have sufficient reason to believe that a device presents an unacceptable risk to the health or safety of patients, users or other persons, or to other aspects of the protection of public health, they shall carry out an evaluation relating to the device concerned covering all requirements laid down in this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 94(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - device_evaluation_report
+      - risk_assessment_record
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.94.OBL.002"
+    kind: obligation
+    title: "Economic operator cooperation with evaluation"
+    text: "The relevant economic operators shall cooperate with the market surveillance authorities and provide all necessary information and documentation. The economic operators shall, where necessary, take all appropriate corrective action to bring the device into conformity or to withdraw or recall the device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 94(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - economic_operator_response
+      - corrective_action_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.94.OBL.003"
+    kind: obligation
+    title: "Provisional restrictive measures"
+    text: "Where the market surveillance authorities consider that non-compliance is not restricted to their national territory, they shall inform the Commission and the other Member States of the results of the evaluation and of the actions which they have required the economic operator to take. The authorities may take provisional restrictive measures to protect health and safety."
+    sourceCitation: "Regulation (EU) 2017/745 Article 94(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - restrictive_measure_notification
+      - commission_notification
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 95 — Procedure for dealing with devices presenting an unacceptable risk ──
+
+  - obligationId: "EUMDR.95.OBL.001"
+    kind: obligation
+    title: "Safeguard clause notification"
+    text: "Where, having performed an evaluation under Article 94, the market surveillance authority finds that the device presents an unacceptable risk to the health or safety, it shall without delay require the relevant economic operator to take all appropriate and duly justified corrective action to bring the device into conformity, to withdraw or recall it within a reasonable period. The market surveillance authority shall notify the Commission and the other Member States forthwith."
+    sourceCitation: "Regulation (EU) 2017/745 Article 95(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - safeguard_clause_notification
+      - corrective_action_record
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.95.OBL.002"
+    kind: obligation
+    title: "Commission evaluation of safeguard clause"
+    text: "The Commission shall evaluate the national measure and, where appropriate, adopt implementing acts determining whether the national measure is justified or not. Where the Commission considers the national measure justified, all Member States shall take equivalent restrictive measures in respect of the device concerned."
+    sourceCitation: "Regulation (EU) 2017/745 Article 95(4)-(6)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - commission_evaluation_record
+      - implementing_act_record
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 96 — Procedure at national level for devices presenting an unacceptable risk ──
+
+  - obligationId: "EUMDR.96.OBL.001"
+    kind: obligation
+    title: "National authority restrictive action"
+    text: "Where the market surveillance authority of a Member State takes action against a device presenting an unacceptable risk to the health and safety of patients, users or other persons, the authority may take any appropriate provisional measure to withdraw, recall, or restrict the making available of the device on its national market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 96(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - national_restrictive_measure
+      - withdrawal_recall_record
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.96.OBL.002"
+    kind: obligation
+    title: "Notify Commission and Member States of national measures"
+    text: "The Member State shall immediately notify the Commission and the other Member States of any measures taken under this Article, including sufficient details about the device, the nature of non-compliance, and the corrective actions taken or required."
+    sourceCitation: "Regulation (EU) 2017/745 Article 96(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - commission_notification
+      - member_state_notification
+    applicability:
+      operatorRoles:
+        - competent_authority
+        - member_state
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.96.OBL.003"
+    kind: obligation
+    title: "Economic operator appeal rights"
+    text: "The economic operator shall have the right to be heard before any restrictive measure is adopted, except where urgent action is required because of serious risk. Where a measure is taken without hearing the economic operator, the opportunity to be heard shall be given as soon as possible and the measure shall be reviewed promptly."
+    sourceCitation: "Regulation (EU) 2017/745 Article 96(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - hearing_record
+      - appeal_documentation
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 97 — Other non-compliance ──
+
+  - obligationId: "EUMDR.97.OBL.001"
+    kind: obligation
+    title: "Address non-compliance not posing unacceptable risk"
+    text: "Where the market surveillance authority of a Member State finds that a device is non-compliant with the requirements of this Regulation but does not present an unacceptable risk to health and safety, the authority shall require the relevant economic operator to put an end to the non-compliance within a reasonable period, proportionate to the nature of the non-compliance."
+    sourceCitation: "Regulation (EU) 2017/745 Article 97(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - non_compliance_finding
+      - corrective_action_record
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.97.OBL.002"
+    kind: obligation
+    title: "Manufacturer corrective measures for non-compliance"
+    text: "The economic operator shall ensure that all appropriate corrective action is taken in respect of all devices concerned that it has made available on the market throughout the Union. Where the economic operator does not take adequate corrective action within the period set by the market surveillance authority, the authority shall take all appropriate provisional measures to prohibit or restrict the making available of the device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 97(2)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - corrective_action_record
+      - economic_operator_response
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.97.OBL.003"
+    kind: obligation
+    title: "Non-compliance types to address"
+    text: "Non-compliance requiring corrective action includes: CE marking affixed in violation of this Regulation; CE marking not affixed; EU declaration of conformity not drawn up or not correctly drawn up; technical documentation not available or not complete; registration obligations not fulfilled; misuse of notified body identification number."
+    sourceCitation: "Regulation (EU) 2017/745 Article 97(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - non_compliance_finding
+      - compliance_gap_analysis
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 98 — Preventive health protection measures ──
+
+  - obligationId: "EUMDR.98.OBL.001"
+    kind: obligation
+    title: "Preventive health protection restriction"
+    text: "A Member State may, on duly justified grounds relating to the protection of public health, restrict or prohibit the making available and putting into service of a specific device or category of devices on its territory, where the available evidence indicates that the device or category of devices presents a particular risk to the health and safety of patients, users or other persons or to other aspects of public health protection."
+    sourceCitation: "Regulation (EU) 2017/745 Article 98(1)"
+    mandatory: false
+    requiredEvidenceTypes:
+      - health_protection_measure
+      - risk_justification_record
+    applicability:
+      operatorRoles:
+        - member_state
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.98.OBL.002"
+    kind: obligation
+    title: "Notify Commission of preventive measures"
+    text: "The Member State which has taken a measure pursuant to paragraph 1 shall immediately notify the Commission and all other Member States, giving the reasons for the decision, including any evidence that justified it. Where the Commission considers the national measure justified, it may adopt implementing acts to extend the measure to all Member States."
+    sourceCitation: "Regulation (EU) 2017/745 Article 98(2)-(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - commission_notification
+      - preventive_measure_justification
+    applicability:
+      operatorRoles:
+        - member_state
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 99 — Good administrative practice ──
+
+  - obligationId: "EUMDR.99.OBL.001"
+    kind: obligation
+    title: "Right to be heard"
+    text: "Any measure adopted by the competent authorities of the Member States pursuant to Articles 95 to 98 shall state the exact grounds on which it is based. Such a measure shall be notified without delay to the economic operator concerned, who shall at the same time be informed of the remedies available under the law of the Member State concerned and of the time limits to which such remedies are subject."
+    sourceCitation: "Regulation (EU) 2017/745 Article 99(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - administrative_decision_record
+      - notification_to_economic_operator
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.99.OBL.002"
+    kind: obligation
+    title: "Opportunity to take corrective action before measures"
+    text: "Before a restrictive measure is adopted pursuant to Articles 95 to 98, the economic operator shall be given the opportunity to be heard within an appropriate period of not less than 10 days, unless such consultation is not possible because of the urgency of the measure to be taken on grounds related to the protection of health or safety."
+    sourceCitation: "Regulation (EU) 2017/745 Article 99(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - hearing_record
+      - corrective_action_timeline
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.99.OBL.003"
+    kind: obligation
+    title: "Confidentiality in administrative proceedings"
+    text: "Competent authorities shall observe the principle of confidentiality in respect of information and data obtained in carrying out their tasks in order to protect commercial secrets and personal data."
+    sourceCitation: "Regulation (EU) 2017/745 Article 99(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - confidentiality_procedure
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Article 100 — Tasks of the Commission ──
+
+  - obligationId: "EUMDR.100.OBL.001"
+    kind: obligation
+    title: "Commission coordination of market surveillance"
+    text: "The Commission shall support and facilitate cooperation and coordination between market surveillance authorities through the organisation of joint market surveillance and inspection activities, the development of common approaches to market surveillance, and the provision of guidance on the application of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 100(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - commission_coordination_record
+      - joint_assessment_report
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.100.OBL.002"
+    kind: obligation
+    title: "Commission guidance and joint assessments"
+    text: "The Commission shall facilitate the development of guidance aimed at ensuring effective and harmonised implementation of this Regulation, with a focus on risk-based market surveillance, coordinated enforcement actions, and cooperation with third countries on market surveillance of devices."
+    sourceCitation: "Regulation (EU) 2017/745 Article 100(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - commission_guidance_document
+    applicability:
+      operatorRoles:
+        - commission
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  - constraintId: "EUMDR.93.CON.001"
+    appliesTo: "EUMDR.93.OBL.001"
+    text: "Market surveillance activities shall be proportionate to the risk level of the devices being surveyed and shall take into account any history of non-compliance by the relevant economic operators."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.94.CON.001"
+    appliesTo: "EUMDR.94.OBL.001"
+    text: "The evaluation shall cover all relevant requirements of this Regulation and shall not be limited to the specific aspects that triggered the suspicion of non-compliance."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.95.CON.001"
+    appliesTo: "EUMDR.95.OBL.001"
+    text: "The safeguard clause procedure requires that corrective action be taken within a reasonable period prescribed by the market surveillance authority, commensurate with the nature of the risk."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.96.CON.001"
+    appliesTo: "EUMDR.96.OBL.001"
+    text: "National restrictive measures must be communicated to the Commission and other Member States immediately. Unilateral measures without notification are not permitted except on a provisional basis in cases of urgent risk."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.97.CON.001"
+    appliesTo: "EUMDR.97.OBL.001"
+    text: "The period granted to the economic operator to rectify non-compliance must be reasonable and proportionate. It shall not exceed the time strictly necessary to bring the device into compliance."
+    severity: soft
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.99.CON.001"
+    appliesTo: "EUMDR.99.OBL.002"
+    text: "The minimum period of 10 days for the economic operator to be heard may only be shortened in cases of genuine urgency related to immediate risk to health or safety."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+definitions:
+  - definitionId: "EUMDR.DEF.MARKET_SURVEILLANCE"
+    term: "Market Surveillance"
+    text: "The activities carried out and measures taken by market surveillance authorities to ensure that devices comply with the requirements set out in the applicable Union harmonisation legislation and do not endanger health, safety or any other aspect of public interest protection."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(60), referencing Regulation (EC) No 765/2008"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.RECALL"
+    term: "Recall"
+    text: "Any measure aimed at achieving the return of a device that has already been made available to the end user."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(62)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.WITHDRAWAL"
+    term: "Withdrawal"
+    text: "Any measure aimed at preventing a device in the supply chain from being further made available on the market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(63)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.MARKET_SURVEILLANCE_AUTHORITY"
+    term: "Market Surveillance Authority"
+    text: "An authority of a Member State responsible for carrying out market surveillance on its territory."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(61), referencing Regulation (EC) No 765/2008"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+relationships:
+  # PART_OF relationships — obligations within same article
+  - from: "EUMDR.93.OBL.002"
+    to: "EUMDR.93.OBL.001"
+    type: PART_OF
+    props:
+      note: "Authority designation is a prerequisite for performing market surveillance activities"
+
+  - from: "EUMDR.93.OBL.003"
+    to: "EUMDR.93.OBL.001"
+    type: PART_OF
+    props:
+      note: "Proportionality principle governs surveillance activity planning"
+
+  - from: "EUMDR.93.OBL.004"
+    to: "EUMDR.93.OBL.001"
+    type: PART_OF
+    props:
+      note: "Inspection and testing powers support market surveillance activities"
+
+  - from: "EUMDR.96.OBL.002"
+    to: "EUMDR.96.OBL.001"
+    type: PART_OF
+    props:
+      note: "Notification is a mandatory step following national restrictive action"
+
+  - from: "EUMDR.97.OBL.002"
+    to: "EUMDR.97.OBL.001"
+    type: PART_OF
+    props:
+      note: "Manufacturer corrective measures follow the authority finding of non-compliance"
+
+  # TRIGGERS relationships — sequential procedural flow
+  - from: "EUMDR.94.OBL.001"
+    to: "EUMDR.95.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Evaluation finding of unacceptable risk triggers safeguard clause procedure"
+
+  - from: "EUMDR.95.OBL.001"
+    to: "EUMDR.95.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "National safeguard measure triggers Commission evaluation"
+
+  - from: "EUMDR.94.OBL.001"
+    to: "EUMDR.97.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Evaluation finding of non-compliance (without unacceptable risk) triggers Article 97 procedure"
+
+  # CROSS_REFERENCES — links to existing obligations in other files
+  - from: "EUMDR.94.OBL.002"
+    to: "EUMDR.87.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Market surveillance evaluation may trigger vigilance reporting obligations for the manufacturer"
+
+  - from: "EUMDR.93.OBL.001"
+    to: "EUMDR.83.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Market surveillance complements manufacturer PMS system obligations"
+
+  - from: "EUMDR.99.OBL.003"
+    to: "EUMDR.99.OBL.001"
+    type: PART_OF
+    props:
+      note: "Confidentiality is an integral principle of good administrative practice"

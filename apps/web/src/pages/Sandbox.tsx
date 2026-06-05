@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { SmarticusMark } from '../components/ui/logos.js';
 import { useAuthenticatedApi } from '../auth/useApi.js';
+import { processS } from './Builder.js';
 
 /* ── Types mirrored from @regground/sandbox ─────────────────────────── */
 
@@ -120,26 +121,40 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
   const [result, setResult] = useState<RunResult | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  useEffect(() => { if (initialTaskId) setSelectedId(initialTaskId); }, [initialTaskId]);
+  // Save-as-agent state (the Builder is now an inline action on a run)
+  const [agentName, setAgentName] = useState('');
+  const [savingAgent, setSavingAgent] = useState(false);
+  const [savedAgentMsg, setSavedAgentMsg] = useState<string | null>(null);
+  const [savedAgentOk, setSavedAgentOk] = useState(false);
 
-  /* Load catalog */
+  // The route (/app/sandbox vs /app/sandbox/:taskId) is the single source of
+  // truth for which process is open. No process is auto-selected — choosing a process is
+  // an explicit first step.
+  useEffect(() => { setSelectedId(initialTaskId); }, [initialTaskId]);
+
+  /* Load catalog once (used by the picker and the chain-hints strip). */
   useEffect(() => {
     api<{ tasks: TaskCard[] }>('/api/sandbox/tasks')
-      .then((r) => {
-        setTasks(r.tasks);
-        if (!selectedId && r.tasks[0]) setSelectedId(r.tasks[0].id);
-      })
+      .then((r) => setTasks(r.tasks))
       .catch((e) => setError(String(e?.message ?? e)));
     return () => { eventSourceRef.current?.close(); };
   }, []);
 
-  /* Load detail when selection changes */
+  /* Load detail when selection changes; clear everything when nothing is selected. */
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId) {
+      setDetail(null);
+      setEvents([]);
+      setResult(null);
+      return;
+    }
     setDetail(null);
     setEvents([]);
     setResult(null);
     setError(null);
+    setAgentName('');
+    setSavedAgentMsg(null);
+    setSavedAgentOk(false);
     api<TaskDetail>(`/api/sandbox/tasks/${selectedId}`)
       .then((d) => {
         setDetail(d);
@@ -239,18 +254,73 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     }
   }
 
+  /* Save the current task + edited input as a reusable agent. This is the
+   * Builder, folded into the run screen: one click turns a working run into
+   * something you can re-open and re-run with the same input. */
+  async function saveAsAgent() {
+    if (!detail) return;
+    const process = processS.find((j) => j.taskId === detail.id);
+    const name =
+      agentName.trim() ||
+      `${detail.name}${process ? '' : ' agent'}`;
+    const riskBand: 'low' | 'medium' | 'high' =
+      process?.risk === 'HIGH' ? 'high' : process?.risk === 'LOW' ? 'low' : 'medium';
+    const regulations =
+      process?.regulations ?? detail.regulation.split('·').map((s) => s.trim()).filter(Boolean);
+
+    setSavingAgent(true);
+    setSavedAgentMsg(null);
+    try {
+      const saved = await api<{ id: string }>('/api/builder/agents', {
+        method: 'POST',
+        body: JSON.stringify({
+          name,
+          processId: process?.id ?? detail.id,
+          processTitle: process?.title ?? detail.name,
+          taskId: detail.id,
+          regulations,
+          evidenceStatus: {},
+          guardrails: { qualification: true, compliance: true, 'review-gate': false, 'strict-schema': true },
+          outputFormat: 'draft-doc',
+          deployTarget: 'sandbox',
+          riskBand,
+          description: detail.oneLiner,
+        }),
+      });
+      // Persist the exact input so the agent re-runs with it.
+      await api(`/api/builder/agents/${saved.id}/attach`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          slot: '__input',
+          filename: 'input.json',
+          content: JSON.stringify(inputValue ?? {}, null, 2),
+          contentType: 'application/json',
+        }),
+      });
+      setSavedAgentOk(true);
+      setSavedAgentMsg(`Saved "${name}" to your agents.`);
+    } catch (e) {
+      setSavedAgentOk(false);
+      setSavedAgentMsg(e instanceof Error ? e.message : 'Save failed.');
+    } finally {
+      setSavingAgent(false);
+    }
+  }
+
   /* ── Catalog state ─────────────────────────────────────────────── */
   if (!detail) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
         <header style={{ padding: '40px 40px 8px' }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Step 1 of 4 · Select a process</div>
           <h1 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-            Pick a process to run.
+            Choose the process you want to run.
           </h1>
-          <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 13 }}>
-            Each process runs against the obligation graph, applies the relevant rules to your input,
-            and returns an answer with citations and a decision trace.
+          <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 620, lineHeight: 1.55 }}>
+            Each process is one regulatory check. Pick one and you will then configure the input, run it, and
+            optionally save it as a reusable agent.
           </p>
+          <CatalogStepHint />
         </header>
         <div style={{ padding: '24px 40px 56px' }}>
           {error && <div style={{ padding: 12, color: '#B00020', fontSize: 13 }}>Could not load: {error}</div>}
@@ -259,7 +329,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             {tasks?.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setSelectedId(t.id)}
+                onClick={() => navigate(`/app/sandbox/${t.id}`)}
                 style={{
                   textAlign: 'left',
                   background: 'var(--paper)',
@@ -307,10 +377,10 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
           <button
-            onClick={() => { setSelectedId(undefined); setDetail(null); setResult(null); setEvents([]); }}
+            onClick={() => navigate('/app/sandbox')}
             style={GHOST_BUTTON}
           >
-            ← Change
+            ← All processs
           </button>
           <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {detail.name}
@@ -320,7 +390,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             upstream={detail.chainHints?.upstream ?? []}
             downstream={detail.chainHints?.downstream ?? []}
             tasks={tasks ?? []}
-            onPick={(id) => { setSelectedId(id); setDetail(null); setResult(null); setEvents([]); }}
+            onPick={(id) => navigate(`/app/sandbox/${id}`)}
           />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -331,10 +401,12 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             className="btn-orange"
             style={{ fontSize: 14, padding: '10px 22px' }}
           >
-            {running ? 'Running…' : 'Run process'}
+            {running ? 'Running…' : 'Run'}
           </button>
         </div>
       </header>
+
+      <Stepper current={result ? 'save' : running ? 'run' : 'configure'} />
 
       <div
         style={{
@@ -403,9 +475,22 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           )}
 
           {!running && !result && (
-            <div style={{ ...CARD, padding: 28, textAlign: 'center', color: 'var(--ink-3)', fontSize: 13 }}>
-              Edit the input on the left, then press <b style={{ color: 'var(--ink)' }}>Run process</b> to
-              get the answer, applicable regulations, and decision trace.
+            <div style={{ ...CARD, padding: 20 }}>
+              <div className="eyebrow" style={{ marginBottom: 10 }}>How to run this</div>
+              <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                  On the left, <b style={{ color: 'var(--ink)' }}>paste your own document or data</b> over the
+                  sample — or just run the sample to see how it works.
+                </li>
+                <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                  Press <b style={{ color: 'var(--ink)' }}>Run</b> (top right).
+                </li>
+                <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                  Read the result here: the <b style={{ color: 'var(--ink)' }}>answer</b>, the{' '}
+                  <b style={{ color: 'var(--ink)' }}>regulations</b> behind it, and the{' '}
+                  <b style={{ color: 'var(--ink)' }}>decision trace</b>.
+                </li>
+              </ol>
             </div>
           )}
 
@@ -431,6 +516,54 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
               runId={result?.runId}
               onOpenFullTrace={result ? () => navigate(`/app/trails/${result.runId}`) : undefined}
             />
+          )}
+
+          {result && !running && (
+            <section style={{ ...CARD, padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
+                <div className="eyebrow">Reuse this</div>
+                {savedAgentOk && (
+                  <button onClick={() => navigate('/app/builder')} style={GHOST_BUTTON}>Open in agents →</button>
+                )}
+              </div>
+              <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+                Save this process with the input you just used. It becomes a reusable agent you can re-run anytime.
+              </p>
+              {savedAgentOk ? (
+                <div style={{ fontSize: 13, color: 'var(--ok, #2a8c4f)' }}>{savedAgentMsg}</div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <input
+                    value={agentName}
+                    onChange={(e) => setAgentName(e.target.value)}
+                    placeholder={`${detail.name}`}
+                    disabled={savingAgent}
+                    style={{
+                      flex: 1,
+                      minWidth: 180,
+                      fontFamily: 'var(--sans)',
+                      fontSize: 13,
+                      color: 'var(--ink)',
+                      background: '#fff',
+                      border: '1px solid var(--rule)',
+                      borderRadius: 6,
+                      padding: '8px 10px',
+                    }}
+                  />
+                  <button
+                    onClick={saveAsAgent}
+                    disabled={savingAgent}
+                    className="btn-orange"
+                    style={{ fontSize: 13, padding: '8px 16px' }}
+                  >
+                    {savingAgent ? 'Saving…' : 'Save as agent'}
+                  </button>
+                </div>
+              )}
+              {savedAgentMsg && !savedAgentOk && (
+                <div style={{ marginTop: 8, fontSize: 12, color: '#B00020' }}>{savedAgentMsg}</div>
+              )}
+            </section>
           )}
         </section>
       </div>
@@ -461,6 +594,91 @@ const GHOST_BUTTON: React.CSSProperties = {
   color: 'var(--ink-2)',
   cursor: 'pointer',
 };
+
+/* ── Flow stepper ────────────────────────────────────────────────────── */
+
+const FLOW_STEPS = [
+  { key: 'select', label: 'Select process' },
+  { key: 'configure', label: 'Configure input' },
+  { key: 'run', label: 'Run' },
+  { key: 'save', label: 'Save / edit' },
+] as const;
+
+/** Slim Select → Configure → Run → Save indicator on the run screen. */
+function Stepper({ current }: { current: 'configure' | 'run' | 'save' }) {
+  const currentIdx = FLOW_STEPS.findIndex((s) => s.key === current);
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 0,
+        padding: '12px 32px',
+        borderBottom: '1px solid var(--rule)',
+        background: 'var(--paper-deep)',
+      }}
+    >
+      {FLOW_STEPS.map((s, i) => {
+        const done = i < currentIdx;
+        const active = s.key === current;
+        const color = active ? 'var(--orange)' : done ? 'var(--ink)' : 'var(--ink-4)';
+        return (
+          <div key={s.key} style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <span
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  border: `1.5px solid ${active || done ? color : 'var(--rule-strong)'}`,
+                  background: done ? 'var(--ink)' : 'transparent',
+                  color: done ? 'var(--paper)' : color,
+                  fontFamily: 'var(--mono)',
+                  fontSize: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {done ? '✓' : i + 1}
+              </span>
+              <span style={{ fontSize: 12, color, fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }}>
+                {s.label}
+              </span>
+            </div>
+            {i < FLOW_STEPS.length - 1 && (
+              <span style={{ width: 22, height: 1, background: 'var(--rule)', margin: '0 12px' }} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Shows the same four steps on the catalog screen so the user sees the path ahead. */
+function CatalogStepHint() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+      {FLOW_STEPS.map((s, i) => (
+        <div key={s.key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            style={{
+              fontSize: 11.5,
+              color: i === 0 ? 'var(--ink)' : 'var(--ink-4)',
+              fontWeight: i === 0 ? 600 : 400,
+            }}
+          >
+            {i + 1}. {s.label}
+          </span>
+          {i < FLOW_STEPS.length - 1 && <span style={{ color: 'var(--ink-4)', fontSize: 11 }}>→</span>}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -798,6 +1016,26 @@ function OutputRenderer({ value }: { value: unknown }) {
     );
   }
 
+  // PSUR Content Review — per-obligation content findings.
+  const findings = obj.findings;
+  if (
+    Array.isArray(findings) &&
+    findings.length > 0 &&
+    findings.every((f) => !!f && typeof f === 'object' && 'assessment' in (f as object) && 'status' in (f as object))
+  ) {
+    return <PsurFindingsView obj={obj} findings={findings as Array<Record<string, unknown>>} />;
+  }
+
+  // PSUR Template Reviewer — per-obligation section coverage.
+  const coverage = obj.coverage;
+  if (
+    Array.isArray(coverage) &&
+    coverage.length > 0 &&
+    coverage.every((c) => !!c && typeof c === 'object' && 'status' in (c as object) && 'mappedSection' in (c as object))
+  ) {
+    return <PsurCoverageView obj={obj} coverage={coverage as Array<Record<string, unknown>>} />;
+  }
+
   // Generic object — show top-level fields.
   const entries = Object.entries(obj);
   return (
@@ -805,6 +1043,160 @@ function OutputRenderer({ value }: { value: unknown }) {
       {entries.map(([k, v]) => (
         <ValueRow key={k} label={labelFromKey(k)} value={v} />
       ))}
+    </div>
+  );
+}
+
+const STATUS_CHIP: Record<string, { color: string; bg: string; label: string }> = {
+  met: { color: '#0f7a4d', bg: 'rgba(15,122,77,0.10)', label: 'Met' },
+  covered: { color: '#0f7a4d', bg: 'rgba(15,122,77,0.10)', label: 'Covered' },
+  partial: { color: '#a8650a', bg: 'rgba(168,101,10,0.12)', label: 'Partial' },
+  gap: { color: 'var(--orange)', bg: 'rgba(250,80,15,0.10)', label: 'Gap' },
+  'not-covered': { color: 'var(--orange)', bg: 'rgba(250,80,15,0.10)', label: 'Not covered' },
+};
+
+function StatusChip({ status }: { status: string }) {
+  const s = STATUS_CHIP[status] ?? { color: 'var(--ink-2)', bg: 'var(--paper-deep)', label: status };
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        height: 20,
+        padding: '0 8px',
+        borderRadius: 10,
+        border: `1px solid ${s.color}`,
+        color: s.color,
+        background: s.bg,
+        fontFamily: 'var(--mono)',
+        fontSize: 10,
+        letterSpacing: '0.04em',
+        textTransform: 'uppercase',
+        flexShrink: 0,
+      }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+function OverallBanner({ status, text }: { status: string; text: string }) {
+  const good = status === 'compliant' || status === 'ready';
+  const minor = status === 'minor-gaps' || status === 'minor-changes';
+  const color = good ? '#0f7a4d' : minor ? '#a8650a' : 'var(--orange)';
+  const bg = good ? 'rgba(15,122,77,0.08)' : minor ? 'rgba(168,101,10,0.08)' : 'rgba(250,80,15,0.08)';
+  return (
+    <div style={{ border: `1px solid ${color}`, background: bg, borderRadius: 8, padding: '10px 12px' }}>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase', color }}>
+        {status.replace(/-/g, ' ')}
+      </div>
+      {text && <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5, marginTop: 4 }}>{text}</div>}
+    </div>
+  );
+}
+
+function PsurFindingsView({ obj, findings }: { obj: Record<string, unknown>; findings: Array<Record<string, unknown>> }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {typeof obj.overallStatus === 'string' && (
+        <OverallBanner status={obj.overallStatus} text={typeof obj.recommendation === 'string' ? obj.recommendation : ''} />
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {findings.map((f, i) => {
+          const status = String(f.status ?? '');
+          const evidence = typeof f.evidence === 'string' ? f.evidence : '';
+          const gap = typeof f.gap === 'string' ? f.gap : '';
+          return (
+            <div key={i} style={{ border: '1px solid var(--rule)', borderRadius: 8, padding: 12, background: 'var(--paper)' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4 }}>
+                  {String(f.requirement ?? f.obligationId ?? '')}
+                </div>
+                <StatusChip status={status} />
+              </div>
+              {typeof f.assessment === 'string' && f.assessment && (
+                <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55, marginTop: 6 }}>{f.assessment}</div>
+              )}
+              {evidence && (
+                <div style={{ marginTop: 8, paddingLeft: 10, borderLeft: '2px solid var(--rule-strong)', fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.5, fontStyle: 'italic' }}>
+                  {evidence}
+                </div>
+              )}
+              {gap && (
+                <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--orange)', lineHeight: 1.5 }}>
+                  <b>Gap:</b> {gap}
+                </div>
+              )}
+              {typeof f.citation === 'string' && f.citation && (
+                <div style={{ marginTop: 8, fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{f.citation}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function PsurCoverageView({ obj, coverage }: { obj: Record<string, unknown>; coverage: Array<Record<string, unknown>> }) {
+  const missing = Array.isArray(obj.missingSections) ? (obj.missingSections as unknown[]).map(String).filter(Boolean) : [];
+  const recs = Array.isArray(obj.structuralRecommendations)
+    ? (obj.structuralRecommendations as unknown[]).map(String).filter(Boolean)
+    : [];
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {typeof obj.readiness === 'string' && (
+        <OverallBanner status={obj.readiness} text={typeof obj.summary === 'string' ? obj.summary : ''} />
+      )}
+      {missing.length > 0 && (
+        <div style={{ border: '1px solid var(--orange)', background: 'rgba(250,80,15,0.06)', borderRadius: 8, padding: '10px 12px' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--orange)', marginBottom: 4 }}>
+            Sections to add
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--ink)', lineHeight: 1.5 }}>{missing.join(' · ')}</div>
+        </div>
+      )}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {coverage.map((c, i) => {
+          const status = String(c.status ?? '');
+          const mapped = typeof c.mappedSection === 'string' ? c.mappedSection : '';
+          const rec = typeof c.recommendation === 'string' ? c.recommendation : '';
+          return (
+            <div key={i} style={{ border: '1px solid var(--rule)', borderRadius: 8, padding: 12, background: 'var(--paper)' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.4 }}>
+                  {String(c.requirement ?? c.obligationId ?? '')}
+                </div>
+                <StatusChip status={status} />
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--ink-3)', marginTop: 6 }}>
+                {mapped ? <>Maps to section: <b style={{ color: 'var(--ink-2)' }}>{mapped}</b></> : 'No section captures this requirement.'}
+              </div>
+              {typeof c.rationale === 'string' && c.rationale && (
+                <div style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55, marginTop: 6 }}>{c.rationale}</div>
+              )}
+              {rec && (
+                <div style={{ marginTop: 8, fontSize: 12.5, color: 'var(--orange)', lineHeight: 1.5 }}>
+                  <b>Recommend:</b> {rec}
+                </div>
+              )}
+              {typeof c.citation === 'string' && c.citation && (
+                <div style={{ marginTop: 8, fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>{c.citation}</div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {recs.length > 0 && (
+        <div style={{ border: '1px solid var(--rule)', borderRadius: 8, padding: '10px 12px', background: 'var(--paper-deep)' }}>
+          <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--ink-3)', marginBottom: 6 }}>
+            Structural recommendations
+          </div>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.6 }}>
+            {recs.map((r, i) => (<li key={i}>{r}</li>))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

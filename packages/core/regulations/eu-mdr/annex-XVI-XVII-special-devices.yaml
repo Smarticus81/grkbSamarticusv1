@@ -1,0 +1,299 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Annexes XVI-XVII — Non-medical devices and correlation table"
+jurisdiction: EU_MDR
+processType: REGULATORY_SCOPE
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ─── Annex XVI — Non-medical purpose devices (Article 1(2)) ───────────────────
+
+  - obligationId: "EUMDR.AXVI.OBL.001"
+    kind: obligation
+    title: "Contact lenses and ocular items without medical purpose"
+    text: "Contact lenses or other items intended to be introduced into or onto the eye fall within the scope of this Regulation pursuant to Article 1(2), even when they do not have an intended medical purpose. Such products are subject to the general safety and performance requirements and conformity assessment procedures applicable under this Regulation, subject to the adoption of common specifications."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVI Group 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - annex_xvi_scope_determination
+      - common_specifications_compliance
+    applicability:
+      deviceTypes:
+        - annex_xvi_device
+        - contact_lens_non_medical
+      conditions:
+        - "product is intended to be introduced into or onto the eye without a medical purpose"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXVI.OBL.002"
+    kind: obligation
+    title: "Surgically invasive products for anatomy modification"
+    text: "Products intended to be totally or partially introduced into the human body through surgically invasive means for the purpose of modification of the anatomy or fixation of body parts, with the exception of tattoo products and body piercings, fall within the scope of this Regulation pursuant to Article 1(2). These products are subject to the general safety and performance requirements and conformity assessment procedures applicable under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVI Group 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - annex_xvi_scope_determination
+      - common_specifications_compliance
+      - surgical_invasiveness_assessment
+    applicability:
+      deviceTypes:
+        - annex_xvi_device
+        - surgically_invasive_non_medical
+      conditions:
+        - "product is surgically invasive for anatomy modification or body part fixation"
+        - "excludes tattoo products and body piercings"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXVI.OBL.003"
+    kind: obligation
+    title: "Facial and dermal fillers"
+    text: "Substances, combinations of substances, or items intended to be used for facial or other dermal or mucous membrane filling by subcutaneous, submucous or intradermal injection or other introduction, excluding those for tattooing, fall within the scope of this Regulation pursuant to Article 1(2). These products are subject to the general safety and performance requirements and conformity assessment procedures applicable under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVI Group 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - annex_xvi_scope_determination
+      - common_specifications_compliance
+      - biocompatibility_assessment
+    applicability:
+      deviceTypes:
+        - annex_xvi_device
+        - dermal_filler_non_medical
+      conditions:
+        - "product is for facial or dermal filling by injection or other introduction"
+        - "excludes products used for tattooing"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXVI.OBL.004"
+    kind: obligation
+    title: "Brain stimulation equipment"
+    text: "Equipment intended to be used to reduce, remove or destroy adipose tissue, such as equipment for liposuction, lipolysis or lipoplasty, falls within the scope of this Regulation pursuant to Article 1(2). Equipment intended for brain stimulation that applies electrical currents or magnetic or electromagnetic fields that penetrate the cranium to modify neuronal activity in the brain likewise falls within scope. These products are subject to the general safety and performance requirements and conformity assessment procedures applicable under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVI Group 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - annex_xvi_scope_determination
+      - common_specifications_compliance
+      - electromagnetic_safety_assessment
+    applicability:
+      deviceTypes:
+        - annex_xvi_device
+        - brain_stimulation_non_medical
+      conditions:
+        - "equipment applies electrical currents or magnetic/electromagnetic fields penetrating the cranium"
+        - "intended to modify neuronal activity without a medical purpose"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXVI.OBL.005"
+    kind: obligation
+    title: "Liposuction, lipolysis and lipoplasty equipment"
+    text: "Equipment intended to be used to reduce, remove or destroy adipose tissue, such as equipment for liposuction, lipolysis or lipoplasty, falls within the scope of this Regulation pursuant to Article 1(2). These products are subject to the general safety and performance requirements and conformity assessment procedures applicable under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVI Group 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - annex_xvi_scope_determination
+      - common_specifications_compliance
+    applicability:
+      deviceTypes:
+        - annex_xvi_device
+        - liposuction_equipment_non_medical
+      conditions:
+        - "equipment is intended to reduce, remove or destroy adipose tissue"
+        - "includes liposuction, lipolysis or lipoplasty equipment"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXVI.OBL.006"
+    kind: obligation
+    title: "High-intensity electromagnetic radiation equipment for skin treatment"
+    text: "Equipment emitting high-intensity electromagnetic radiation (e.g. infra-red, visible light and ultra-violet) intended for use on the human body, including coherent and non-coherent sources, monochromatic and broad-spectrum, such as lasers and intense pulsed light (IPL) equipment, for skin resurfacing, tattoo or hair removal or other skin treatment, falls within the scope of this Regulation pursuant to Article 1(2). These products are subject to the general safety and performance requirements and conformity assessment procedures applicable under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVI Group 6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - annex_xvi_scope_determination
+      - common_specifications_compliance
+      - optical_radiation_safety_assessment
+    applicability:
+      deviceTypes:
+        - annex_xvi_device
+        - laser_ipl_non_medical
+      conditions:
+        - "equipment emits high-intensity electromagnetic radiation for skin treatment"
+        - "includes lasers and IPL equipment for resurfacing, tattoo or hair removal"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXVI.OBL.007"
+    kind: obligation
+    title: "Common specifications prerequisite for clinical evaluation of Annex XVI devices"
+    text: "For devices listed in Annex XVI, the requirements of this Regulation relating to clinical evaluation and clinical investigation shall apply only when and to the extent that common specifications have been adopted by the Commission pursuant to Article 1(2). Until common specifications have been adopted, manufacturers of Annex XVI devices shall comply with all other applicable requirements of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(2), Annex XVI"
+    mandatory: true
+    requiredEvidenceTypes:
+      - common_specifications_applicability_assessment
+    applicability:
+      deviceTypes:
+        - annex_xvi_device
+      conditions:
+        - "clinical evaluation and clinical investigation requirements contingent on common specifications adoption"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ─── Annex XVII — Correlation table ───────────────────────────────────────────
+
+  - obligationId: "EUMDR.AXVII.OBL.001"
+    kind: obligation
+    title: "Correlation table for transitional interpretation — MDD to MDR"
+    text: "Annex XVII provides a correlation table mapping provisions of Directive 93/42/EEC (Medical Devices Directive) and Directive 90/385/EEC (Active Implantable Medical Devices Directive) to corresponding provisions of this Regulation. Manufacturers, notified bodies, and competent authorities shall use this correlation table when interpreting transitional provisions and when assessing the correspondence of obligations under the previous directives with those under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVII"
+    mandatory: true
+    requiredEvidenceTypes:
+      - transitional_mapping_record
+      - regulatory_gap_analysis
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - notified_body
+        - competent_authority
+      conditions:
+        - "applicable during transition from MDD/AIMDD to MDR"
+        - "use for interpreting how previous directive obligations correspond to MDR obligations"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXVII.OBL.002"
+    kind: obligation
+    title: "Correlation table for legacy device transition planning"
+    text: "Manufacturers of devices that were lawfully placed on the market pursuant to Directives 93/42/EEC or 90/385/EEC shall reference the Annex XVII correlation table to identify which provisions of this Regulation correspond to the provisions under which their devices were previously certified. This mapping shall inform transition planning, regulatory gap analysis, and conformity assessment strategy under the MDR."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVII, read with Articles 120-122"
+    mandatory: true
+    requiredEvidenceTypes:
+      - transitional_mapping_record
+      - legacy_device_inventory
+      - mdr_transition_plan
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+      conditions:
+        - "applicable to legacy devices transitioning from MDD/AIMDD to MDR"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  - constraintId: "EUMDR.AXVI.CON.001"
+    appliesTo: "EUMDR.AXVI.OBL.007"
+    text: "Clinical evaluation and clinical investigation requirements for Annex XVI devices are contingent upon the adoption of common specifications by the Commission. Until common specifications are adopted, these specific requirements do not apply, but all other requirements of the Regulation remain in force."
+    severity: hard
+
+  - constraintId: "EUMDR.AXVI.CON.002"
+    appliesTo: "EUMDR.AXVI.OBL.001"
+    text: "Non-medical contact lenses and other ocular items must meet the same general safety and performance requirements as medical devices of equivalent risk class. The absence of a medical purpose does not reduce the applicable safety standards."
+    severity: hard
+
+  - constraintId: "EUMDR.AXVI.CON.003"
+    appliesTo: "EUMDR.AXVI.OBL.002"
+    text: "Tattoo products and body piercings are explicitly excluded from Group 2 of Annex XVI. The exclusion applies only to tattoo products and piercings; all other surgically invasive products for anatomy modification remain in scope."
+    severity: hard
+
+  - constraintId: "EUMDR.AXVI.CON.004"
+    appliesTo: "EUMDR.AXVI.OBL.003"
+    text: "Products intended for tattooing are excluded from Group 3 of Annex XVI. All other facial and dermal fillers, including hyaluronic acid fillers used for cosmetic purposes, remain within scope."
+    severity: hard
+
+  - constraintId: "EUMDR.AXVII.CON.001"
+    appliesTo: "EUMDR.AXVII.OBL.001"
+    text: "The correlation table is a reference tool and does not create new obligations. Where there is no direct correspondence between a directive provision and a regulation provision, the applicable MDR requirement shall be determined by its own terms, not by analogy with the directive."
+    severity: soft
+
+definitions:
+  - definitionId: "EUMDR.DEF.ANNEX_XVI_DEVICE"
+    term: "Annex XVI Device"
+    text: "A product without an intended medical purpose that falls within one of the groups listed in Annex XVI of Regulation (EU) 2017/745 and is therefore subject to the requirements of this Regulation as specified in Article 1(2)."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(2), Annex XVI"
+
+  - definitionId: "EUMDR.DEF.COMMON_SPECIFICATIONS"
+    term: "Common Specifications"
+    text: "A set of technical and/or clinical requirements, other than a standard, that provides a means of complying with the legal obligations applicable to a device, process or system. Common specifications for Annex XVI devices are adopted by the Commission by means of implementing acts."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(71), Article 9"
+
+  - definitionId: "EUMDR.DEF.CORRELATION_TABLE"
+    term: "Correlation Table"
+    text: "The table set out in Annex XVII mapping the provisions of Directive 93/42/EEC (MDD) and Directive 90/385/EEC (AIMDD) to corresponding provisions of Regulation (EU) 2017/745 (MDR), used for transitional interpretation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XVII"
+
+relationships:
+  - from: "EUMDR.AXVI.OBL.001"
+    to: "EUMDR.1.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XVI Group 1 devices are brought into scope by Article 1(2)"
+
+  - from: "EUMDR.AXVI.OBL.002"
+    to: "EUMDR.1.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XVI Group 2 devices are brought into scope by Article 1(2)"
+
+  - from: "EUMDR.AXVI.OBL.003"
+    to: "EUMDR.1.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XVI Group 3 devices are brought into scope by Article 1(2)"
+
+  - from: "EUMDR.AXVI.OBL.004"
+    to: "EUMDR.1.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XVI Group 4 devices are brought into scope by Article 1(2)"
+
+  - from: "EUMDR.AXVI.OBL.005"
+    to: "EUMDR.1.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XVI Group 5 devices are brought into scope by Article 1(2)"
+
+  - from: "EUMDR.AXVI.OBL.006"
+    to: "EUMDR.1.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XVI Group 6 devices are brought into scope by Article 1(2)"
+
+  - from: "EUMDR.AXVI.OBL.007"
+    to: "EUMDR.1.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Common specifications prerequisite derives from Article 1(2) scope provision"
+
+  - from: "EUMDR.AXVI.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "Annex XVI devices must undergo conformity assessment per Article 52"
+
+  - from: "EUMDR.AXVII.OBL.001"
+    to: "EUMDR.AXVII.OBL.002"
+    type: TRIGGERS
+    props:
+      note: "The correlation table informs legacy device transition planning"

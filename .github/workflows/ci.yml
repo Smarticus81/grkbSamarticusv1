@@ -10,7 +10,7 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-jobs:
+processs:
   ci:
     name: CI (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest

@@ -1,0 +1,826 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Chapter I — Subject matter and scope (Articles 1-4)"
+jurisdiction: EU_MDR
+processType: REGULATORY_SCOPE
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ─── Chapter-level grouping node ────────────────────────────────────────────
+  - obligationId: "EUMDR.CH1.OBL.000"
+    kind: obligation
+    title: "Chapter I — Subject matter and scope"
+    text: "Chapter I of the EU MDR establishes the subject matter and scope of the Regulation, defines key terms used throughout, empowers the Commission to amend definitions, and sets rules for the regulatory status of borderline and combination products."
+    sourceCitation: "Regulation (EU) 2017/745 Chapter I (Articles 1-4)"
+    mandatory: true
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ─── Article 1 — Subject matter and scope ──────────────────────────────────
+  - obligationId: "EUMDR.1.OBL.001"
+    kind: obligation
+    title: "Rules for placing devices on the market"
+    text: "This Regulation lays down rules concerning the placing on the market, making available on the market or putting into service of medical devices for human use and accessories for such devices in the Union. It also applies to clinical investigations conducted in the Union concerning such devices and accessories."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(1)"
+    mandatory: true
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.1.OBL.002"
+    kind: obligation
+    title: "Scope includes Annex XVI devices without medical purpose"
+    text: "This Regulation shall also apply to groups of products without an intended medical purpose that are listed in Annex XVI. Requirements relating to clinical evaluation and clinical investigation in relation to such products shall apply only where a common specification has been adopted."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(2)"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - annex_xvi_device
+      conditions:
+        - "applies to devices listed in Annex XVI even without a medical purpose"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.1.OBL.003"
+    kind: obligation
+    title: "Devices incorporating viable tissues or cells"
+    text: "Devices that incorporate viable tissues or cells of human or animal origin, or their derivatives, that are covered by Directive 2004/23/EC or Regulation (EC) No 1394/2007 are subject to this Regulation only in respect of the requirements of this Regulation that relate to the device aspects not covered by those acts."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(4)"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - combination_device
+      conditions:
+        - "device incorporates viable human or animal tissues or cells"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.1.OBL.004"
+    kind: obligation
+    title: "Exclusion of in vitro diagnostic medical devices"
+    text: "This Regulation does not apply to in vitro diagnostic medical devices covered by Regulation (EU) 2017/746."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(5)"
+    mandatory: true
+    applicability:
+      conditions:
+        - "IVDs are excluded from the scope of this Regulation"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.1.OBL.005"
+    kind: obligation
+    title: "Exclusions — medicinal products, cosmetics, food, and other product types"
+    text: "This Regulation does not apply to medicinal products as defined in Directive 2001/83/EC, to cosmetic products covered by Regulation (EC) No 1223/2009, to food covered by Regulation (EC) No 178/2002, or to products covered by Council Directive 90/385/EEC to the extent superseded."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(5)-(6)"
+    mandatory: true
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.1.OBL.006"
+    kind: obligation
+    title: "General safety and performance requirements"
+    text: "Devices may only be placed on the market or put into service if they comply with this Regulation when duly supplied and properly installed, maintained and used in accordance with their intended purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(1), read with Article 5(1)"
+    mandatory: true
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ─── Article 3 — Amendment of certain definitions ──────────────────────────
+  - obligationId: "EUMDR.3.OBL.001"
+    kind: obligation
+    title: "Commission empowered to amend definitions via delegated acts"
+    text: "The Commission shall be empowered to adopt delegated acts in accordance with Article 115 to amend the definitions set out in Article 2, in light of technical progress and taking into account possible relevant international regulatory developments and technical standards, and harmonised definitions adopted in other Union legislation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 3"
+    mandatory: true
+    applicability:
+      conditions:
+        - "procedural provision; Commission power to amend definitions via delegated acts"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ─── Article 4 — Regulatory status of products ─────────────────────────────
+  - obligationId: "EUMDR.4.OBL.001"
+    kind: obligation
+    title: "Determination of regulatory status of borderline products"
+    text: "Where a Member State considers that a product, or a category or group of products, does not fall within the definitions of 'medical device' or 'accessory for a medical device', but may satisfy the definition of a medical device or of an accessory under another Directive or Regulation, the Commission may, by means of implementing acts, determine the regulatory status of that product."
+    sourceCitation: "Regulation (EU) 2017/745 Article 4(1)"
+    mandatory: true
+    applicability:
+      conditions:
+        - "applies to borderline products whose classification as a medical device is uncertain"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.4.OBL.002"
+    kind: obligation
+    title: "Combination product containing a device and a medicinal substance"
+    text: "A product that comprises both a device and a medicinal substance where the principal mode of action of the product is that of the device shall be regulated as a device under this Regulation. If the principal mode of action of the integral medicinal substance is ancillary to that of the device, the product is governed by this Regulation, but the medicinal substance shall be assessed in accordance with Directive 2001/83/EC."
+    sourceCitation: "Regulation (EU) 2017/745 Article 1(8) read with Article 4"
+    mandatory: true
+    applicability:
+      deviceTypes:
+        - combination_device
+      conditions:
+        - "device incorporates an integral medicinal substance with ancillary action"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.4.OBL.003"
+    kind: obligation
+    title: "Consultation procedure for borderline classification"
+    text: "The Commission may, on its own initiative or at the request of a Member State, after consulting the MDCG, decide by means of implementing acts whether a specific product or category of products falls within the definitions of 'medical device' or 'accessory for a medical device'."
+    sourceCitation: "Regulation (EU) 2017/745 Article 4(1)"
+    mandatory: true
+    applicability:
+      conditions:
+        - "procedural: Commission may issue implementing acts on borderline classification"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.4.OBL.004"
+    kind: obligation
+    title: "Member State notification of borderline product decisions"
+    text: "Where Member States have diverging views on the qualification of a product or category of products as a medical device, they shall bring the matter to the attention of the Commission, which shall decide on the regulatory status of the product concerned."
+    sourceCitation: "Regulation (EU) 2017/745 Article 4(2)"
+    mandatory: true
+    applicability:
+      conditions:
+        - "procedural: Member States must notify Commission of divergent borderline determinations"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  ARTICLE 2 — DEFINITIONS
+# ═══════════════════════════════════════════════════════════════════════════════
+definitions:
+  # ── Core device definitions ─────────────────────────────────────────────────
+  - definitionId: "EUMDR.DEF.MEDICAL_DEVICE"
+    term: "Medical Device"
+    text: "Any instrument, apparatus, appliance, software, implant, reagent, material or other article intended by the manufacturer to be used, alone or in combination, for human beings for one or more of the following specific medical purposes: diagnosis, prevention, monitoring, prediction, prognosis, treatment or alleviation of disease; diagnosis, monitoring, treatment, alleviation of, or compensation for, an injury or disability; investigation, replacement or modification of the anatomy or of a physiological or pathological process or state; providing information by means of in vitro examination of specimens derived from the human body, including organ, blood and tissue donations, and which does not achieve its principal intended action by pharmacological, immunological or metabolic means, in or on the human body, but which may be assisted in its function by such means."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(1)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.ACCESSORY"
+    term: "Accessory for a Medical Device"
+    text: "An article which, whilst not being itself a medical device, is intended by its manufacturer to be used together with one or several particular medical device(s) to specifically enable the medical device(s) to be used in accordance with its/their intended purpose(s) or to specifically and directly assist the medical functionality of the medical device(s) in terms of its/their intended purpose(s)."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(2)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.CUSTOM_MADE_DEVICE"
+    term: "Custom-Made Device"
+    text: "Any device specifically made in accordance with a written prescription of any person authorised by national law by virtue of that person's professional qualifications which gives, under that person's responsibility, specific design characteristics, and is intended for the sole use of a particular patient exclusively to meet their individual conditions and needs."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(3)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.ACTIVE_DEVICE"
+    term: "Active Device"
+    text: "Any device, the operation of which depends on a source of energy other than that generated by the human body for that purpose, or by gravity, and which acts by changing the density of or converting that energy. Devices intended to transmit energy, substances or other elements between an active device and the patient, without any significant change, shall not be deemed to be active devices. Software shall also be deemed to be an active device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(4)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.ACTIVE_IMPLANTABLE"
+    term: "Active Implantable Medical Device"
+    text: "Any active device which is intended to be totally or partially introduced, surgically or medically, into the human body or by medical intervention into a natural orifice, and which is intended to remain after the procedure."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(5)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.IMPLANTABLE_DEVICE"
+    term: "Implantable Device"
+    text: "Any device, including those that are partially or wholly absorbed, which is intended to be totally introduced into the human body or to replace an epithelial surface or the surface of the eye, by clinical intervention and which is intended to remain in place after the procedure. Any device intended to be partially introduced into the human body by clinical intervention and intended to remain in place after the procedure for at least 30 days shall also be deemed to be an implantable device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(6)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.INVASIVE_DEVICE"
+    term: "Invasive Device"
+    text: "Any device which, in whole or in part, penetrates inside the body, either through a body orifice or through the surface of the body. A device which is intended to administer a medicinal product by means of a body orifice shall not be regarded as an invasive device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(7)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.INVESTIGATIONAL_DEVICE"
+    term: "Device Intended for Clinical Investigation"
+    text: "A device that is intended to be used by a subject or to be applied to a subject in a clinical investigation as defined in point (45)."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(8)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Market and supply chain definitions ─────────────────────────────────────
+  - definitionId: "EUMDR.DEF.MAKING_AVAILABLE"
+    term: "Making Available on the Market"
+    text: "Any supply of a device, other than an investigational device, for distribution, consumption or use on the Union market in the course of a commercial activity, whether in return for payment or free of charge."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(9)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.PLACING_ON_MARKET"
+    term: "Placing on the Market"
+    text: "The first making available of a device, other than an investigational device, on the Union market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(10)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.PUTTING_INTO_SERVICE"
+    term: "Putting into Service"
+    text: "The stage at which a device, other than an investigational device, has been made available to the final user as being ready for use on the Union market for the first time for its intended purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(11)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Purpose and labelling definitions ───────────────────────────────────────
+  - definitionId: "EUMDR.DEF.INTENDED_PURPOSE"
+    term: "Intended Purpose"
+    text: "The use for which a device is intended according to the data supplied by the manufacturer on the label, in the instructions for use or in promotional or sales materials or statements and as specified by the manufacturer in the clinical evaluation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(12)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.LABEL"
+    term: "Label"
+    text: "The written, printed or graphic information appearing on the device itself, or on the packaging of each unit, or on the packaging of multiple devices."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(13)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.IFU"
+    term: "Instructions for Use"
+    text: "The information provided by the manufacturer to inform the user of a device's intended purpose and proper use and of any precautions to be taken."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(14)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.UDI"
+    term: "Unique Device Identifier (UDI)"
+    text: "A series of numeric or alphanumeric characters that is created through internationally accepted device identification and coding standards and that allows unambiguous identification of a specific device on the market. The UDI is comprised of a UDI-DI and a UDI-PI. The UDI-DI is a unique numeric or alphanumeric code specific to a model of device and that is also used as the 'access key' to information stored in a UDI database. The UDI-PI is a numeric or alphanumeric code that identifies the unit of device production."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(15)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Risk and benefit definitions ────────────────────────────────────────────
+  - definitionId: "EUMDR.DEF.RISK"
+    term: "Risk"
+    text: "The combination of the probability of occurrence of harm and the severity of that harm."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(16)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.BENEFIT_RISK_DETERMINATION"
+    term: "Benefit-Risk Determination"
+    text: "The analysis of all assessments of benefit and risk of possible relevance for the use of the device for the intended purpose, when used in accordance with the intended purpose given by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(17)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Performance definition ──────────────────────────────────────────────────
+  - definitionId: "EUMDR.DEF.PERFORMANCE"
+    term: "Performance"
+    text: "The ability of a device to achieve its intended purpose as stated by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(22)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Economic operator definitions ───────────────────────────────────────────
+  - definitionId: "EUMDR.DEF.MANUFACTURER"
+    term: "Manufacturer"
+    text: "The natural or legal person who manufactures or fully refurbishes a device or has a device designed, manufactured or fully refurbished, and markets that device under its name or trade mark."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(30)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.AUTHORISED_REPRESENTATIVE"
+    term: "Authorised Representative"
+    text: "Any natural or legal person established within the Union who has received and accepted a written mandate from a manufacturer, located outside the Union, to act on the manufacturer's behalf in relation to specified tasks with regard to the latter's obligations under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(32)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.IMPORTER"
+    term: "Importer"
+    text: "Any natural or legal person established within the Union that places a device from a third country on the Union market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(33)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.DISTRIBUTOR"
+    term: "Distributor"
+    text: "Any natural or legal person in the supply chain, other than the manufacturer or the importer, that makes a device available on the market, up until the point of putting into service."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(34)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.ECONOMIC_OPERATOR"
+    term: "Economic Operator"
+    text: "A manufacturer, an authorised representative, an importer, a distributor or the person referred to in Article 22(1) and 22(3)."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(35)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.HEALTH_INSTITUTION"
+    term: "Health Institution"
+    text: "An organisation the primary purpose of which is the care or treatment of patients or the promotion of public health."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(36)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Conformity and regulatory body definitions ──────────────────────────────
+  - definitionId: "EUMDR.DEF.CONFORMITY_ASSESSMENT"
+    term: "Conformity Assessment"
+    text: "The process demonstrating whether the requirements of this Regulation relating to a device have been fulfilled."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(40)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.NOTIFIED_BODY"
+    term: "Notified Body"
+    text: "A conformity assessment body designated in accordance with this Regulation to carry out third-party conformity assessment activities, including calibration, testing, certification and inspection."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(42)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Clinical definitions ────────────────────────────────────────────────────
+  - definitionId: "EUMDR.DEF.CLINICAL_EVALUATION"
+    term: "Clinical Evaluation"
+    text: "A systematic and planned process to continuously generate, collect, analyse and assess the clinical data pertaining to a device in order to verify the safety and performance, including clinical benefits, of the device when used as intended by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(44)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.CLINICAL_INVESTIGATION"
+    term: "Clinical Investigation"
+    text: "Any systematic investigation involving one or more human subjects, undertaken to assess the safety or performance of a device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(45)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.CLINICAL_DATA"
+    term: "Clinical Data"
+    text: "Information concerning safety or performance that is generated from the use of a device and is sourced from clinical investigation(s) of the device concerned, clinical investigation(s) or other studies reported in scientific literature of a similar device for which equivalence can be demonstrated, reports published in peer-reviewed scientific literature on other clinical experience of either the device or a similar device, and clinically relevant information coming from post-market surveillance, in particular post-market clinical follow-up."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(48)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.SPONSOR"
+    term: "Sponsor"
+    text: "Any individual, company, institution or organisation which takes responsibility for the initiation, for the management and setting up of the financing of a clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(49)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.SUBJECT"
+    term: "Subject"
+    text: "An individual who participates in a clinical investigation, whether as a recipient of the investigational device or as a control."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(50)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.CLINICAL_EVIDENCE"
+    term: "Clinical Evidence"
+    text: "Clinical data and clinical evaluation results pertaining to a device of a sufficient amount and quality to allow a qualified assessment of whether the device is safe and achieves the intended clinical benefit(s), when used as intended by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(51)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.CLINICAL_PERFORMANCE"
+    term: "Clinical Performance"
+    text: "The ability of a device, resulting from any direct or indirect medical effects which stem from its technical or functional characteristics, including diagnostic characteristics, to achieve its intended purpose as claimed by the manufacturer, thereby leading to a clinical benefit for patients, when used as intended by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(52)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ── Post-market and vigilance definitions ───────────────────────────────────
+  - definitionId: "EUMDR.DEF.POST_MARKET_SURVEILLANCE"
+    term: "Post-Market Surveillance"
+    text: "All activities carried out by manufacturers in cooperation with other economic operators to institute and keep up to date a systematic procedure to proactively collect and review experience gained from devices they place on the market, make available on the market or put into service for the purpose of identifying any need to immediately apply any necessary corrective or preventive actions."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(60)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.PMCF"
+    term: "Post-Market Clinical Follow-Up (PMCF)"
+    text: "A continuous process that updates the clinical evaluation referred to in Article 61 and Part A of Annex XIV and that shall be addressed in the manufacturer's post-market surveillance plan. In conducting PMCF, the manufacturer shall proactively collect and evaluate clinical data from the use in or on humans of an already CE-marked device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(61)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.SERIOUS_INCIDENT"
+    term: "Serious Incident"
+    text: "Any incident that directly or indirectly led, might have led or might lead to any of the following: the death of a patient, user or other person; the temporary or permanent serious deterioration of a patient's, user's or other person's state of health; a serious public health threat."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(65)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.RECALL"
+    term: "Recall"
+    text: "Any measure aimed at achieving the return of a device that has already been made available to the end user."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(66)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.WITHDRAWAL"
+    term: "Withdrawal"
+    text: "Any measure aimed at preventing a device in the supply chain from being further made available on the market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(67)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - definitionId: "EUMDR.DEF.FSCA"
+    term: "Field Safety Corrective Action"
+    text: "A corrective action taken by the manufacturer for technical or medical reasons to prevent or reduce the risk of a serious incident in relation to a device made available on the market. Such actions, whether associated with the device directly or related to the information supplied by the manufacturer, should be reported as a field safety corrective action."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(68)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  CONSTRAINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+constraints:
+  - constraintId: "EUMDR.1.CON.001"
+    appliesTo: "EUMDR.1.OBL.001"
+    text: "The Regulation applies to devices intended for human use only. Veterinary devices are outside the scope."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.1.CON.002"
+    appliesTo: "EUMDR.1.OBL.004"
+    text: "In vitro diagnostic medical devices are governed exclusively by Regulation (EU) 2017/746 (IVDR) and are not subject to the requirements of the MDR."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.1.CON.003"
+    appliesTo: "EUMDR.1.OBL.002"
+    text: "Annex XVI devices without a medical purpose are subject to the MDR only to the extent that common specifications have been adopted for the relevant product group. Clinical evaluation and clinical investigation requirements apply only when such common specifications exist."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.4.CON.001"
+    appliesTo: "EUMDR.4.OBL.002"
+    text: "Where a device incorporates a medicinal substance that has an action ancillary to that of the device, the product as a whole shall be governed by this Regulation. The quality, safety and usefulness of the medicinal substance shall be verified by analogy with Directive 2001/83/EC."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - constraintId: "EUMDR.4.CON.002"
+    appliesTo: "EUMDR.4.OBL.001"
+    text: "The Commission implementing acts on borderline product status shall be binding on all Member States and shall prevail over any divergent national classification."
+    severity: hard
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  RELATIONSHIPS
+# ═══════════════════════════════════════════════════════════════════════════════
+relationships:
+  # ── PART_OF: all obligations belong to Chapter I grouping ───────────────────
+  - from: "EUMDR.1.OBL.001"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 1 obligation is part of Chapter I"
+  - from: "EUMDR.1.OBL.002"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 1 Annex XVI scope is part of Chapter I"
+  - from: "EUMDR.1.OBL.003"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 1 viable tissues provision is part of Chapter I"
+  - from: "EUMDR.1.OBL.004"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 1 IVD exclusion is part of Chapter I"
+  - from: "EUMDR.1.OBL.005"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 1 product exclusions are part of Chapter I"
+  - from: "EUMDR.1.OBL.006"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 1 GSPR compliance is part of Chapter I"
+  - from: "EUMDR.3.OBL.001"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 3 delegated acts provision is part of Chapter I"
+  - from: "EUMDR.4.OBL.001"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 4 borderline product status is part of Chapter I"
+  - from: "EUMDR.4.OBL.002"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 4 combination products are part of Chapter I"
+  - from: "EUMDR.4.OBL.003"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 4 consultation procedure is part of Chapter I"
+  - from: "EUMDR.4.OBL.004"
+    to: "EUMDR.CH1.OBL.000"
+    type: PART_OF
+    props:
+      note: "Article 4 Member State notification is part of Chapter I"
+
+  # ── CROSS_REFERENCES: definitions ↔ obligations that use them ──────────────
+  - from: "EUMDR.DEF.MEDICAL_DEVICE"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 1(1) scope references the definition of 'medical device'"
+  - from: "EUMDR.DEF.ACCESSORY"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 1(1) scope includes accessories for medical devices"
+  - from: "EUMDR.DEF.MEDICAL_DEVICE"
+    to: "EUMDR.4.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 4 borderline status depends on the definition of 'medical device'"
+  - from: "EUMDR.DEF.ACCESSORY"
+    to: "EUMDR.4.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 4 borderline status depends on the definition of 'accessory'"
+  - from: "EUMDR.DEF.PLACING_ON_MARKET"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 1(1) references 'placing on the market'"
+  - from: "EUMDR.DEF.MAKING_AVAILABLE"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 1(1) references 'making available on the market'"
+  - from: "EUMDR.DEF.PUTTING_INTO_SERVICE"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 1(1) references 'putting into service'"
+  - from: "EUMDR.DEF.MANUFACTURER"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Manufacturer is a key operator role referenced in Article 1 scope"
+  - from: "EUMDR.DEF.INTENDED_PURPOSE"
+    to: "EUMDR.1.OBL.006"
+    type: CROSS_REFERENCES
+    props:
+      note: "Devices must comply when used in accordance with their intended purpose"
+  - from: "EUMDR.DEF.CLINICAL_INVESTIGATION"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 1(1) scope includes clinical investigations"
+  - from: "EUMDR.DEF.CONFORMITY_ASSESSMENT"
+    to: "EUMDR.1.OBL.006"
+    type: CROSS_REFERENCES
+    props:
+      note: "Compliance obligation is linked to conformity assessment"
+  - from: "EUMDR.DEF.ECONOMIC_OPERATOR"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "All economic operators are subject to Article 1 scope"
+  - from: "EUMDR.DEF.CUSTOM_MADE_DEVICE"
+    to: "EUMDR.1.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Custom-made devices are within the scope of the Regulation"
+  - from: "EUMDR.DEF.RISK"
+    to: "EUMDR.DEF.BENEFIT_RISK_DETERMINATION"
+    type: CROSS_REFERENCES
+    props:
+      note: "Benefit-risk determination relies on the definition of risk"
+  - from: "EUMDR.DEF.CLINICAL_DATA"
+    to: "EUMDR.DEF.CLINICAL_EVIDENCE"
+    type: CROSS_REFERENCES
+    props:
+      note: "Clinical evidence is composed of clinical data and clinical evaluation results"
+  - from: "EUMDR.DEF.CLINICAL_EVALUATION"
+    to: "EUMDR.DEF.CLINICAL_EVIDENCE"
+    type: CROSS_REFERENCES
+    props:
+      note: "Clinical evidence includes clinical evaluation results"
+  - from: "EUMDR.DEF.SERIOUS_INCIDENT"
+    to: "EUMDR.DEF.FSCA"
+    type: CROSS_REFERENCES
+    props:
+      note: "FSCA is taken to prevent or reduce the risk of a serious incident"
+  - from: "EUMDR.DEF.RECALL"
+    to: "EUMDR.DEF.FSCA"
+    type: CROSS_REFERENCES
+    props:
+      note: "Recall is a type of field safety corrective action"
+  - from: "EUMDR.DEF.WITHDRAWAL"
+    to: "EUMDR.DEF.FSCA"
+    type: CROSS_REFERENCES
+    props:
+      note: "Withdrawal is a type of field safety corrective action"
+  - from: "EUMDR.DEF.POST_MARKET_SURVEILLANCE"
+    to: "EUMDR.DEF.PMCF"
+    type: CROSS_REFERENCES
+    props:
+      note: "PMCF is part of the post-market surveillance system"
+  - from: "EUMDR.DEF.MANUFACTURER"
+    to: "EUMDR.DEF.ECONOMIC_OPERATOR"
+    type: CROSS_REFERENCES
+    props:
+      note: "Manufacturer is one type of economic operator"
+  - from: "EUMDR.DEF.AUTHORISED_REPRESENTATIVE"
+    to: "EUMDR.DEF.ECONOMIC_OPERATOR"
+    type: CROSS_REFERENCES
+    props:
+      note: "Authorised representative is one type of economic operator"
+  - from: "EUMDR.DEF.IMPORTER"
+    to: "EUMDR.DEF.ECONOMIC_OPERATOR"
+    type: CROSS_REFERENCES
+    props:
+      note: "Importer is one type of economic operator"
+  - from: "EUMDR.DEF.DISTRIBUTOR"
+    to: "EUMDR.DEF.ECONOMIC_OPERATOR"
+    type: CROSS_REFERENCES
+    props:
+      note: "Distributor is one type of economic operator"
+  - from: "EUMDR.DEF.ACTIVE_DEVICE"
+    to: "EUMDR.DEF.ACTIVE_IMPLANTABLE"
+    type: CROSS_REFERENCES
+    props:
+      note: "Active implantable device is a subset of active devices"
+  - from: "EUMDR.DEF.IMPLANTABLE_DEVICE"
+    to: "EUMDR.DEF.ACTIVE_IMPLANTABLE"
+    type: CROSS_REFERENCES
+    props:
+      note: "Active implantable device is also a subset of implantable devices"
+  - from: "EUMDR.DEF.INVASIVE_DEVICE"
+    to: "EUMDR.DEF.IMPLANTABLE_DEVICE"
+    type: CROSS_REFERENCES
+    props:
+      note: "Implantable devices are a category of invasive devices"
+
+  # ── CROSS_REFERENCES: to existing obligations in other EU MDR files ────────
+  - from: "EUMDR.DEF.PLACING_ON_MARKET"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Placing on the market requires prior conformity assessment (Article 52)"
+  - from: "EUMDR.DEF.POST_MARKET_SURVEILLANCE"
+    to: "EUMDR.83.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "PMS definition is operationalized in Article 83 PMS system obligation"
+  - from: "EUMDR.DEF.NOTIFIED_BODY"
+    to: "EUMDR.56.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Notified body definition is operationalized in Article 56 certificates"
+  - from: "EUMDR.DEF.UDI"
+    to: "EUMDR.27.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "UDI definition is operationalized in Article 27 UDI system"
+  - from: "EUMDR.DEF.CONFORMITY_ASSESSMENT"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Conformity assessment definition is operationalized in Article 52"
+  - from: "EUMDR.1.OBL.001"
+    to: "EUMDR.52.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Scope of Regulation (Article 1) encompasses conformity assessment (Article 52)"

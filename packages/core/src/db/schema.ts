@@ -445,7 +445,7 @@ export const agentConfigs = pgTable(
 
 // === Builder Agents — saved low-code agent configurations ===
 // Each row is one agent a user composed in the Builder. The agent is not
-// independently executable — it is a saved configuration of (job + scope +
+// independently executable — it is a saved configuration of (process + scope +
 // evidence + guardrails + output + deploy) that the user can later download
 // as an MCP-compatible bundle, run in the sandbox, or expose via API.
 export const builderAgents = pgTable(
@@ -455,8 +455,8 @@ export const builderAgents = pgTable(
     tenantId: varchar('tenant_id', { length: 128 }).notNull(),
     createdBy: uuid('created_by'),
     name: varchar('name', { length: 200 }).notNull(),
-    jobId: varchar('job_id', { length: 64 }).notNull(),
-    jobTitle: varchar('job_title', { length: 200 }).notNull(),
+    processId: varchar('process_id', { length: 64 }).notNull(),
+    processTitle: varchar('process_title', { length: 200 }).notNull(),
     /** Sandbox task agent id this builder agent runs against (optional). */
     taskId: varchar('task_id', { length: 64 }),
     regulations: jsonb('regulations').$type<string[]>().default([]).notNull(),

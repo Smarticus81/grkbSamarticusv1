@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AE Reportability — given adverse-event facts, determines reportability
  * in EU, US and UK with the relevant clock and graph-resolved citation.
  *
@@ -36,6 +36,25 @@ const OutputSchema = z.object({
 
 type Input = z.infer<typeof InputSchema>;
 type Output = z.infer<typeof OutputSchema>;
+
+const SYSTEM_PROMPT = `You are a medical-device vigilance specialist deciding adverse-event reportability.
+Given the event facts, return exactly THREE decisions, in this order: EU, US, UK. For each:
+- reportable: boolean — is the event reportable in that jurisdiction?
+- clockDays: the reporting deadline (in days) WHEN reportable, otherwise omit:
+    EU = 15 days (but 2 days for a serious public-health threat)
+    US = 30 days
+    UK = 15 days
+- reasoning: 1-2 sentences explaining WHY, naming the governing provision. Example:
+    "A serious injury requiring hospitalization is a serious incident under EU MDR Article 87,
+     which obliges the manufacturer to report within 15 days."
+- citation: copy VERBATIM the source citation of the obligation that governs that jurisdiction:
+    EU -> the citation listed for obligation EUMDR.87.OBL.001
+    US -> the citation listed for obligation CFR820.198.OBL.002
+    UK -> the citation listed for obligation UKMDR.2.OBL.001
+Set "trendReportTriggered" to true when 3 or more similar events occurred in the prior 30 days.
+Write a one-paragraph "summary" of the overall determination.
+Put EVERY supplied source citation into the "citations" array. Decide strictly from the facts:
+a serious injury, death, or public-health threat is reportable; lesser outcomes generally are not.`;
 
 const SAMPLE: Input = {
   eventId: '',
@@ -138,6 +157,23 @@ export const AeReportabilityTask: TaskAgentDefinition<Input, Output> = {
   inputSchema: InputSchema,
   outputSchema: OutputSchema,
   sampleData: SAMPLE,
+  systemPrompt: SYSTEM_PROMPT,
+  explainObligation: (output, ob) => {
+    const parsed = OutputSchema.safeParse(output);
+    if (!parsed.success) return undefined;
+    // Match the jurisdiction decision whose citation is this obligation, and
+    // surface its reasoning + clock as the trail "why".
+    const d = parsed.data.decisions.find((dec) => dec.citation && dec.citation === ob.sourceCitation);
+    if (d) {
+      const clock = typeof d.clockDays === 'number' ? ` (${d.clockDays}-day reporting clock)` : '';
+      return `${d.jurisdiction}: ${d.reasoning}${clock}`;
+    }
+    return parsed.data.summary;
+  },
+  explainGate: (output) => {
+    const parsed = OutputSchema.safeParse(output);
+    return parsed.success ? parsed.data.summary : undefined;
+  },
   obligationChecks: [
     {
       obligationId: 'EUMDR.87.OBL.001',

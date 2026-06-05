@@ -10,7 +10,7 @@ import {
  * Reportability screening against EU MDR Art. 87 and 21 CFR §803.
  * Operates on the IMDRF-coded complaint output; returns a per-jurisdiction
  * "should escalate to reportability process" verdict. Does NOT decide the
- * clock — that is the ReportabilityDecisionAgent's job in the
+ * clock — that is the ReportabilityDecisionAgent's process in the
  * adverse-event-reportability process.
  */
 export const ReportabilityScreenInputSchema = z.object({

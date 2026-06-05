@@ -1,0 +1,532 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Annexes XII-XIII — Certificates and clinical investigation procedures"
+jurisdiction: EU_MDR
+processType: CONFORMITY_ASSESSMENT
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ─── Annex XII — Certificates issued by a notified body ───────────────────────
+
+  - obligationId: "EUMDR.AXII.OBL.001"
+    kind: obligation
+    title: "Minimum content requirements for certificates"
+    text: "Certificates issued by a notified body shall contain, as a minimum: the name, address and identification number of the notified body; the name and address of the manufacturer and, where applicable, the authorised representative; a unique number identifying the certificate; the date of issue and, where applicable, the date of expiry; the data needed to identify the device or devices covered including the intended purpose, the device or product model, and the applicable GMDN code(s) and risk class; a reference to this Regulation and the annex according to which the conformity assessment has been carried out; a legally binding signature of the notified body; and the scope of the certificate with, where applicable, the description of applicable conditions or limitations."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XII Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_certificate
+      - certificate_content_checklist
+    applicability:
+      operatorRoles:
+        - notified_body
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXII.OBL.002"
+    kind: obligation
+    title: "Certificate identification of manufacturer and device"
+    text: "Each certificate shall identify the manufacturer and include the manufacturer's single registration number, the manufacturer's registered place of business, the device or group of devices covered, including unique device identification where applicable, and a statement that the device is in conformity with the provisions of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XII Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_certificate
+      - manufacturer_registration_record
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXII.OBL.003"
+    kind: obligation
+    title: "EU type-examination certificate additional content"
+    text: "In addition to the minimum content requirements, EU type-examination certificates issued under Annex X shall include a description of the type examined, including its variants and accessories, a reference to the technical documentation and any test reports and standards applied, the conditions of validity of the certificate, and a description of the examinations and tests performed to verify conformity of the device with the requirements of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XII Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_type_examination_certificate
+      - type_examination_test_reports
+      - technical_documentation
+    applicability:
+      operatorRoles:
+        - notified_body
+      conditions:
+        - "applies when conformity assessment follows Annex X (EU type-examination)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXII.OBL.004"
+    kind: obligation
+    title: "QMS certificate additional content"
+    text: "Certificates relating to the quality management system issued under Annex IX shall include the scope of the quality management system assessed, a list of the manufacturing sites covered by the quality management system, a list of the devices or groups of devices covered by the certificate, and a reference to the quality management system documentation assessed."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XII Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - qms_certificate
+      - qms_audit_report
+      - manufacturing_site_list
+    applicability:
+      operatorRoles:
+        - notified_body
+      conditions:
+        - "applies when conformity assessment follows Annex IX (QMS-based assessment)"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXII.OBL.005"
+    kind: obligation
+    title: "Certificate language requirements"
+    text: "Certificates shall be drawn up in an official Union language or languages determined by the Member State in which the notified body is established or in an official Union language otherwise acceptable to the notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XII Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_certificate
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXII.OBL.006"
+    kind: obligation
+    title: "Maximum certificate validity and renewal"
+    text: "The validity of certificates shall not exceed five years. On application by the manufacturer, the validity may be extended for further periods, each not exceeding five years, on the basis of a re-assessment in accordance with the applicable conformity assessment procedures. Supplements to certificates shall remain valid as long as the certificate which they supplement is valid."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XII Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - certificate_validity_record
+      - certificate_renewal_application
+    applicability:
+      operatorRoles:
+        - notified_body
+        - manufacturer
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXII.OBL.007"
+    kind: obligation
+    title: "Statement of conformity and conditions or restrictions"
+    text: "Each certificate shall include a clear statement that the device conforms to the applicable provisions of this Regulation. Where the notified body attaches conditions or restrictions to the certificate, these shall be explicitly stated and justified. Any deviation from the applicable standards or common specifications shall be documented."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XII Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - notified_body_certificate
+      - conformity_statement
+    applicability:
+      operatorRoles:
+        - notified_body
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ─── Annex XIII — Clinical investigation procedures ────────────────────────────
+
+  # ─── Part A: Criteria for Member States concerning authorization ───────────────
+
+  - obligationId: "EUMDR.AXIII.OBL.001"
+    kind: obligation
+    title: "Ethics committee favorable opinion required"
+    text: "Member States shall not authorize a clinical investigation unless the ethics committee concerned has issued a favorable opinion in respect of the clinical investigation plan, the suitability of the investigators and the adequacy of the facilities, and the methods and documents to be used to inform the subjects and obtain their informed consent."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part A Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ethics_committee_opinion
+      - clinical_investigation_plan
+    applicability:
+      operatorRoles:
+        - sponsor
+        - manufacturer
+      conditions:
+        - "required before clinical investigation may begin"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.002"
+    kind: obligation
+    title: "Subject protection — insurance and indemnification"
+    text: "The sponsor shall ensure that subjects participating in a clinical investigation are covered by an insurance or indemnification arrangement that covers the liability of the sponsor and the investigator for any damage suffered by subjects resulting from their participation in the clinical investigation, unless the Member State in which the clinical investigation is conducted has a national indemnification system."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part A Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - insurance_documentation
+      - indemnification_agreement
+    applicability:
+      operatorRoles:
+        - sponsor
+      conditions:
+        - "insurance or indemnification must be in place prior to investigation start"
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.003"
+    kind: obligation
+    title: "Sponsor requirements and responsibilities"
+    text: "The sponsor shall be established in the Union or have a legal representative in the Union. The sponsor shall assume responsibility for the initiation, management and setting up of financing for the clinical investigation, shall ensure proper monitoring, and shall be responsible for the choice of investigators and investigation sites, and compliance with applicable regulatory requirements."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part A Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - sponsor_qualification_record
+      - sponsor_responsibility_documentation
+    applicability:
+      operatorRoles:
+        - sponsor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.004"
+    kind: obligation
+    title: "Investigator qualifications"
+    text: "The investigator shall be a person exercising a profession which is recognized in the Member State concerned as qualifying for the role of investigator on account of the scientific knowledge and experience in patient care required. The investigator shall have knowledge of the investigational device, the clinical investigation plan, and Good Clinical Practice."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part A Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - investigator_cv
+      - investigator_qualification_record
+    applicability:
+      operatorRoles:
+        - investigator
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.005"
+    kind: obligation
+    title: "Facility suitability"
+    text: "The facilities where the clinical investigation is to be conducted shall be suitable for the clinical investigation and shall be similar to the facilities where the device is intended to be used. The facilities shall provide adequate resources including personnel, equipment, and emergency provisions for the safe conduct of the investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part A Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - facility_assessment_record
+      - site_suitability_declaration
+    applicability:
+      operatorRoles:
+        - sponsor
+        - investigator
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.006"
+    kind: obligation
+    title: "Clinical investigation documentation requirements"
+    text: "The Member State shall verify that the application dossier is complete, that the documentation is consistent and that the clinical investigation plan is adequate for achieving the stated objectives. The competent authority shall assess the benefit-risk analysis, the risk management, and the justification for the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part A Section 6"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+      - benefit_risk_analysis
+      - risk_management_plan
+    applicability:
+      operatorRoles:
+        - competent_authority
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ─── Part B: Information submitted by sponsor ─────────────────────────────────
+
+  - obligationId: "EUMDR.AXIII.OBL.007"
+    kind: obligation
+    title: "Application form and administrative information"
+    text: "The sponsor shall submit an application form containing administrative information including the title of the clinical investigation, the sponsor's identity and contact details, the identity of the legal representative where applicable, the proposed start and duration, the number of subjects, and identification of the investigational device."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part B Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_application_form
+    applicability:
+      operatorRoles:
+        - sponsor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.008"
+    kind: obligation
+    title: "Investigator's brochure"
+    text: "The sponsor shall provide an investigator's brochure containing clinical and non-clinical information on the investigational device that is relevant to the investigation, including information on the device description, prior testing, potential risks and benefits, and contraindications. The brochure shall be kept up to date throughout the investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part B Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - investigator_brochure
+    applicability:
+      operatorRoles:
+        - sponsor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.009"
+    kind: obligation
+    title: "Clinical investigation plan"
+    text: "The sponsor shall submit a clinical investigation plan specifying the rationale, objectives, design and proposed analysis, monitoring, and conduct of the clinical investigation. The plan shall include information on the investigational device, justification for the design, subject selection criteria, statistical considerations, the monitoring plan, and data management procedures."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part B Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+      - statistical_analysis_plan
+    applicability:
+      operatorRoles:
+        - sponsor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.010"
+    kind: obligation
+    title: "Investigational device dossier"
+    text: "The sponsor shall submit an investigational device dossier containing the device description, manufacturing information, reference to relevant standards, a summary of all prior testing including pre-clinical testing, risk analysis, and a description of the design and manufacturing process. The dossier shall demonstrate that the device is suitable for the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part B Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - investigational_device_dossier
+      - preclinical_test_reports
+      - risk_analysis
+    applicability:
+      operatorRoles:
+        - sponsor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.011"
+    kind: obligation
+    title: "Insurance and other supporting documentation"
+    text: "The sponsor shall submit documentation of insurance or indemnification covering the liability of the sponsor and the investigator, a copy of the ethics committee favorable opinion, proof of payment of any applicable fees, evidence that the investigational device conforms to the applicable general safety and performance requirements, and any other documentation required by national legislation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part B Section 5"
+    mandatory: true
+    requiredEvidenceTypes:
+      - insurance_documentation
+      - ethics_committee_opinion
+      - fee_payment_receipt
+      - safety_performance_evidence
+    applicability:
+      operatorRoles:
+        - sponsor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  # ─── Part C: Other requirements for clinical investigation conduct ─────────────
+
+  - obligationId: "EUMDR.AXIII.OBL.012"
+    kind: obligation
+    title: "Good Clinical Practice compliance"
+    text: "Clinical investigations shall be designed, authorized, conducted, recorded and reported in accordance with the provisions of this Regulation and in compliance with Good Clinical Practice (GCP). The rights, safety, dignity and well-being of subjects shall prevail over all other interests, and clinical data generated shall be reliable and robust."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part C Section 1"
+    mandatory: true
+    requiredEvidenceTypes:
+      - gcp_compliance_declaration
+      - gcp_training_records
+    applicability:
+      operatorRoles:
+        - sponsor
+        - investigator
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.013"
+    kind: obligation
+    title: "Clinical investigation monitoring requirements"
+    text: "The sponsor shall implement a monitoring system appropriate to the nature and risk of the clinical investigation. Monitoring shall include verification that the rights and well-being of subjects are protected, that reported data are accurate and complete, that the investigation is conducted in accordance with the clinical investigation plan and GCP, and that the investigational device is suitable for use."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part C Section 2"
+    mandatory: true
+    requiredEvidenceTypes:
+      - monitoring_plan
+      - monitoring_visit_reports
+    applicability:
+      operatorRoles:
+        - sponsor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.014"
+    kind: obligation
+    title: "Safety reporting during clinical investigations"
+    text: "The investigator shall report to the sponsor any serious adverse event, any device deficiency that might have led to a serious adverse event, and any new finding in relation to any of those events without delay. The sponsor shall report serious adverse events and device deficiencies to the Member States in which the investigation is being conducted in accordance with the timelines laid down in this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part C Section 3"
+    mandatory: true
+    requiredEvidenceTypes:
+      - serious_adverse_event_report
+      - device_deficiency_report
+      - safety_report_timeline_log
+    applicability:
+      operatorRoles:
+        - sponsor
+        - investigator
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+  - obligationId: "EUMDR.AXIII.OBL.015"
+    kind: obligation
+    title: "End of clinical investigation notification"
+    text: "The sponsor shall notify the Member States in which a clinical investigation was being conducted and the Commission of the end of a clinical investigation, together with a justification in the case of early termination. The notification shall be made within 15 days of the end of the clinical investigation. A clinical investigation report shall be submitted within one year of the end of the investigation or within three months in the case of early termination for safety reasons."
+    sourceCitation: "Regulation (EU) 2017/745 Annex XIII Part C Section 4"
+    mandatory: true
+    requiredEvidenceTypes:
+      - end_of_investigation_notification
+      - clinical_investigation_report
+    applicability:
+      operatorRoles:
+        - sponsor
+    metadata:
+      review: "pending"
+      extractedBy: "llm"
+      extractedAt: "2026-05-31T00:00:00Z"
+
+constraints:
+  - constraintId: "EUMDR.AXII.CON.001"
+    appliesTo: "EUMDR.AXII.OBL.006"
+    text: "Certificates shall not exceed five years validity. The manufacturer must apply for renewal before expiry; failure to renew results in loss of conformity status and the device may no longer be placed on the market."
+    severity: hard
+
+  - constraintId: "EUMDR.AXII.CON.002"
+    appliesTo: "EUMDR.AXII.OBL.001"
+    text: "A certificate that is missing any of the minimum content elements listed in Annex XII is invalid. The notified body shall not issue an incomplete certificate."
+    severity: hard
+
+  - constraintId: "EUMDR.AXII.CON.003"
+    appliesTo: "EUMDR.AXII.OBL.005"
+    text: "The language of the certificate must be acceptable to the Member State in which the notified body is established. Certificates in a non-accepted language may not be recognized."
+    severity: hard
+
+  - constraintId: "EUMDR.AXIII.CON.001"
+    appliesTo: "EUMDR.AXIII.OBL.001"
+    text: "A clinical investigation shall not commence without a favorable ethics committee opinion. Starting an investigation prior to receiving the favorable opinion constitutes a regulatory violation."
+    severity: hard
+
+  - constraintId: "EUMDR.AXIII.CON.002"
+    appliesTo: "EUMDR.AXIII.OBL.002"
+    text: "Insurance or indemnification coverage must be proportionate to the risks of the clinical investigation and must be in place before the first subject is enrolled."
+    severity: hard
+
+  - constraintId: "EUMDR.AXIII.CON.003"
+    appliesTo: "EUMDR.AXIII.OBL.014"
+    text: "Serious adverse events must be reported to the sponsor by the investigator without delay. The sponsor must report to Member States within the timelines specified: immediately for life-threatening or fatal events, and within the periods defined by Article 80 for other serious events."
+    severity: hard
+
+  - constraintId: "EUMDR.AXIII.CON.004"
+    appliesTo: "EUMDR.AXIII.OBL.015"
+    text: "End-of-investigation notification must be submitted within 15 days. The final clinical investigation report deadline is one year after end of investigation, or three months if terminated early for safety reasons. Failure to comply constitutes non-compliance."
+    severity: hard
+
+  - constraintId: "EUMDR.AXIII.CON.005"
+    appliesTo: "EUMDR.AXIII.OBL.012"
+    text: "Good Clinical Practice compliance is mandatory throughout the entire clinical investigation lifecycle. Non-compliance may result in suspension or termination of the investigation by the competent authority."
+    severity: hard
+
+definitions:
+  - definitionId: "EUMDR.DEF.CERTIFICATE"
+    term: "Certificate"
+    text: "A document issued by a notified body attesting that the quality management system, the EU type-examination, or the product conformity verification, has been assessed and found to comply with the applicable requirements of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2, Annex XII"
+
+  - definitionId: "EUMDR.DEF.CLINICAL_INVESTIGATION"
+    term: "Clinical Investigation"
+    text: "Any systematic investigation involving one or more human subjects, undertaken to assess the safety or performance of a device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(45)"
+
+  - definitionId: "EUMDR.DEF.SPONSOR"
+    term: "Sponsor"
+    text: "Any individual, company, institution or organisation which takes responsibility for the initiation, for the management and setting up of the financing of the clinical investigation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(49)"
+
+  - definitionId: "EUMDR.DEF.INVESTIGATOR"
+    term: "Investigator"
+    text: "An individual responsible for the conduct of a clinical investigation at a clinical investigation site."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(51)"
+
+  - definitionId: "EUMDR.DEF.SERIOUS_ADVERSE_EVENT"
+    term: "Serious Adverse Event"
+    text: "Any adverse event that led to death, a serious deterioration in the health of the subject, a life-threatening illness or injury, a permanent impairment of a body structure or function, hospitalisation or prolongation of existing hospitalisation, medical or surgical intervention to prevent life-threatening illness or injury or permanent impairment, or foetal distress, foetal death or congenital abnormality."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(58)"
+
+relationships:
+  - from: "EUMDR.AXII.OBL.001"
+    to: "EUMDR.56.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Annex XII specifies the certificate content requirements referenced by Article 56"
+
+  - from: "EUMDR.AXII.OBL.003"
+    to: "EUMDR.52.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "EU type-examination certificates relate to the Annex X conformity assessment procedure for class IIa and above"
+
+  - from: "EUMDR.AXII.OBL.004"
+    to: "EUMDR.52.OBL.004"
+    type: CROSS_REFERENCES
+    props:
+      note: "QMS certificates relate to the Annex IX conformity assessment procedure"
+
+  - from: "EUMDR.AXII.OBL.006"
+    to: "EUMDR.56.CON.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Five-year maximum validity aligns with Article 56 certificate validity constraints"
+
+  - from: "EUMDR.AXIII.OBL.001"
+    to: "EUMDR.AXIII.OBL.007"
+    type: TRIGGERS
+    props:
+      note: "Ethics committee opinion is a prerequisite for the clinical investigation application"
+
+  - from: "EUMDR.AXIII.OBL.009"
+    to: "EUMDR.AXIII.OBL.012"
+    type: TRIGGERS
+    props:
+      note: "The clinical investigation plan governs the conduct requirements including GCP compliance"
+
+  - from: "EUMDR.AXIII.OBL.012"
+    to: "EUMDR.AXIII.OBL.013"
+    type: TRIGGERS
+    props:
+      note: "GCP compliance requires adequate monitoring throughout the investigation"
+
+  - from: "EUMDR.AXIII.OBL.013"
+    to: "EUMDR.AXIII.OBL.014"
+    type: TRIGGERS
+    props:
+      note: "Monitoring activities feed into safety reporting obligations"
+
+  - from: "EUMDR.AXIII.OBL.014"
+    to: "EUMDR.AXIII.OBL.015"
+    type: TRIGGERS
+    props:
+      note: "Safety reporting culminates in the end-of-investigation notification and final report"

@@ -1,0 +1,1376 @@
+regulation: "Regulation (EU) 2017/745 (MDR)"
+section: "Chapter II — Making available and obligations of economic operators (Articles 5-24)"
+jurisdiction: EU_MDR
+processType: MARKET_ACCESS
+artifactType: REGULATION
+version: "1.0.0"
+effectiveFrom: "2021-05-26"
+
+obligations:
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 5 — Placing on the market and putting into service
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.5.OBL.001"
+    kind: obligation
+    title: "Devices must conform when placed on market"
+    text: "Devices may only be placed on the market or put into service if they comply with this Regulation when duly supplied and properly installed, maintained and used in accordance with their intended purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Article 5(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_record
+      - eu_declaration_of_conformity
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.5.OBL.002"
+    kind: obligation
+    title: "CE marking required for market placement"
+    text: "A device that is in conformity with this Regulation shall bear the CE marking of conformity as provided for in Article 20, with the exception of custom-made devices and investigational devices."
+    sourceCitation: "Regulation (EU) 2017/745 Article 5(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - label_artwork
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.5.OBL.003"
+    kind: obligation
+    title: "Devices must meet applicable general safety and performance requirements"
+    text: "Devices shall meet the general safety and performance requirements set out in Annex I which apply to them, taking into account their intended purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Article 5(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - gspr_checklist
+      - technical_documentation
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.5.OBL.004"
+    kind: obligation
+    title: "Demonstration of conformity via appropriate conformity assessment"
+    text: "Demonstration of conformity with the general safety and performance requirements shall include a clinical evaluation in accordance with Article 61."
+    sourceCitation: "Regulation (EU) 2017/745 Article 5(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_report
+      - conformity_assessment_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 6 — Distance sales
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.6.OBL.001"
+    kind: obligation
+    title: "Distance sales compliance"
+    text: "A device offered by means of information society services, as defined in Directive (EU) 2015/1535, to a natural or legal person established in the Union shall comply with this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 6(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_record
+      - distance_sales_compliance_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+      conditions:
+        - "applicable when device is offered via information society services or electronic means"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 7 — Claims
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.7.OBL.001"
+    kind: obligation
+    title: "Prohibition of misleading claims"
+    text: "In the labelling, instructions for use, making available, putting into service and advertising of devices, it shall be prohibited to use text, names, trademarks, pictures and figurative or other signs that may mislead the user or the patient with regard to the device's intended purpose, safety and performance."
+    sourceCitation: "Regulation (EU) 2017/745 Article 7(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - promotional_material_review
+      - instructions_for_use
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+        - distributor
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.7.OBL.002"
+    kind: obligation
+    title: "Prohibition of unsupported performance claims"
+    text: "It shall be prohibited to attribute to the device functions and properties which the device does not have, to create a false impression regarding treatment or diagnosis or functions or properties which the device does not have, to fail to inform the user or patient of a likely risk, or to suggest uses other than those stated as forming part of the intended purpose for which the conformity assessment was carried out."
+    sourceCitation: "Regulation (EU) 2017/745 Article 7(1)(a)-(d)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - promotional_material_review
+      - clinical_evaluation_report
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - distributor
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 8 — Use of harmonised standards
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.8.OBL.001"
+    kind: obligation
+    title: "Presumption of conformity via harmonised standards"
+    text: "Devices which are in conformity with the relevant harmonised standards, or the relevant parts of those standards, the references of which have been published in the Official Journal of the European Union, shall be presumed to be in conformity with the requirements of this Regulation covered by those standards or parts thereof."
+    sourceCitation: "Regulation (EU) 2017/745 Article 8(1)"
+    mandatory: false
+    requiredEvidenceTypes:
+      - harmonised_standard_declaration
+      - standard_conformity_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 9 — Common specifications
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.9.OBL.001"
+    kind: obligation
+    title: "Compliance with common specifications"
+    text: "Where no harmonised standards exist or where relevant harmonised standards are not sufficient, or where there is a need to address public health concerns, the Commission may, by means of implementing acts, adopt common specifications in respect of the general safety and performance requirements, the technical documentation, clinical evaluation, or post-market clinical follow-up. Devices shall comply with those common specifications unless duly justified."
+    sourceCitation: "Regulation (EU) 2017/745 Article 9(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - common_specification_conformity_record
+      - technical_documentation
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable when Commission has adopted common specifications and no harmonised standard is sufficient"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.9.OBL.002"
+    kind: obligation
+    title: "Justification for deviation from common specifications"
+    text: "Manufacturers that do not comply with common specifications shall duly justify that they have adopted solutions that ensure a level of safety and performance that is at least equivalent thereto."
+    sourceCitation: "Regulation (EU) 2017/745 Article 9(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - deviation_justification
+      - equivalence_assessment
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable when manufacturer deviates from adopted common specifications"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 10 — General obligations of manufacturers
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.10.OBL.001"
+    kind: obligation
+    title: "Ensure devices conform to this Regulation"
+    text: "When placing their devices on the market or putting them into service, manufacturers shall ensure that they have been designed and manufactured in accordance with the requirements of this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_history_file
+      - conformity_assessment_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.002"
+    kind: obligation
+    title: "Risk management and clinical evaluation system"
+    text: "Manufacturers shall establish, document, implement and maintain a system for risk management as described in Section 3 of Annex I, and shall conduct a clinical evaluation in accordance with Article 61 and Annex XIV, including a post-market clinical follow-up."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_plan
+      - risk_management_report
+      - clinical_evaluation_plan
+      - clinical_evaluation_report
+      - pmcf_plan
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.003"
+    kind: obligation
+    title: "Technical documentation before placing on market"
+    text: "Manufacturers shall, before placing a device on the market, draw up and keep up to date technical documentation for that device. The technical documentation shall be such as to allow the conformity of the device with the requirements of this Regulation to be assessed."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - technical_documentation
+      - technical_documentation_review_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.004"
+    kind: obligation
+    title: "Conformity assessment via notified body where required"
+    text: "Where compliance with applicable requirements has been demonstrated following the applicable conformity assessment procedure, manufacturers of devices, other than custom-made devices, shall draw up an EU declaration of conformity in accordance with Article 19 and affix the CE marking of conformity in accordance with Article 20."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_record
+      - eu_declaration_of_conformity
+      - ce_marking_record
+      - notified_body_certificate
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.005"
+    kind: obligation
+    title: "Retain technical documentation and EU DoC"
+    text: "Manufacturers shall keep available for the competent authorities the technical documentation, the EU declaration of conformity, and where applicable the copy of any relevant certificate including any amendments and supplements issued in accordance with Article 56, for a period of at least 10 years after the last device covered by the EU declaration of conformity has been placed on the market. In the case of implantable devices, the period shall be at least 15 years."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_retention_record
+      - technical_documentation
+      - eu_declaration_of_conformity
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "retention period: 10 years minimum; 15 years for implantable devices"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.006"
+    kind: obligation
+    title: "Serial production conformity maintenance"
+    text: "Manufacturers shall ensure that procedures are in place to keep series production in conformity with the requirements of this Regulation. Changes in device design or characteristics and changes in the harmonised standards or common specifications by reference to which the conformity of a device is declared shall be adequately taken into account in a timely manner."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(6)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - production_conformity_record
+      - change_control_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.007"
+    kind: obligation
+    title: "Quality management system"
+    text: "Manufacturers shall establish, document, implement, maintain, and keep up to date a quality management system that shall include at least the following aspects: a strategy for regulatory compliance, identification of applicable general safety and performance requirements, responsibility of the management, resource management, risk management, clinical evaluation, product realisation including planning, design, development, production and service provision, verification of the UDI, setting-up, management and maintenance of a post-market surveillance system, communication with competent authorities, incident and field safety corrective action reporting, management of corrective and preventive actions, and processes for monitoring and measurement of output, data analysis and product improvement."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(9)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - qms_manual
+      - qms_certificate
+      - management_review_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.008"
+    kind: obligation
+    title: "QMS — design and development controls"
+    text: "The quality management system shall address design controls including design planning, design input, design output, design review, design verification and validation, and design transfer, proportionate to the risk class of the device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(9)(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - design_history_file
+      - design_review_record
+      - design_verification_record
+      - design_validation_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.009"
+    kind: obligation
+    title: "QMS — risk management integration"
+    text: "The quality management system shall address risk management as set out in Section 3 of Annex I, including the establishment and maintenance of a risk management system throughout the device lifecycle."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(9)(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - risk_management_plan
+      - risk_management_report
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.010"
+    kind: obligation
+    title: "QMS — clinical evaluation"
+    text: "The quality management system shall address clinical evaluation in accordance with Article 61 and Annex XIV, including post-market clinical follow-up."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(9)(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_evaluation_plan
+      - clinical_evaluation_report
+      - pmcf_plan
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.011"
+    kind: obligation
+    title: "QMS — process validation"
+    text: "The quality management system shall address product realisation, including planning, design, development, production and service provision, and where applicable validation of production processes."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(9)(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - process_validation_record
+      - production_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.012"
+    kind: obligation
+    title: "QMS — document control"
+    text: "The quality management system shall include procedures for the control of documents and records, including a document control procedure ensuring documents are reviewed, approved, issued, distributed, and maintained in a controlled manner."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(9)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - document_control_procedure
+      - document_control_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.013"
+    kind: obligation
+    title: "QMS — corrective and preventive actions"
+    text: "The quality management system shall address the management of corrective and preventive actions (CAPA) and verification of their effectiveness."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(9)(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - capa_record
+      - capa_effectiveness_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.014"
+    kind: obligation
+    title: "QMS — supplier controls"
+    text: "The quality management system shall address the selection and control of suppliers and subcontractors, including procedures for purchasing, verification of purchased products or services, and evaluation of supplier performance."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(9)(a)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supplier_evaluation_record
+      - supplier_agreement
+      - incoming_inspection_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.015"
+    kind: obligation
+    title: "Post-market surveillance system"
+    text: "Manufacturers shall plan, establish, document, implement, maintain and update a post-market surveillance system in accordance with Article 83 in a manner that is proportionate to the risk class and appropriate for the type of device."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(10)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - pms_plan
+      - pms_report
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.016"
+    kind: obligation
+    title: "Complaints handling and FSCA notification"
+    text: "Manufacturers shall have a system for recording and reporting incidents and field safety corrective actions as set out in Articles 87 and 89. They shall establish and keep up to date a systematic procedure to review experience gained from devices in the post-production phase, including complaints and non-conformities."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(10)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - complaint_record
+      - fsca_record
+      - vigilance_report
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.017"
+    kind: obligation
+    title: "Labeling requirements compliance"
+    text: "Manufacturers shall ensure that the device is accompanied by the information set out in Annex I Chapter III (Section 23) in an official Union language(s) determined by the Member State in which the device is made available to the user or patient."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(11)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - instructions_for_use
+      - label_review_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.018"
+    kind: obligation
+    title: "UDI system participation"
+    text: "Manufacturers shall assign a UDI to the device and shall comply with the obligations relating to the Unique Device Identification system referred to in Article 27."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(12)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - udi_assignment_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.019"
+    kind: obligation
+    title: "Registration in EUDAMED"
+    text: "Manufacturers shall, before placing a device on the market, register in the electronic system referred to in Article 30 and enter the information referred to in Section 2 of Part A of Annex VI. They shall keep the information up to date."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(13)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - economic_operator_registration
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.020"
+    kind: obligation
+    title: "EU Declaration of Conformity"
+    text: "Manufacturers shall draw up and keep up to date an EU declaration of conformity in accordance with Article 19."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(14)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.021"
+    kind: obligation
+    title: "Financial coverage for potential liabilities"
+    text: "Manufacturers shall, in a manner that is proportionate to the risk class, type of device and the size of the enterprise, have measures in place to provide sufficient financial coverage in respect of their potential liability under Directive 85/374/EEC, without prejudice to more protective measures under national law."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(16)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - liability_insurance_record
+      - financial_coverage_evidence
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.10.OBL.022"
+    kind: obligation
+    title: "Natural or legal person responsibility"
+    text: "Natural or legal persons may claim compensation for damage caused by a defective device in accordance with applicable Union and national law. Manufacturers shall have a system to ensure traceability and enable identification of the natural or legal persons involved in the supply chain."
+    sourceCitation: "Regulation (EU) 2017/745 Article 10(16)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - supply_chain_traceability_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 11 — Authorised representative
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.11.OBL.001"
+    kind: obligation
+    title: "Designation of authorised representative"
+    text: "Where the manufacturer of a device is not established in a Member State, the device may only be placed on the Union market if the manufacturer designates a sole authorised representative established within the Union."
+    sourceCitation: "Regulation (EU) 2017/745 Article 11(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - authorised_representative_mandate
+      - economic_operator_registration
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+      conditions:
+        - "applicable when manufacturer is established outside the EU"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.11.OBL.002"
+    kind: obligation
+    title: "Authorised representative mandate and obligations"
+    text: "The authorised representative shall perform the tasks specified in the mandate agreed between the authorised representative and the manufacturer. The mandate shall allow the authorised representative at least to: verify that the EU declaration of conformity and technical documentation have been drawn up; keep available a copy of the technical documentation, the EU declaration of conformity and, if applicable, the relevant certificate; comply with the registration obligations in Article 29; and in response to a request from a competent authority, provide all the information and documentation necessary."
+    sourceCitation: "Regulation (EU) 2017/745 Article 11(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - authorised_representative_mandate
+      - technical_documentation
+      - eu_declaration_of_conformity
+    applicability:
+      operatorRoles:
+        - authorised_representative
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.11.OBL.003"
+    kind: obligation
+    title: "Authorised representative — terminate mandate for non-compliant manufacturer"
+    text: "Where the authorised representative considers or has reason to consider that a device presents a risk, or that the manufacturer does not meet its obligations, it shall inform the manufacturer and, where necessary, terminate the mandate, and inform the competent authority of the Member State in which it is established and, where applicable, the relevant notified body."
+    sourceCitation: "Regulation (EU) 2017/745 Article 11(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - non_compliance_notification
+      - mandate_termination_record
+    applicability:
+      operatorRoles:
+        - authorised_representative
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 12 — Change of authorised representative
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.12.OBL.001"
+    kind: obligation
+    title: "Procedure for change of authorised representative"
+    text: "The detailed arrangements for a change of authorised representative shall be clearly defined in an agreement between the outgoing authorised representative, the incoming authorised representative, and where practicable the manufacturer. That agreement shall address at least the date of termination of the mandate of the outgoing authorised representative, the date of commencement of the mandate of the incoming authorised representative, and the transfer of documents and information."
+    sourceCitation: "Regulation (EU) 2017/745 Article 12(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ar_change_agreement
+      - authorised_representative_mandate
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 13 — General obligations of importers
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.13.OBL.001"
+    kind: obligation
+    title: "Importer — verify device conformity"
+    text: "Importers shall place on the Union market only devices that are in conformity with this Regulation. They shall verify that the EU declaration of conformity and technical documentation have been drawn up, that the manufacturer has been identified and an authorised representative has been designated, and that the device bears the required conformity marking and is labelled in accordance with this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 13(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - import_verification_record
+      - eu_declaration_of_conformity
+      - ce_marking_record
+    applicability:
+      operatorRoles:
+        - importer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.13.OBL.002"
+    kind: obligation
+    title: "Importer — labeling and identification"
+    text: "Importers shall indicate on the device or on its packaging or in a document accompanying the device their name, registered trade name or registered trademark, and the address at which they can be contacted, so that their location can be established."
+    sourceCitation: "Regulation (EU) 2017/745 Article 13(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - import_labeling_record
+    applicability:
+      operatorRoles:
+        - importer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.13.OBL.003"
+    kind: obligation
+    title: "Importer — storage and transport conditions"
+    text: "Importers shall ensure that the storage or transport conditions comply with the conditions set by the manufacturer while a device is under their responsibility."
+    sourceCitation: "Regulation (EU) 2017/745 Article 13(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - storage_conditions_record
+      - transport_conditions_record
+    applicability:
+      operatorRoles:
+        - importer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.13.OBL.004"
+    kind: obligation
+    title: "Importer — complaint forwarding and notification"
+    text: "Importers who consider or have reason to consider that a device is not in conformity with this Regulation shall not place the device on the market until it has been brought into conformity. They shall forward complaints and reports from healthcare professionals, patients and users to the manufacturer and the authorised representative, and inform the competent authority of the Member State in which the device is made available."
+    sourceCitation: "Regulation (EU) 2017/745 Article 13(5)-(7)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - complaint_forwarding_record
+      - non_compliance_notification
+    applicability:
+      operatorRoles:
+        - importer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.13.OBL.005"
+    kind: obligation
+    title: "Importer — registration in EUDAMED"
+    text: "Importers shall register in the electronic system referred to in Article 30 and verify the registration of the device and the manufacturer before placing it on the market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 13(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - economic_operator_registration
+    applicability:
+      operatorRoles:
+        - importer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 14 — General obligations of distributors
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.14.OBL.001"
+    kind: obligation
+    title: "Distributor — verify device conformity indicators"
+    text: "Distributors shall, before making a device available on the market, verify that the device bears the CE marking of conformity, that the EU declaration of conformity has been drawn up, that the device is accompanied by the information required under Article 10(11) in the official language(s) of the Member State, and that the importer has complied with Article 13(3)."
+    sourceCitation: "Regulation (EU) 2017/745 Article 14(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - distribution_verification_record
+      - ce_marking_record
+      - eu_declaration_of_conformity
+    applicability:
+      operatorRoles:
+        - distributor
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.14.OBL.002"
+    kind: obligation
+    title: "Distributor — storage and transport conditions"
+    text: "Distributors shall ensure that while a device is under their responsibility, storage or transport conditions comply with those set by the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 14(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - storage_conditions_record
+      - transport_conditions_record
+    applicability:
+      operatorRoles:
+        - distributor
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.14.OBL.003"
+    kind: obligation
+    title: "Distributor — complaint forwarding and non-conformity action"
+    text: "Distributors who consider or have reason to consider that a device is not in conformity shall not make the device available until it has been brought into conformity. They shall inform the manufacturer and, where applicable, its authorised representative, and shall forward complaints and reports from healthcare professionals, patients and users to the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 14(4)-(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - complaint_forwarding_record
+      - non_compliance_notification
+    applicability:
+      operatorRoles:
+        - distributor
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 15 — Person responsible for regulatory compliance
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.15.OBL.001"
+    kind: obligation
+    title: "Designate person responsible for regulatory compliance"
+    text: "Manufacturers shall have available within their organisation at least one person responsible for regulatory compliance who possesses the requisite expertise in the field of medical devices. The requisite expertise shall be demonstrated by either a diploma, certificate or other evidence of formal qualification in law, medicine, pharmacy, engineering or another relevant scientific discipline, and at least one year of professional experience in regulatory affairs or quality management systems relating to medical devices; or four years of professional experience in regulatory affairs or quality management systems."
+    sourceCitation: "Regulation (EU) 2017/745 Article 15(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - prrc_designation_record
+      - prrc_qualification_evidence
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.15.OBL.002"
+    kind: obligation
+    title: "PRRC responsibilities"
+    text: "The person responsible for regulatory compliance shall at least be responsible for ensuring that the conformity of the devices is appropriately checked before a device is released, that the technical documentation and the EU declaration of conformity are drawn up and kept up to date, that the post-market surveillance obligations are complied with, that the reporting obligations in Articles 87 to 91 are fulfilled, and that, in the case of investigational devices, the statement referred to in Section 4.1 of Chapter II of Annex XV is issued."
+    sourceCitation: "Regulation (EU) 2017/745 Article 15(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - prrc_responsibilities_record
+      - device_release_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.15.OBL.003"
+    kind: obligation
+    title: "PRRC for micro and small enterprises"
+    text: "Micro and small enterprises as defined in Commission Recommendation 2003/361/EC shall not be required to have the person responsible for regulatory compliance within their organisation but shall have such a person permanently and continuously at their disposal."
+    sourceCitation: "Regulation (EU) 2017/745 Article 15(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - prrc_availability_agreement
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+      conditions:
+        - "applicable to micro and small enterprises only"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 16 — Obligations of importers/distributors acting as manufacturers
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.16.OBL.001"
+    kind: obligation
+    title: "Distributor or importer assuming manufacturer obligations"
+    text: "A distributor, importer or other natural or legal person shall assume the obligations incumbent on manufacturers if it places a device on the market under its own name, registered trade name or registered trademark; changes the intended purpose of a device already placed on the market or put into service; or modifies a device already placed on the market or put into service in such a way that compliance with the applicable requirements may be affected."
+    sourceCitation: "Regulation (EU) 2017/745 Article 16(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - manufacturer_obligation_assumption_record
+      - conformity_assessment_record
+      - technical_documentation
+    applicability:
+      operatorRoles:
+        - importer
+        - distributor
+      conditions:
+        - "applicable when the distributor or importer modifies the device, changes its intended purpose, or markets under own name"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.16.OBL.002"
+    kind: obligation
+    title: "Relabelling or repackaging notification"
+    text: "The person performing relabelling or repackaging activities shall inform the manufacturer and the competent authority of the Member State in which it is established and, upon request, provide a sample or mock-up of the relabelled or repackaged device and any translated labels."
+    sourceCitation: "Regulation (EU) 2017/745 Article 16(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - relabelling_notification_record
+      - relabelling_sample_record
+    applicability:
+      operatorRoles:
+        - importer
+        - distributor
+      conditions:
+        - "applicable when the device is relabelled or repackaged"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 17 — Single-use devices and their reprocessing
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.17.OBL.001"
+    kind: obligation
+    title: "Single-use device reprocessing requirements"
+    text: "Reprocessing and further use of single-use devices may only take place where permitted by national law of the Member State. Reprocessing shall be considered as manufacturing. The natural or legal person who reprocesses a single-use device shall be considered to be the manufacturer of the reprocessed device and shall assume the obligations incumbent on manufacturers."
+    sourceCitation: "Regulation (EU) 2017/745 Article 17(1)-(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - reprocessing_validation_record
+      - conformity_assessment_record
+      - national_law_compliance_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable to reprocessing of single-use devices where national law permits"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.17.OBL.002"
+    kind: obligation
+    title: "Reprocessed device labeling and traceability"
+    text: "The name and address of the natural or legal person who reprocesses the device and other relevant details shall be indicated on the label of the reprocessed device. The name, trademark and address of the original manufacturer shall no longer appear on the label but shall be mentioned in the instructions for use."
+    sourceCitation: "Regulation (EU) 2017/745 Article 17(5)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - reprocessing_labeling_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable to reprocessed single-use devices"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 18 — Implant card and information for implant patients
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.18.OBL.001"
+    kind: obligation
+    title: "Provide implant card"
+    text: "The manufacturer of an implantable device shall provide together with the device an implant card which shall be delivered to the particular patient who has been implanted with the device. The implant card shall contain information allowing the identification of the device including the device name, serial number, lot number, UDI, device model, and the name, address and website of the manufacturer."
+    sourceCitation: "Regulation (EU) 2017/745 Article 18(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - implant_card_template
+      - label_artwork
+    applicability:
+      operatorRoles:
+        - manufacturer
+      deviceTypes:
+        - implantable
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.18.OBL.002"
+    kind: obligation
+    title: "Implant card information for patients"
+    text: "The implant card shall provide information that allows the patient to identify the device and to be warned of any precautions, including information on the expected lifetime of the device and any necessary follow-up, in a language that can be easily understood by a lay person."
+    sourceCitation: "Regulation (EU) 2017/745 Article 18(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - implant_card_template
+      - patient_information_review
+    applicability:
+      operatorRoles:
+        - manufacturer
+      deviceTypes:
+        - implantable
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 19 — EU declaration of conformity
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.19.OBL.001"
+    kind: obligation
+    title: "Draw up EU declaration of conformity"
+    text: "By drawing up the EU declaration of conformity, the manufacturer shall ensure and declare that the device in question meets the requirements of this Regulation. The manufacturer shall keep the EU declaration of conformity up to date."
+    sourceCitation: "Regulation (EU) 2017/745 Article 19(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.19.OBL.002"
+    kind: obligation
+    title: "EU DoC content requirements"
+    text: "The EU declaration of conformity shall contain the information set out in Annex IV and shall be translated into an official Union language or languages required by the Member State(s) in which the device is made available."
+    sourceCitation: "Regulation (EU) 2017/745 Article 19(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - translation_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 20 — CE marking
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.20.OBL.001"
+    kind: obligation
+    title: "Affix CE marking"
+    text: "Devices, other than custom-made or investigational devices, considered to be in conformity with the requirements of this Regulation shall bear the CE marking of conformity, as presented in Annex V. The CE marking shall be affixed visibly, legibly and indelibly to the device or its sterile packaging. Where that is not possible or not warranted on account of the nature of the device, it shall be affixed to the packaging."
+    sourceCitation: "Regulation (EU) 2017/745 Article 20(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - label_artwork
+    applicability:
+      operatorRoles:
+        - manufacturer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.20.OBL.002"
+    kind: obligation
+    title: "CE marking with notified body number"
+    text: "The CE marking shall be followed by the identification number of the notified body responsible for the conformity assessment procedures set out in Annexes IX to XI. The identification number shall also be indicated in any promotional material which mentions that the device fulfils the requirements for CE marking."
+    sourceCitation: "Regulation (EU) 2017/745 Article 20(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - ce_marking_record
+      - notified_body_certificate
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable when notified body is involved in conformity assessment"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.20.OBL.003"
+    kind: obligation
+    title: "Prohibition of misleading marks"
+    text: "It shall be prohibited to affix marks, signs or inscriptions that are likely to mislead third parties with regard to the meaning or the graphic form of the CE marking. Any other marking may be affixed to the device, to the packaging, or to the document accompanying the device provided that the visibility, legibility and meaning of the CE marking is not thereby reduced."
+    sourceCitation: "Regulation (EU) 2017/745 Article 20(4)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - label_artwork
+      - ce_marking_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - importer
+        - distributor
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 21 — Devices for special purposes
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.21.OBL.001"
+    kind: obligation
+    title: "Custom-made device requirements"
+    text: "Custom-made devices shall not bear the CE marking. Custom-made devices shall comply with the procedure set out in Annex XIII and shall be accompanied by a statement as specified in Section 1 of Annex XIII, which shall be made available to the particular patient or user identified by name, an acronym or a numerical code."
+    sourceCitation: "Regulation (EU) 2017/745 Article 21(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - custom_device_statement
+      - technical_documentation
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable to custom-made devices only"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.21.OBL.002"
+    kind: obligation
+    title: "Investigational device requirements"
+    text: "Investigational devices shall be subject to the requirements set out in Articles 62 to 81 and shall not bear the CE marking."
+    sourceCitation: "Regulation (EU) 2017/745 Article 21(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - clinical_investigation_plan
+      - ethics_committee_approval
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable to investigational devices only"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 22 — Systems and procedure packs
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.22.OBL.001"
+    kind: obligation
+    title: "System or procedure pack assembler obligations"
+    text: "Natural or legal persons who combine devices bearing a CE marking with other devices or products, in a manner that is compatible with the intended purpose of the devices or other products and within the limits of use specified by their manufacturers, to place them on the market as a system or procedure pack, shall draw up a declaration stating that they have verified the mutual compatibility of the devices and other products, they have carried out the activities in accordance with the manufacturers' instructions, they have labelled the system or procedure pack, and they have drawn up the instructions for use."
+    sourceCitation: "Regulation (EU) 2017/745 Article 22(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - system_procedure_pack_declaration
+      - compatibility_verification_record
+      - label_artwork
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable to persons assembling systems or procedure packs"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.22.OBL.002"
+    kind: obligation
+    title: "System or procedure pack sterilisation"
+    text: "Where the system or procedure pack incorporates devices which do not bear the CE marking or where the chosen combination of devices is not compatible, or the sterilisation was not carried out in accordance with the manufacturers' instructions, the system or procedure pack shall be treated as a device in its own right and shall be subject to the relevant conformity assessment procedure."
+    sourceCitation: "Regulation (EU) 2017/745 Article 22(3)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - conformity_assessment_record
+      - sterilisation_validation_report
+    applicability:
+      operatorRoles:
+        - manufacturer
+      conditions:
+        - "applicable when system or procedure pack includes non-CE devices or requires independent sterilisation"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 23 — Parts and components
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.23.OBL.001"
+    kind: obligation
+    title: "Parts and components intended for device incorporation"
+    text: "Any natural or legal person who makes available on the market an article, including a spare part or component, which is specifically intended to replace an identical or similar integral part or component of a device that is defective or worn, in order to maintain or restore the function of the device without changing its performance or safety characteristics or its intended purpose, shall ensure that the article does not adversely affect the safety and performance of the device. Evidence thereof shall be kept available for competent authorities."
+    sourceCitation: "Regulation (EU) 2017/745 Article 23(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - component_compatibility_record
+      - safety_performance_assessment
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - distributor
+      conditions:
+        - "applicable to persons making available parts, components, or spare parts for device maintenance"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Article 24 — Submission of information, including on UDI
+  # ──────────────────────────────────────────────────────────────────────
+  - obligationId: "EUMDR.24.OBL.001"
+    kind: obligation
+    title: "Information submission to EUDAMED by economic operators"
+    text: "Economic operators shall submit the relevant information referred to in Part A of Annex VI to the UDI database and, where applicable, to the electronic system referred to in Article 30, in accordance with the timelines and conditions established in this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 24(1)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_registration_record
+      - udi_assignment_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - obligationId: "EUMDR.24.OBL.002"
+    kind: obligation
+    title: "Keep EUDAMED information up to date"
+    text: "Each economic operator shall keep the information referred to in Part A of Annex VI up to date. Where applicable, the economic operator shall update the information within one week of a change occurring."
+    sourceCitation: "Regulation (EU) 2017/745 Article 24(2)"
+    mandatory: true
+    requiredEvidenceTypes:
+      - eudamed_update_record
+    applicability:
+      operatorRoles:
+        - manufacturer
+        - authorised_representative
+        - importer
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+constraints:
+  # Article 5 constraints
+  - constraintId: "EUMDR.5.CON.001"
+    appliesTo: "EUMDR.5.OBL.001"
+    text: "A device may only be placed on the market or put into service if it complies with this Regulation when duly supplied. Non-compliant devices shall be withdrawn or recalled."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 7 constraints
+  - constraintId: "EUMDR.7.CON.001"
+    appliesTo: "EUMDR.7.OBL.002"
+    text: "Performance claims must be supported by clinical evidence. Claims attributing unsubstantiated functions, properties, or therapeutic effects to the device are prohibited."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 10 constraints
+  - constraintId: "EUMDR.10.CON.001"
+    appliesTo: "EUMDR.10.OBL.005"
+    text: "Technical documentation and EU declaration of conformity must be retained for a minimum of 10 years (15 years for implantable devices) after the last device has been placed on the market. Premature disposal is a regulatory violation."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - constraintId: "EUMDR.10.CON.002"
+    appliesTo: "EUMDR.10.OBL.007"
+    text: "The quality management system shall be proportionate to the risk class of the device. Class III and implantable devices require the most comprehensive QMS coverage."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - constraintId: "EUMDR.10.CON.003"
+    appliesTo: "EUMDR.10.OBL.003"
+    text: "Technical documentation must be drawn up before the device is placed on the market. Retrospective documentation is not acceptable for initial market placement."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 11 constraints
+  - constraintId: "EUMDR.11.CON.001"
+    appliesTo: "EUMDR.11.OBL.001"
+    text: "A manufacturer established outside the Union may not place a device on the Union market without a designated authorised representative established in the Union. The authorised representative must be a sole representative."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 13 constraints
+  - constraintId: "EUMDR.13.CON.001"
+    appliesTo: "EUMDR.13.OBL.001"
+    text: "The importer shall not place a device on the market where it considers or has reason to consider that the device is not in conformity with this Regulation. Non-compliant devices must not enter the Union market."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 15 constraints
+  - constraintId: "EUMDR.15.CON.001"
+    appliesTo: "EUMDR.15.OBL.001"
+    text: "The person responsible for regulatory compliance must possess the requisite expertise. The qualifications are minimum requirements — a diploma plus one year experience, or four years experience in the absence of formal qualifications."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 16 constraints
+  - constraintId: "EUMDR.16.CON.001"
+    appliesTo: "EUMDR.16.OBL.001"
+    text: "When a distributor or importer modifies a device, changes its intended purpose, or places it under its own name, it shall be considered the manufacturer and shall fully assume all manufacturer obligations under this Regulation."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 17 constraints
+  - constraintId: "EUMDR.17.CON.001"
+    appliesTo: "EUMDR.17.OBL.001"
+    text: "Reprocessing of single-use devices is only permitted where Member State national law allows it. A reprocessor assumes manufacturer obligations. Class III single-use devices may not be reprocessed."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 19 constraints
+  - constraintId: "EUMDR.19.CON.001"
+    appliesTo: "EUMDR.19.OBL.002"
+    text: "The EU declaration of conformity must contain all elements set out in Annex IV. Omission of any required element renders the declaration non-compliant."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 20 constraints
+  - constraintId: "EUMDR.20.CON.001"
+    appliesTo: "EUMDR.20.OBL.001"
+    text: "The CE marking shall be affixed before the device is placed on the market. It must be visible, legible and indelible. Custom-made and investigational devices shall not bear the CE marking."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  # Article 22 constraints
+  - constraintId: "EUMDR.22.CON.001"
+    appliesTo: "EUMDR.22.OBL.002"
+    text: "Where a system or procedure pack includes devices not bearing CE marking, or where sterilisation is performed not in accordance with manufacturers' instructions, the entire pack shall be treated as a standalone device requiring its own conformity assessment."
+    severity: hard
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+definitions:
+  - definitionId: "EUMDR.DEF.MAKING_AVAILABLE"
+    term: "Making Available on the Market"
+    text: "Any supply of a device, other than an investigational device, for distribution, consumption or use on the Union market in the course of a commercial activity, whether in return for payment or free of charge."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(27)"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - definitionId: "EUMDR.DEF.PUTTING_INTO_SERVICE"
+    term: "Putting into Service"
+    text: "The stage at which a device, other than an investigational device, has been made available to the final user as being ready for use on the Union market for the first time for its intended purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(29)"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - definitionId: "EUMDR.DEF.MANUFACTURER"
+    term: "Manufacturer"
+    text: "The natural or legal person who manufactures or fully refurbishes a device or has a device designed, manufactured or fully refurbished, and markets that device under its name or trademark."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(30)"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - definitionId: "EUMDR.DEF.AUTHORISED_REPRESENTATIVE"
+    term: "Authorised Representative"
+    text: "Any natural or legal person established within the Union who has received and accepted a written mandate from a manufacturer, located outside the Union, to act on the manufacturer's behalf in relation to specified tasks with regard to the latter's obligations under this Regulation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(32)"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - definitionId: "EUMDR.DEF.IMPORTER"
+    term: "Importer"
+    text: "Any natural or legal person established within the Union that places a device from a third country on the Union market."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(33)"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - definitionId: "EUMDR.DEF.DISTRIBUTOR"
+    term: "Distributor"
+    text: "Any natural or legal person in the supply chain, other than the manufacturer or the importer, that makes a device available on the market, up until the point of putting into service."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(34)"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - definitionId: "EUMDR.DEF.INTENDED_PURPOSE"
+    term: "Intended Purpose"
+    text: "The use for which a device is intended according to the data supplied by the manufacturer on the label, in the instructions for use or in promotional or sales materials or statements and as specified by the manufacturer in the clinical evaluation."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(12)"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - definitionId: "EUMDR.DEF.CUSTOM_MADE_DEVICE"
+    term: "Custom-made Device"
+    text: "Any device specifically made in accordance with a written prescription of any person authorised by national law by virtue of that person's professional qualifications which gives, under that person's responsibility, specific design characteristics, and is intended for the sole use of a particular patient exclusively to meet their individual conditions and needs."
+    sourceCitation: "Regulation (EU) 2017/745 Article 2(3)"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+  - definitionId: "EUMDR.DEF.SYSTEM_PROCEDURE_PACK"
+    term: "System or Procedure Pack"
+    text: "A combination of products, including devices, which are packaged together and placed on the market for the purpose of being used for a specific medical purpose."
+    sourceCitation: "Regulation (EU) 2017/745 Article 22"
+    metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
+
+relationships:
+  # PART_OF relationships — Article 10 sub-obligations
+  - from: "EUMDR.10.OBL.008"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "Design and development controls are a component of the QMS"
+
+  - from: "EUMDR.10.OBL.009"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "Risk management integration is a component of the QMS"
+
+  - from: "EUMDR.10.OBL.010"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "Clinical evaluation is a component of the QMS"
+
+  - from: "EUMDR.10.OBL.011"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "Process validation is a component of the QMS"
+
+  - from: "EUMDR.10.OBL.012"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "Document control is a component of the QMS"
+
+  - from: "EUMDR.10.OBL.013"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "CAPA is a component of the QMS"
+
+  - from: "EUMDR.10.OBL.014"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "Supplier controls are a component of the QMS"
+
+  - from: "EUMDR.10.OBL.015"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "Post-market surveillance system is a component of the QMS"
+
+  - from: "EUMDR.10.OBL.016"
+    to: "EUMDR.10.OBL.007"
+    type: PART_OF
+    props:
+      note: "Complaints handling and FSCA notification is a component of the QMS"
+
+  # CROSS_REFERENCES — inter-article references within Chapter II
+  - from: "EUMDR.10.OBL.020"
+    to: "EUMDR.19.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 10(14) references Article 19 for EU DoC requirements"
+
+  - from: "EUMDR.10.OBL.004"
+    to: "EUMDR.20.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 10(4) references Article 20 for CE marking requirements"
+
+  - from: "EUMDR.10.OBL.017"
+    to: "EUMDR.18.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 10 labeling references Article 18 implant card for implantable devices"
+
+  - from: "EUMDR.10.OBL.018"
+    to: "EUMDR.24.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 10 UDI participation references Article 24 EUDAMED submissions"
+
+  - from: "EUMDR.10.OBL.019"
+    to: "EUMDR.24.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 10 EUDAMED registration references Article 24 information submission"
+
+  - from: "EUMDR.5.OBL.002"
+    to: "EUMDR.20.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 5 CE marking requirement references Article 20 CE marking rules"
+
+  - from: "EUMDR.14.OBL.001"
+    to: "EUMDR.13.OBL.002"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 14 distributor verification includes checking Article 13(3) importer labeling"
+
+  - from: "EUMDR.16.OBL.001"
+    to: "EUMDR.10.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Article 16 states that importers/distributors who modify devices assume Article 10 manufacturer obligations"
+
+  - from: "EUMDR.11.OBL.002"
+    to: "EUMDR.10.OBL.003"
+    type: CROSS_REFERENCES
+    props:
+      note: "Authorised representative must verify that technical documentation (Art. 10(3)) has been drawn up"
+
+  - from: "EUMDR.11.OBL.002"
+    to: "EUMDR.19.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Authorised representative must verify that EU DoC (Art. 19) has been drawn up"
+
+  - from: "EUMDR.13.OBL.005"
+    to: "EUMDR.24.OBL.001"
+    type: CROSS_REFERENCES
+    props:
+      note: "Importer EUDAMED registration relates to Article 24 information submission"
+
+  - from: "EUMDR.19.OBL.001"
+    to: "EUMDR.20.OBL.001"
+    type: TRIGGERS
+    props:
+      note: "EU declaration of conformity is a prerequisite for affixing CE marking"
+
+  - from: "EUMDR.10.OBL.001"
+    to: "EUMDR.5.OBL.001"
+    type: SATISFIES
+    props:
+      note: "Manufacturer compliance with Art. 10 satisfies the general market placement requirement of Art. 5"
+
+  - from: "EUMDR.10.OBL.002"
+    to: "EUMDR.10.OBL.003"
+    type: TRIGGERS
+    props:
+      note: "Risk management and clinical evaluation feed into the technical documentation"
+
+  # Cross-regulation references
+  - from: "EUMDR.10.OBL.007"
+    to: "ISO13485.4.1.OBL.001"
+    type: IMPLEMENTS
+    props:
+      note: "EU MDR Article 10(9) QMS requirement implemented via ISO 13485 QMS clause"
+
+  - from: "EUMDR.10.OBL.009"
+    to: "ISO14971.3.OBL.001"
+    type: IMPLEMENTS
+    props:
+      note: "EU MDR risk management requirement implemented via ISO 14971 risk management process"
+
+  - from: "EUMDR.8.OBL.001"
+    to: "ISO14971.3.OBL.001"
+    type: HARMONIZED_BY
+    props:
+      note: "EU MDR requirements can be presumed met via harmonised EN ISO 14971"
+
+  - from: "EUMDR.5.OBL.001"
+    to: "EUMDR.10.OBL.001"
+    type: DEPENDS_ON
+    props:
+      note: "Market placement depends on manufacturer fulfilling Art. 10 obligations"
+
+  - from: "EUMDR.21.OBL.001"
+    to: "EUMDR.20.OBL.001"
+    type: EXEMPTS
+    props:
+      note: "Custom-made devices are exempt from CE marking requirement"
+
+  - from: "EUMDR.21.OBL.002"
+    to: "EUMDR.20.OBL.001"
+    type: EXEMPTS
+    props:
+      note: "Investigational devices are exempt from CE marking requirement"

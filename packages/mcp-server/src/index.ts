@@ -18,6 +18,7 @@
  *   - regground_get_graph_stats: Graph summary stats
  *   - regground_list_process_types: Available process types
  *   - regground_list_jurisdictions: Available jurisdictions
+ *   - regground_get_definition: Look up or search regulatory definitions
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -486,6 +487,56 @@ Returns: string[] of jurisdictions (e.g., "FDA", "EU_MDR", "GLOBAL", "UK_MDR", e
       return {
         content: [{ type: 'text', text: JSON.stringify(jurisdictions, null, 2) }],
       };
+    } catch (error) {
+      return { content: [{ type: 'text', text: handleError(error) }] };
+    }
+  }
+);
+
+// ========== TOOL 12: Get Definition ==========
+
+server.registerTool(
+  'regground_get_definition',
+  {
+    title: 'Get Regulatory Definition',
+    description: `Look up a regulatory definition by ID or search definitions by term.
+
+Args:
+  - definition_id (string, optional): Exact definition ID (e.g. "EUMDR.DEF.MEDICAL_DEVICE")
+  - query (string, optional): Search term to find definitions by term or text (case-insensitive partial match)
+  - limit (number): Max results for search, default 20
+
+Provide either definition_id for exact lookup or query for search.
+
+Returns: Definition(s) with term, text, and source citation.`,
+    inputSchema: {
+      definition_id: z.string().optional().describe('Exact definition ID for lookup'),
+      query: z.string().optional().describe('Search term to find definitions'),
+      limit: z.number().int().min(1).max(100).default(20).describe('Max search results'),
+    },
+    annotations: {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
+  },
+  async ({ definition_id, query, limit }) => {
+    try {
+      if (definition_id) {
+        const def = await graph.getDefinition(definition_id);
+        if (!def) {
+          return { content: [{ type: 'text', text: `Definition not found: ${definition_id}` }] };
+        }
+        return { content: [{ type: 'text', text: JSON.stringify(def, null, 2) }] };
+      }
+      if (query) {
+        const defs = await graph.searchDefinitions(query, limit);
+        return {
+          content: [{ type: 'text', text: truncate(JSON.stringify({ total: defs.length, definitions: defs }, null, 2)) }],
+        };
+      }
+      return { content: [{ type: 'text', text: 'Provide either definition_id or query.' }] };
     } catch (error) {
       return { content: [{ type: 'text', text: handleError(error) }] };
     }

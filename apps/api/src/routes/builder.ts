@@ -5,6 +5,7 @@
  * - GET    /agents                 list this tenant's saved agents
  * - GET    /agents/:id             fetch one
  * - POST   /agents                 create or upsert by (tenantId, name)
+ * - PATCH  /agents/:id             rename a saved agent
  * - PATCH  /agents/:id/attach      attach data to a slot on this agent
  * - DELETE /agents/:id/attach/:slot remove a slot's attached data
  * - POST   /agents/:id/launch      resolve agent → sandbox task + merged input
@@ -24,6 +25,8 @@ import {
   KBCatalog,
   ProcessBuilderAgent,
   LLMAbstraction,
+  EmbeddingClient,
+  SemanticContextBroker,
   templateToWorkflowDraft,
   summarizeTemplate,
 } from '@regground/core';
@@ -47,8 +50,8 @@ function requireTenantId(req: Express.Request): string {
 
 const SaveSchema = z.object({
   name: z.string().min(1).max(200),
-  jobId: z.string().min(1).max(64),
-  jobTitle: z.string().min(1).max(200),
+  processId: z.string().min(1).max(64),
+  processTitle: z.string().min(1).max(200),
   taskId: z.string().min(1).max(64).optional().nullable(),
   regulations: z.array(z.string()).default([]),
   evidenceStatus: z.record(z.string()).default({}),
@@ -141,14 +144,14 @@ router.post('/agents', async (req, res) => {
         | undefined;
       const materialChanged =
         JSON.stringify(existing.regulations ?? []) !== JSON.stringify(parsed.data.regulations)
-        || existing.jobId !== parsed.data.jobId
+        || existing.processId !== parsed.data.processId
         || existing.riskBand !== parsed.data.riskBand
         || (existing.description ?? null) !== (parsed.data.description ?? null);
       let nextAttachedData: typeof existing.attachedData = existing.attachedData ?? {};
       if (!existingCtx || materialChanged) {
         const ctx = await synthesizeAgentContext({
-          jobId: parsed.data.jobId,
-          jobTitle: parsed.data.jobTitle,
+          processId: parsed.data.processId,
+          processTitle: parsed.data.processTitle,
           taskId: parsed.data.taskId ?? null,
           regulations: parsed.data.regulations,
           description: parsed.data.description ?? null,
@@ -159,8 +162,8 @@ router.post('/agents', async (req, res) => {
       const [row] = await db
         .update(builderAgents)
         .set({
-          jobId: parsed.data.jobId,
-          jobTitle: parsed.data.jobTitle,
+          processId: parsed.data.processId,
+          processTitle: parsed.data.processTitle,
           taskId: parsed.data.taskId ?? null,
           regulations: parsed.data.regulations,
           evidenceStatus: parsed.data.evidenceStatus,
@@ -178,8 +181,8 @@ router.post('/agents', async (req, res) => {
     }
 
     const initialCtx = await synthesizeAgentContext({
-      jobId: parsed.data.jobId,
-      jobTitle: parsed.data.jobTitle,
+      processId: parsed.data.processId,
+      processTitle: parsed.data.processTitle,
       taskId: parsed.data.taskId ?? null,
       regulations: parsed.data.regulations,
       description: parsed.data.description ?? null,
@@ -192,8 +195,8 @@ router.post('/agents', async (req, res) => {
         tenantId,
         createdBy: isUuid(req.user?.sub) ? req.user!.sub : null,
         name: parsed.data.name,
-        jobId: parsed.data.jobId,
-        jobTitle: parsed.data.jobTitle,
+        processId: parsed.data.processId,
+        processTitle: parsed.data.processTitle,
         taskId: parsed.data.taskId ?? null,
         regulations: parsed.data.regulations,
         evidenceStatus: parsed.data.evidenceStatus,
@@ -206,6 +209,27 @@ router.post('/agents', async (req, res) => {
       })
       .returning();
     res.status(201).json(row);
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+/* ── PATCH /agents/:id ─ rename ───────────────────────────────────── */
+const RenameSchema = z.object({ name: z.string().min(1).max(200) });
+router.patch('/agents/:id', async (req, res) => {
+  const parsed = RenameSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ errors: parsed.error.errors });
+  try {
+    const tenantId = requireTenantId(req);
+    const id = req.params.id;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const [row] = await getDB()
+      .update(builderAgents)
+      .set({ name: parsed.data.name.trim(), updatedAt: new Date() })
+      .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
+      .returning();
+    if (!row) return res.status(404).json({ error: 'agent not found' });
+    res.json(row);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
@@ -299,7 +323,7 @@ router.post('/agents/:id/launch', async (req, res) => {
     if (!agent.taskId) {
       return res.status(409).json({
         error: 'no_runner',
-        message: 'This agent has no sandbox runner mapped. Pick a job that has one.',
+        message: 'This agent has no sandbox runner mapped. Pick a process that has one.',
       });
     }
     const def = getTask(agent.taskId);
@@ -310,17 +334,29 @@ router.post('/agents/:id/launch', async (req, res) => {
       });
     }
 
-    // Merge attached data over the sample data. Attached data is keyed by
+    // Merge attached data over the base input. Attached data is keyed by
     // slot label; we expose it under input.attachments so the task agent
     // can opt to consume it.
+    //
+    // Two reserved slots are handled specially:
+    //   __context — the synthesised agent persona (surfaced separately).
+    //   __input   — a full input snapshot saved from the Sandbox run screen.
+    //               When present it becomes the base input (instead of the
+    //               task's sample data), so the agent replays exactly what the
+    //               user ran.
     const attachments: Record<string, unknown> = {};
     let agentContext: string | null = null;
+    let savedInput: unknown = undefined;
     for (const [slot, payload] of Object.entries(agent.attachedData ?? {})) {
-      // The synthesised context lives under a reserved __context slot; pull
-      // it out so it's surfaced separately instead of as an "attachment".
       if (slot === '__context') {
         const ctx = payload as unknown as { systemPrompt?: string } | null | undefined;
         if (ctx && typeof ctx.systemPrompt === 'string') agentContext = ctx.systemPrompt;
+        continue;
+      }
+      if (slot === '__input') {
+        if (payload && typeof payload === 'object' && 'content' in payload) {
+          try { savedInput = JSON.parse((payload as { content: string }).content); } catch { /* ignore */ }
+        }
         continue;
       }
       if (!payload || typeof payload !== 'object' || !('content' in payload)) continue;
@@ -337,16 +373,20 @@ router.post('/agents/:id/launch', async (req, res) => {
       };
     }
 
+    const baseInput = savedInput !== undefined ? savedInput : def.sampleData;
+    const hasAttachments = Object.keys(attachments).length > 0;
     const mergedInput =
-      typeof def.sampleData === 'object' && def.sampleData !== null && !Array.isArray(def.sampleData)
-        ? { ...(def.sampleData as Record<string, unknown>), attachments }
-        : def.sampleData;
+      typeof baseInput === 'object' && baseInput !== null && !Array.isArray(baseInput)
+        ? (hasAttachments
+            ? { ...(baseInput as Record<string, unknown>), attachments }
+            : (baseInput as Record<string, unknown>))
+        : baseInput;
 
     res.json({
       taskId: def.id,
       taskName: def.name,
       input: mergedInput,
-      hasAttachments: Object.keys(attachments).length > 0,
+      hasAttachments,
       attachmentSlots: Object.keys(attachments),
       agentContext,
     });
@@ -379,16 +419,38 @@ router.delete('/agents/:id', async (req, res) => {
 let _graph: ObligationGraph | null = null;
 let _catalog: KBCatalog | null = null;
 let _agent: ProcessBuilderAgent | null = null;
+let _broker: SemanticContextBroker | null = null;
+function getGraph(): ObligationGraph {
+  if (!_graph) _graph = new ObligationGraph();
+  return _graph;
+}
 function getCatalog(): KBCatalog {
-  if (!_catalog) {
-    _graph = new ObligationGraph();
-    _catalog = new KBCatalog(_graph);
-  }
+  if (!_catalog) _catalog = new KBCatalog(getGraph());
   return _catalog;
+}
+function getBroker(): SemanticContextBroker | null {
+  if (_broker) return _broker;
+  try {
+    const llm = LLMAbstraction.fromEnv();
+    let embeddings: EmbeddingClient | null = null;
+    try {
+      embeddings = EmbeddingClient.fromEnv();
+    } catch {
+      // Embeddings unavailable — broker will use structural-only fallback
+    }
+    _broker = new SemanticContextBroker(getGraph(), getCatalog(), llm, embeddings);
+    return _broker;
+  } catch {
+    // LLM unavailable — no broker
+    return null;
+  }
 }
 function getBuilderAgent(): ProcessBuilderAgent {
   if (!_agent) {
-    _agent = new ProcessBuilderAgent(LLMAbstraction.fromEnv(), getCatalog());
+    const agent = new ProcessBuilderAgent(LLMAbstraction.fromEnv(), getCatalog());
+    const broker = getBroker();
+    if (broker) agent.withBroker(broker);
+    _agent = agent;
   }
   return _agent;
 }
@@ -423,7 +485,7 @@ const DraftSchema = z.object({
     .optional(),
 });
 
-// POST /api/builder/draft  — KB-grounded LLM workflow draft
+// POST /api/builder/draft  — KB-grounded LLM workflow draft (semantic-aware)
 router.post('/draft', async (req, res) => {
   try {
     requireTenantId(req);
@@ -431,7 +493,13 @@ router.post('/draft', async (req, res) => {
     if (!parsed.success) {
       return res.status(400).json({ error: 'Invalid request', issues: parsed.error.issues });
     }
+    const t0 = Date.now();
+    console.log('[builder/draft] starting build…', {
+      description: parsed.data.description.slice(0, 80),
+      conversation: parsed.data.conversation?.length ?? 0,
+    });
     const result = await getBuilderAgent().build(parsed.data);
+    console.log('[builder/draft] done in %dms — %s via %s', Date.now() - t0, result.llmModel, result.llmProvider);
     res.json({ ...result, generatedAt: new Date().toISOString() });
   } catch (e) {
     const err = e as Error & {
@@ -513,13 +581,25 @@ router.get('/templates/:id/draft', (req, res) => {
 // Process Workflows — persisted WorkflowDrafts from the Process Designer
 // ─────────────────────────────────────────────────────────────────────────
 
+const WorkflowSourceSchema = z.enum(['template', 'chat', 'manual', 'canvas']);
+
 const WorkflowSaveSchema = z.object({
   name: z.string().min(1).max(200),
   processType: z.string().min(1).max(64),
   jurisdiction: z.string().min(1).max(64),
   description: z.string().max(2000).optional().nullable(),
   draft: z.record(z.unknown()),
-  source: z.enum(['template', 'chat', 'manual']).default('manual'),
+  source: WorkflowSourceSchema.default('manual'),
+  sourceTemplateId: z.string().max(64).optional().nullable(),
+});
+
+const WorkflowUpdateSchema = z.object({
+  name: z.string().min(1).max(200).optional(),
+  processType: z.string().min(1).max(64).optional(),
+  jurisdiction: z.string().min(1).max(64).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  draft: z.record(z.unknown()).optional(),
+  source: WorkflowSourceSchema.optional(),
   sourceTemplateId: z.string().max(64).optional().nullable(),
 });
 
@@ -559,6 +639,38 @@ router.get('/workflows/:id', async (req, res) => {
       .from(processWorkflows)
       .where(and(eq(processWorkflows.id, id), eq(processWorkflows.tenantId, tenantId)))
       .limit(1);
+    if (!row) return res.status(404).json({ error: 'workflow not found' });
+    res.json(row);
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+// PATCH /api/builder/workflows/:id — update an existing saved workflow
+router.patch('/workflows/:id', async (req, res) => {
+  try {
+    const tenantId = requireTenantId(req);
+    const id = req.params.id;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    const parsed = WorkflowUpdateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request', issues: parsed.error.issues });
+    }
+    const v = parsed.data;
+    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    if (v.name !== undefined) patch.name = v.name;
+    if (v.processType !== undefined) patch.processType = v.processType;
+    if (v.jurisdiction !== undefined) patch.jurisdiction = v.jurisdiction;
+    if (v.description !== undefined) patch.description = v.description;
+    if (v.draft !== undefined) patch.draft = v.draft;
+    if (v.source !== undefined) patch.source = v.source;
+    if (v.sourceTemplateId !== undefined) patch.sourceTemplateId = v.sourceTemplateId;
+
+    const [row] = await getDB()
+      .update(processWorkflows)
+      .set(patch)
+      .where(and(eq(processWorkflows.id, id), eq(processWorkflows.tenantId, tenantId)))
+      .returning();
     if (!row) return res.status(404).json({ error: 'workflow not found' });
     res.json(row);
   } catch (e) {

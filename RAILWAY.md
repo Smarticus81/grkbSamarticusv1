@@ -77,4 +77,4 @@ open  https://<web-domain>
 - `DATABASE_URL` from Railway Postgres includes SSL — Drizzle handles it.
 - For Neo4j Aura, always use the `neo4j+s://` scheme (TLS).
 - `apps/api/uploads` is excluded from the image; if you need persistent uploads, attach a Railway Volume to the `api` service at `/app/apps/api/uploads`.
-- To seed the graph, run `pnpm seed:graph` locally (or as a one-off Railway job) with the same `NEO4J_*` vars pointing at Aura.
+- To seed the graph, run `pnpm seed:graph` locally (or as a one-off Railway process) with the same `NEO4J_*` vars pointing at Aura.

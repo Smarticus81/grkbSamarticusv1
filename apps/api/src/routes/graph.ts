@@ -41,6 +41,12 @@ const UpsertSchema = z.object({
   version: z.string(),
   mandatory: z.boolean().default(true),
   requiredEvidenceTypes: z.array(z.string()).default([]),
+  applicability: z.object({
+    deviceClasses: z.array(z.string()).optional(),
+    operatorRoles: z.array(z.string()).optional(),
+    deviceTypes: z.array(z.string()).optional(),
+    conditions: z.array(z.string()).optional(),
+  }).default({}),
   metadata: z.record(z.unknown()).default({}),
 });
 
