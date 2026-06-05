@@ -98,10 +98,8 @@ type RunResult = {
 
 /* ── Component ───────────────────────────────────────────────────────── */
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
-
 export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
-  const { api } = useAuthenticatedApi();
+  const { api, streamSse } = useAuthenticatedApi();
   const [, navigate] = useLocation();
 
   const [tasks, setTasks] = useState<TaskCard[] | null>(null);
@@ -119,13 +117,14 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
   const [running, setRunning] = useState(false);
   const [events, setEvents] = useState<LaneEvent[]>([]);
   const [result, setResult] = useState<RunResult | null>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const streamAbortRef = useRef<AbortController | null>(null);
 
   // Save-as-agent state (the Builder is now an inline action on a run)
   const [agentName, setAgentName] = useState('');
   const [savingAgent, setSavingAgent] = useState(false);
   const [savedAgentMsg, setSavedAgentMsg] = useState<string | null>(null);
   const [savedAgentOk, setSavedAgentOk] = useState(false);
+  const [saveTarget, setSaveTarget] = useState<'sandbox' | 'claude-managed-agents'>('sandbox');
 
   // The route (/app/sandbox vs /app/sandbox/:taskId) is the single source of
   // truth for which process is open. No process is auto-selected — choosing a process is
@@ -137,7 +136,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     api<{ tasks: TaskCard[] }>('/api/sandbox/tasks')
       .then((r) => setTasks(r.tasks))
       .catch((e) => setError(String(e?.message ?? e)));
-    return () => { eventSourceRef.current?.close(); };
+    return () => { streamAbortRef.current?.abort(); };
   }, []);
 
   /* Load detail when selection changes; clear everything when nothing is selected. */
@@ -218,38 +217,42 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     setEvents([]);
     setResult(null);
     setError(null);
-    eventSourceRef.current?.close();
+    streamAbortRef.current?.abort();
     try {
       const start = await api<{ runId: string }>(`/api/sandbox/tasks/${detail.id}/run`, {
         method: 'POST',
         body: JSON.stringify({ input: body, mode: 'with-graph' }),
       });
-      const es = new EventSource(`${API_BASE}/api/sandbox/runs/${start.runId}/stream`);
-      eventSourceRef.current = es;
-      const eventNames: LaneEvent['type'][] = [
+      const controller = new AbortController();
+      streamAbortRef.current = controller;
+      const eventNames = new Set<LaneEvent['type']>([
         'run.started', 'agent.thinking', 'graph.query', 'graph.cite',
         'obligation.satisfied', 'obligation.missed', 'output.gated',
         'run.completed', 'run.error',
-      ];
-      eventNames.forEach((name) => {
-        es.addEventListener(name, (e: MessageEvent) => {
+      ]);
+      await streamSse(`/api/sandbox/runs/${start.runId}/stream`, {
+        signal: controller.signal,
+        onEvent: async ({ event, data }) => {
+          if (event === 'stream.end') {
+            try {
+              const r = await api<RunResult>(`/api/sandbox/runs/${start.runId}/result`);
+              setResult(r);
+            } catch { /* ignore */ }
+            return;
+          }
+          if (!eventNames.has(event as LaneEvent['type'])) return;
           try {
-            const parsed = JSON.parse(e.data) as LaneEvent;
+            const parsed = JSON.parse(data) as LaneEvent;
             setEvents((prev) => [...prev, parsed]);
           } catch { /* ignore */ }
-        });
+        },
       });
-      es.addEventListener('stream.end', async () => {
-        es.close();
-        try {
-          const r = await api<RunResult>(`/api/sandbox/runs/${start.runId}/result`);
-          setResult(r);
-        } catch { /* ignore */ }
-        setRunning(false);
-      });
-      es.onerror = () => { es.close(); setRunning(false); };
     } catch (e) {
-      setError(String((e as Error)?.message ?? e));
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        setError(String((e as Error)?.message ?? e));
+      }
+    } finally {
+      streamAbortRef.current = null;
       setRunning(false);
     }
   }
@@ -282,7 +285,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           evidenceStatus: {},
           guardrails: { qualification: true, compliance: true, 'review-gate': false, 'strict-schema': true },
           outputFormat: 'draft-doc',
-          deployTarget: 'sandbox',
+          deployTarget: saveTarget,
           riskBand,
           description: detail.oneLiner,
         }),
@@ -532,32 +535,57 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
               {savedAgentOk ? (
                 <div style={{ fontSize: 13, color: 'var(--ok, #2a8c4f)' }}>{savedAgentMsg}</div>
               ) : (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <input
-                    value={agentName}
-                    onChange={(e) => setAgentName(e.target.value)}
-                    placeholder={`${detail.name}`}
-                    disabled={savingAgent}
-                    style={{
-                      flex: 1,
-                      minWidth: 180,
-                      fontFamily: 'var(--sans)',
-                      fontSize: 13,
-                      color: 'var(--ink)',
-                      background: '#fff',
-                      border: '1px solid var(--rule)',
-                      borderRadius: 6,
-                      padding: '8px 10px',
-                    }}
-                  />
-                  <button
-                    onClick={saveAsAgent}
-                    disabled={savingAgent}
-                    className="btn-orange"
-                    style={{ fontSize: 13, padding: '8px 16px' }}
-                  >
-                    {savingAgent ? 'Saving…' : 'Save as agent'}
-                  </button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <input
+                      value={agentName}
+                      onChange={(e) => setAgentName(e.target.value)}
+                      placeholder={`${detail.name}`}
+                      disabled={savingAgent}
+                      style={{
+                        flex: 1,
+                        minWidth: 180,
+                        fontFamily: 'var(--sans)',
+                        fontSize: 13,
+                        color: 'var(--ink)',
+                        background: '#fff',
+                        border: '1px solid var(--rule)',
+                        borderRadius: 6,
+                        padding: '8px 10px',
+                      }}
+                    />
+                    <button
+                      onClick={saveAsAgent}
+                      disabled={savingAgent}
+                      className="btn-orange"
+                      style={{ fontSize: 13, padding: '8px 16px' }}
+                    >
+                      {savingAgent ? 'Saving…' : 'Save as agent'}
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>Deploy target:</span>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="saveTarget"
+                        checked={saveTarget === 'sandbox'}
+                        onChange={() => setSaveTarget('sandbox')}
+                        disabled={savingAgent}
+                      />
+                      Sandbox
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
+                      <input
+                        type="radio"
+                        name="saveTarget"
+                        checked={saveTarget === 'claude-managed-agents'}
+                        onChange={() => setSaveTarget('claude-managed-agents')}
+                        disabled={savingAgent}
+                      />
+                      Claude Managed Agents
+                    </label>
+                  </div>
                 </div>
               )}
               {savedAgentMsg && !savedAgentOk && (

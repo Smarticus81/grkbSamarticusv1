@@ -476,6 +476,16 @@ export const builderAgents = pgTable(
     deployTarget: varchar('deploy_target', { length: 64 }),
     riskBand: varchar('risk_band', { length: 16 }).notNull().default('medium'),
     description: text('description'),
+    /** Provider runtime metadata — populated after a deploy to Claude Managed Agents. */
+    providerRuntime: jsonb('provider_runtime')
+      .$type<{
+        provider: 'claude-managed-agents';
+        agentId: string;
+        agentVersion: number;
+        environmentId: string;
+        deployedAt: string;
+      } | null>()
+      .default(null),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
@@ -511,6 +521,63 @@ export const processWorkflows = pgTable(
   (t) => ({
     tenantUpdatedIdx: index('process_workflows_tenant_updated_idx').on(t.tenantId, t.updatedAt),
     tenantNameIdx: uniqueIndex('process_workflows_tenant_name_idx').on(t.tenantId, t.name),
+  }),
+);
+
+// === Managed Agent Runs — sessions on Claude Managed Agents ===
+// Each row is one managed agent session (run). Tied to a builder agent and
+// tracks the external provider ids, status, input/output snapshots, and usage.
+
+export const managedRunStatusEnum = pgEnum('managed_run_status', [
+  'deploying',
+  'running',
+  'idle',
+  'completed',
+  'failed',
+]);
+
+export const managedAgentRuns = pgTable(
+  'managed_agent_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+    builderAgentId: uuid('builder_agent_id')
+      .references(() => builderAgents.id, { onDelete: 'cascade' })
+      .notNull(),
+    /** Provider: always 'claude-managed-agents' for now. */
+    provider: varchar('provider', { length: 64 }).notNull().default('claude-managed-agents'),
+    /** External provider agent id. */
+    externalAgentId: varchar('external_agent_id', { length: 128 }),
+    externalAgentVersion: integer('external_agent_version'),
+    /** External environment id. */
+    externalEnvironmentId: varchar('external_environment_id', { length: 128 }),
+    /** External session id for this run. */
+    externalSessionId: varchar('external_session_id', { length: 128 }),
+    status: managedRunStatusEnum('status').default('deploying').notNull(),
+    /** The user message sent to start the session. */
+    inputSnapshot: jsonb('input_snapshot').$type<Record<string, unknown>>().default({}).notNull(),
+    /** Final output collected from the agent. */
+    outputSnapshot: jsonb('output_snapshot').$type<Record<string, unknown>>().default({}).notNull(),
+    /** Raw event log (array of ManagedSessionEvent). */
+    eventLog: jsonb('event_log').$type<unknown[]>().default([]).notNull(),
+    /** Optional link to a process instance / trace for deeper audit. */
+    processInstanceId: uuid('process_instance_id'),
+    traceId: varchar('trace_id', { length: 128 }),
+    /** Token usage reported by the provider. */
+    usage: jsonb('usage').$type<{
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      costEstimate?: string;
+    }>().default({}).notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    tenantTimeIdx: index('managed_runs_tenant_time_idx').on(t.tenantId, t.createdAt),
+    builderAgentIdx: index('managed_runs_builder_agent_idx').on(t.builderAgentId),
+    statusIdx: index('managed_runs_status_idx').on(t.status),
   }),
 );
 
@@ -575,3 +642,5 @@ export type UsageEventRow = typeof usageEvents.$inferSelect;
 export type NewUsageEvent = typeof usageEvents.$inferInsert;
 export type TenantQuotaRow = typeof tenantQuotas.$inferSelect;
 export type NewTenantQuota = typeof tenantQuotas.$inferInsert;
+export type ManagedAgentRunRow = typeof managedAgentRuns.$inferSelect;
+export type NewManagedAgentRun = typeof managedAgentRuns.$inferInsert;

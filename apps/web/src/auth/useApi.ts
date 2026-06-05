@@ -1,6 +1,11 @@
 import { useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
-import { createAuthenticatedApi, api as unauthApi } from '../lib/queryClient.js';
+import {
+  createAuthenticatedApi,
+  createAuthenticatedSse,
+  api as unauthApi,
+  type StreamSseOptions,
+} from '../lib/queryClient.js';
 
 // Build-time constant — true only when a Clerk publishable key is present.
 // This never changes between renders, so selecting the hook at module init
@@ -9,6 +14,7 @@ const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 interface AuthenticatedApiReturn {
   api: <T>(path: string, init?: RequestInit) => Promise<T>;
+  streamSse: (path: string, options: StreamSseOptions) => Promise<void>;
   isSignedIn: boolean;
   orgId: string | null;
   userId: string | null;
@@ -31,9 +37,14 @@ function useClerkApi(): AuthenticatedApiReturn {
     () => createAuthenticatedApi(getTokenStable),
     [getTokenStable],
   );
+  const authenticatedSse = useMemo(
+    () => createAuthenticatedSse(getTokenStable),
+    [getTokenStable],
+  );
 
   return {
     api: authenticatedApi,
+    streamSse: authenticatedSse,
     isSignedIn: isSignedIn ?? false,
     orgId: orgId ?? null,
     userId: userId ?? null,
@@ -45,7 +56,8 @@ function useClerkApi(): AuthenticatedApiReturn {
 // ---------------------------------------------------------------------------
 function useDevApi(): AuthenticatedApiReturn {
   const stableApi = useMemo(() => unauthApi, []);
-  return { api: stableApi, isSignedIn: false, orgId: null, userId: null };
+  const streamSse = useMemo(() => createAuthenticatedSse(async () => null), []);
+  return { api: stableApi, streamSse, isSignedIn: false, orgId: null, userId: null };
 }
 
 /**

@@ -113,6 +113,28 @@ export {
 export { AgentConfigStore } from './agents/AgentConfigStore.js';
 export { DynamicGroundedAgent } from './agents/DynamicGroundedAgent.js';
 
+// managed agents (Claude Managed Agents runtime)
+export {
+  ManagedAgentClient,
+  ManagedAgentError,
+  ManagedAgentConfigSchema,
+  CreateAgentParamsSchema,
+  CreateEnvironmentParamsSchema,
+  CreateSessionParamsSchema,
+} from './agents/managed/index.js';
+export type {
+  ManagedAgentConfig,
+  CreateAgentParams,
+  ManagedAgent,
+  CreateEnvironmentParams,
+  ManagedEnvironment,
+  CreateSessionParams,
+  ManagedSession,
+  SendEventsParams,
+  ManagedSessionEvent,
+  ManagedAgentTool,
+} from './agents/managed/index.js';
+
 // evidence
 export * from './evidence/types.js';
 export { EvidenceTypeRegistry } from './evidence/EvidenceTypeRegistry.js';

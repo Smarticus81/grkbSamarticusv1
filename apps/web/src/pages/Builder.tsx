@@ -11,7 +11,7 @@
  * rendered here.)
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuthenticatedApi } from '../auth/useApi.js';
 import { PageHeader } from '../components/ui/PageHeader.js';
@@ -42,6 +42,31 @@ type AttachedFile = {
   attachedAt: string;
 };
 
+type ProviderRuntime = {
+  provider: 'claude-managed-agents';
+  agentId: string;
+  agentVersion: number;
+  environmentId: string;
+  deployedAt: string;
+} | null;
+
+type ManagedRun = {
+  id: string;
+  status: 'deploying' | 'running' | 'idle' | 'completed' | 'failed';
+  externalSessionId: string | null;
+  inputSnapshot: { message?: string };
+  outputSnapshot: { text?: string; error?: string };
+  createdAt: string;
+  finishedAt: string | null;
+};
+
+type ManagedEvent = {
+  type: string;
+  content?: Array<{ type: string; text: string }>;
+  name?: string;
+  error?: string;
+};
+
 type SavedAgent = {
   id: string;
   name: string;
@@ -54,6 +79,7 @@ type SavedAgent = {
   guardrails: Record<string, boolean>;
   outputFormat: string | null;
   deployTarget: string | null;
+  providerRuntime: ProviderRuntime;
   riskBand: 'low' | 'medium' | 'high';
   description: string | null;
   updatedAt: string;
@@ -282,13 +308,20 @@ function inputSummary(a: SavedAgent): string | null {
 
 export function Builder() {
   const [, navigate] = useLocation();
-  const { api } = useAuthenticatedApi();
+  const { api, streamSse } = useAuthenticatedApi();
 
   const [agents, setAgents] = useState<SavedAgent[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+
+  // Managed agents state
+  const [activeRunAgent, setActiveRunAgent] = useState<string | null>(null);
+  const [runMessage, setRunMessage] = useState('');
+  const [streamEvents, setStreamEvents] = useState<ManagedEvent[]>([]);
+  const [streaming, setStreaming] = useState(false);
+  const streamAbortRef = useRef<AbortController | null>(null);
 
   const refresh = async () => {
     try {
@@ -300,6 +333,9 @@ export function Builder() {
 
   useEffect(() => {
     void refresh();
+    return () => {
+      streamAbortRef.current?.abort();
+    };
   }, []);
 
   async function runAgent(a: SavedAgent) {
@@ -365,6 +401,89 @@ export function Builder() {
     }
   }
 
+  // ── Managed Agents: deploy ──────────────────────────────────────
+  async function deployAgent(a: SavedAgent) {
+    setBusy(`deploy:${a.id}`);
+    try {
+      await api<unknown>(`/api/builder/agents/${a.id}/deploy`, { method: 'POST', body: '{}' });
+      setToast(`Deployed "${a.name}" to Claude Managed Agents.`);
+      await refresh();
+    } catch (e) {
+      setToast(e instanceof Error ? e.message : 'Deploy failed.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // ── Managed Agents: start session + stream ─────────────────────
+  async function startManagedRun(a: SavedAgent) {
+    const msg = runMessage.trim();
+    if (!msg) {
+      setToast('Enter a message for the agent.');
+      return;
+    }
+    if (!a.providerRuntime?.agentId) {
+      setToast('Deploy this agent before starting a managed session.');
+      return;
+    }
+    setBusy(`mrun:${a.id}`);
+    setStreamEvents([]);
+    setStreaming(true);
+    streamAbortRef.current?.abort();
+    try {
+      const run = await api<ManagedRun>(`/api/builder/agents/${a.id}/runs`, {
+        method: 'POST',
+        body: JSON.stringify({ message: msg }),
+      });
+
+      const controller = new AbortController();
+      streamAbortRef.current = controller;
+      const eventTypes = new Set([
+        'agent.message', 'agent.tool_use', 'agent.tool_result',
+        'session.status_idle', 'session.status_failed',
+      ]);
+
+      await streamSse(`/api/builder/agents/${a.id}/runs/${run.id}/stream`, {
+        signal: controller.signal,
+        onEvent: ({ event, data }) => {
+          if (event === 'stream.end') return;
+          if (event === 'stream.error') {
+            try {
+              const parsed = JSON.parse(data) as { error?: string };
+              setToast(parsed.error ?? 'Managed session stream failed.');
+            } catch {
+              setToast('Managed session stream failed.');
+            }
+            return;
+          }
+          if (!eventTypes.has(event)) return;
+          try {
+            const parsed = JSON.parse(data) as ManagedEvent;
+            setStreamEvents((prev) => [...prev, parsed]);
+          } catch {
+            /* ignore malformed event payloads */
+          }
+        },
+      });
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === 'AbortError')) {
+        setToast(e instanceof Error ? e.message : 'Run failed.');
+      }
+    } finally {
+      streamAbortRef.current = null;
+      setStreaming(false);
+      setBusy(null);
+    }
+  }
+
+  function closeManagedPanel() {
+    streamAbortRef.current?.abort();
+    setActiveRunAgent(null);
+    setStreamEvents([]);
+    setStreaming(false);
+    setRunMessage('');
+  }
+
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PageHeader
@@ -422,6 +541,8 @@ export function Builder() {
                 const summary = inputSummary(a);
                 const renaming = renamingId === a.id;
                 const runnable = !!a.taskId;
+                const isManaged = a.deployTarget === 'claude-managed-agents';
+                const deployed = isManaged && !!a.providerRuntime?.agentId;
                 return (
                   <div
                     key={a.id}
@@ -480,7 +601,7 @@ export function Builder() {
 
                     <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>{a.processTitle}</div>
 
-                    {/* Regulations + risk */}
+                    {/* Regulations + risk + deploy target */}
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {a.regulations.slice(0, 4).map((r) => (
                         <span key={r} style={PILL}>{r}</span>
@@ -488,7 +609,19 @@ export function Builder() {
                       <span style={{ ...PILL, color: RISK_COLOR[a.riskBand], borderColor: a.riskBand === 'high' ? 'var(--orange)' : 'var(--rule-strong)' }}>
                         {a.riskBand} risk
                       </span>
+                      {isManaged && (
+                        <span style={{ ...PILL, color: 'var(--blue, #2563eb)', borderColor: 'var(--blue, #2563eb)' }}>
+                          {deployed ? 'deployed' : 'cloud agent'}
+                        </span>
+                      )}
                     </div>
+
+                    {/* Deployed provider info */}
+                    {deployed && a.providerRuntime && (
+                      <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)', lineHeight: 1.5 }}>
+                        agent: {a.providerRuntime.agentId.slice(0, 16)}… · env: {a.providerRuntime.environmentId.slice(0, 16)}…
+                      </div>
+                    )}
 
                     {summary && (
                       <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.45 }}>{summary}</div>
@@ -510,17 +643,102 @@ export function Builder() {
                         >
                           Delete
                         </button>
-                        <button
-                          className="btn btn-orange"
-                          onClick={() => void runAgent(a)}
-                          disabled={!runnable || busy === `run:${a.id}`}
-                          title={runnable ? 'Re-run this agent with its saved input' : 'No runnable process mapped'}
-                          style={{ fontSize: 12, opacity: runnable ? 1 : 0.5 }}
-                        >
-                          {busy === `run:${a.id}` ? 'Opening…' : 'Run →'}
-                        </button>
+                        {isManaged ? (
+                          <>
+                            {!deployed && (
+                              <button
+                                className="btn btn-orange"
+                                onClick={() => void deployAgent(a)}
+                                disabled={busy === `deploy:${a.id}`}
+                                style={{ fontSize: 12 }}
+                              >
+                                {busy === `deploy:${a.id}` ? 'Deploying…' : 'Deploy'}
+                              </button>
+                            )}
+                            {deployed && (
+                              <button
+                                className="btn btn-orange"
+                                onClick={() => { setActiveRunAgent(a.id); setRunMessage(''); setStreamEvents([]); }}
+                                style={{ fontSize: 12 }}
+                              >
+                                Start session
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <button
+                            className="btn btn-orange"
+                            onClick={() => void runAgent(a)}
+                            disabled={!runnable || busy === `run:${a.id}`}
+                            title={runnable ? 'Re-run this agent with its saved input' : 'No runnable process mapped'}
+                            style={{ fontSize: 12, opacity: runnable ? 1 : 0.5 }}
+                          >
+                            {busy === `run:${a.id}` ? 'Opening…' : 'Run →'}
+                          </button>
+                        )}
                       </div>
                     </div>
+
+                    {/* Managed session panel (inline) */}
+                    {activeRunAgent === a.id && (
+                      <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <input
+                            value={runMessage}
+                            onChange={(e) => setRunMessage(e.target.value)}
+                            placeholder="Describe the task for this agent…"
+                            disabled={streaming}
+                            onKeyDown={(e) => { if (e.key === 'Enter' && !streaming) void startManagedRun(a); }}
+                            style={{
+                              flex: 1,
+                              minWidth: 0,
+                              fontFamily: 'var(--sans)',
+                              fontSize: 13,
+                              color: 'var(--ink)',
+                              background: '#fff',
+                              border: '1px solid var(--rule-strong)',
+                              borderRadius: 6,
+                              padding: '8px 10px',
+                            }}
+                          />
+                          <button
+                            className="btn btn-orange"
+                            onClick={() => void startManagedRun(a)}
+                            disabled={streaming || !runMessage.trim()}
+                            style={{ fontSize: 12 }}
+                          >
+                            {streaming ? 'Running…' : 'Send'}
+                          </button>
+                          <button className="btn btn-ghost" onClick={closeManagedPanel} style={{ fontSize: 12 }}>
+                            Close
+                          </button>
+                        </div>
+
+                        {streamEvents.length > 0 && (
+                          <div
+                            style={{
+                              maxHeight: 300,
+                              overflowY: 'auto',
+                              background: 'var(--paper-deep)',
+                              border: '1px solid var(--rule)',
+                              borderRadius: 6,
+                              padding: 10,
+                              fontSize: 12,
+                              fontFamily: 'var(--mono)',
+                              lineHeight: 1.6,
+                              color: 'var(--ink-2)',
+                            }}
+                          >
+                            {streamEvents.map((ev, i) => (
+                              <ManagedEventLine key={i} event={ev} />
+                            ))}
+                            {streaming && (
+                              <div style={{ color: 'var(--ink-4)', marginTop: 4 }}>Streaming…</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -530,6 +748,31 @@ export function Builder() {
       </div>
     </div>
   );
+}
+
+/** Renders a single event from the managed agent stream. */
+function ManagedEventLine({ event }: { event: ManagedEvent }) {
+  if (event.type === 'agent.message' && event.content) {
+    const text = event.content
+      .filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join('');
+    return <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>;
+  }
+  if (event.type === 'agent.tool_use') {
+    return (
+      <div style={{ color: 'var(--ink-3)' }}>
+        [Tool: {event.name}]
+      </div>
+    );
+  }
+  if (event.type === 'session.status_idle') {
+    return <div style={{ color: 'var(--ok, #2a8c4f)', fontWeight: 600 }}>Agent finished.</div>;
+  }
+  if (event.type === 'session.status_failed') {
+    return <div style={{ color: '#B00020' }}>Session failed{event.error ? `: ${event.error}` : '.'}</div>;
+  }
+  return null;
 }
 
 export default Builder;

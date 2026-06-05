@@ -12,6 +12,16 @@ export const queryClient = new QueryClient({
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
+export interface SseMessage {
+  event: string;
+  data: string;
+}
+
+export interface StreamSseOptions {
+  signal?: AbortSignal;
+  onEvent: (message: SseMessage) => void | Promise<void>;
+}
+
 /**
  * Unauthenticated API helper — use for health checks and public endpoints.
  */
@@ -57,5 +67,71 @@ export function createAuthenticatedApi(
     const text = await res.text();
     if (!text) return undefined as T;
     return JSON.parse(text) as T;
+  };
+}
+
+async function readSseStream(
+  res: Response,
+  onEvent: StreamSseOptions['onEvent'],
+): Promise<void> {
+  if (!res.body) throw new Error('SSE response did not include a readable body.');
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  const dispatch = async (frame: string) => {
+    const lines = frame.split(/\r?\n/);
+    let event = 'message';
+    const data: string[] = [];
+    for (const line of lines) {
+      if (line.startsWith('event:')) event = line.slice(6).trim();
+      if (line.startsWith('data:')) data.push(line.slice(5).trimStart());
+    }
+    if (data.length > 0) await onEvent({ event, data: data.join('\n') });
+  };
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const frames = buffer.split(/\r?\n\r?\n/);
+      buffer = frames.pop() ?? '';
+      for (const frame of frames) {
+        if (frame.trim()) await dispatch(frame);
+      }
+    }
+    const trailing = buffer.trim();
+    if (trailing) await dispatch(trailing);
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Stream an authenticated server-sent events endpoint via fetch.
+ *
+ * Native EventSource cannot attach Authorization headers, so production Clerk
+ * routes must use this reader instead.
+ */
+export function createAuthenticatedSse(
+  getToken: () => Promise<string | null>,
+) {
+  return async function streamSse(
+    path: string,
+    options: StreamSseOptions,
+  ): Promise<void> {
+    const token = await getToken();
+    const headers: Record<string, string> = { Accept: 'text/event-stream' };
+    if (token) headers.Authorization = `Bearer ${token}`;
+
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: 'GET',
+      headers,
+      signal: options.signal,
+    });
+    if (!res.ok) throw new Error(`SSE ${res.status}: ${await res.text()}`);
+    await readSseStream(res, options.onEvent);
   };
 }
