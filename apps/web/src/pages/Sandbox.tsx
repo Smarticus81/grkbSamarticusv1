@@ -124,7 +124,6 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
   const [savingAgent, setSavingAgent] = useState(false);
   const [savedAgentMsg, setSavedAgentMsg] = useState<string | null>(null);
   const [savedAgentOk, setSavedAgentOk] = useState(false);
-  const [saveTarget, setSaveTarget] = useState<'sandbox' | 'claude-managed-agents'>('sandbox');
 
   // The route (/app/sandbox vs /app/sandbox/:taskId) is the single source of
   // truth for which process is open. No process is auto-selected — choosing a process is
@@ -285,7 +284,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           evidenceStatus: {},
           guardrails: { qualification: true, compliance: true, 'review-gate': false, 'strict-schema': true },
           outputFormat: 'draft-doc',
-          deployTarget: saveTarget,
+          deployTarget: 'claude-managed-agents',
           riskBand,
           description: detail.oneLiner,
         }),
@@ -522,25 +521,65 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           )}
 
           {result && !running && (
-            <section style={{ ...CARD, padding: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
-                <div className="eyebrow">Reuse this</div>
+            <section style={{ ...CARD, padding: 18, background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)', borderColor: 'rgba(255, 115, 0, 0.24)' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
+                <div>
+                  <div className="eyebrow" style={{ marginBottom: 6 }}>Promote this run</div>
+                  <h2 style={{ margin: 0, fontSize: 18, fontWeight: 650, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
+                    Save it as a runtime-ready agent.
+                  </h2>
+                </div>
                 {savedAgentOk && (
-                  <button onClick={() => navigate('/app/builder')} style={GHOST_BUTTON}>Open in agents →</button>
+                  <button onClick={() => navigate('/app/builder')} className="btn btn-orange" style={{ fontSize: 12 }}>
+                    Open Agent Builder
+                  </button>
                 )}
               </div>
-              <p style={{ margin: '0 0 12px', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                Save this process with the input you just used. It becomes a reusable agent you can re-run anytime.
+              <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.55 }}>
+                Capture the exact input, graph grounding, and guardrails from this run. Every saved agent now opens in Agent Builder for Claude Managed Agents deployment.
               </p>
               {savedAgentOk ? (
-                <div style={{ fontSize: 13, color: 'var(--ok, #2a8c4f)' }}>{savedAgentMsg}</div>
+                <div
+                  style={{
+                    padding: 12,
+                    border: '1px solid rgba(42, 140, 79, 0.22)',
+                    borderRadius: 10,
+                    background: 'rgba(42, 140, 79, 0.06)',
+                    fontSize: 13,
+                    color: 'var(--ok, #2a8c4f)',
+                  }}
+                >
+                  {savedAgentMsg}
+                </div>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div
+                    style={{
+                      padding: 14,
+                      border: '1px solid rgba(255, 115, 0, 0.28)',
+                      borderRadius: 12,
+                      background: '#fff',
+                      display: 'grid',
+                      gap: 6,
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                      <div style={{ fontSize: 14, fontWeight: 650, color: 'var(--ink)' }}>
+                        Claude Managed Agents
+                      </div>
+                      <span style={{ ...SMALL_RUNTIME_PILL, color: 'var(--orange)', borderColor: 'rgba(255, 115, 0, 0.34)' }}>
+                        default runtime
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 12.5, lineHeight: 1.55, color: 'var(--ink-3)' }}>
+                      This creates a Builder agent that provisions a Claude agent, cloud environment, and live session stream.
+                    </div>
+                  </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <input
                       value={agentName}
                       onChange={(e) => setAgentName(e.target.value)}
-                      placeholder={`${detail.name}`}
+                      placeholder={`${detail.name} runtime agent`}
                       disabled={savingAgent}
                       style={{
                         flex: 1,
@@ -549,42 +588,24 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                         fontSize: 13,
                         color: 'var(--ink)',
                         background: '#fff',
-                        border: '1px solid var(--rule)',
-                        borderRadius: 6,
-                        padding: '8px 10px',
+                        border: '1px solid var(--rule-strong)',
+                        borderRadius: 10,
+                        padding: '10px 12px',
                       }}
                     />
                     <button
                       onClick={saveAsAgent}
                       disabled={savingAgent}
                       className="btn-orange"
-                      style={{ fontSize: 13, padding: '8px 16px' }}
+                      style={{ fontSize: 13, padding: '10px 18px' }}
                     >
-                      {savingAgent ? 'Saving…' : 'Save as agent'}
+                      {savingAgent ? 'Saving…' : 'Save for Claude deploy'}
                     </button>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <span style={{ fontSize: 11, color: 'var(--ink-3)' }}>Deploy target:</span>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        name="saveTarget"
-                        checked={saveTarget === 'sandbox'}
-                        onChange={() => setSaveTarget('sandbox')}
-                        disabled={savingAgent}
-                      />
-                      Sandbox
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: 'var(--ink-2)', cursor: 'pointer' }}>
-                      <input
-                        type="radio"
-                        name="saveTarget"
-                        checked={saveTarget === 'claude-managed-agents'}
-                        onChange={() => setSaveTarget('claude-managed-agents')}
-                        disabled={savingAgent}
-                      />
-                      Claude Managed Agents
-                    </label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={SMALL_RUNTIME_PILL}>input snapshot</span>
+                    <span style={SMALL_RUNTIME_PILL}>guardrails on</span>
+                    <span style={SMALL_RUNTIME_PILL}>deploy from Builder</span>
                   </div>
                 </div>
               )}
@@ -621,6 +642,20 @@ const GHOST_BUTTON: React.CSSProperties = {
   fontSize: 12,
   color: 'var(--ink-2)',
   cursor: 'pointer',
+};
+const SMALL_RUNTIME_PILL: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  height: 24,
+  padding: '0 9px',
+  border: '1px solid rgba(255, 115, 0, 0.22)',
+  borderRadius: 999,
+  background: '#fff',
+  color: 'var(--ink-3)',
+  fontFamily: 'var(--mono)',
+  fontSize: 10,
+  letterSpacing: '0.05em',
+  textTransform: 'uppercase',
 };
 
 /* ── Flow stepper ────────────────────────────────────────────────────── */

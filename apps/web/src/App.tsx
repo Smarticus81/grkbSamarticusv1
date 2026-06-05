@@ -28,12 +28,12 @@ const NAV_GROUPS: {
 }[] = [
   {
     heading: 'Do the work',
-    caption: 'Run a process, then save it to reuse.',
+    caption: 'Run a process, then deploy it as a managed agent.',
     items: [
       { href: '/app',          label: 'Home', exact: true },
       { href: '/app/designer', label: 'Multi-step workflows' },
       { href: '/app/sandbox',  label: 'Run a process' },
-      { href: '/app/builder',  label: 'Saved agents' },
+      { href: '/app/builder',  label: 'Agent Builder' },
     ],
   },
   {

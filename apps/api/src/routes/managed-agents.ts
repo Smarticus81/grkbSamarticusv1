@@ -69,13 +69,6 @@ router.post('/agents/:id/deploy', async (req: Request, res: Response) => {
       .limit(1);
     if (!agent) return res.status(404).json({ error: 'agent not found' });
 
-    if (agent.deployTarget !== 'claude-managed-agents') {
-      return res.status(409).json({
-        error: 'wrong_target',
-        message: 'Agent deploy target is not claude-managed-agents.',
-      });
-    }
-
     const client = getClient();
     const manifest = buildPromptManifest(agent, { model: parsed.data.model });
 
@@ -119,7 +112,11 @@ router.post('/agents/:id/deploy', async (req: Request, res: Response) => {
 
     const [updated] = await db
       .update(builderAgents)
-      .set({ providerRuntime: runtime, updatedAt: new Date() })
+      .set({
+        deployTarget: 'claude-managed-agents',
+        providerRuntime: runtime,
+        updatedAt: new Date(),
+      })
       .where(eq(builderAgents.id, id))
       .returning();
 
@@ -177,13 +174,6 @@ router.post('/agents/:id/runs', async (req: Request, res: Response) => {
       agentVersion?: number;
       environmentId: string;
     } | null;
-
-    if (agent.deployTarget !== 'claude-managed-agents') {
-      return res.status(409).json({
-        error: 'wrong_target',
-        message: 'Agent deploy target is not claude-managed-agents.',
-      });
-    }
 
     if (!runtime?.agentId || !runtime?.environmentId) {
       return res.status(409).json({

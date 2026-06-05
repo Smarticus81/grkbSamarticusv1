@@ -11,7 +11,7 @@ const root = ReactDOM.createRoot(document.getElementById('root')!);
 if (clerkPubKey) {
   root.render(
     <React.StrictMode>
-      <ClerkProvider publishableKey={clerkPubKey}>
+      <ClerkProvider publishableKey={clerkPubKey} telemetry={{ disabled: true }}>
         <App />
       </ClerkProvider>
     </React.StrictMode>,

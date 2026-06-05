@@ -304,6 +304,22 @@ function inputSummary(a: SavedAgent): string | null {
   return slots.length ? `${slots.length} attached item${slots.length === 1 ? '' : 's'}` : null;
 }
 
+function runtimeLabel(a: SavedAgent): string {
+  return a.providerRuntime?.agentId ? 'Claude cloud live' : 'Claude cloud ready';
+}
+
+function runtimeDescription(a: SavedAgent): string {
+  return a.providerRuntime?.agentId
+    ? 'Provisioned as a Claude Managed Agent with a cloud environment and session streaming.'
+    : 'Configured for Claude Managed Agents. Deploy once, then start live sessions from this card.';
+}
+
+function runtimeTone(a: SavedAgent): { border: string; background: string; accent: string } {
+  return a.providerRuntime?.agentId
+    ? { border: 'rgba(37, 99, 235, 0.35)', background: 'linear-gradient(135deg, #fff 0%, #f5f8ff 100%)', accent: '#2563eb' }
+    : { border: 'rgba(255, 115, 0, 0.32)', background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)', accent: 'var(--orange)' };
+}
+
 /* ── Component ─────────────────────────────────────────────────────── */
 
 export function Builder() {
@@ -337,30 +353,6 @@ export function Builder() {
       streamAbortRef.current?.abort();
     };
   }, []);
-
-  async function runAgent(a: SavedAgent) {
-    if (!a.taskId) {
-      setToast('This agent has no runnable process mapped.');
-      return;
-    }
-    setBusy(`run:${a.id}`);
-    try {
-      const launch = await api<{ taskId: string; input: unknown }>(
-        `/api/builder/agents/${a.id}/launch`,
-        { method: 'POST' },
-      );
-      try {
-        sessionStorage.setItem(`builder:input:${launch.taskId}`, JSON.stringify(launch.input ?? {}));
-      } catch {
-        /* sessionStorage may be blocked */
-      }
-      navigate(`/app/sandbox/${launch.taskId}`);
-    } catch (e) {
-      setToast(e instanceof Error ? e.message : 'Could not open agent.');
-    } finally {
-      setBusy(null);
-    }
-  }
 
   async function remove(a: SavedAgent) {
     if (!confirm(`Delete "${a.name}"? This can't be undone.`)) return;
@@ -484,34 +476,46 @@ export function Builder() {
     setRunMessage('');
   }
 
+  const managedCount = agents?.length ?? 0;
+  const deployedCount = agents?.filter((a) => a.providerRuntime?.agentId).length ?? 0;
+
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PageHeader
-        eyebrow="Saved agents"
-        title="Your saved agents."
-        subtitle="An agent is a process saved with the exact input you used, so you can re-run it anytime. Create one by running a process in the sandbox and choosing 'Save as agent'."
+        eyebrow="Agent Builder"
+        title="All saved agents run as Claude Managed Agents."
+        subtitle="Every saved process is now promoted into the managed runtime path: deploy a Claude cloud agent, start a session, and stream events back into Regulatory Ground."
         actions={
           <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')} style={{ fontSize: 13 }}>
-            Run a process
+            Create from Sandbox
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         }
+        meta={
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 10, maxWidth: 760 }}>
+            <RuntimeStat label="Agent configs" value={String(agents?.length ?? 0)} />
+            <RuntimeStat label="Claude managed" value={String(managedCount)} />
+            <RuntimeStat label="Live deployments" value={String(deployedCount)} />
+            <RuntimeStat label="Need deploy" value={String(Math.max(0, managedCount - deployedCount))} />
+          </div>
+        }
       />
 
-      <div style={{ padding: '24px 40px 80px', maxWidth: 1100, margin: '0 auto' }}>
+      <div style={{ padding: '28px 40px 80px', maxWidth: 1240, margin: '0 auto' }}>
         {toast && (
           <div
             onClick={() => setToast(null)}
             style={{
-              padding: '8px 12px',
-              marginBottom: 16,
-              background: 'var(--paper-deep)',
+              padding: '10px 14px',
+              marginBottom: 18,
+              background: '#fff',
               border: '1px solid var(--rule-strong)',
-              borderRadius: 6,
+              borderRadius: 10,
               fontFamily: 'var(--mono)',
               fontSize: 11,
               color: 'var(--ink-2)',
               cursor: 'pointer',
+              boxShadow: '0 10px 30px rgba(17, 24, 39, 0.04)',
             }}
           >
             {toast}
@@ -524,117 +528,143 @@ export function Builder() {
 
         {agents !== null && agents.length === 0 && (
           <EmptyState
-            eyebrow="No saved agents yet"
-            title="Save a process once, re-run it forever."
-            body="Run any process in the sandbox, fill in your data, then click 'Save as agent'. It will appear here so you can re-run it with one click."
-            primaryAction={{ label: 'Run a process', href: '/app/sandbox' }}
+            eyebrow="No runtime agents yet"
+            title="Create a grounded agent from a real process run."
+            body="Run a regulated process, save the input, then choose whether that agent stays in Sandbox or deploys to Claude Managed Agents."
+            primaryAction={{ label: 'Create from Sandbox', href: '/app/sandbox' }}
           />
         )}
 
         {agents !== null && agents.length > 0 && (
           <>
-            <div className="eyebrow" style={{ marginBottom: 14 }}>
-              {agents.length} agent{agents.length === 1 ? '' : 's'}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+              <div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>
+                  Managed runtime inventory
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.45 }}>
+                  Every card follows the same lifecycle: saved configuration, Claude deployment, then live session.
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                <RuntimeLegend label="Awaiting deployment" color="var(--orange)" />
+                <RuntimeLegend label="Live cloud agent" color="#2563eb" />
+              </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 14 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 16 }}>
               {agents.map((a) => {
                 const summary = inputSummary(a);
                 const renaming = renamingId === a.id;
-                const runnable = !!a.taskId;
-                const isManaged = a.deployTarget === 'claude-managed-agents';
-                const deployed = isManaged && !!a.providerRuntime?.agentId;
+                const deployed = !!a.providerRuntime?.agentId;
+                const tone = runtimeTone(a);
                 return (
                   <div
                     key={a.id}
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 10,
-                      padding: 16,
-                      border: '1px solid var(--rule)',
-                      borderRadius: 10,
-                      background: '#fff',
+                      gap: 14,
+                      padding: 18,
+                      border: `1px solid ${tone.border}`,
+                      borderRadius: 16,
+                      background: tone.background,
+                      boxShadow: '0 16px 44px rgba(17, 24, 39, 0.05)',
                     }}
                   >
-                    {/* Name / rename */}
-                    {renaming ? (
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <input
-                          autoFocus
-                          value={renameValue}
-                          onChange={(e) => setRenameValue(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') void saveRename(a);
-                            if (e.key === 'Escape') setRenamingId(null);
-                          }}
-                          style={{
-                            flex: 1,
-                            minWidth: 0,
-                            fontFamily: 'var(--sans)',
-                            fontSize: 15,
-                            fontWeight: 600,
-                            color: 'var(--ink)',
-                            background: '#fff',
-                            border: '1px solid var(--rule-strong)',
-                            borderRadius: 6,
-                            padding: '6px 8px',
-                          }}
-                        />
-                        <button className="btn btn-ghost" onClick={() => void saveRename(a)} disabled={busy === `rename:${a.id}`} style={{ fontSize: 12 }}>
-                          Save
-                        </button>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14 }}>
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        {renaming ? (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <input
+                              autoFocus
+                              value={renameValue}
+                              onChange={(e) => setRenameValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') void saveRename(a);
+                                if (e.key === 'Escape') setRenamingId(null);
+                              }}
+                              style={{
+                                flex: 1,
+                                minWidth: 0,
+                                fontFamily: 'var(--sans)',
+                                fontSize: 15,
+                                fontWeight: 600,
+                                color: 'var(--ink)',
+                                background: '#fff',
+                                border: '1px solid var(--rule-strong)',
+                                borderRadius: 8,
+                                padding: '8px 10px',
+                              }}
+                            />
+                            <button className="btn btn-ghost" onClick={() => void saveRename(a)} disabled={busy === `rename:${a.id}`} style={{ fontSize: 12 }}>
+                              Save
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <div style={{ fontSize: 18, fontWeight: 650, letterSpacing: '-0.02em', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {a.name}
+                            </div>
+                            <div style={{ marginTop: 4, fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.45 }}>
+                              {a.processTitle}
+                            </div>
+                          </>
+                        )}
                       </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
-                        <div style={{ fontSize: 16, fontWeight: 600, letterSpacing: '-0.01em', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {a.name}
-                        </div>
-                        <button
-                          onClick={() => startRename(a)}
-                          title="Rename"
-                          style={{ background: 'none', border: 0, color: 'var(--ink-3)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
-                        >
-                          Rename
-                        </button>
-                      </div>
-                    )}
+                      <RuntimeBadge label={runtimeLabel(a)} color={tone.accent} />
+                    </div>
 
-                    <div style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-3)' }}>{a.processTitle}</div>
+                    <AgentLifecycle deployed={deployed} />
 
-                    {/* Regulations + risk + deploy target */}
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {a.regulations.slice(0, 4).map((r) => (
-                        <span key={r} style={PILL}>{r}</span>
-                      ))}
-                      <span style={{ ...PILL, color: RISK_COLOR[a.riskBand], borderColor: a.riskBand === 'high' ? 'var(--orange)' : 'var(--rule-strong)' }}>
-                        {a.riskBand} risk
-                      </span>
-                      {isManaged && (
-                        <span style={{ ...PILL, color: 'var(--blue, #2563eb)', borderColor: 'var(--blue, #2563eb)' }}>
-                          {deployed ? 'deployed' : 'cloud agent'}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {a.regulations.slice(0, 4).map((r) => (
+                          <span key={r} style={PILL}>{r}</span>
+                        ))}
+                        <span style={{ ...PILL, color: RISK_COLOR[a.riskBand], borderColor: a.riskBand === 'high' ? 'var(--orange)' : 'var(--rule-strong)' }}>
+                          {a.riskBand} risk
                         </span>
+                        {summary && <span style={PILL}>{summary}</span>}
+                      </div>
+                      <div style={{ fontSize: 12.5, color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                        {runtimeDescription(a)}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: deployed && a.providerRuntime ? '1fr 1fr' : '1fr',
+                        gap: 8,
+                        padding: 12,
+                        border: '1px solid var(--rule)',
+                        borderRadius: 12,
+                        background: 'rgba(255,255,255,0.72)',
+                      }}
+                    >
+                      <RuntimeMeta label="Updated" value={relTime(a.updatedAt)} />
+                      {deployed && a.providerRuntime && (
+                        <>
+                          <RuntimeMeta label="Agent" value={`${a.providerRuntime.agentId.slice(0, 18)}…`} />
+                          <RuntimeMeta label="Environment" value={`${a.providerRuntime.environmentId.slice(0, 18)}…`} />
+                          <RuntimeMeta label="Version" value={`v${a.providerRuntime.agentVersion}`} />
+                        </>
                       )}
                     </div>
 
-                    {/* Deployed provider info */}
-                    {deployed && a.providerRuntime && (
-                      <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)', lineHeight: 1.5 }}>
-                        agent: {a.providerRuntime.agentId.slice(0, 16)}… · env: {a.providerRuntime.environmentId.slice(0, 16)}…
-                      </div>
-                    )}
-
-                    {summary && (
-                      <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.45 }}>{summary}</div>
-                    )}
-
                     <div style={{ flex: 1 }} />
 
-                    {/* Footer: timestamp + actions */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, borderTop: '1px solid var(--rule)', paddingTop: 12 }}>
-                      <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
-                        saved {relTime(a.updatedAt)}
-                      </span>
-                      <div style={{ display: 'flex', gap: 6 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, borderTop: '1px solid var(--rule)', paddingTop: 14 }}>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {!renaming && (
+                          <button
+                            className="btn btn-ghost"
+                            onClick={() => startRename(a)}
+                            style={{ fontSize: 12 }}
+                          >
+                            Rename
+                          </button>
+                        )}
                         <button
                           className="btn btn-ghost"
                           onClick={() => void remove(a)}
@@ -643,37 +673,36 @@ export function Builder() {
                         >
                           Delete
                         </button>
-                        {isManaged ? (
-                          <>
-                            {!deployed && (
-                              <button
-                                className="btn btn-orange"
-                                onClick={() => void deployAgent(a)}
-                                disabled={busy === `deploy:${a.id}`}
-                                style={{ fontSize: 12 }}
-                              >
-                                {busy === `deploy:${a.id}` ? 'Deploying…' : 'Deploy'}
-                              </button>
-                            )}
-                            {deployed && (
-                              <button
-                                className="btn btn-orange"
-                                onClick={() => { setActiveRunAgent(a.id); setRunMessage(''); setStreamEvents([]); }}
-                                style={{ fontSize: 12 }}
-                              >
-                                Start session
-                              </button>
-                            )}
-                          </>
-                        ) : (
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {deployed && (
+                          <button
+                            className="btn btn-ghost"
+                            onClick={() => void deployAgent(a)}
+                            disabled={busy === `deploy:${a.id}`}
+                            style={{ fontSize: 12 }}
+                          >
+                            {busy === `deploy:${a.id}` ? 'Redeploying…' : 'Redeploy'}
+                          </button>
+                        )}
+                        {!deployed && (
                           <button
                             className="btn btn-orange"
-                            onClick={() => void runAgent(a)}
-                            disabled={!runnable || busy === `run:${a.id}`}
-                            title={runnable ? 'Re-run this agent with its saved input' : 'No runnable process mapped'}
-                            style={{ fontSize: 12, opacity: runnable ? 1 : 0.5 }}
+                            onClick={() => void deployAgent(a)}
+                            disabled={busy === `deploy:${a.id}`}
+                            style={{ fontSize: 12 }}
                           >
-                            {busy === `run:${a.id}` ? 'Opening…' : 'Run →'}
+                            {busy === `deploy:${a.id}` ? 'Deploying…' : 'Deploy'}
+                          </button>
+                        )}
+                        {deployed && (
+                          <button
+                            className="btn btn-orange"
+                            onClick={() => { setActiveRunAgent(a.id); setRunMessage(''); setStreamEvents([]); }}
+                            disabled={streaming && activeRunAgent === a.id}
+                            style={{ fontSize: 12 }}
+                          >
+                            Start session
                           </button>
                         )}
                       </div>
@@ -681,62 +710,75 @@ export function Builder() {
 
                     {/* Managed session panel (inline) */}
                     {activeRunAgent === a.id && (
-                      <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <input
+                      <div style={{ borderTop: '1px solid var(--rule)', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div>
+                          <div className="eyebrow" style={{ marginBottom: 6 }}>Claude session</div>
+                          <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
+                            This sends a `user.message`, opens the Managed Agents stream, and persists the run record.
+                          </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'stretch' }}>
+                          <textarea
                             value={runMessage}
                             onChange={(e) => setRunMessage(e.target.value)}
-                            placeholder="Describe the task for this agent…"
+                            placeholder="Ask the managed agent to perform a specific regulated task…"
                             disabled={streaming}
                             onKeyDown={(e) => { if (e.key === 'Enter' && !streaming) void startManagedRun(a); }}
                             style={{
-                              flex: 1,
                               minWidth: 0,
+                              minHeight: 76,
                               fontFamily: 'var(--sans)',
                               fontSize: 13,
                               color: 'var(--ink)',
                               background: '#fff',
                               border: '1px solid var(--rule-strong)',
-                              borderRadius: 6,
-                              padding: '8px 10px',
+                              borderRadius: 10,
+                              padding: '10px 12px',
+                              resize: 'vertical',
                             }}
                           />
-                          <button
-                            className="btn btn-orange"
-                            onClick={() => void startManagedRun(a)}
-                            disabled={streaming || !runMessage.trim()}
-                            style={{ fontSize: 12 }}
-                          >
-                            {streaming ? 'Running…' : 'Send'}
-                          </button>
-                          <button className="btn btn-ghost" onClick={closeManagedPanel} style={{ fontSize: 12 }}>
-                            Close
-                          </button>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            <button
+                              className="btn btn-orange"
+                              onClick={() => void startManagedRun(a)}
+                              disabled={streaming || !runMessage.trim()}
+                              style={{ fontSize: 12, flex: 1 }}
+                            >
+                              {streaming ? 'Running…' : 'Start'}
+                            </button>
+                            <button className="btn btn-ghost" onClick={closeManagedPanel} style={{ fontSize: 12 }}>
+                              Close
+                            </button>
+                          </div>
                         </div>
 
-                        {streamEvents.length > 0 && (
-                          <div
-                            style={{
-                              maxHeight: 300,
-                              overflowY: 'auto',
-                              background: 'var(--paper-deep)',
-                              border: '1px solid var(--rule)',
-                              borderRadius: 6,
-                              padding: 10,
-                              fontSize: 12,
-                              fontFamily: 'var(--mono)',
-                              lineHeight: 1.6,
-                              color: 'var(--ink-2)',
-                            }}
-                          >
-                            {streamEvents.map((ev, i) => (
-                              <ManagedEventLine key={i} event={ev} />
-                            ))}
-                            {streaming && (
-                              <div style={{ color: 'var(--ink-4)', marginTop: 4 }}>Streaming…</div>
-                            )}
-                          </div>
-                        )}
+                        <div
+                          style={{
+                            minHeight: 120,
+                            maxHeight: 340,
+                            overflowY: 'auto',
+                            background: '#0f172a',
+                            border: '1px solid rgba(15, 23, 42, 0.2)',
+                            borderRadius: 12,
+                            padding: 12,
+                            fontSize: 12,
+                            fontFamily: 'var(--mono)',
+                            lineHeight: 1.65,
+                            color: '#dbeafe',
+                          }}
+                        >
+                          {streamEvents.length === 0 && (
+                            <div style={{ color: '#94a3b8' }}>
+                              {streaming ? 'Opening Claude Managed Agents stream…' : 'Session events will appear here.'}
+                            </div>
+                          )}
+                          {streamEvents.map((ev, i) => (
+                            <ManagedEventLine key={i} event={ev} />
+                          ))}
+                          {streaming && (
+                            <div style={{ color: '#93c5fd', marginTop: 4 }}>Streaming…</div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -750,6 +792,106 @@ export function Builder() {
   );
 }
 
+function RuntimeStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        border: '1px solid var(--rule)',
+        borderRadius: 12,
+        padding: '12px 14px',
+        background: '#fff',
+      }}
+    >
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-3)' }}>
+        {label}
+      </div>
+      <div style={{ marginTop: 4, fontSize: 22, fontWeight: 650, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function RuntimeLegend({ label, color }: { label: string; color: string }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: 'var(--ink-3)' }}>
+      <span style={{ width: 7, height: 7, borderRadius: 999, background: color }} />
+      {label}
+    </span>
+  );
+}
+
+function RuntimeBadge({ label, color }: { label: string; color: string }) {
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 7,
+        height: 30,
+        padding: '0 10px',
+        borderRadius: 999,
+        background: '#fff',
+        border: `1px solid ${color}`,
+        color,
+        fontFamily: 'var(--mono)',
+        fontSize: 10,
+        letterSpacing: '0.06em',
+        textTransform: 'uppercase',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
+      {label}
+    </div>
+  );
+}
+
+function AgentLifecycle({ deployed }: { deployed: boolean }) {
+  const steps = [
+    { label: 'Saved', done: true },
+    { label: 'Deployed', done: deployed },
+    { label: 'Session-ready', done: deployed },
+  ];
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${steps.length}, 1fr)`, gap: 6 }}>
+      {steps.map((step) => (
+        <div
+          key={step.label}
+          style={{
+            padding: '7px 8px',
+            borderRadius: 999,
+            background: step.done ? 'rgba(42, 140, 79, 0.08)' : 'rgba(17, 24, 39, 0.04)',
+            border: `1px solid ${step.done ? 'rgba(42, 140, 79, 0.22)' : 'var(--rule)'}`,
+            color: step.done ? 'var(--ok, #2a8c4f)' : 'var(--ink-3)',
+            textAlign: 'center',
+            fontFamily: 'var(--mono)',
+            fontSize: 10,
+            letterSpacing: '0.04em',
+            textTransform: 'uppercase',
+          }}
+        >
+          {step.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RuntimeMeta({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-4)' }}>
+        {label}
+      </div>
+      <div style={{ marginTop: 3, fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
 /** Renders a single event from the managed agent stream. */
 function ManagedEventLine({ event }: { event: ManagedEvent }) {
   if (event.type === 'agent.message' && event.content) {
@@ -757,20 +899,20 @@ function ManagedEventLine({ event }: { event: ManagedEvent }) {
       .filter((b) => b.type === 'text')
       .map((b) => b.text)
       .join('');
-    return <div style={{ whiteSpace: 'pre-wrap' }}>{text}</div>;
+    return <div style={{ whiteSpace: 'pre-wrap', color: '#e0f2fe' }}>{text}</div>;
   }
   if (event.type === 'agent.tool_use') {
     return (
-      <div style={{ color: 'var(--ink-3)' }}>
+      <div style={{ color: '#93c5fd' }}>
         [Tool: {event.name}]
       </div>
     );
   }
   if (event.type === 'session.status_idle') {
-    return <div style={{ color: 'var(--ok, #2a8c4f)', fontWeight: 600 }}>Agent finished.</div>;
+    return <div style={{ color: '#86efac', fontWeight: 600 }}>Agent finished.</div>;
   }
   if (event.type === 'session.status_failed') {
-    return <div style={{ color: '#B00020' }}>Session failed{event.error ? `: ${event.error}` : '.'}</div>;
+    return <div style={{ color: '#fca5a5' }}>Session failed{event.error ? `: ${event.error}` : '.'}</div>;
   }
   return null;
 }
