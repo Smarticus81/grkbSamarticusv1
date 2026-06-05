@@ -314,14 +314,27 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
         <header style={{ padding: '40px 40px 8px' }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Step 1 of 4 · Select a process</div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Step 1 of 4 · Select a managed-agent template</div>
           <h1 style={{ fontSize: 26, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-            Choose the process you want to run.
+            Choose the Claude Managed Agent you want to create.
           </h1>
           <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 620, lineHeight: 1.55 }}>
-            Each process is one regulatory check. Pick one and you will then configure the input, run it, and
-            optionally save it as a reusable agent.
+            Each template runs once with graph-grounded citations, then saves as a Claude Managed Agent ready to deploy
+            from Agent Builder.
           </p>
+          <div
+            style={{
+              marginTop: 16,
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: 10,
+              maxWidth: 760,
+            }}
+          >
+            <ManagedStep label="1. Configure" body="Paste real QMS input or use the starter schema." />
+            <ManagedStep label="2. Ground" body="Regulatory Ground loads obligations and citations." />
+            <ManagedStep label="3. Deploy" body="Save directly into Claude Managed Agents." />
+          </div>
           <CatalogStepHint />
         </header>
         <div style={{ padding: '24px 40px 56px' }}>
@@ -334,14 +347,15 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                 onClick={() => navigate(`/app/sandbox/${t.id}`)}
                 style={{
                   textAlign: 'left',
-                  background: 'var(--paper)',
-                  border: '1px solid var(--rule)',
-                  borderRadius: 8,
-                  padding: '14px 16px',
+                  background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)',
+                  border: '1px solid rgba(255, 115, 0, 0.22)',
+                  borderRadius: 14,
+                  padding: '16px 18px',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 8,
+                  gap: 10,
+                  boxShadow: '0 14px 36px rgba(17, 24, 39, 0.04)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -349,7 +363,10 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{t.name}</span>
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--ink-2)', lineHeight: 1.45 }}>{t.oneLiner}</div>
-                <div style={{ fontSize: 11, color: 'var(--ink-3)', fontFamily: 'var(--mono)' }}>{t.regulation}</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <span style={SMALL_RUNTIME_PILL}>Claude Managed Agent</span>
+                  <span style={SMALL_RUNTIME_PILL}>{t.regulation}</span>
+                </div>
                 {((t.upstream?.length ?? 0) + (t.downstream?.length ?? 0)) > 0 && (
                   <div style={{ fontSize: 10, color: 'var(--ink-3)', marginTop: 2 }}>
                     ↔ chains with {(t.upstream?.length ?? 0) + (t.downstream?.length ?? 0)} task
@@ -382,7 +399,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             onClick={() => navigate('/app/sandbox')}
             style={GHOST_BUTTON}
           >
-            ← All processs
+            ← All managed agents
           </button>
           <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {detail.name}
@@ -396,14 +413,14 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={resetToSample} style={GHOST_BUTTON} disabled={running}>Reset to sample</button>
+          <button onClick={resetToSample} style={GHOST_BUTTON} disabled={running}>Reset input</button>
           <button
             onClick={runProcess}
             disabled={running}
             className="btn-orange"
             style={{ fontSize: 14, padding: '10px 22px' }}
           >
-            {running ? 'Running…' : 'Run'}
+            {running ? 'Grounding…' : 'Run grounding pass'}
           </button>
         </div>
       </header>
@@ -658,16 +675,36 @@ const SMALL_RUNTIME_PILL: React.CSSProperties = {
   textTransform: 'uppercase',
 };
 
+function ManagedStep({ label, body }: { label: string; body: string }) {
+  return (
+    <div
+      style={{
+        padding: '12px 14px',
+        border: '1px solid rgba(255, 115, 0, 0.20)',
+        borderRadius: 12,
+        background: '#fff',
+      }}
+    >
+      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--orange)' }}>
+        {label}
+      </div>
+      <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.45, color: 'var(--ink-3)' }}>
+        {body}
+      </div>
+    </div>
+  );
+}
+
 /* ── Flow stepper ────────────────────────────────────────────────────── */
 
 const FLOW_STEPS = [
-  { key: 'select', label: 'Select process' },
+  { key: 'select', label: 'Select agent' },
   { key: 'configure', label: 'Configure input' },
-  { key: 'run', label: 'Run' },
-  { key: 'save', label: 'Save / edit' },
+  { key: 'run', label: 'Ground run' },
+  { key: 'save', label: 'Save for deploy' },
 ] as const;
 
-/** Slim Select → Configure → Run → Save indicator on the run screen. */
+/** Slim Select → Configure → Ground → Save indicator on the run screen. */
 function Stepper({ current }: { current: 'configure' | 'run' | 'save' }) {
   const currentIdx = FLOW_STEPS.findIndex((s) => s.key === current);
   return (

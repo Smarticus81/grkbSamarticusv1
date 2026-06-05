@@ -199,7 +199,7 @@ export function TraceExplorer({ initialId }: Props) {
       setChain(traceData);
       setVerification(verifyData);
       if (traceData.length === 0) {
-        setError(`No decision trail found for "${pid}". Run a process in the Sandbox to generate one.`);
+        setError(`No decision trail found for "${pid}". Run a managed agent template to generate one.`);
       }
     } catch (err) {
       setChain([]);

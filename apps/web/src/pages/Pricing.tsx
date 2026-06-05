@@ -54,8 +54,8 @@ const TIERS: Tier[] = [
     featured: true,
     features: [
       'Everything in Sandbox',
-      'Run processs on your own data — your tenant, never stored by us',
-      'Save reusable agents with required-data slots and review gates',
+      'Run managed agents on your own data — your tenant, never stored by us',
+      'Deploy reusable Claude Managed Agents with required-data slots and review gates',
       'Design multi-agent workflows in the canvas',
       'Export audit packs and full hash-chained decision trails',
       'Email support with a 1-business-day response',
@@ -161,8 +161,8 @@ export function Pricing() {
           Free to prove. Priced to <span style={{ color: 'var(--orange)' }}>scale</span>.
         </h1>
         <p style={{ margin: '22px auto 0', maxWidth: 560, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)' }}>
-          Run real regulatory processs on sample data for free. Pay when you put your own data through and
-          start exporting defensible deliverables.
+          Create grounded managed agents on sample data for free. Pay when you put your own data through and
+          start deploying defensible agent workflows.
         </p>
       </section>
 

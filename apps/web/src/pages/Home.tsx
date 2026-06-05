@@ -5,11 +5,11 @@
  * next action within seconds. So the screen is deliberately low-density and
  * progressive:
  *
- *   1. One line on what this does + ONE dominant action ("Run a process").
- *   2. The loop in three steps (pick -> run on your data -> cited deliverable
- *      + tamper-evident trail) so "what does it do" is answered immediately.
- *   3. Three featured processs as one-click starts.
- *   4. History (recent runs, saved agents) appears ONLY once it exists, so a
+ *   1. One line on what this does + ONE dominant action ("Create managed agent").
+ *   2. The loop in three steps (pick -> run on your data -> deploy a Claude
+ *      Managed Agent) so "what does it do" is answered immediately.
+ *   3. Three featured managed-agent templates as one-click starts.
+ *   4. History (recent runs, managed agents) appears ONLY once it exists, so a
  *      new user is never shown empty shells.
  *
  * Everything is wired to live endpoints — no placeholder data.
@@ -67,9 +67,9 @@ const FEATURED: { taskId: string; eyebrow: string; title: string; outcome: strin
 ];
 
 const STEPS: { n: string; title: string; body: string }[] = [
-  { n: '1', title: 'Pick a regulatory process', body: 'Each process is pre-bound to the exact requirements it must satisfy.' },
-  { n: '2', title: 'Run it on your data', body: 'Your data stays in your tenant. The agent queries the rulebook, not your records.' },
-  { n: '3', title: 'Get a defensible result', body: 'A cited draft plus a tamper-evident decision trail you can hand to an inspector.' },
+  { n: '1', title: 'Pick a grounded agent template', body: 'Each template is pre-bound to the exact requirements it must satisfy.' },
+  { n: '2', title: 'Run once with real input', body: 'The run captures the input, citations, guardrails, and graph context.' },
+  { n: '3', title: 'Deploy to Claude Managed Agents', body: 'Save the run, deploy the cloud agent, then start live managed sessions.' },
 ];
 
 /* ── Component ──────────────────────────────────────────────────────── */
@@ -109,14 +109,14 @@ export function Home() {
         .hw-wrap { max-width: 980px; margin: 0 auto; padding: 0 40px; }
         .hw-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: var(--r-3); overflow: hidden; }
         .hw-step { background: var(--paper); padding: 22px 22px; }
-        .hw-processs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .hw-processes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .hw-process { display:flex; flex-direction:column; gap:10px; padding:20px; cursor:pointer; height:100%; text-align:left; }
         .hw-process:hover { border-color: var(--ink); }
         .hw-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border:1px solid var(--rule); border-radius: var(--r-2); background: var(--paper); cursor:pointer; text-align:left; width:100%; transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
         .hw-row:hover { border-color: var(--ink); background: var(--paper-deep); }
         @media (max-width: 860px) {
           .hw-steps { grid-template-columns: 1fr; }
-          .hw-processs { grid-template-columns: 1fr; }
+          .hw-processes { grid-template-columns: 1fr; }
         }
       `}</style>
 
@@ -135,19 +135,22 @@ export function Home() {
         <div className="hw-wrap" style={{ position: 'relative', padding: '48px 40px 40px' }}>
           <div className="eyebrow" style={{ marginBottom: 14 }}>
             <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
-            Smarticus workspace
+            Claude Managed Agents workspace
           </div>
           <h1 style={{ fontSize: 'clamp(30px, 4vw, 46px)', fontWeight: 500, letterSpacing: '-0.035em', lineHeight: 1.04, margin: 0, maxWidth: 680 }}>
-            Run a regulatory process.
+            Build regulated Claude agents from grounded runs.
           </h1>
           <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 560 }}>
-            Pick a process, paste your document or data, and run it. You get back a checked result: what passes,
-            what is missing, the regulations behind each finding, and an audit trail. Start below.
+            Pick a regulated workflow, run it once against your data, then promote it into a Claude Managed Agent
+            with its own cloud environment, live session stream, citations, and Regulatory Ground guardrails.
           </p>
           <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')} style={{ padding: '12px 22px', fontSize: 14.5 }}>
-              Run a process
+              Create managed agent
               <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+            <button className="btn btn-ghost" onClick={() => navigate('/app/builder')} style={{ fontSize: 14 }}>
+              Open Agent Builder
             </button>
             {hasHistory && (
               <button className="btn btn-ghost" onClick={() => navigate('/app/trails')} style={{ fontSize: 14 }}>
@@ -179,21 +182,21 @@ export function Home() {
         </div>
       </section>
 
-      {/* ── Start a process ── */}
+      {/* ── Start a managed agent ── */}
       <section className="hw-wrap" style={{ padding: '40px 40px 8px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
-          <h2 style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>Start a process</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>Start a managed agent</h2>
           <button onClick={() => navigate('/app/sandbox')} style={{ background: 'none', border: 0, color: 'var(--ink-2)', fontSize: 13, cursor: 'pointer' }}>
-            Browse all {tasks ? tasks.length : ''} &rarr;
+            Browse all {tasks ? tasks.length : ''} templates &rarr;
           </button>
         </div>
-        <div className="hw-processs">
+        <div className="hw-processes">
           {featured.map((f) => (
             <button key={f.taskId} className="ground-card lift hw-process" onClick={() => navigate(`/app/sandbox/${f.taskId}`)}>
               <span className="eyebrow">{f.eyebrow}</span>
               <div style={{ fontSize: 18, fontWeight: 500, letterSpacing: '-0.02em', color: 'var(--ink)' }}>{f.title}</div>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--ink-3)', flex: 1 }}>{f.outcome}</p>
-              <span style={{ color: 'var(--orange)', fontSize: 13, fontWeight: 500 }}>Run &rarr;</span>
+              <span style={{ color: 'var(--orange)', fontSize: 13, fontWeight: 500 }}>Configure agent &rarr;</span>
             </button>
           ))}
         </div>
@@ -229,7 +232,7 @@ export function Home() {
             )}
             {hasAgents && (
               <div>
-                <div className="eyebrow" style={{ marginBottom: 10 }}>Your agents</div>
+                <div className="eyebrow" style={{ marginBottom: 10 }}>Managed agents</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {agents!.map((a) => (
                     <button key={a.id} className="hw-row" onClick={() => navigate('/app/builder')}>
@@ -237,7 +240,7 @@ export function Home() {
                         <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-4)', marginTop: 2 }}>{a.processTitle}</div>
                       </div>
-                      <span style={{ color: 'var(--ink-3)', fontSize: 13, flexShrink: 0 }}>Open &rarr;</span>
+                      <span style={{ color: 'var(--ink-3)', fontSize: 13, flexShrink: 0 }}>Deploy &rarr;</span>
                     </button>
                   ))}
                 </div>
@@ -257,10 +260,10 @@ export function Home() {
         >
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 14.5, fontWeight: 500, color: 'var(--ink)' }}>
-              Backed by {REQUIREMENT_COUNT} requirements across {REG_COUNT} regulations.
+              Claude Managed Agents grounded by {REQUIREMENT_COUNT} requirements across {REG_COUNT} regulations.
             </div>
             <p style={{ margin: '4px 0 0', fontSize: 13, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-              Every run queries a versioned requirements map. Your proprietary data never leaves your tenant.
+              Every managed session starts from a graph-grounded run and carries its regulatory context forward.
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>

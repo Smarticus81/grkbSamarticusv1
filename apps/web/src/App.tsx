@@ -17,9 +17,9 @@ import { SmarticusWordmark } from './components/ui/logos.js';
 /**
  * Navigation is grouped by what a non-technical user is trying to do, with a
  * one-line caption under each heading so the purpose is obvious.
- *   "Do the work"     — run processs and reuse them.
+ *   "Do the work"     — create managed agents from grounded processes.
  *   "Rules & records" — the regulations, and proof of every decision.
- *   "Advanced"        — chain processs together or plug into other tools.
+ *   "Advanced"        — chain processes together or plug into other tools.
  */
 const NAV_GROUPS: {
   heading: string;
@@ -28,11 +28,11 @@ const NAV_GROUPS: {
 }[] = [
   {
     heading: 'Do the work',
-    caption: 'Run a process, then deploy it as a managed agent.',
+    caption: 'Create, deploy, and run managed agents.',
     items: [
       { href: '/app',          label: 'Home', exact: true },
       { href: '/app/designer', label: 'Multi-step workflows' },
-      { href: '/app/sandbox',  label: 'Run a process' },
+      { href: '/app/sandbox',  label: 'Create managed agent' },
       { href: '/app/builder',  label: 'Agent Builder' },
     ],
   },
@@ -46,7 +46,7 @@ const NAV_GROUPS: {
   },
   {
     heading: 'Advanced',
-    caption: 'Chain processs together or connect your tools.',
+    caption: 'Chain workflows or connect your tools.',
     items: [
       { href: '/app/connect',  label: 'Connect a tool (API / MCP)' },
     ],
@@ -186,7 +186,7 @@ function AppShell() {
               padding: '9px 14px',
             }}
           >
-            Run a process
+            New managed agent
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </Link>
         </div>
