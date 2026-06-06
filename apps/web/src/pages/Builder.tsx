@@ -263,8 +263,8 @@ function runtimeLabel(a: SavedAgent): string {
 
 function runtimeTone(a: SavedAgent): { border: string; background: string; accent: string } {
   return a.providerRuntime?.agentId
-    ? { border: 'rgba(37, 99, 235, 0.35)', background: 'linear-gradient(135deg, #fff 0%, #f5f8ff 100%)', accent: '#2563eb' }
-    : { border: 'rgba(255, 115, 0, 0.32)', background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)', accent: 'var(--orange)' };
+    ? { border: 'var(--rule-strong)', background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-soft) 100%)', accent: '#5B8CFF' }
+    : { border: 'var(--signal-edge)', background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-warm) 100%)', accent: 'var(--orange)' };
 }
 
 function outcomeText(events: ManagedEvent[]): string {
@@ -526,7 +526,7 @@ export function Builder() {
             style={{
               padding: '12px 14px',
               marginBottom: 18,
-              background: '#fff',
+              background: 'var(--surface)',
               border: '1px solid var(--rule-strong)',
               borderRadius: 10,
               fontSize: 13,
@@ -569,9 +569,9 @@ export function Builder() {
                       aspectRatio: '1 / 1',
                       minHeight: 230,
                       padding: 18,
-                      border: `1px solid ${deployed ? 'rgba(37, 99, 235, 0.22)' : 'rgba(255, 115, 0, 0.24)'}`,
+                      border: `1px solid ${deployed ? 'var(--rule-strong)' : 'var(--signal-edge)'}`,
                       borderRadius: 18,
-                      background: '#fff',
+                      background: 'var(--surface)',
                       boxShadow: '0 14px 38px rgba(17, 24, 39, 0.045)',
                     }}
                   >
@@ -597,7 +597,7 @@ export function Builder() {
                                 fontSize: 15,
                                 fontWeight: 600,
                                 color: 'var(--ink)',
-                                background: '#fff',
+                                background: 'var(--surface)',
                                 border: '1px solid var(--rule-strong)',
                                 borderRadius: 8,
                                 padding: '8px 10px',
@@ -709,7 +709,7 @@ export function Builder() {
               overflow: 'auto',
               borderRadius: 22,
               border: '1px solid rgba(17, 24, 39, 0.12)',
-              background: '#fff',
+              background: 'var(--surface)',
               boxShadow: '0 28px 90px rgba(17, 24, 39, 0.22)',
               padding: 22,
             }}
@@ -748,7 +748,7 @@ export function Builder() {
                     fontSize: 14,
                     lineHeight: 1.55,
                     color: 'var(--ink)',
-                    background: '#fff',
+                    background: 'var(--surface)',
                     border: '1px solid var(--rule-strong)',
                     borderRadius: 14,
                     padding: '13px 14px',
@@ -774,7 +774,7 @@ export function Builder() {
                   minHeight: 190,
                   border: '1px solid var(--rule-strong)',
                   borderRadius: 16,
-                  background: '#fff',
+                  background: 'var(--surface)',
                   padding: 18,
                 }}
               >
@@ -787,7 +787,7 @@ export function Builder() {
                   </div>
                   <OutcomeDot tone={activeState.tone} />
                 </div>
-                <div style={{ fontSize: 14, lineHeight: 1.7, color: activeError ? '#B00020' : activeText ? 'var(--ink)' : 'var(--ink-3)', whiteSpace: 'pre-wrap' }}>
+                <div style={{ fontSize: 14, lineHeight: 1.7, color: activeError ? 'var(--err)' : activeText ? 'var(--ink)' : 'var(--ink-3)', whiteSpace: 'pre-wrap' }}>
                   {activeError || activeText || (streaming
                     ? 'The agent is reading the record and preparing the outcome.'
                     : activeState.tone === 'done'
@@ -826,7 +826,7 @@ function OutcomeDot({ tone }: { tone: 'idle' | 'working' | 'done' | 'failed' }) 
     idle: 'var(--ink-4)',
     working: 'var(--orange)',
     done: 'var(--ok, #2a8c4f)',
-    failed: '#B00020',
+    failed: 'var(--err)',
   };
   return (
     <span
@@ -852,7 +852,7 @@ function RuntimeBadge({ label, color }: { label: string; color: string }) {
         height: 30,
         padding: '0 10px',
         borderRadius: 999,
-        background: '#fff',
+        background: 'var(--surface)',
         border: `1px solid ${color}`,
         color,
         fontFamily: 'var(--mono)',

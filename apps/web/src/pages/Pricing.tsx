@@ -17,7 +17,7 @@
 import { useLocation } from 'wouter';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
 import { SmarticusWordmark, SmarticusMark } from '../components/ui/logos.js';
-import { REG_COUNT, REQUIREMENT_COUNT } from '../lib/coverage.js';
+import { EVIDENCE_TYPE_COUNT, REG_COUNT, REQUIREMENT_COUNT } from '../lib/coverage.js';
 
 interface Tier {
   id: string;
@@ -39,8 +39,8 @@ const TIERS: Tier[] = [
     cta: { label: 'Start agent build', action: 'sandbox' },
     features: [
       'Launch every medical-device agent template on built-in sample evidence',
-      `Browse all ${REQUIREMENT_COUNT} requirements across ${REG_COUNT} regulations`,
-      'See citations, applicable requirements, and the live audit trail',
+      `Browse ${REQUIREMENT_COUNT} requirements across ${REG_COUNT} semantic compliance buckets`,
+      `Use ${EVIDENCE_TYPE_COUNT} evidence types for runtime grounding`,
       'Verify the hash chain on any agent run',
     ],
   },
@@ -93,7 +93,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Which regulations are covered today?',
-    a: `EU MDR, ISO 13485, ISO 14971, 21 CFR Part 820, UK MDR, IMDRF, MDCG 2022-21, and IEC 62304 — ${REQUIREMENT_COUNT} requirements, versioned to source. New regulations are added continuously.`,
+    a: `The live graph currently contains ${REQUIREMENT_COUNT} requirements, ${EVIDENCE_TYPE_COUNT} evidence types, and ${REG_COUNT} semantic compliance buckets across medical-device regulations, standards, and QMS process areas.`,
   },
 ];
 
@@ -114,7 +114,7 @@ export function Pricing() {
         }
         .price-card {
           display: flex; flex-direction: column; gap: 18px; padding: 28px 26px;
-          background: var(--paper); border: 1px solid var(--rule); border-radius: var(--r-3);
+          background: var(--surface); border: 1px solid var(--rule); border-radius: var(--r-3);
           transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease), transform var(--t-fast) var(--ease);
         }
         .price-card:hover { border-color: var(--rule-strong); box-shadow: var(--shadow-1); }

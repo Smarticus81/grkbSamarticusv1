@@ -374,7 +374,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           </p>
         </header>
         <div style={{ padding: '24px 40px 56px' }}>
-          {error && <div style={{ padding: 12, color: '#B00020', fontSize: 13 }}>Could not load: {error}</div>}
+          {error && <div style={{ padding: 12, color: 'var(--err)', fontSize: 13 }}>Could not load: {error}</div>}
           {!tasks && !error && <div style={{ padding: 12, color: 'var(--ink-3)', fontSize: 13 }}>Loading…</div>}
           {workflowSource && (
             <WorkflowBuildSourcePanel
@@ -391,8 +391,8 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                 onClick={() => navigate(`/app/sandbox/${t.id}`)}
                 style={{
                   textAlign: 'left',
-                  background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)',
-                  border: '1px solid rgba(255, 115, 0, 0.22)',
+                  background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-warm) 100%)',
+                  border: '1px solid var(--signal-edge)',
                   borderRadius: 16,
                   padding: 16,
                   cursor: 'pointer',
@@ -526,12 +526,12 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   borderRadius: 6,
                   padding: 10,
                   resize: 'vertical',
-                  background: '#fff',
+                  background: 'var(--surface)',
                   color: 'var(--ink)',
                 }}
               />
               {jsonError && (
-                <div style={{ marginTop: 6, color: '#B00020', fontSize: 12, fontFamily: 'var(--mono)' }}>
+                <div style={{ marginTop: 6, color: 'var(--err)', fontSize: 12, fontFamily: 'var(--mono)' }}>
                   {jsonError}
                 </div>
               )}
@@ -542,7 +542,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
         {/* ── RIGHT: Live reasoning + result ────────────────────── */}
         <section style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {error && (
-            <div style={{ padding: 12, color: '#B00020', fontSize: 13, border: '1px solid #f5cccc', borderRadius: 8, background: '#fff5f5' }}>
+            <div style={{ padding: 12, color: 'var(--err)', fontSize: 13, border: '1px solid var(--err-edge)', borderRadius: 8, background: 'var(--err-soft)' }}>
               {error}
             </div>
           )}
@@ -589,7 +589,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           )}
 
           {result && !running && (
-            <section style={{ ...CARD, padding: 18, background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)', borderColor: 'rgba(255, 115, 0, 0.24)' }}>
+            <section style={{ ...CARD, padding: 18, background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-warm) 100%)', borderColor: 'var(--signal-edge)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
                 <div>
                   <div className="eyebrow" style={{ marginBottom: 6 }}>Create managed agent</div>
@@ -616,7 +616,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                     borderRadius: 10,
                     background: 'rgba(176, 0, 32, 0.05)',
                     fontSize: 12.5,
-                    color: '#B00020',
+                    color: 'var(--err)',
                     lineHeight: 1.5,
                   }}
                 >
@@ -632,14 +632,14 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                             padding: '10px 12px',
                             border: '1px solid rgba(176, 0, 32, 0.14)',
                             borderRadius: 10,
-                            background: '#fff',
+                            background: 'var(--surface)',
                             color: 'var(--ink-2)',
                           }}
                         >
                           <div style={{ fontWeight: 650, color: 'var(--ink)', marginBottom: 4 }}>
                             {item.title}
                           </div>
-                          <div style={{ color: '#B00020' }}>
+                          <div style={{ color: 'var(--err)' }}>
                             {item.reason}
                           </div>
                           <div style={{ marginTop: 5, color: 'var(--ink-3)' }}>
@@ -685,7 +685,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                       padding: 14,
                       border: '1px solid rgba(255, 115, 0, 0.28)',
                       borderRadius: 12,
-                      background: '#fff',
+                      background: 'var(--surface)',
                       display: 'grid',
                       gap: 6,
                     }}
@@ -714,7 +714,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                         fontFamily: 'var(--sans)',
                         fontSize: 13,
                         color: 'var(--ink)',
-                        background: '#fff',
+                        background: 'var(--surface)',
                         border: '1px solid var(--rule-strong)',
                         borderRadius: 10,
                         padding: '10px 12px',
@@ -737,7 +737,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                 </div>
               )}
               {savedAgentMsg && !savedAgentOk && (
-                <div style={{ marginTop: 8, fontSize: 12, color: '#B00020' }}>{savedAgentMsg}</div>
+                <div style={{ marginTop: 8, fontSize: 12, color: 'var(--err)' }}>{savedAgentMsg}</div>
               )}
             </section>
           )}
@@ -750,7 +750,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
 /* ── Sub-components ──────────────────────────────────────────────────── */
 
 const CARD: React.CSSProperties = {
-  background: '#fff',
+  background: 'var(--surface)',
   border: '1px solid var(--rule)',
   borderRadius: 10,
 };
@@ -777,7 +777,7 @@ const SMALL_RUNTIME_PILL: React.CSSProperties = {
   padding: '0 9px',
   border: '1px solid rgba(255, 115, 0, 0.22)',
   borderRadius: 999,
-  background: '#fff',
+  background: 'var(--surface)',
   color: 'var(--ink-3)',
   fontFamily: 'var(--mono)',
   fontSize: 10,
@@ -803,7 +803,7 @@ function WorkflowBuildSourcePanel({
         marginBottom: 18,
         border: '1px solid rgba(255, 115, 0, 0.24)',
         borderRadius: 16,
-        background: 'linear-gradient(135deg, #fff 0%, #fff8f2 100%)',
+        background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-warm) 100%)',
         padding: 18,
         boxShadow: '0 18px 42px rgba(17, 24, 39, 0.05)',
       }}
@@ -840,7 +840,7 @@ function WorkflowBuildSourcePanel({
                 padding: '11px 12px',
                 border: '1px solid var(--rule)',
                 borderRadius: 12,
-                background: '#fff',
+                background: 'var(--surface)',
                 minHeight: 86,
               }}
             >
@@ -861,7 +861,7 @@ function WorkflowBuildSourcePanel({
             style={{
               minHeight: 132,
               textAlign: 'left',
-              background: '#fff',
+              background: 'var(--surface)',
               border: '1px solid rgba(255, 115, 0, 0.22)',
               borderRadius: 14,
               padding: 14,
@@ -1321,7 +1321,7 @@ function FieldRow({
     fontFamily: 'var(--sans)',
     fontSize: 13,
     color: 'var(--ink)',
-    background: '#fff',
+    background: 'var(--surface)',
     border: '1px solid var(--rule)',
     borderRadius: 6,
     padding: '8px 10px',
@@ -1446,7 +1446,7 @@ function AnswerPanel({
           </div>
         )}
         {lane?.error && (
-          <div style={{ color: '#B00020', fontSize: 13 }}>{lane.error}</div>
+          <div style={{ color: 'var(--err)', fontSize: 13 }}>{lane.error}</div>
         )}
         {lane && !lane.error && lane.output != null && (
           <OutputRenderer value={lane.output} />
@@ -1521,9 +1521,9 @@ function OutputRenderer({ value }: { value: unknown }) {
 }
 
 const STATUS_CHIP: Record<string, { color: string; bg: string; label: string }> = {
-  met: { color: '#0f7a4d', bg: 'rgba(15,122,77,0.10)', label: 'Met' },
-  covered: { color: '#0f7a4d', bg: 'rgba(15,122,77,0.10)', label: 'Covered' },
-  partial: { color: '#a8650a', bg: 'rgba(168,101,10,0.12)', label: 'Partial' },
+  met: { color: 'var(--ok)', bg: 'var(--ok-soft)', label: 'Met' },
+  covered: { color: 'var(--ok)', bg: 'var(--ok-soft)', label: 'Covered' },
+  partial: { color: 'var(--warn)', bg: 'var(--warn-soft)', label: 'Partial' },
   gap: { color: 'var(--orange)', bg: 'rgba(250,80,15,0.10)', label: 'Gap' },
   'not-covered': { color: 'var(--orange)', bg: 'rgba(250,80,15,0.10)', label: 'Not covered' },
 };
@@ -1781,7 +1781,7 @@ function RegulationsPanel({
             style={{
               ...OBLIGATION_ROW,
               borderColor: violations.has(o.obligationId) ? 'var(--orange)' : 'var(--rule)',
-              background: violations.has(o.obligationId) ? 'rgba(250,80,15,0.05)' : '#fff',
+              background: violations.has(o.obligationId) ? 'var(--signal-soft)' : 'var(--surface)',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
@@ -1808,7 +1808,7 @@ const OBLIGATION_ROW: React.CSSProperties = {
   border: '1px solid var(--rule)',
   borderRadius: 8,
   padding: '10px 12px',
-  background: '#fff',
+  background: 'var(--surface)',
 };
 
 /* ── Audit trail (inline) ─────────────────────────────────────────── */

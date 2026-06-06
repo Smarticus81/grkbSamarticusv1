@@ -318,7 +318,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
             style={{
               padding: '18px 22px',
               border: '1px solid var(--ok)',
-              background: '#0E6B3A0A',
+              background: 'var(--ok-soft)',
               borderRadius: 'var(--r-3)',
               marginBottom: 32,
               display: 'flex',

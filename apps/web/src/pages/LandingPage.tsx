@@ -1,8 +1,16 @@
+import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { RegulatorHeroRail } from '../components/ui/RegulatorAssets.js';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
 import { SmarticusWordmark, SmarticusMark, SmarticusByThinkertonsLockup } from '../components/ui/logos.js';
-import { REG_COUNT, OBLIGATION_COUNT } from '../lib/coverage.js';
+import { EVIDENCE_TYPE_COUNT, REG_COUNT, OBLIGATION_COUNT } from '../lib/coverage.js';
+import { api } from '../lib/queryClient.js';
+
+interface GraphStats {
+  regulations: number;
+  obligations: number;
+  evidenceTypes: number;
+}
 
 /* ── Featured product rows (Mistral-style alternating showcase) ── */
 const PRODUCTS: {
@@ -254,6 +262,311 @@ function PainIcon() {
 
 export function LandingPage() {
   const [, navigate] = useLocation();
+  const [graphStats, setGraphStats] = useState<GraphStats | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api<GraphStats>('/api/graph/stats')
+      .then((stats) => {
+        if (!cancelled) setGraphStats(stats);
+      })
+      .catch(() => {
+        if (!cancelled) setGraphStats(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const liveRequirements = graphStats?.obligations ?? OBLIGATION_COUNT;
+  const liveEvidenceTypes = graphStats?.evidenceTypes ?? EVIDENCE_TYPE_COUNT;
+  const liveSemanticBuckets = graphStats?.regulations ?? REG_COUNT;
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--paper)',
+        color: 'var(--ink)',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <style>{`
+        .landing-hero {
+          position: relative;
+          max-width: 1120px;
+          margin: 0 auto;
+          width: 100%;
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
+          gap: 56px;
+          align-items: center;
+        }
+        .regulatory-panel {
+          border: 1px solid var(--rule);
+          border-radius: var(--r-3);
+          background:
+            radial-gradient(circle at 18% 20%, var(--signal-soft), transparent 34%),
+            linear-gradient(135deg, var(--surface-glass-strong), var(--surface-soft));
+          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.16);
+          padding: 22px;
+          overflow: hidden;
+        }
+        .regulatory-step {
+          display: grid;
+          grid-template-columns: 28px 1fr;
+          gap: 12px;
+          padding: 14px 0;
+          border-top: 1px solid var(--rule);
+        }
+        .regulatory-step:first-of-type { border-top: 0; }
+        .regulatory-number {
+          width: 24px;
+          height: 24px;
+          border-radius: 999px;
+          border: 1px solid rgba(255, 115, 0, 0.38);
+          color: var(--orange);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: var(--mono);
+          font-size: 11px;
+        }
+        .runtime-orbit {
+          position: relative;
+          height: 330px;
+          margin-top: 14px;
+          border: 1px solid var(--rule);
+          border-radius: 18px;
+          background:
+            radial-gradient(circle at 50% 45%, var(--signal-soft), transparent 24%),
+            radial-gradient(circle at 18% 22%, rgba(255, 122, 61, 0.16), transparent 26%),
+            var(--paper-deep);
+          overflow: hidden;
+        }
+        .runtime-orbit::before {
+          content: '';
+          position: absolute;
+          inset: 28px;
+          border: 1px solid var(--rule-strong);
+          border-radius: 50%;
+          animation: semantic-spin 18s linear infinite;
+        }
+        .runtime-orbit::after {
+          content: '';
+          position: absolute;
+          inset: 72px;
+          border: 1px dashed var(--signal-edge);
+          border-radius: 50%;
+          animation: semantic-spin 12s linear infinite reverse;
+        }
+        .runtime-core {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: 138px;
+          height: 138px;
+          border-radius: 28px;
+          border: 1px solid var(--signal-edge);
+          background: var(--surface);
+          display: grid;
+          place-items: center;
+          text-align: center;
+          padding: 18px;
+          box-shadow: 0 22px 60px rgba(0, 0, 0, 0.18), 0 0 0 8px var(--signal-soft);
+          animation: core-breathe 3.6s var(--ease) infinite;
+          z-index: 2;
+        }
+        .runtime-node {
+          position: absolute;
+          width: 104px;
+          padding: 10px 12px;
+          border: 1px solid var(--rule);
+          border-radius: 14px;
+          background: var(--surface-glass-strong);
+          box-shadow: var(--shadow-2);
+          z-index: 3;
+          animation: node-float 5s var(--ease) infinite;
+        }
+        .runtime-node:nth-child(2) { left: 18px; top: 28px; animation-delay: 0ms; }
+        .runtime-node:nth-child(3) { right: 18px; top: 54px; animation-delay: 240ms; }
+        .runtime-node:nth-child(4) { left: 26px; bottom: 36px; animation-delay: 480ms; }
+        .runtime-node:nth-child(5) { right: 28px; bottom: 28px; animation-delay: 720ms; }
+        .runtime-line {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 44%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, var(--signal-edge), transparent);
+          transform-origin: left center;
+          z-index: 1;
+          animation: line-pulse 2.8s var(--ease) infinite;
+        }
+        .runtime-line.l1 { transform: rotate(220deg); }
+        .runtime-line.l2 { transform: rotate(318deg); animation-delay: 180ms; }
+        .runtime-line.l3 { transform: rotate(142deg); animation-delay: 360ms; }
+        .runtime-line.l4 { transform: rotate(42deg); animation-delay: 540ms; }
+        @keyframes semantic-spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes core-breathe {
+          0%, 100% { transform: translate(-50%, -50%) scale(1); }
+          50% { transform: translate(-50%, -50%) scale(1.035); }
+        }
+        @keyframes node-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-7px); }
+        }
+        @keyframes line-pulse {
+          0%, 100% { opacity: 0.34; }
+          50% { opacity: 0.92; }
+        }
+        @media (max-width: 900px) {
+          .landing-hero { grid-template-columns: 1fr; gap: 36px; }
+        }
+      `}</style>
+      <nav
+        style={{
+          height: 68,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 32px',
+          borderBottom: '1px solid var(--rule)',
+        }}
+      >
+        <SmarticusWordmark size={16} tagline={false} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <ThemeToggle />
+          <button className="btn btn-ghost" onClick={() => navigate('/app')}>
+            Sign in
+          </button>
+        </div>
+      </nav>
+
+      <main
+        style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '56px 32px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          aria-hidden
+          className="halftone"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0.12,
+            maskImage: 'radial-gradient(ellipse 60% 80% at 86% 22%, #000 18%, transparent 70%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 60% 80% at 86% 22%, #000 18%, transparent 70%)',
+            pointerEvents: 'none',
+          }}
+        />
+        <section className="landing-hero">
+          <div>
+            <div className="eyebrow" style={{ marginBottom: 18 }}>
+              <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
+              Compliance-constrained AI runtime
+            </div>
+            <h1
+              style={{
+                margin: 0,
+                maxWidth: 720,
+                fontSize: 'clamp(48px, 8vw, 98px)',
+                lineHeight: 0.92,
+                letterSpacing: '-0.06em',
+                fontWeight: 500,
+                color: 'var(--ink)',
+              }}
+            >
+              Automate QMS work with strict Compliance Agents.
+            </h1>
+            <p
+              style={{
+                margin: '24px 0 0',
+                maxWidth: 610,
+                color: 'var(--ink-2)',
+                fontSize: 18,
+                lineHeight: 1.55,
+              }}
+            >
+              Smarticus uses a deep knowledge base of Medical device regulations to constrain AI work for Quality Systems Work like CAPA, PMS, and regulatory compliance. The system guides AI Agent behavior and blocks unsupported output,
+             ensures compliance,
+              and records why each decision was made.
+            </p>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
+              <button className="btn btn-orange" onClick={() => navigate('/app/designer')}>
+                Automate a regulated process
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <button className="btn btn-ghost" onClick={() => navigate('/app/sandbox')}>
+                Run with graph controls
+              </button>
+            </div>
+            <p
+              style={{
+                margin: '28px 0 0',
+                fontFamily: 'var(--mono)',
+                fontSize: 11,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: 'var(--ink-4)',
+              }}
+            >
+              Live graph: {liveRequirements} requirements, {liveEvidenceTypes} evidence types, {liveSemanticBuckets} semantic buckets.
+            </p>
+          </div>
+
+          <aside className="regulatory-panel" aria-label="Semantic compliance runtime">
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Semantic compliance layer</div>
+            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
+              The graph constrains runtime.
+            </h2>
+            <div className="runtime-orbit" aria-hidden="true">
+              <div className="runtime-core">
+                <div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--orange)' }}>Runtime</div>
+                  <div style={{ marginTop: 7, fontSize: 15, fontWeight: 650, lineHeight: 1.1, color: 'var(--ink)' }}>Allowed actions only</div>
+                </div>
+              </div>
+              <div className="runtime-node">
+                <div className="eyebrow" style={{ fontSize: 8 }}>EU MDR</div>
+                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Obligations</div>
+              </div>
+              <div className="runtime-node">
+                <div className="eyebrow" style={{ fontSize: 8 }}>QMS</div>
+                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Evidence</div>
+              </div>
+              <div className="runtime-node">
+                <div className="eyebrow" style={{ fontSize: 8 }}>Guardrails</div>
+                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Block / allow</div>
+              </div>
+              <div className="runtime-node">
+                <div className="eyebrow" style={{ fontSize: 8 }}>Trace</div>
+                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Why recorded</div>
+              </div>
+              <span className="runtime-line l1" />
+              <span className="runtime-line l2" />
+              <span className="runtime-line l3" />
+              <span className="runtime-line l4" />
+            </div>
+            <p style={{ margin: '16px 0 0', fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>
+              The graph supplies the boundaries before, during, and after execution. Your team reviews the result.
+            </p>
+          </aside>
+        </section>
+      </main>
+    </div>
+  );
 
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh', color: 'var(--ink)' }}>

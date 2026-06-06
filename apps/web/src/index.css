@@ -9,6 +9,11 @@
   --paper:        #F7F5F0;
   --paper-deep:   #EFECE5;
   --paper-edge:   #E5E1D8;
+  --surface:      #FFFFFF;
+  --surface-soft: #FBFAF7;
+  --surface-warm: #FFF8F2;
+  --surface-glass: rgba(255,255,255,0.82);
+  --surface-glass-strong: rgba(255,255,255,0.96);
   /* Brand ink: Smarticus navy. Deep enough to read as ink, never pure black. */
   --ink:          #0E2A47;
   --ink-deep:     #0A1F36;
@@ -23,10 +28,15 @@
   --signal-edge:  #FA500F40;
   --orange:       #FA500F;
   --orange-deep:  #E04408;
+  --on-accent:    #FFFFFF;
 
   --ok:           #0E6B3A;
+  --ok-soft:      #0E6B3A0A;
   --warn:         #B07300;
+  --warn-soft:    #B073000A;
   --err:          #B5241B;
+  --err-soft:     #B5241B0A;
+  --err-edge:     #B5241B2E;
 
   --sans:    'Inter Tight', system-ui, -apple-system, sans-serif;
   --serif:   'Instrument Serif', 'Times New Roman', serif;
@@ -51,6 +61,11 @@
   --paper:        #0A1422;
   --paper-deep:   #0E1B2D;
   --paper-edge:   #142336;
+  --surface:      #101D2E;
+  --surface-soft: #132235;
+  --surface-warm: #1A2433;
+  --surface-glass: rgba(16,29,46,0.82);
+  --surface-glass-strong: rgba(16,29,46,0.96);
   --ink:          #F1EFE9;
   --ink-deep:     #FFFFFF;
   --ink-2:        #C9D2DC;
@@ -64,6 +79,14 @@
   --signal-edge:  #FF7A3D55;
   --orange:       #FF7A3D;
   --orange-deep:  #FA500F;
+  --on-accent:    #08111E;
+  --ok:           #74D99F;
+  --ok-soft:      #74D99F14;
+  --warn:         #F7C873;
+  --warn-soft:    #F7C87314;
+  --err:          #FF8D86;
+  --err-soft:     #FF8D8614;
+  --err-edge:     #FF8D8640;
 
   --shadow-1: 0 1px 0 rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.4);
   --shadow-2: 0 1px 0 rgba(0,0,0,0.5), 0 12px 32px -12px rgba(0,0,0,0.6);
@@ -243,7 +266,7 @@ button { font-family: var(--sans); }
 
 .btn-orange {
   background: var(--orange);
-  color: #fff;
+  color: var(--on-accent);
   border-color: var(--orange);
 }
 .btn-orange:hover { background: var(--orange-deep); border-color: var(--orange-deep); transform: translateY(-1px); }
@@ -263,7 +286,7 @@ button { font-family: var(--sans); }
 /* Orange check used in feature lists */
 .check-orange {
   width: 18px; height: 18px; border-radius: 999px;
-  background: var(--orange); color: #fff;
+  background: var(--orange); color: var(--on-accent);
   display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
@@ -310,7 +333,7 @@ button { font-family: var(--sans); }
 /* Ground System — regulatory cartography */
 .ground-card {
   padding: 20px;
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--rule);
   border-radius: var(--r-2);
   transition: border-color var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
@@ -336,9 +359,9 @@ button { font-family: var(--sans); }
   border-radius: 999px;
   border: 1px solid;
 }
-.badge-ok { color: var(--ok); border-color: var(--ok); background: #0E6B3A0A; }
-.badge-warn { color: var(--warn); border-color: var(--warn); background: #B073000A; }
-.badge-err { color: var(--err); border-color: var(--err); background: #B5241B0A; }
+.badge-ok { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+.badge-warn { color: var(--warn); border-color: var(--warn); background: var(--warn-soft); }
+.badge-err { color: var(--err); border-color: var(--err); background: var(--err-soft); }
 .badge-signal { color: var(--orange); border-color: var(--orange); background: var(--signal-soft); }
 .badge-ink { color: var(--ink-3); border-color: var(--rule-strong); background: transparent; }
 
@@ -380,12 +403,12 @@ button { font-family: var(--sans); }
 .stepper-dot.active {
   border-color: var(--orange);
   background: var(--orange);
-  color: #fff;
+  color: var(--on-accent);
 }
 .stepper-dot.completed {
   border-color: var(--ok);
   background: var(--ok);
-  color: #fff;
+  color: var(--paper);
 }
 
 /* Risk level indicators */
@@ -430,7 +453,7 @@ button { font-family: var(--sans); }
   padding: 0 6px;
 }
 .comparison-after {
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--ok);
   border-radius: var(--r-2);
   padding: 16px;
@@ -445,7 +468,7 @@ button { font-family: var(--sans); }
   font-size: 9px;
   letter-spacing: 0.14em;
   color: var(--ok);
-  background: var(--paper);
+  background: var(--surface);
   padding: 0 6px;
 }
 

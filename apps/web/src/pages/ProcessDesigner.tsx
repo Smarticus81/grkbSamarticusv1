@@ -894,7 +894,7 @@ export function ProcessDesigner() {
               title="Open starters and saved workflows"
               style={{
                 position: 'absolute', left: 16, top: 16,
-                zIndex: 6, background: 'rgba(255,255,255,0.94)', border: '1px solid var(--rule)',
+                zIndex: 6, background: 'var(--surface-glass-strong)', border: '1px solid var(--rule)',
                 borderRadius: 999, padding: '9px 13px',
                 cursor: 'pointer', color: 'var(--ink)', fontSize: 12, fontWeight: 650,
                 boxShadow: '0 12px 30px rgba(15,23,42,0.08)',
@@ -1098,7 +1098,7 @@ function DesignerHeader(props: {
           )}
           {props.isDirty && (
             <span style={{
-              fontSize: 11, color: 'var(--warn, #b45309)', background: 'var(--signal-soft, #fff7ed)',
+              fontSize: 11, color: 'var(--warn)', background: 'var(--warn-soft)',
               border: '1px solid var(--rule)', borderRadius: 999, padding: '3px 10px', flexShrink: 0,
             }}>
               Unsaved changes
@@ -1150,7 +1150,7 @@ function DesignerHeader(props: {
             disabled={props.saving || props.stepCount === 0}
             title={props.stepCount === 0 ? 'Add at least one step first' : 'Save this workflow and continue to validated agent builds'}
             style={{
-              background: 'var(--orange)', color: '#fff', border: 0, borderRadius: 8,
+              background: 'var(--orange)', color: 'var(--on-accent)', border: 0, borderRadius: 8,
               padding: '8px 16px', fontSize: 13, fontWeight: 650,
               cursor: props.saving ? 'wait' : props.stepCount === 0 ? 'not-allowed' : 'pointer',
               opacity: props.saving || props.stepCount === 0 ? 0.55 : 1,
@@ -1243,7 +1243,7 @@ function NodePalette(props: {
     <div style={{
       width: 292, height: '100%', border: '1px solid var(--rule)', borderRadius: 18,
       display: 'flex', flexDirection: 'column',
-      background: 'rgba(255,255,255,0.96)', flexShrink: 0,
+      background: 'var(--surface-glass-strong)', flexShrink: 0,
       boxShadow: '0 24px 70px rgba(15,23,42,0.14)',
       overflow: 'hidden',
     }}>
@@ -1514,7 +1514,7 @@ function EdgeLayer(props: {
               stroke="transparent" strokeWidth={12} fill="none" />
             <path d={route.path}
               stroke="color-mix(in srgb, var(--ink) 38%, transparent)" strokeWidth={1.8} fill="none" markerEnd="url(#arrowhead)"
-              style={{ transition: 'stroke 150ms', filter: 'drop-shadow(0 1px 0 rgba(255,255,255,0.7))' }} />
+              style={{ transition: 'stroke 150ms', filter: 'drop-shadow(0 1px 0 rgba(0,0,0,0.14))' }} />
             {e.label && (
               <text x={route.labelX} y={route.labelY - 8} fontSize={10} fill="var(--ink-3)" textAnchor="middle">{e.label}</text>
             )}
@@ -1862,7 +1862,7 @@ function ChatPanel(props: {
     <div style={{
       width: 380, height: '100%', border: '1px solid var(--rule)', borderRadius: 18,
       display: 'flex', flexDirection: 'column',
-      background: 'rgba(255,255,255,0.97)', flexShrink: 0,
+      background: 'var(--surface-glass-strong)', flexShrink: 0,
       boxShadow: '0 24px 70px rgba(15,23,42,0.16)',
       overflow: 'hidden',
     }}>

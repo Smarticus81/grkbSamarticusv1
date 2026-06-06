@@ -16,7 +16,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuthenticatedApi } from '../auth/useApi.js';
-import { REQUIREMENT_COUNT } from '../lib/coverage.js';
+import { EVIDENCE_TYPE_COUNT, REG_COUNT, REQUIREMENT_COUNT } from '../lib/coverage.js';
 
 /* ── Types (mirrored from the sandbox + builder APIs) ───────────────── */
 
@@ -41,6 +41,12 @@ interface SavedAgent {
   processTitle: string;
 }
 
+interface GraphStats {
+  regulations: number;
+  obligations: number;
+  evidenceTypes: number;
+}
+
 /* ── Component ──────────────────────────────────────────────────────── */
 
 export function Home() {
@@ -50,6 +56,7 @@ export function Home() {
   const [tasks, setTasks] = useState<TaskCard[] | null>(null);
   const [runs, setRuns] = useState<RecentRun[] | null>(null);
   const [agents, setAgents] = useState<SavedAgent[] | null>(null);
+  const [graphStats, setGraphStats] = useState<GraphStats | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +69,9 @@ export function Home() {
     api<SavedAgent[]>('/api/builder/agents')
       .then((r) => !cancelled && setAgents(Array.isArray(r) ? r : []))
       .catch(() => !cancelled && setAgents([]));
+    api<GraphStats>('/api/graph/stats')
+      .then((r) => !cancelled && setGraphStats(r))
+      .catch(() => !cancelled && setGraphStats(null));
     return () => {
       cancelled = true;
     };
@@ -72,13 +82,16 @@ export function Home() {
   const hasHistory = hasRuns || hasAgents;
   const taskCount = tasks?.length ?? 0;
   const agentCount = agents?.length ?? 0;
+  const requirementCount = graphStats?.obligations ?? REQUIREMENT_COUNT;
+  const evidenceTypeCount = graphStats?.evidenceTypes ?? EVIDENCE_TYPE_COUNT;
+  const semanticBucketCount = graphStats?.regulations ?? REG_COUNT;
 
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <style>{`
         .hw-wrap { max-width: 1120px; margin: 0 auto; padding: 0 40px; }
         .hw-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 30px; }
-        .hw-action { min-height: 132px; text-align:left; padding:20px; border:1px solid var(--rule); border-radius: var(--r-3); background:#fff; cursor:pointer; display:flex; flex-direction:column; justify-content:space-between; gap:14px; }
+        .hw-action { min-height: 132px; text-align:left; padding:20px; border:1px solid var(--rule); border-radius: var(--r-3); background:var(--surface); cursor:pointer; display:flex; flex-direction:column; justify-content:space-between; gap:14px; }
         .hw-action:hover { border-color: var(--ink); }
         .hw-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 22px; max-width: 680px; }
         .hw-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border:1px solid var(--rule); border-radius: var(--r-2); background: var(--paper); cursor:pointer; text-align:left; width:100%; transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
@@ -126,7 +139,9 @@ export function Home() {
           <div className="hw-metrics">
             <Metric label="Agent templates" value={tasks ? String(taskCount) : '...'} />
             <Metric label="Managed agents" value={agents ? String(agentCount) : '...'} />
-            <Metric label="Requirements mapped" value={String(REQUIREMENT_COUNT)} />
+            <Metric label="Graph requirements" value={String(requirementCount)} />
+            <Metric label="Evidence types" value={String(evidenceTypeCount)} />
+            <Metric label="Semantic buckets" value={String(semanticBucketCount)} />
           </div>
         </div>
       </section>
@@ -198,7 +213,7 @@ function Metric({ label, value }: { label: string; value: string }) {
         padding: '15px 16px',
         border: '1px solid rgba(255, 115, 0, 0.20)',
         borderRadius: 'var(--r-3)',
-        background: 'rgba(255, 255, 255, 0.82)',
+        background: 'var(--surface-glass)',
         boxShadow: '0 14px 38px rgba(17, 24, 39, 0.045)',
       }}
     >
