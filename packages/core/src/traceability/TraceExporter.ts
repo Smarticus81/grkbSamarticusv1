@@ -1,6 +1,14 @@
 import { DecisionTraceService } from './DecisionTraceService.js';
 import { ChainVerifier } from './ChainVerifier.js';
 import type { DecisionTraceEntry } from './types.js';
+import {
+  assembleAuditPack,
+  decisionFromTraceEntry,
+  referencedObligationIds,
+  renderAuditPackMarkdown,
+  type AuditPack,
+  type ObligationLookup,
+} from './AuditPack.js';
 
 /**
  * Exports a process instance's decision trace in audit-ready formats.
@@ -59,6 +67,34 @@ export class TraceExporter {
       },
       summary: { byEventType, actors: Array.from(actorsSet) },
     };
+  }
+
+  /**
+   * Assemble the full audit pack for a process instance: normalized decision
+   * log, hash-chain verification verdict, and the obligations the run touched
+   * (enriched from the graph when a lookup is provided). A broken chain still
+   * exports, flagged FAILED_VERIFICATION.
+   */
+  async toAuditPack(
+    processInstanceId: string,
+    lookupObligation?: ObligationLookup,
+  ): Promise<AuditPack> {
+    const chain = await this.traceService.getTraceChain(processInstanceId);
+    const verification = this.verifier.verifyEntries(chain);
+    const decisions = chain.map(decisionFromTraceEntry);
+    const extraObligationIds = chain.flatMap(referencedObligationIds);
+    return assembleAuditPack(
+      { packType: 'process-instance', subjectId: processInstanceId, decisions, verification },
+      lookupObligation,
+      extraObligationIds,
+    );
+  }
+
+  async toAuditPackMarkdown(
+    processInstanceId: string,
+    lookupObligation?: ObligationLookup,
+  ): Promise<string> {
+    return renderAuditPackMarkdown(await this.toAuditPack(processInstanceId, lookupObligation));
   }
 
   private normalize(e: DecisionTraceEntry): Record<string, unknown> {

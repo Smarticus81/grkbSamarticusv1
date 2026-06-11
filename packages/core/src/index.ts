@@ -62,6 +62,7 @@ export { ContentTraceService } from './traceability/ContentTraceService.js';
 export { ProvenanceRegistry } from './traceability/ProvenanceRegistry.js';
 export { ChainVerifier } from './traceability/ChainVerifier.js';
 export { TraceExporter } from './traceability/TraceExporter.js';
+export * from './traceability/AuditPack.js';
 
 // guardrails
 export * from './guardrails/types.js';

@@ -175,6 +175,7 @@ export function TraceExplorer({ initialId }: Props) {
   const [chain, setChain] = useState<TraceEntry[]>([]);
   const [verification, setVerification] = useState<Verification | null>(null);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -207,6 +208,33 @@ export function TraceExplorer({ initialId }: Props) {
       setError(err instanceof Error ? err.message : 'Could not load decision trail.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function downloadAuditPack(kind: 'json' | 'markdown') {
+    if (!pid.trim() || downloading) return;
+    setDownloading(true);
+    try {
+      const id = pid.trim();
+      const path = id.startsWith('run_')
+        ? `/api/sandbox/runs/${id}/audit-pack?include=markdown`
+        : `/api/traces/${id}/audit-pack?include=markdown`;
+      const pack = await api<Record<string, unknown> & { markdown: string }>(path);
+      const { markdown, ...json } = pack;
+      const isMd = kind === 'markdown';
+      const blob = new Blob([isMd ? markdown : JSON.stringify(json, null, 2)], {
+        type: isMd ? 'text/markdown;charset=utf-8' : 'application/json;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-pack-${id}.${isMd ? 'md' : 'json'}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not download the audit pack.');
+    } finally {
+      setDownloading(false);
     }
   }
 
@@ -352,13 +380,31 @@ export function TraceExplorer({ initialId }: Props) {
                 </div>
               )}
             </div>
-            <button
-              className="btn btn-ghost"
-              onClick={() => navigator.clipboard.writeText(verification.signatureHash).catch(() => {})}
-              style={{ fontSize: 12, flexShrink: 0 }}
-            >
-              Copy signature
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-orange"
+                onClick={() => downloadAuditPack('markdown')}
+                disabled={downloading}
+                style={{ fontSize: 12 }}
+              >
+                {downloading ? 'Preparing…' : 'Download audit pack'}
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => downloadAuditPack('json')}
+                disabled={downloading}
+                style={{ fontSize: 12 }}
+              >
+                JSON
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={() => navigator.clipboard.writeText(verification.signatureHash).catch(() => {})}
+                style={{ fontSize: 12 }}
+              >
+                Copy signature
+              </button>
+            </div>
           </div>
         )}
 

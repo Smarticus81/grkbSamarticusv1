@@ -21,7 +21,17 @@ import {
 import { buildAgentBundle } from '../services/AgentBundler.js';
 import type { AuthedRequest } from '../middleware/auth.js';
 import { getContext } from '../context.js';
-import { LLMAbstraction, getDB, schema, eq, and } from '@regground/core';
+import { graphObligationLookup } from './traces.js';
+import {
+  LLMAbstraction,
+  getDB,
+  schema,
+  eq,
+  and,
+  assembleAuditPack,
+  renderAuditPackMarkdown,
+  type AuditPackDecision,
+} from '@regground/core';
 
 const { groundedRuns } = schema;
 
@@ -432,6 +442,96 @@ router.get('/runs/:runId/trace/verify', (req, res) => {
   const s = RUNS.get(runId);
   if (!s) return res.status(404).json({ error: 'run not found' });
   res.json(sandboxVerification(sandboxTrace(runId, s)));
+});
+
+/* ── GET /api/sandbox/runs/:runId/audit-pack ────────────────────────── */
+
+function str(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value : undefined;
+}
+
+function decisionFromSandboxEntry(entry: SandboxTraceEntry): AuditPackDecision {
+  const p = entry.payload ?? {};
+  const decision: AuditPackDecision = {
+    sequenceNumber: entry.sequenceNumber,
+    eventType: entry.eventType,
+    actor: entry.actor,
+    timestamp: entry.timestamp,
+    currentHash: entry.currentHash,
+    previousHash: entry.previousHash,
+    reasons: [],
+  };
+  const reason = str(p['reason']) ?? str(p['message']);
+  if (reason) decision.reasons = [reason];
+  const summary = str(p['summary']);
+  if (summary) decision.humanSummary = summary;
+  const obligationId = str(p['obligationId']);
+  if (obligationId) decision.obligationId = obligationId;
+  const citation = str(p['citation']);
+  if (citation) decision.citation = citation;
+  const regulation = str(p['regulation']);
+  if (regulation) decision.regulation = regulation;
+  return decision;
+}
+
+router.get('/runs/:runId/audit-pack', async (req: AuthedRequest, res) => {
+  const runId = req.params.runId!;
+  const tenantId = req.user?.tenantId ?? 'dev';
+  const format = req.query.format === 'markdown' ? 'markdown' : 'json';
+  const includeMarkdown = req.query.include === 'markdown';
+  const download = req.query.download === '1' || req.query.download === 'true';
+
+  try {
+    const manifest = await getGroundedRunManifest(runId, tenantId);
+    if (!manifest) return res.status(404).json({ error: 'run not found' });
+
+    const v = manifest.trace.verification;
+    const pack = await assembleAuditPack(
+      {
+        packType: 'sandbox-run',
+        subjectId: runId,
+        decisions: manifest.trace.entries.map(decisionFromSandboxEntry),
+        verification: {
+          valid: v.valid,
+          totalEntries: v.totalEntries,
+          verifiedEntries: v.verifiedEntries,
+          verifiedAt: new Date(),
+          signatureHash: v.signatureHash,
+        },
+        notes: [
+          `Task: ${manifest.taskName} (${manifest.taskId}) · mode ${manifest.mode} · started ${manifest.createdAtIso}.`,
+          `Validation: coverage ${(manifest.validation.coverage * 100).toFixed(0)}%, ` +
+            `${manifest.validation.citationCount} citations, strict gate ` +
+            `${manifest.validation.strictGatePass ? 'passed' : 'FAILED'}` +
+            (manifest.validation.violations.length > 0
+              ? `, violations: ${manifest.validation.violations.join('; ')}`
+              : '') +
+            '.',
+        ],
+      },
+      graphObligationLookup(),
+      manifest.obligationsConsulted,
+    );
+
+    if (format === 'markdown') {
+      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+      if (download) {
+        res.setHeader('Content-Disposition', `attachment; filename="audit-pack-${runId}.md"`);
+      }
+      return res.send(renderAuditPackMarkdown(pack));
+    }
+    if (download) {
+      res.setHeader('Content-Disposition', `attachment; filename="audit-pack-${runId}.json"`);
+    }
+    if (includeMarkdown) {
+      return res.json({ ...pack, markdown: renderAuditPackMarkdown(pack) });
+    }
+    return res.json(pack);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : 'Could not build audit pack.' });
+  }
 });
 
 /* ── POST /api/sandbox/runs/:runId/judge ────────────────────────────── */
