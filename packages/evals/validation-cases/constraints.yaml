@@ -1,0 +1,129 @@
+suite: constraints
+description: >
+  ConstraintEvaluator — machine-readable constraint expressions on claimed
+  obligations are evaluated against the output payload; hard violations are
+  critical, soft violations warn.
+
+cases:
+  - id: ct-pass-001
+    description: Hard EXISTS constraint satisfied by the output field
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.003
+          title: Verify corrective action effectiveness
+      constraints:
+        - constraintId: C-EFF
+          appliesTo: ISO13485.8.5.2.OBL.003
+          text: Output must include an effectiveness check
+          expression: effectivenessCheck EXISTS
+          severity: hard
+    output:
+      summary: Corrective action verified.
+      addressedObligations: [ISO13485.8.5.2.OBL.003]
+      effectivenessCheck: Recurrence monitored for 90 days, none observed.
+    expect:
+      status: PASS
+      passedHardChecks: true
+      findings:
+        - validator: ConstraintEvaluator
+          severity: info
+          messageIncludes: C-EFF
+
+  - id: ct-fail-001
+    description: Violating a hard constraint on a claimed obligation is critical
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.003
+      constraints:
+        - constraintId: C-EFF
+          appliesTo: ISO13485.8.5.2.OBL.003
+          text: Output must include an effectiveness check
+          expression: effectivenessCheck EXISTS
+          severity: hard
+    output:
+      summary: Corrective action closed without verification.
+      addressedObligations: [ISO13485.8.5.2.OBL.003]
+    expect:
+      status: FAIL
+      passedHardChecks: false
+      findings:
+        - validator: ConstraintEvaluator
+          severity: critical
+          obligationId: ISO13485.8.5.2.OBL.003
+          messageIncludes: C-EFF
+
+  - id: ct-warn-001
+    description: Violating a soft constraint warns but does not block
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.003
+      constraints:
+        - constraintId: C-TREND
+          appliesTo: ISO13485.8.5.2.OBL.003
+          text: Trend analysis should accompany closure
+          expression: trendAnalysis NOT_EMPTY
+          severity: soft
+    output:
+      summary: Closure recorded.
+      addressedObligations: [ISO13485.8.5.2.OBL.003]
+    expect:
+      status: PASS_WITH_WARNINGS
+      passedHardChecks: true
+      findings:
+        - validator: ConstraintEvaluator
+          severity: warning
+          messageIncludes: C-TREND
+
+  - id: ct-pass-002
+    description: MIN_LENGTH constraint satisfied by an array of corrective actions
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.003
+      constraints:
+        - constraintId: C-ACTIONS
+          appliesTo: ISO13485.8.5.2.OBL.003
+          text: At least two corrective actions must be defined
+          expression: correctiveActions MIN_LENGTH 2
+          severity: hard
+    output:
+      summary: Two corrective actions defined.
+      addressedObligations: [ISO13485.8.5.2.OBL.003]
+      correctiveActions:
+        - Update work instruction for line clearance
+        - Retrain operators on revised procedure
+    expect:
+      status: PASS
+      passedHardChecks: true
+      findings:
+        - validator: ConstraintEvaluator
+          severity: info
+          messageIncludes: C-ACTIONS
+
+  - id: ct-pass-003
+    description: Nested EQUALS constraint path resolves into the output object
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.003
+      constraints:
+        - constraintId: C-METHOD
+          appliesTo: ISO13485.8.5.2.OBL.003
+          text: Investigation must use the five-whys method
+          expression: investigation.method EQUALS five-whys
+          severity: hard
+    output:
+      summary: Investigation completed.
+      addressedObligations: [ISO13485.8.5.2.OBL.003]
+      investigation:
+        method: five-whys
+    expect:
+      status: PASS
+      passedHardChecks: true
+      findings:
+        - validator: ConstraintEvaluator
+          severity: info
+          messageIncludes: C-METHOD

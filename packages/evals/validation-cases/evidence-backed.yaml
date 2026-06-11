@@ -1,0 +1,106 @@
+suite: evidence-backed
+description: >
+  EvidenceBackedComplianceValidator — a compliance claim without the
+  obligation's required evidence types behind it must be rejected.
+
+cases:
+  - id: eb-pass-001
+    description: Claim backed by a flat evidence list covering all required types
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.002
+          title: Evaluate need for corrective action
+          requiredEvidenceTypes: [root_cause_analysis, action_plan]
+    output:
+      summary: Corrective action evaluated and planned.
+      addressedObligations: [ISO13485.8.5.2.OBL.002]
+      evidence: [root_cause_analysis, action_plan]
+    expect:
+      status: PASS
+      passedHardChecks: true
+      mustNotFire:
+        - EvidenceBackedComplianceValidator
+
+  - id: eb-fail-001
+    description: Claiming compliance with no evidence at all is rejected per missing type
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.002
+          requiredEvidenceTypes: [root_cause_analysis, action_plan]
+    output:
+      summary: Corrective action complete, trust me.
+      addressedObligations: [ISO13485.8.5.2.OBL.002]
+      evidence: []
+    expect:
+      status: REQUIRES_REVIEW
+      passedHardChecks: false
+      findings:
+        - validator: EvidenceBackedComplianceValidator
+          severity: error
+          obligationId: ISO13485.8.5.2.OBL.002
+          messageIncludes: root_cause_analysis
+        - validator: EvidenceBackedComplianceValidator
+          severity: error
+          obligationId: ISO13485.8.5.2.OBL.002
+          messageIncludes: action_plan
+
+  - id: eb-pass-002
+    description: Evidence keyed per obligation satisfies that obligation
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.002
+          requiredEvidenceTypes: [root_cause_analysis, action_plan]
+    output:
+      summary: Corrective action evaluated.
+      addressedObligations: [ISO13485.8.5.2.OBL.002]
+      evidence:
+        ISO13485.8.5.2.OBL.002: [root_cause_analysis, action_plan]
+    expect:
+      status: PASS
+      passedHardChecks: true
+      mustNotFire:
+        - EvidenceBackedComplianceValidator
+
+  - id: eb-fail-002
+    description: Evidence keyed to a different obligation does not back the claim
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.002
+          requiredEvidenceTypes: [root_cause_analysis]
+    output:
+      summary: Evidence attached elsewhere.
+      addressedObligations: [ISO13485.8.5.2.OBL.002]
+      evidence:
+        SOME.OTHER.OBL.001: [root_cause_analysis]
+    expect:
+      status: REQUIRES_REVIEW
+      passedHardChecks: false
+      findings:
+        - validator: EvidenceBackedComplianceValidator
+          severity: error
+          obligationId: ISO13485.8.5.2.OBL.002
+          messageIncludes: root_cause_analysis
+
+  - id: eb-pass-003
+    description: Structured evidence atoms (with and without obligation keys) are honored
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.002
+          requiredEvidenceTypes: [root_cause_analysis, action_plan]
+    output:
+      summary: Atomized evidence attached.
+      addressedObligations: [ISO13485.8.5.2.OBL.002]
+      evidence:
+        - obligationId: ISO13485.8.5.2.OBL.002
+          evidenceType: root_cause_analysis
+        - evidenceType: action_plan
+    expect:
+      status: PASS
+      passedHardChecks: true
+      mustNotFire:
+        - EvidenceBackedComplianceValidator

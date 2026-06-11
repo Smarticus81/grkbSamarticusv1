@@ -222,6 +222,9 @@ importers:
 
   packages/evals:
     dependencies:
+      '@regground/core':
+        specifier: workspace:*
+        version: link:../core
       yaml:
         specifier: ^2.3.0
         version: 2.8.3

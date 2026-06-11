@@ -1,0 +1,147 @@
+suite: qualification
+description: >
+  QualificationGate — the pre-execution gate must block on missing or
+  wrong-type evidence, grade partial coverage correctly, and never round a
+  50% coverage score into human review.
+
+cases:
+  - id: qg-pass-001
+    description: All mandatory evidence available → QUALIFIED
+    target: qualification
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.2.2.OBL.001
+          requiredEvidenceTypes: [complaint_record]
+    input:
+      processType: capa
+      jurisdiction: GLOBAL
+      availableEvidence: [complaint_record]
+    expect:
+      status: QUALIFIED
+      coverageScore: 1
+
+  - id: qg-pass-002
+    description: Only optional obligations → QUALIFIED with no mandatory burden
+    target: qualification
+    graph:
+      obligations:
+        - obligationId: TREND.OBL.002
+          mandatory: false
+          requiredEvidenceTypes: [trend_chart]
+    input:
+      processType: capa
+      jurisdiction: GLOBAL
+      availableEvidence: []
+    expect:
+      status: QUALIFIED
+
+  - id: qg-block-001
+    description: No evidence at all → BLOCKED with the missing types named
+    target: qualification
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.2.2.OBL.001
+          requiredEvidenceTypes: [complaint_record]
+    input:
+      processType: capa
+      jurisdiction: GLOBAL
+      availableEvidence: []
+    expect:
+      status: BLOCKED
+      missingEvidenceIncludes: [complaint_record]
+
+  - id: qg-block-002
+    description: Evidence of the wrong type does not satisfy the gate
+    target: qualification
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.2.2.OBL.001
+          requiredEvidenceTypes: [complaint_record]
+    input:
+      processType: capa
+      jurisdiction: GLOBAL
+      availableEvidence: [customer_survey, marketing_brochure]
+    expect:
+      status: BLOCKED
+      missingEvidenceIncludes: [complaint_record]
+
+  - id: qg-block-003
+    description: Exactly 50% coverage stays BLOCKED — no rounding into human review
+    target: qualification
+    graph:
+      obligations:
+        - obligationId: CAPA.OBL.A
+          requiredEvidenceTypes: [evidence_a]
+        - obligationId: CAPA.OBL.B
+          requiredEvidenceTypes: [evidence_b]
+    input:
+      processType: capa
+      jurisdiction: GLOBAL
+      availableEvidence: [evidence_a]
+    expect:
+      status: BLOCKED
+      coverageScore: 0.5
+      canProceedWithHumanApproval: false
+      missingEvidenceIncludes: [evidence_b]
+
+  - id: qg-review-001
+    description: Two-thirds coverage routes to human review with approval possible
+    target: qualification
+    graph:
+      obligations:
+        - obligationId: CAPA.OBL.A
+          requiredEvidenceTypes: [evidence_a]
+        - obligationId: CAPA.OBL.B
+          requiredEvidenceTypes: [evidence_b]
+        - obligationId: CAPA.OBL.C
+          requiredEvidenceTypes: [evidence_c]
+    input:
+      processType: capa
+      jurisdiction: GLOBAL
+      availableEvidence: [evidence_a, evidence_b]
+    expect:
+      status: NEEDS_HUMAN_REVIEW
+      coverageScore: 0.667
+      canProceedWithHumanApproval: true
+      missingEvidenceIncludes: [evidence_c]
+
+  - id: qg-warn-001
+    description: High coverage with only soft gaps qualifies with warnings
+    target: qualification
+    graph:
+      obligations:
+        - obligationId: CAPA.OBL.A
+          requiredEvidenceTypes: [evidence_a]
+        - obligationId: CAPA.OBL.B
+          requiredEvidenceTypes: [evidence_b]
+        - obligationId: CAPA.OBL.C
+          requiredEvidenceTypes: [evidence_c]
+        - obligationId: CAPA.OBL.D
+          requiredEvidenceTypes: [evidence_d]
+        - obligationId: CAPA.OBL.E
+          requiredEvidenceTypes: [evidence_e]
+        - obligationId: CAPA.OBL.F
+          requiredEvidenceTypes: [evidence_f]
+    input:
+      processType: capa
+      jurisdiction: GLOBAL
+      availableEvidence: [evidence_a, evidence_b, evidence_c, evidence_d, evidence_e]
+    expect:
+      status: QUALIFIED_WITH_WARNINGS
+      coverageScore: 0.833
+      missingEvidenceIncludes: [evidence_f]
+
+  - id: qg-oos-001
+    description: A process type with no applicable obligations is OUT_OF_SCOPE
+    target: qualification
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.2.2.OBL.001
+          processType: capa
+          requiredEvidenceTypes: [complaint_record]
+    input:
+      processType: design-transfer
+      jurisdiction: GLOBAL
+      availableEvidence: [complaint_record]
+    expect:
+      status: OUT_OF_SCOPE

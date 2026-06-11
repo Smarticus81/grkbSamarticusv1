@@ -1,0 +1,95 @@
+suite: contradictions
+description: >
+  RegulatoryContradictionDetector — claiming obligations that conflict is
+  critical; ignoring a mandatory cross-referenced twin obligation warns.
+
+cases:
+  - id: cd-fail-001
+    description: Claiming both sides of a CONFLICTS_WITH pair is a critical contradiction
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: EUMDR.87.OBL.001
+          title: Report serious incidents to competent authority
+        - obligationId: NATREG.77.OBL.004
+          title: National derogation deferring incident reporting
+          mandatory: false
+      relationships:
+        - from: EUMDR.87.OBL.001
+          to: NATREG.77.OBL.004
+          type: CONFLICTS_WITH
+    output:
+      summary: Reported immediately and also deferred under national derogation.
+      addressedObligations: [EUMDR.87.OBL.001, NATREG.77.OBL.004]
+    expect:
+      status: FAIL
+      passedHardChecks: false
+      findings:
+        - validator: RegulatoryContradictionDetector
+          severity: critical
+          messageIncludes: CONFLICTS_WITH
+
+  - id: cd-pass-001
+    description: A conflict edge is harmless when only one side is claimed
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: EUMDR.87.OBL.001
+        - obligationId: NATREG.77.OBL.004
+          mandatory: false
+      relationships:
+        - from: EUMDR.87.OBL.001
+          to: NATREG.77.OBL.004
+          type: CONFLICTS_WITH
+    output:
+      summary: Serious incident reported to the competent authority.
+      addressedObligations: [EUMDR.87.OBL.001]
+    expect:
+      status: PASS
+      passedHardChecks: true
+      mustNotFire:
+        - RegulatoryContradictionDetector
+
+  - id: cd-warn-001
+    description: Ignoring a mandatory cross-referenced twin obligation is a gap
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: EUMDR.87.OBL.001
+      crossReferences:
+        EUMDR.87.OBL.001:
+          - obligationId: CFR820.198.OBL.001
+            title: FDA complaint file twin requirement
+            sourceCitation: "21 CFR §820.198(a)"
+    output:
+      summary: EU reporting complete.
+      addressedObligations: [EUMDR.87.OBL.001]
+    expect:
+      status: PASS_WITH_WARNINGS
+      passedHardChecks: true
+      findings:
+        - validator: RegulatoryContradictionDetector
+          severity: warning
+          messageIncludes: CFR820.198.OBL.001
+
+  - id: cd-pass-002
+    description: Claiming the cross-referenced twin alongside the original is clean
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: EUMDR.87.OBL.001
+        - obligationId: CFR820.198.OBL.001
+          title: FDA complaint file twin requirement
+          sourceCitation: "21 CFR §820.198(a)"
+      crossReferences:
+        EUMDR.87.OBL.001:
+          - obligationId: CFR820.198.OBL.001
+            sourceCitation: "21 CFR §820.198(a)"
+    output:
+      summary: Reported under both EU MDR and FDA regimes.
+      addressedObligations: [EUMDR.87.OBL.001, CFR820.198.OBL.001]
+    expect:
+      status: PASS
+      passedHardChecks: true
+      mustNotFire:
+        - RegulatoryContradictionDetector

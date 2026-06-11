@@ -18,6 +18,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,json,md,yaml,yml}\"",
     "eval": "pnpm --filter @regground/evals eval",
     "eval:all": "pnpm --filter @regground/evals eval:all",
+    "bench": "pnpm --filter @regground/evals bench",
+    "bench:update": "pnpm --filter @regground/evals bench:update",
     "check:graph": "node scripts/check-graph-quality.mjs"
   },
   "devDependencies": {

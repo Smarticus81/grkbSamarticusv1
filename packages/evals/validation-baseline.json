@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-06-11T23:23:12.304Z",
+  "caseCount": 31,
+  "overallAccuracy": 1,
+  "checks": {
+    "ClaimCoverageValidator": {
+      "positives": 6,
+      "truePositives": 6,
+      "recall": 1,
+      "falseAlarmCandidates": 1,
+      "falseAlarms": 0,
+      "precision": 1
+    },
+    "EvidenceBackedComplianceValidator": {
+      "positives": 3,
+      "truePositives": 3,
+      "recall": 1,
+      "falseAlarmCandidates": 6,
+      "falseAlarms": 0,
+      "precision": 1
+    },
+    "ConstraintEvaluator": {
+      "positives": 5,
+      "truePositives": 5,
+      "recall": 1,
+      "falseAlarmCandidates": 3,
+      "falseAlarms": 0,
+      "precision": 1
+    },
+    "CitationVerifier": {
+      "positives": 2,
+      "truePositives": 2,
+      "recall": 1,
+      "falseAlarmCandidates": 5,
+      "falseAlarms": 0,
+      "precision": 1
+    },
+    "RegulatoryContradictionDetector": {
+      "positives": 2,
+      "truePositives": 2,
+      "recall": 1,
+      "falseAlarmCandidates": 4,
+      "falseAlarms": 0,
+      "precision": 1
+    },
+    "QualificationGate": {
+      "positives": 6,
+      "truePositives": 6,
+      "recall": 1,
+      "falseAlarmCandidates": 2,
+      "falseAlarms": 0,
+      "precision": 1
+    }
+  }
+}

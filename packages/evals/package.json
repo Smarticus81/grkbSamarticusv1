@@ -6,10 +6,14 @@
   "scripts": {
     "eval": "tsx src/runner.ts",
     "eval:all": "tsx src/runner.ts --suite=all",
+    "bench": "tsx src/validation-bench.ts",
+    "bench:update": "tsx src/validation-bench.ts --update-baseline",
+    "test": "tsx src/validation-bench.ts",
     "check": "tsc -p tsconfig.json --noEmit",
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@regground/core": "workspace:*",
     "yaml": "^2.3.0",
     "zod": "^3.22.0"
   },

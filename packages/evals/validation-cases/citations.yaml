@@ -1,0 +1,75 @@
+suite: citations
+description: >
+  CitationVerifier — every citation in the output must resolve to a real
+  obligation ID or source citation; fabricated references are flagged.
+
+cases:
+  - id: ci-pass-001
+    description: Citing a known obligation ID resolves cleanly
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.2.2.OBL.003
+          title: Evaluate need to investigate complaint
+          sourceCitation: "ISO 13485:2016 §8.2.2(b)"
+    output:
+      summary: Complaint evaluated for investigation.
+      addressedObligations: [ISO13485.8.2.2.OBL.003]
+      citations: [ISO13485.8.2.2.OBL.003]
+    expect:
+      status: PASS
+      passedHardChecks: true
+      mustNotFire:
+        - CitationVerifier
+
+  - id: ci-pass-002
+    description: Citing the regulation source text resolves via sourceCitation
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.2.2.OBL.003
+          sourceCitation: "ISO 13485:2016 §8.2.2(b)"
+    output:
+      summary: Complaint evaluated for investigation.
+      addressedObligations: [ISO13485.8.2.2.OBL.003]
+      citations: ["ISO 13485:2016 §8.2.2(b)"]
+    expect:
+      status: PASS
+      passedHardChecks: true
+      mustNotFire:
+        - CitationVerifier
+
+  - id: ci-fail-001
+    description: A fabricated citation in the citations array is flagged
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.2.2.OBL.003
+    output:
+      summary: Complaint evaluated.
+      addressedObligations: [ISO13485.8.2.2.OBL.003]
+      citations: [GHOST.ART.999]
+    expect:
+      status: PASS_WITH_WARNINGS
+      passedHardChecks: true
+      findings:
+        - validator: CitationVerifier
+          severity: warning
+          messageIncludes: GHOST.ART.999
+
+  - id: ci-fail-002
+    description: A citation-shaped reference buried in prose is still verified
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.2.2.OBL.003
+    output:
+      summary: Classified as not reportable per FAKE.REG.123 criteria.
+      addressedObligations: [ISO13485.8.2.2.OBL.003]
+    expect:
+      status: PASS_WITH_WARNINGS
+      passedHardChecks: true
+      findings:
+        - validator: CitationVerifier
+          severity: warning
+          messageIncludes: FAKE.REG.123

@@ -10,6 +10,7 @@ on:
       - 'packages/core/regulations/**'
       - 'packages/evals/**'
       - 'packages/core/src/graph/**'
+      - 'packages/core/src/guardrails/**'
       - 'packages/core/src/config/yaml-schema.ts'
       - 'packages/core/src/config/regulation-loader.ts'
       - 'scripts/check-graph-quality.mjs'
@@ -25,7 +26,37 @@ permissions:
   contents: read
   pull-requests: write
 
-processs:
+jobs:
+  validation-bench:
+    name: Compliance Validation Benchmark (baseline-gated)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Gated: any drop in compliance-validation accuracy vs the committed
+      # baseline fails this job. No continue-on-error by design.
+      - name: Run baseline-gated benchmark
+        run: pnpm --filter @regground/evals bench
+
+      - name: Upload benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-bench-results
+          path: packages/evals/reports/validation-bench-latest.json
+          retention-days: 30
+
   graph-quality:
     name: Graph Quality Check
     runs-on: ubuntu-latest

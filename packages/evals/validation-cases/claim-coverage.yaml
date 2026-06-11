@@ -1,0 +1,117 @@
+suite: claim-coverage
+description: >
+  ClaimCoverageValidator — outputs must address every mandatory obligation,
+  and claims against unknown obligations must be flagged.
+
+cases:
+  - id: cc-pass-001
+    description: CAPA closure addressing all mandatory obligations passes clean
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.001
+          title: Determine causes of nonconformities
+          sourceCitation: "ISO 13485:2016 §8.5.2(b)"
+        - obligationId: CFR820.100.OBL.001
+          title: Investigate the cause of nonconformities
+          sourceCitation: "21 CFR §820.100(a)(2)"
+    output:
+      summary: Root cause investigation completed and corrective action implemented.
+      addressedObligations: [ISO13485.8.5.2.OBL.001, CFR820.100.OBL.001]
+    expect:
+      status: PASS
+      passedHardChecks: true
+      findings:
+        - validator: ClaimCoverageValidator
+          severity: info
+          messageIncludes: "All 2 mandatory obligations"
+      mustNotFire:
+        - EvidenceBackedComplianceValidator
+        - ConstraintEvaluator
+        - CitationVerifier
+        - RegulatoryContradictionDetector
+
+  - id: cc-fail-001
+    description: Skipping one mandatory obligation is an error-level gap
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.001
+          sourceCitation: "ISO 13485:2016 §8.5.2(b)"
+        - obligationId: CFR820.100.OBL.001
+          sourceCitation: "21 CFR §820.100(a)(2)"
+    output:
+      summary: Root cause investigation completed.
+      addressedObligations: [ISO13485.8.5.2.OBL.001]
+    expect:
+      status: REQUIRES_REVIEW
+      passedHardChecks: false
+      findings:
+        - validator: ClaimCoverageValidator
+          severity: error
+          obligationId: CFR820.100.OBL.001
+
+  - id: cc-fail-002
+    description: An output claiming nothing cannot pass by being empty
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.001
+        - obligationId: CFR820.100.OBL.001
+    output:
+      summary: Task completed successfully.
+    expect:
+      status: REQUIRES_REVIEW
+      passedHardChecks: false
+      findings:
+        - validator: ClaimCoverageValidator
+          severity: error
+          obligationId: ISO13485.8.5.2.OBL.001
+        - validator: ClaimCoverageValidator
+          severity: error
+          obligationId: CFR820.100.OBL.001
+
+  - id: cc-warn-001
+    description: Claiming a fabricated obligation is flagged even with full coverage
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: ISO13485.8.5.2.OBL.001
+        - obligationId: CFR820.100.OBL.001
+    output:
+      summary: All requirements addressed.
+      addressedObligations: [ISO13485.8.5.2.OBL.001, CFR820.100.OBL.001, GHOST.OBL.999]
+    expect:
+      status: PASS_WITH_WARNINGS
+      passedHardChecks: true
+      findings:
+        - validator: ClaimCoverageValidator
+          severity: warning
+          obligationId: GHOST.OBL.999
+        - validator: ClaimCoverageValidator
+          severity: info
+      mustNotFire:
+        - EvidenceBackedComplianceValidator
+        - ConstraintEvaluator
+        - CitationVerifier
+
+  - id: cc-pass-002
+    description: A process with only optional obligations passes without claims
+    target: pipeline
+    graph:
+      obligations:
+        - obligationId: TREND.OBL.001
+          mandatory: false
+          title: Optional trend annotation
+    output:
+      summary: Routine review, no action required.
+      addressedObligations: []
+    expect:
+      status: PASS
+      passedHardChecks: true
+      mustNotFire:
+        - ClaimCoverageValidator
+        - EvidenceBackedComplianceValidator
+        - ConstraintEvaluator
+        - CitationVerifier
+        - RegulatoryContradictionDetector
