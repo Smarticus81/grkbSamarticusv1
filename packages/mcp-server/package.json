@@ -1,20 +1,63 @@
 {
   "name": "@regground/mcp-server",
   "version": "0.1.0",
-  "description": "MCP server for Regulatory Ground obligation knowledge graph — ground any AI agent in regulatory compliance",
+  "description": "MCP server for the Regulatory Ground obligation knowledge graph — ground any AI agent in regulatory compliance (EU MDR, ISO 13485, ISO 14971, 21 CFR 820, UK MDR, MDCG, IMDRF)",
   "type": "module",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "regground-mcp": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE.md"
+  ],
   "scripts": {
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "smoke": "node scripts/smoke.mjs",
+    "prepublishOnly": "npm run build && npm run smoke"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "compliance",
+    "regulatory",
+    "medical-device",
+    "qms",
+    "knowledge-graph",
+    "eu-mdr",
+    "iso-13485",
+    "fda",
+    "ai-agents",
+    "guardrails"
+  ],
+  "license": "SEE LICENSE IN LICENSE.md",
+  "author": "Thinkertons Ltd.",
+  "homepage": "https://github.com/Smarticus81/grkbSamarticusv1/tree/main/packages/mcp-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Smarticus81/grkbSamarticusv1.git",
+    "directory": "packages/mcp-server"
+  },
+  "bugs": {
+    "url": "https://github.com/Smarticus81/grkbSamarticusv1/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
