@@ -70,6 +70,26 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
     this.promptComposer = deps.promptComposer;
     this.llm = deps.llm;
     this.compliancePipeline = deps.compliancePipeline;
+
+    // Runtime seal. TypeScript alone cannot stop a subclass from overriding
+    // run() and skipping qualification, validation, or tracing, so the seal is
+    // enforced here: a prototype override fails construction loudly, and the
+    // lifecycle is pinned as a non-writable, non-configurable own property so
+    // it cannot be shadowed by a class field or reassigned after construction.
+    const proto = Object.getPrototypeOf(this) as { run?: unknown };
+    if (proto.run !== BaseGroundedAgent.prototype.run) {
+      throw new Error(
+        `${this.constructor.name} overrides run() — the grounded agent lifecycle is sealed. ` +
+          'Override execute(), getRequiredObligations(), getOutputSchema(), initialize(), or cleanup() instead.',
+      );
+    }
+    const sealedRun = BaseGroundedAgent.prototype.run as this['run'];
+    Object.defineProperty(this, 'run', {
+      value: sealedRun.bind(this),
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
   }
 
   // *** SEALED — do not override ***
