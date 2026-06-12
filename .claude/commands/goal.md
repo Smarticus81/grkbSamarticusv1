@@ -12,7 +12,7 @@ vision; this command turns it into one concrete work session.
 `$ARGUMENTS` may be:
 - empty → run a **status assessment** and recommend the next goal (do not start it)
 - `next` → run the status assessment, then immediately execute the recommended goal's command
-- the name of a sub-goal (`publish-mcp`, `audit-pack`, `encode-regulation <name>`, `trust-bar`, `evals-gate`, `graph-explorer`) → delegate directly to that `/goal-*` command's instructions in `.claude/commands/`
+- the name of a sub-goal (`publish-mcp`, `audit-pack`, `encode-regulation <name>`, `trust-bar`, `evals-gate`, `graph-explorer`, `psur-demo`) → delegate directly to that `/goal-*` command's instructions in `.claude/commands/`
 
 ## Status assessment procedure
 
@@ -23,6 +23,7 @@ Check each agent-executable goal against the actual repo state — verify, don't
 3. **G-2 coverage** — List `packages/core/regulations/*/` directories. Mandate targets FDA QMSR, EU IVDR, Health Canada, TGA, PMDA, MDSAP. Report which exist.
 4. **G-4 trust-bar** — Count test files in `packages/core` covering guardrails/traceability; check whether adversarial suites exist (grep tests for bypass/forge/tamper scenarios); check whether `@regground/evals` gates CI.
 5. **G-6 graph-explorer** — Does the public landing page (apps/web) include an obligation-graph explorer that works signed-out?
+6. **G-3b psur-demo** — Does a public, signed-out PSUR demo exist at `/demo/psur` in apps/web, backed by `/api/psur` and the real bestpsurgenerator pipeline, writing graph-grounded decision traces via `DecisionTraceService`? Check for the wouter route, the `apps/api` psur router, and whether the landing-page hero CTA points to the demo. (Requires the `bestpsurgenerator` repo alongside this one.)
 
 ## Output
 

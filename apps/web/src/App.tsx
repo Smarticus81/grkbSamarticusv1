@@ -3,6 +3,7 @@ import { Link, Route, Switch, useLocation } from 'wouter';
 import { SignedIn, SignedOut, RedirectToSignIn, OrganizationSwitcher, UserButton } from '@clerk/clerk-react';
 import { queryClient } from './lib/queryClient.js';
 import { LandingPage } from './pages/LandingPage.js';
+import { PsurDemo } from './pages/PsurDemo.js';
 import { Home } from './pages/Home.js';
 import { Pricing } from './pages/Pricing.js';
 import { TraceExplorer } from './pages/TraceExplorer.js';
@@ -255,6 +256,8 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <Switch>
         <Route path="/" component={LandingPage} />
+        {/* Public PSUR walkthrough demo — intentionally outside the protected shell. */}
+        <Route path="/demo/psur" component={PsurDemo} />
         <Route path="/pricing" component={Pricing} />
         <Route path="/app" component={ProtectedAppShell} />
         <Route path="/app/*" component={ProtectedAppShell} />

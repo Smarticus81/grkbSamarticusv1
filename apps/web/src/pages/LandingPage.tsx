@@ -26,17 +26,17 @@ const PRODUCTS: {
   {
     eyebrow: 'Authoring',
     title: 'PSUR Compiler.',
-    body: 'A full PSUR draft under MDCG 2022-21 in about ten minutes. Sections, required data, citations, and a coverage matrix.',
+    body: 'Two weeks of PSUR assembly becomes a human-review-ready draft in under 20 minutes \u2014 a 99% reduction in data-to-draft time. Every decision in the run is hash-chained and grounded in the obligation graph.',
     bullets: [
-      'MDCG 2022-21 section structure',
-      'Cross-references to EU MDR Articles 85 and 86',
-      'Required data pulled from your QMS, never stored by us',
-      'Citations on every claim',
+      'MDCG 2022-21 sections A\u2013M, drafted by 13 grounded agents',
+      'Deterministic statistics \u2014 numbers computed once, never fabricated',
+      'A graph-grounded decision trace: every decision cites its reason and regulation',
+      'Hash-chain verification and one-click audit pack',
     ],
-    cta: { label: 'Start build', to: '/app' },
+    cta: { label: 'Watch the demo', to: '/demo/psur' },
     visual: 'psur',
-    before: 'A PSUR draft with unsupported claims and manual citation cleanup.',
-    after: 'A PSUR draft structured to MDCG 2022-21, checked against EU MDR Articles 83\u201386, with required data coverage and traceable citations.',
+    before: 'Two weeks of manual assembly: sales, complaints, incidents, trends, literature \u2014 reconciled by hand.',
+    after: 'A draft structured to MDCG 2022-21 in under 20 minutes, with a verified decision trace behind every number.',
   },
   {
     eyebrow: 'Vigilance',
@@ -502,8 +502,8 @@ export function LandingPage() {
               and records why each decision was made.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
-              <button className="btn btn-orange" onClick={() => navigate('/app/designer')}>
-                Automate a regulated process
+              <button className="btn btn-orange" onClick={() => navigate('/demo/psur')}>
+                Watch a PSUR draft itself in 20 minutes
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>

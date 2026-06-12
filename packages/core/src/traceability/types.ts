@@ -21,7 +21,12 @@ export type TraceEventType =
   | 'HITL_GATE_REJECTED'
   | 'COMPLIANCE_CHECK_PASSED'
   | 'COMPLIANCE_CHECK_FAILED'
-  | 'COMPLIANCE_PIPELINE_COMPLETED';
+  | 'COMPLIANCE_PIPELINE_COMPLETED'
+  // PSUR demo pipeline events (bridged from the Python PSUR service)
+  | 'psur.run.started'
+  | 'psur.decision'
+  | 'psur.run.completed'
+  | 'psur.run.failed';
 
 export interface TraceContext {
   processInstanceId: string;

@@ -59,6 +59,28 @@ In the `web` service:
 
 For each service: **Settings → Networking → Generate Domain**. Then update the `web` service's `VITE_API_URL` build arg with the API's domain and redeploy `web`.
 
+## PSUR demo service (Python)
+
+The public PSUR demo at `/demo/psur` drives a Python FastAPI service that wraps
+the real PSUR pipeline. It lives in the **bestpsurgenerator** repo (deployed
+from its `Dockerfile.psur`), not in this monorepo.
+
+1. Create a fourth Railway service, `psur-service`, pointing at the
+   bestpsurgenerator repo with `Dockerfile.psur` as its config. Give it the
+   LLM provider keys it needs (`ANTHROPIC_API_KEY`, optionally
+   `OPENAI_API_KEY`) — keys stay server-side; the browser never sees them.
+2. Generate a domain for it (or use Railway private networking) and point the
+   `api` service at it:
+
+   ```
+   PSUR_SERVICE_URL          = https://<psur-service-domain>   # or the private network URL
+   DEMO_RUNS_PER_IP_PER_DAY  = 5    # per-visitor daily run cap (optional, default 5)
+   DEMO_MAX_CONCURRENT_RUNS  = 1    # global concurrency cap (optional, default 1)
+   ```
+
+The `/api/psur` routes are public (no Clerk) but rate-limited by the caps
+above; demo runs are traced under the `psur-demo` tenant in Postgres.
+
 ## Deploy
 
 Push to your default branch — Railway auto-deploys all three services. Or trigger manually from the dashboard.

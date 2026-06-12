@@ -22,6 +22,7 @@ import managedAgents from './routes/managed-agents.js';
 import usage from './routes/usage.js';
 import validateDraft from './routes/validate-draft.js';
 import clerkWebhook from './routes/clerk-webhook.js';
+import psur from './routes/psur.js';
 
 // ---------------------------------------------------------------------------
 // Boot-time validation
@@ -134,6 +135,12 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'regground-api', version: '0.1.0' });
 });
 
+// --- Public PSUR demo bridge (no Clerk/JWT) -------------------------------
+// Mounted BEFORE the /api auth+tenancy middleware so signed-out visitors can
+// run the demo. The router carries its own demo guard (per-IP daily cap +
+// global concurrency cap) and traces runs under the 'psur-demo' tenant.
+app.use('/api/psur', psur);
+
 // --- Auth + tenant context for all /api routes ---------------------------
 app.use('/api', auth, tenancy);
 
@@ -163,5 +170,5 @@ const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 const host = process.env.API_HOST ?? '0.0.0.0';
 app.listen(port, host, () => {
   console.log(`Regulatory Ground API listening on http://${host}:${port}`);
-  console.log('Routes: /api/graph, /api/traces, /api/api-keys, /api/sandbox, /api/builder, /api/usage, /health');
+  console.log('Routes: /api/graph, /api/traces, /api/api-keys, /api/sandbox, /api/builder, /api/usage, /api/psur (public), /health');
 });
