@@ -249,7 +249,6 @@ export function TraceExplorer({ initialId }: Props) {
 
   useEffect(() => {
     if (initialId) load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialId]);
 
   const showEmpty = !loading && chain.length === 0 && !hasSearched;

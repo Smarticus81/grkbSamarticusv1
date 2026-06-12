@@ -29,7 +29,6 @@ function useClerkApi(): AuthenticatedApiReturn {
 
   const getTokenStable = useCallback(
     () => getToken(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [getToken, isSignedIn],
   );
 

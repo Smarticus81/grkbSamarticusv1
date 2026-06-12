@@ -13,7 +13,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ${{ github.repository }}
 
-processs:
+jobs:
   build:
     name: Build ${{ matrix.image }}
     runs-on: ubuntu-latest

@@ -195,18 +195,14 @@ router.post('/agents/:id/deploy', async (req: Request, res: Response) => {
     const client = getClient();
     const manifest = buildPromptManifest(agent, { model: parsed.data.model });
 
-    let providerAgent: Awaited<ReturnType<ManagedAgentClient['createAgent']>> | null = null;
-    try {
-      // Create the provider agent
-      providerAgent = await client.createAgent({
+    // Create the provider agent
+    const providerAgent: Awaited<ReturnType<ManagedAgentClient['createAgent']>> =
+      await client.createAgent({
         name: manifest.agentName,
         model: manifest.model,
         system: manifest.system,
         tools: client.config.defaultTools,
       });
-    } catch (e) {
-      throw e;
-    }
 
     let providerEnv: Awaited<ReturnType<ManagedAgentClient['createEnvironment']>>;
     try {

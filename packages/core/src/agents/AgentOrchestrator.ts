@@ -34,7 +34,10 @@ export class AgentOrchestrator {
         skipped.add(id);
         continue;
       }
-      const input = typeof node.input === 'function' ? (node.input as Function)(results) : node.input;
+      const input =
+        typeof node.input === 'function'
+          ? (node.input as (results: Record<string, GroundedAgentResult<unknown>>) => unknown)(results)
+          : node.input;
       const res = await node.agent.run(input, context);
       results[id] = res;
       if (!res.success) failed.push(id);
