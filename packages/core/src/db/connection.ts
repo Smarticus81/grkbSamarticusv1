@@ -20,7 +20,20 @@ export function getDB(config?: DBConfig): RegGroundDB {
   if (drizzleDb) return drizzleDb;
   const url = config?.databaseUrl ?? process.env.DATABASE_URL;
   if (!url) throw new Error('DATABASE_URL is not set');
-  pgPool = new pg.Pool({ connectionString: url });
+  pgPool = new pg.Pool({
+    connectionString: url,
+    // Hosted poolers (e.g. Supabase transaction pooler) aggressively close idle
+    // server-side connections. Recycle idle clients ourselves first to avoid
+    // racing the pooler's reset.
+    idleTimeoutMillis: 10_000,
+  });
+  // A Pool emits 'error' on IDLE clients when the backend drops the connection
+  // (e.g. pooler timeout, network blip). With no listener Node treats this as an
+  // unhandled 'error' event and crashes the process. Log and swallow it — the
+  // broken client is removed from the pool and the next query reconnects.
+  pgPool.on('error', (err) => {
+    console.error('[db] idle pg client error (connection dropped, will reconnect):', err.message);
+  });
   drizzleDb = drizzle(pgPool, { schema });
   return drizzleDb;
 }
