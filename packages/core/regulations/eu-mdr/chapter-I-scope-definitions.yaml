@@ -14,6 +14,8 @@ obligations:
     text: "Chapter I of the EU MDR establishes the subject matter and scope of the Regulation, defines key terms used throughout, empowers the Commission to amend definitions, and sets rules for the regulatory status of borderline and combination products."
     sourceCitation: "Regulation (EU) 2017/745 Chapter I (Articles 1-4)"
     mandatory: true
+    requiredEvidenceTypes:
+      - regulatory_applicability_assessment
     metadata:
       review: "pending"
       extractedBy: "llm"
@@ -26,6 +28,9 @@ obligations:
     text: "This Regulation lays down rules concerning the placing on the market, making available on the market or putting into service of medical devices for human use and accessories for such devices in the Union. It also applies to clinical investigations conducted in the Union concerning such devices and accessories."
     sourceCitation: "Regulation (EU) 2017/745 Article 1(1)"
     mandatory: true
+    requiredEvidenceTypes:
+      - device_qualification_rationale
+      - regulatory_applicability_assessment
     applicability:
       operatorRoles:
         - manufacturer
@@ -43,6 +48,9 @@ obligations:
     text: "This Regulation shall also apply to groups of products without an intended medical purpose that are listed in Annex XVI. Requirements relating to clinical evaluation and clinical investigation in relation to such products shall apply only where a common specification has been adopted."
     sourceCitation: "Regulation (EU) 2017/745 Article 1(2)"
     mandatory: true
+    requiredEvidenceTypes:
+      - annex_xvi_product_qualification
+      - common_specification_review
     applicability:
       deviceTypes:
         - annex_xvi_device
@@ -59,6 +67,9 @@ obligations:
     text: "Devices that incorporate viable tissues or cells of human or animal origin, or their derivatives, that are covered by Directive 2004/23/EC or Regulation (EC) No 1394/2007 are subject to this Regulation only in respect of the requirements of this Regulation that relate to the device aspects not covered by those acts."
     sourceCitation: "Regulation (EU) 2017/745 Article 1(4)"
     mandatory: true
+    requiredEvidenceTypes:
+      - tissue_cell_origin_documentation
+      - regulatory_applicability_assessment
     applicability:
       deviceTypes:
         - combination_device
@@ -75,6 +86,9 @@ obligations:
     text: "This Regulation does not apply to in vitro diagnostic medical devices covered by Regulation (EU) 2017/746."
     sourceCitation: "Regulation (EU) 2017/745 Article 1(5)"
     mandatory: true
+    requiredEvidenceTypes:
+      - device_qualification_rationale
+      - regulatory_applicability_assessment
     applicability:
       conditions:
         - "IVDs are excluded from the scope of this Regulation"
@@ -89,6 +103,9 @@ obligations:
     text: "This Regulation does not apply to medicinal products as defined in Directive 2001/83/EC, to cosmetic products covered by Regulation (EC) No 1223/2009, to food covered by Regulation (EC) No 178/2002, or to products covered by Council Directive 90/385/EEC to the extent superseded."
     sourceCitation: "Regulation (EU) 2017/745 Article 1(5)-(6)"
     mandatory: true
+    requiredEvidenceTypes:
+      - device_qualification_rationale
+      - regulatory_applicability_assessment
     metadata:
       review: "pending"
       extractedBy: "llm"
@@ -100,6 +117,9 @@ obligations:
     text: "Devices may only be placed on the market or put into service if they comply with this Regulation when duly supplied and properly installed, maintained and used in accordance with their intended purpose."
     sourceCitation: "Regulation (EU) 2017/745 Article 1(1), read with Article 5(1)"
     mandatory: true
+    requiredEvidenceTypes:
+      - eu_declaration_of_conformity
+      - gspr_checklist
     applicability:
       operatorRoles:
         - manufacturer
@@ -115,6 +135,9 @@ obligations:
     text: "The Commission shall be empowered to adopt delegated acts in accordance with Article 115 to amend the definitions set out in Article 2, in light of technical progress and taking into account possible relevant international regulatory developments and technical standards, and harmonised definitions adopted in other Union legislation."
     sourceCitation: "Regulation (EU) 2017/745 Article 3"
     mandatory: true
+    requiredEvidenceTypes:
+      - regulatory_monitoring_record
+      - definition_change_impact_assessment
     applicability:
       conditions:
         - "procedural provision; Commission power to amend definitions via delegated acts"
@@ -130,6 +153,9 @@ obligations:
     text: "Where a Member State considers that a product, or a category or group of products, does not fall within the definitions of 'medical device' or 'accessory for a medical device', but may satisfy the definition of a medical device or of an accessory under another Directive or Regulation, the Commission may, by means of implementing acts, determine the regulatory status of that product."
     sourceCitation: "Regulation (EU) 2017/745 Article 4(1)"
     mandatory: true
+    requiredEvidenceTypes:
+      - device_qualification_rationale
+      - borderline_classification_determination
     applicability:
       conditions:
         - "applies to borderline products whose classification as a medical device is uncertain"
@@ -144,6 +170,9 @@ obligations:
     text: "A product that comprises both a device and a medicinal substance where the principal mode of action of the product is that of the device shall be regulated as a device under this Regulation. If the principal mode of action of the integral medicinal substance is ancillary to that of the device, the product is governed by this Regulation, but the medicinal substance shall be assessed in accordance with Directive 2001/83/EC."
     sourceCitation: "Regulation (EU) 2017/745 Article 1(8) read with Article 4"
     mandatory: true
+    requiredEvidenceTypes:
+      - principal_mode_of_action_assessment
+      - medicinal_substance_assessment
     applicability:
       deviceTypes:
         - combination_device
@@ -160,6 +189,9 @@ obligations:
     text: "The Commission may, on its own initiative or at the request of a Member State, after consulting the MDCG, decide by means of implementing acts whether a specific product or category of products falls within the definitions of 'medical device' or 'accessory for a medical device'."
     sourceCitation: "Regulation (EU) 2017/745 Article 4(1)"
     mandatory: true
+    requiredEvidenceTypes:
+      - borderline_classification_determination
+      - regulatory_authority_correspondence
     applicability:
       conditions:
         - "procedural: Commission may issue implementing acts on borderline classification"
@@ -174,6 +206,9 @@ obligations:
     text: "Where Member States have diverging views on the qualification of a product or category of products as a medical device, they shall bring the matter to the attention of the Commission, which shall decide on the regulatory status of the product concerned."
     sourceCitation: "Regulation (EU) 2017/745 Article 4(2)"
     mandatory: true
+    requiredEvidenceTypes:
+      - regulatory_authority_correspondence
+      - borderline_classification_determination
     applicability:
       conditions:
         - "procedural: Member States must notify Commission of divergent borderline determinations"

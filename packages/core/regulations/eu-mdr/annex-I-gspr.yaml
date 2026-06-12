@@ -23,6 +23,8 @@ obligations:
       - design_output
       - risk_benefit_analysis
       - clinical_evaluation_report
+      - performance_test_report
+      - safety_assessment
     metadata:
       review: "pending"
       extractedBy: "llm"
@@ -70,6 +72,7 @@ obligations:
       - risk_control_record
       - risk_control_option_analysis
       - risk_management_report
+      - residual_risk_evaluation
     metadata:
       review: "pending"
       extractedBy: "llm"
