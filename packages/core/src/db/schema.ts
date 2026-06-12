@@ -215,9 +215,10 @@ export const decisionTraceEntries = pgTable(
   'decision_trace_entries',
   {
     id: serial('id').primaryKey(),
-    processInstanceId: uuid('process_instance_id')
-      .references(() => processInstances.id)
-      .notNull(),
+    // Free-form trace-grouping identifier. May be a process_instances.id (uuid)
+    // or a synthetic id for ad-hoc/demo traces (e.g. "psur-demo-<uuid>"), so it
+    // is intentionally NOT a foreign key to process_instances.
+    processInstanceId: varchar('process_instance_id', { length: 128 }).notNull(),
     tenantId: varchar('tenant_id', { length: 128 }).notNull(),
     traceId: varchar('trace_id', { length: 128 }).notNull(),
     sequenceNumber: integer('sequence_number').notNull(),
