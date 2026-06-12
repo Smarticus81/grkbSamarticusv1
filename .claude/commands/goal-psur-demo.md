@@ -103,7 +103,20 @@ apps/web /demo/psur  ──HTTP/SSE──▶  apps/api /api/psur  ──HTTP/SSE
 
 ### A. Python side (bestpsurgenerator)
 
-1. **Event emitter** (`psur-generator/events.py`): a `ProgressEmitter` the
+1. **De-brand the pipeline (prerequisite).** The repo currently bundles a
+   proprietary third-party form as its DOCX template
+   (`psur-generator/constraints/*_template.docx`, cloned by
+   `rendering/renderer.py`) and its form identifier appears throughout the
+   codebase (code, prompts, constraints JSON, skills, docs — grep for the
+   identifier in that template's filename). Remove it entirely: author a
+   neutral, in-house DOCX template aligned to MDCG 2022-21's PSUR content
+   requirements (same section A–M structure and tables, original layout and
+   styling), update `template_schema.json` / `section_guidance.json` /
+   validation / rendering accordingly, and purge the proprietary identifier
+   from every file, output filename, and document-control block. No
+   third-party proprietary form identifiers may appear anywhere in either
+   repo, in generated outputs, or in the demo UI.
+2. **Event emitter** (`psur-generator/events.py`): a `ProgressEmitter` the
    pipeline calls at every phase boundary, per-section start/complete, and at
    every **decision point**. Two event classes:
    - `progress` — phase/section lifecycle for the UI stepper.
@@ -121,7 +134,7 @@ apps/web /demo/psur  ──HTTP/SSE──▶  apps/api /api/psur  ──HTTP/SSE
    - Wire the emitter through `main.py`'s generate flow and
      `agents/orchestrator.py` as an optional parameter; the CLI keeps working
      unchanged with a no-op emitter.
-2. **FastAPI service** (`psur-generator/server/`):
+3. **FastAPI service** (`psur-generator/server/`):
    - `POST /runs` — accepts the full mock-input payload (all input types),
      validates **content freely but structure strictly** against the template
      specs in `data/templates/` (exact column/field sets per
@@ -134,21 +147,21 @@ apps/web /demo/psur  ──HTTP/SSE──▶  apps/api /api/psur  ──HTTP/SSE
      PSUR/PMSR DOCX, PSUR JSON, statistics JSON, traceability JSON,
      validation report.
    - One concurrent run per process by default; `MAX_CONCURRENT_RUNS` env.
-3. **Mock data pack audit**: verify the bundled inputs exercise **every**
-   MDCG 2022-21 / FormQAR-054 section A–M and the UK MDR path. Known gap to
+4. **Mock data pack audit**: verify the bundled inputs exercise **every**
+   MDCG 2022-21 PSUR section A–M and the UK MDR path. Known gap to
    check: Section J needs a **literature search results** input — add a
    template + mock file if missing. Mock data must include serious incidents
    (Section D), FSCA (H), trend signal that actually trips a Western Electric
    rule (G), UK sales rows (UK MDR activation), and at least one uncoded
    complaint (to demo IMDRF auto-coding). Update `INPUT_README.md` for
    anything added.
-4. **Tests**: introduce `pytest` (none exists) minimally — emitter ordering,
+5. **Tests**: introduce `pytest` (none exists) minimally — emitter ordering,
    structural-validation accept/reject cases, and an end-to-end run against
    the mock pack with a stubbed LLM client asserting the decision-event set.
 
 ### B. grkb side (this repo)
 
-5. **API bridge** (`apps/api/src/routes/psur.ts`, mounted at `/api/psur`):
+6. **API bridge** (`apps/api/src/routes/psur.ts`, mounted at `/api/psur`):
    - `POST /api/psur/runs` — creates a `processInstanceId`, calls
      `DecisionTraceService.startTrace()` under the demo tenant, forwards
      inputs to the Python service (`PSUR_SERVICE_URL` env).
@@ -167,7 +180,7 @@ apps/web /demo/psur  ──HTTP/SSE──▶  apps/api /api/psur  ──HTTP/SSE
    - **Demo guard**: public (no Clerk) but rate-limited — per-IP daily run
      cap + global concurrency cap; clear "demo is busy" SSE event when
      saturated. Zod on every payload.
-6. **Walkthrough UI** (`apps/web/src/pages/PsurDemo.tsx` + components, wouter
+7. **Walkthrough UI** (`apps/web/src/pages/PsurDemo.tsx` + components, wouter
    route `/demo/psur`, public): the four-step tutorial above. One active step
    on screen; a slim progress rail shows where you are. Inputs step renders
    each input type as an editable grid/form generated **from the structure
@@ -178,16 +191,16 @@ apps/web /demo/psur  ──HTTP/SSE──▶  apps/api /api/psur  ──HTTP/SSE
    hash-chain verification badge (calls the existing verify endpoint) and
    Audit Pack export. Match existing component and styling conventions —
    read neighboring pages first.
-7. **Landing page**: make the demo the main feature — the hero's primary CTA
+8. **Landing page**: make the demo the main feature — the hero's primary CTA
    points to `/demo/psur` ("Watch a PSUR draft itself in 20 minutes"), and
    the existing PSUR Compiler product card's CTA goes to the demo, with the
    2-weeks→20-minutes / 99% claim and the decision-trace differentiator in
    its copy.
-8. **Deployment**: `Dockerfile.psur` in bestpsurgenerator (or repo root here
+9. **Deployment**: `Dockerfile.psur` in bestpsurgenerator (or repo root here
    if the Railway context demands it — follow RAILWAY.md conventions), new
    `PSUR_SERVICE_URL` + demo-tenant envs documented in `.env.example` and
    RAILWAY.md.
-9. **Tests**: route tests for the bridge (run create, SSE relay with a mocked
+10. **Tests**: route tests for the bridge (run create, SSE relay with a mocked
    Python service, citation resolution incl. the unresolved path, rate-limit
    rejection); a trace test asserting a completed demo run's chain passes
    `ChainVerifier` and ≥1 obligation citation exists per regulatory decision
@@ -206,6 +219,9 @@ apps/web /demo/psur  ──HTTP/SSE──▶  apps/api /api/psur  ──HTTP/SSE
 - **Real runtime, guarded cost.** LLM keys live server-side only. Rate limits
   are not optional. Never proxy arbitrary user files — demo accepts only the
   structured mock-input payload.
+- **No proprietary third-party form branding.** The rendered output, schema,
+  prompts, code, docs, and UI use only the neutral in-house template from
+  deliverable 1; the removed form identifier must not reappear anywhere.
 - **No stubs; Zod (TS) / Pydantic (Python) at every boundary; no `any`.**
 - Sealed lifecycle and the existing sandbox processes remain untouched.
 
@@ -223,4 +239,6 @@ apps/web /demo/psur  ──HTTP/SSE──▶  apps/api /api/psur  ──HTTP/SSE
   (UK MDR 44ZL) and the trace records that cadence decision with its citation.
 - `pnpm check` and `pnpm test` pass; `pytest` passes in bestpsurgenerator;
   the original CLI (`python main.py generate ...`) still works unchanged.
+- A case-insensitive grep across both repos (and a generated output set) for
+  the removed proprietary form identifier returns zero hits.
 - The landing page hero links to the demo and the claim copy is live.
