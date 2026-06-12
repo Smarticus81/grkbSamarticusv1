@@ -78,36 +78,8 @@ obligations:
       - gspr_checklist
       - standards_list
 
-  - obligationId: "EUMDR.AI.1.OBL.001"
-    kind: obligation
-    title: "Devices shall be safe and perform as intended"
-    text: "Devices shall achieve the performance intended by their manufacturer and shall be designed and manufactured in such a way that, during normal conditions of use, they are suitable for their intended purpose. They shall be safe and effective and shall not compromise the clinical condition or the safety of patients."
-    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter I Section 1"
-    mandatory: true
-    requiredEvidenceTypes:
-      - performance_test_report
-      - safety_assessment
-
-  - obligationId: "EUMDR.AI.2.OBL.001"
-    kind: obligation
-    title: "Risk management"
-    text: "Manufacturers shall establish, implement, document and maintain a system for risk management. Risk management shall be understood as a continuous iterative process throughout the entire lifecycle of a device, requiring regular systematic updating."
-    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter I Section 3"
-    mandatory: true
-    requiredEvidenceTypes:
-      - risk_management_file
-      - risk_management_plan
-      - risk_management_report
-
-  - obligationId: "EUMDR.AI.2.OBL.002"
-    kind: obligation
-    title: "Risk control measures"
-    text: "Risk control measures adopted by manufacturers for the design and manufacture of the devices shall conform to safety principles, taking account of the generally acknowledged state of the art. Manufacturers shall eliminate or reduce risks as far as possible through safe design, take adequate protection measures, and provide information for safety."
-    sourceCitation: "Regulation (EU) 2017/745 Annex I Chapter I Section 4"
-    mandatory: true
-    requiredEvidenceTypes:
-      - risk_management_report
-      - residual_risk_evaluation
+  # NOTE: Annex I GSPR obligations (EUMDR.AI.1.OBL.001, EUMDR.AI.2.OBL.001,
+  # EUMDR.AI.2.OBL.002) are defined canonically in annex-I-gspr.yaml.
 
   - obligationId: "EUMDR.AII.4.OBL.001"
     kind: obligation
@@ -216,10 +188,8 @@ constraints:
     text: "Benefit-risk analysis must not be a standalone document disconnected from the risk management file. It must be consistent with and traceable to the risk management outputs."
     severity: hard
 
-  - constraintId: "EUMDR.AI.CON.001"
-    appliesTo: "EUMDR.AI.2.OBL.002"
-    text: "Risk control measures shall follow the priority order: inherently safe design first, then protection measures, then information for safety. Deviation from this hierarchy must be justified."
-    severity: hard
+  # NOTE: the risk-control hierarchy constraint on EUMDR.AI.2.OBL.002 is
+  # defined canonically as EUMDR.AI.2.CON.001 in annex-I-gspr.yaml.
 
   - constraintId: "EUMDR.AII.CON.004"
     appliesTo: "EUMDR.AII.5.OBL.002"

@@ -115,36 +115,8 @@ obligations:
       - notified_body_certificate
       - technical_documentation_assessment
 
-  - obligationId: "EUMDR.19.OBL.001"
-    kind: obligation
-    title: "EU declaration of conformity"
-    text: "The manufacturer shall draw up and keep up to date an EU declaration of conformity. The EU declaration of conformity shall contain the information set out in Annex IV and shall be translated into an official Union language or languages required by the Member State(s) in which the device is made available."
-    sourceCitation: "Regulation (EU) 2017/745 Article 19(1)"
-    mandatory: true
-    requiredEvidenceTypes:
-      - eu_declaration_of_conformity
-
-  - obligationId: "EUMDR.20.OBL.001"
-    kind: obligation
-    title: "CE marking"
-    text: "Devices, other than custom-made or investigational devices, considered to be in conformity with the requirements of this Regulation shall bear the CE marking of conformity. The CE marking shall be affixed visibly, legibly and indelibly to the device or its sterile packaging. Where this is not possible, the CE marking shall be affixed to the packaging and the accompanying document."
-    sourceCitation: "Regulation (EU) 2017/745 Article 20(1)"
-    mandatory: true
-    requiredEvidenceTypes:
-      - ce_marking_record
-      - label_artwork
-
-  - obligationId: "EUMDR.20.OBL.002"
-    kind: obligation
-    title: "CE marking with notified body number"
-    text: "The CE marking shall be followed by the identification number of the notified body responsible for the conformity assessment procedures set out in Annexes IX to XI. The identification number shall also be indicated in any promotional material which mentions that the device fulfils the requirements for CE marking."
-    sourceCitation: "Regulation (EU) 2017/745 Article 20(3)"
-    mandatory: true
-    requiredEvidenceTypes:
-      - ce_marking_record
-      - notified_body_certificate
-    metadata:
-      conditional: "Not applicable to class I devices without measuring, sterile, or reprocessing functions"
+  # NOTE: Article 19/20 obligations (EUMDR.19.OBL.001, EUMDR.20.OBL.001,
+  # EUMDR.20.OBL.002) are defined canonically in chapter-II-obligations.yaml.
 
   - obligationId: "EUMDR.27.OBL.001"
     kind: obligation
@@ -206,7 +178,7 @@ constraints:
     text: "Conformity assessment must be completed before placing the device on the market. Conditional or provisional market placement pending assessment completion is not permitted."
     severity: hard
 
-  - constraintId: "EUMDR.20.CON.001"
+  - constraintId: "EUMDR.20.CON.002"
     appliesTo: "EUMDR.20.OBL.001"
     text: "The CE marking shall not be affixed to a device unless and until all applicable conformity assessment procedures have been completed. Premature CE marking is a regulatory violation."
     severity: hard

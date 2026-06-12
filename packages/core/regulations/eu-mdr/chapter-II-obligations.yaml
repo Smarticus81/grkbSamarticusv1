@@ -909,6 +909,7 @@ obligations:
         - manufacturer
       conditions:
         - "applicable when notified body is involved in conformity assessment"
+        - "not applicable to class I devices without measuring, sterile, or reprocessing functions"
     metadata: { review: "pending", extractedBy: "llm", extractedAt: "2026-05-31T00:00:00Z" }
 
   - obligationId: "EUMDR.20.OBL.003"
