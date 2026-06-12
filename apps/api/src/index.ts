@@ -13,7 +13,7 @@ import { auth, validateJwtSecret } from './middleware/auth.js';
 import { tenancy } from './middleware/tenancy.js';
 import { tracing } from './middleware/tracing.js';
 import { requestId } from './middleware/request-id.js';
-import graph from './routes/graph.js';
+import graph, { graphStatsHandler } from './routes/graph.js';
 import traces from './routes/traces.js';
 import apiKeysRoute from './routes/api-keys.js';
 import sandbox from './routes/sandbox.js';
@@ -134,6 +134,12 @@ app.use(globalLimiter);
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'regground-api', version: '0.1.0' });
 });
+
+// --- Public graph stats (no auth) ------------------------------------------
+// Aggregate counts only (obligations, regulations, jurisdictions) — consumed
+// by the signed-out landing page. Mounted BEFORE the auth middleware; the
+// rest of /api/graph remains sign-in only.
+app.get('/api/graph/stats', graphStatsHandler);
 
 // --- Auth + tenant context for all /api routes ---------------------------
 app.use('/api', auth, tenancy);

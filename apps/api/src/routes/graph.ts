@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { getContext } from '../context.js';
 
@@ -317,8 +317,12 @@ router.get('/process-types', async (_req, res) => {
 /**
  * GET /api/graph/stats
  * Graph statistics — obligation count, jurisdiction spread, etc.
+ *
+ * Exported as a standalone handler: these are non-sensitive aggregates that
+ * power the public landing page, so index.ts also mounts this route BEFORE
+ * the auth middleware. Everything else under /api/graph stays sign-in only.
  */
-router.get('/stats', async (_req, res) => {
+export const graphStatsHandler = async (_req: Request, res: Response): Promise<void> => {
   const ctx = getContext();
   const driver = (ctx.graph as any).driver;
   const database = (ctx.graph as any).database ?? 'neo4j';
@@ -371,7 +375,9 @@ router.get('/stats', async (_req, res) => {
   } finally {
     await session.close();
   }
-});
+};
+
+router.get('/stats', graphStatsHandler);
 
 /**
  * GET /api/graph/obligations-by-regulation
