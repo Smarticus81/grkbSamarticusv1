@@ -30,14 +30,17 @@ import { ThemeToggle } from '../components/ui/ThemeToggle.js';
  * SIMULATION (signed out): the identical four-step experience, driven by a
  * scripted client-side engine. Every conclusion is recomputed from the
  * visitor's edited inputs, the hash chain is real SHA-256 built and verified
- * locally, and the downloadable draft is watermarked SIMULATED on every page.
- * Nothing leaves the browser; sign-up unlocks the real engine.
+ * locally, and the downloadable PDF/DOCX drafts are watermarked SIMULATED on
+ * every page. Nothing leaves the browser; sign-up unlocks the real engine.
  *
  * 1. Intro    — the 2-weeks-to-20-minutes story.
  * 2. Inputs   — editable mock data pack (content editable, structure locked).
- * 3. Run      — live stream: phases, section agents A–M, decision ticker.
- * 4. Results  — artifact downloads, validation summary, and the hero artifact:
- *               the hash-chained decision trace with a verification badge.
+ * 3. Run      — the runtime, end to end: elapsed clock, phase timeline with
+ *               per-phase timings, section agents A–M, animated decision
+ *               stream, and a live runtime log from run-start to artifacts.
+ * 4. Results  — inline document preview, PDF/DOCX/trace downloads, validation
+ *               summary, and the hero artifact: the hash-chained decision
+ *               trace with a verification badge.
  */
 
 const API_BASE: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
@@ -58,6 +61,14 @@ interface DecisionTick {
   reason: string;
   basis: string[];
   section?: string;
+}
+
+interface LogLine {
+  id: number;
+  /** Milliseconds since run start. */
+  t: number;
+  kind: 'phase' | 'agent' | 'decision' | 'error';
+  text: string;
 }
 
 const PHASES = [
@@ -163,11 +174,33 @@ function saveBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
+/** 'E_complaint_trends' → 'Complaint trends' */
+function sectionPretty(section: string): string {
+  const rest = section.includes('_') ? section.slice(section.indexOf('_') + 1) : section;
+  const words = rest.replace(/_/g, ' ');
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+function fmtClock(ms: number): string {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
+
+function extOf(name: string): string {
+  return (name.split('.').pop() ?? '').toUpperCase();
+}
+
 // ---------------------------------------------------------------------------
 // Shared UI atoms
 // ---------------------------------------------------------------------------
 
 const mono: CSSProperties = { fontFamily: 'var(--mono)', letterSpacing: '0.08em' };
+
+/** Page-scoped keyframes for the runtime view. */
+const RUNTIME_KEYFRAMES = `
+@keyframes rgFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes rgPulseDot { 0% { box-shadow: 0 0 0 0 var(--signal-edge); } 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+`;
 
 function Chip({
   children,
@@ -364,11 +397,12 @@ function IntroStep({ mode, onStart }: { mode: DemoMode; onStart: () => void }) {
         <>
           <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
             What you are about to watch is a <strong style={{ color: 'var(--ink)' }}>faithful, fully
-            simulated replay</strong> of our real generation pipeline — the same four steps, the same 13
-            section agents (A–M), the same decision ticker. The statistics, the EU MDR Article 88 trend
-            finding, and the benefit–risk conclusion are all <strong style={{ color: 'var(--ink)' }}>recomputed
-            live from the data you can edit in step 2</strong>. The hash chain at the end is real SHA-256,
-            built and verified in your browser. The draft you download is watermarked SIMULATED on every page.
+            simulated replay</strong> of our real generation pipeline — the runtime end to end: every phase,
+            all 13 section agents (A–M), and every traced decision, streamed live. The statistics, the EU MDR
+            Article 88 trend finding, and the benefit–risk conclusion are all{' '}
+            <strong style={{ color: 'var(--ink)' }}>recomputed live from the data you can edit in step 2</strong>.
+            The hash chain at the end is real SHA-256, built and verified in your browser. The draft downloads
+            as <strong style={{ color: 'var(--ink)' }}>PDF and DOCX</strong>, watermarked SIMULATED on every page.
           </p>
           <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
             The real engine — grounded LLM section agents, the obligation knowledge graph, and an auditable
@@ -391,8 +425,8 @@ function IntroStep({ mode, onStart }: { mode: DemoMode; onStart: () => void }) {
           Review (and edit) the mock inputs — content is editable, structure is locked.
           {mode === 'simulation' && ' Push the numbers around: the simulation recomputes its conclusions from your edits.'}
         </li>
-        <li>Watch the pipeline stream live: phases, 13 section agents (A–M), and a decision ticker.</li>
-        <li>Download the draft and inspect the verified decision trace.</li>
+        <li>Watch the runtime end to end: phases with live timings, 13 section agents (A–M), the decision stream, and the raw runtime log.</li>
+        <li>Preview the draft in place, download it{mode === 'simulation' ? ' as PDF or DOCX' : ''}, and inspect the verified decision trace.</li>
       </ol>
       <div style={{ marginTop: 28, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         <button className="btn btn-orange" onClick={onStart}>
@@ -716,15 +750,156 @@ function InputsStep({
 }
 
 // ---------------------------------------------------------------------------
-// Step 3: Run
+// Step 3: Run — the runtime, end to end
 // ---------------------------------------------------------------------------
 
 interface RunState {
   phases: Partial<Record<Phase, Status>>;
   sections: Partial<Record<string, Status>>;
   decisions: DecisionTick[];
+  log: LogLine[];
+  phaseTimes: Partial<Record<Phase, { start: number; end?: number }>>;
+  startedAt: number | null;
+  endedAt: number | null;
   error: string | null;
   busy: boolean;
+}
+
+/** Weighted run progress: generation counts per completed section agent. */
+function runProgressPct(runState: RunState): number {
+  const sectionsDone = SECTION_LETTERS.filter((l) => runState.sections[l] === 'completed').length;
+  const score = PHASES.reduce((acc, p) => {
+    if (p === 'generation') {
+      const st = runState.phases[p];
+      if (st === 'completed') return acc + 1;
+      return acc + sectionsDone / SECTION_LETTERS.length;
+    }
+    const st = runState.phases[p];
+    return acc + (st === 'completed' ? 1 : st === 'started' ? 0.4 : 0);
+  }, 0);
+  return Math.min(100, Math.round((score / PHASES.length) * 100));
+}
+
+function RuntimeStat({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 86 }}>
+      <span style={{ ...mono, fontSize: 9.5, textTransform: 'uppercase', color: 'var(--ink-4)' }}>{label}</span>
+      <span style={{ ...mono, fontSize: 19, letterSpacing: '0.02em', color: accent ? 'var(--orange)' : 'var(--ink)' }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function PhaseTimeline({ runState, now }: { runState: RunState; now: number }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {PHASES.map((phase, i) => {
+        const status = runState.phases[phase] ?? 'pending';
+        const times = runState.phaseTimes[phase];
+        const duration =
+          times?.end !== undefined
+            ? `${((times.end - times.start) / 1000).toFixed(1)}s`
+            : status === 'started' && times
+              ? `${Math.max(0, (now - times.start) / 1000).toFixed(0)}s`
+              : '';
+        return (
+          <div key={phase} style={{ display: 'flex', alignItems: 'stretch', gap: 12 }}>
+            {/* Rail: dot + connecting line */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 14 }}>
+              <span
+                style={{
+                  width: 9,
+                  height: 9,
+                  borderRadius: '50%',
+                  marginTop: 6,
+                  flexShrink: 0,
+                  border: '1.5px solid',
+                  borderColor: status === 'pending' ? 'var(--rule-strong)' : 'var(--orange)',
+                  background: status === 'completed' ? 'var(--orange)' : 'var(--paper)',
+                  animation: status === 'started' ? 'rgPulseDot 1.4s ease-out infinite' : undefined,
+                }}
+              />
+              {i < PHASES.length - 1 && (
+                <span
+                  style={{
+                    width: 1.5,
+                    flex: 1,
+                    minHeight: 14,
+                    background: status === 'completed' ? 'var(--orange)' : 'var(--rule)',
+                  }}
+                />
+              )}
+            </div>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                gap: 10,
+                flex: 1,
+                paddingBottom: 12,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 13,
+                  color: status === 'pending' ? 'var(--ink-4)' : status === 'started' ? 'var(--orange)' : 'var(--ink)',
+                  fontWeight: status === 'started' ? 600 : 400,
+                }}
+              >
+                {PHASE_LABELS[phase]}
+              </span>
+              <span style={{ ...mono, fontSize: 10, color: status === 'started' ? 'var(--orange)' : 'var(--ink-4)' }}>
+                {duration}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RuntimeLog({ log }: { log: LogLine[] }) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [log.length]);
+
+  const colors: Record<LogLine['kind'], string> = {
+    phase: 'var(--ink-2)',
+    agent: 'var(--orange)',
+    decision: 'var(--ink)',
+    error: 'var(--err)',
+  };
+
+  return (
+    <div
+      ref={ref}
+      aria-live="polite"
+      style={{
+        border: '1px solid var(--rule)',
+        borderRadius: 'var(--r-2)',
+        background: 'var(--paper-deep)',
+        maxHeight: 190,
+        overflowY: 'auto',
+        padding: '10px 14px',
+        fontFamily: 'var(--mono)',
+        fontSize: 10.5,
+        lineHeight: 1.85,
+      }}
+    >
+      {log.length === 0 && <span style={{ color: 'var(--ink-4)' }}>waiting for the runtime…</span>}
+      {log.map((line) => (
+        <div key={line.id} style={{ display: 'flex', gap: 10, animation: 'rgFadeUp 200ms var(--ease-out) both' }}>
+          <span style={{ color: 'var(--ink-4)', flexShrink: 0 }}>{(line.t / 1000).toFixed(1).padStart(6, ' ')}s</span>
+          <span style={{ color: colors[line.kind], wordBreak: 'break-word' }}>{line.text}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function RunStep({
@@ -746,6 +921,15 @@ function RunStep({
   onRetry: () => void;
   onBack: () => void;
 }) {
+  // Live clock — ticks while the run is in flight.
+  const [now, setNow] = useState(() => Date.now());
+  const running = runState.startedAt !== null && runState.endedAt === null && !startError;
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(timer);
+  }, [running]);
+
   if (startError) {
     return (
       <div style={{ maxWidth: 640 }}>
@@ -758,128 +942,169 @@ function RunStep({
     );
   }
 
+  const elapsed = runState.startedAt ? (runState.endedAt ?? now) - runState.startedAt : 0;
+  const pct = runProgressPct(runState);
+  const sectionsDone = SECTION_LETTERS.filter((l) => runState.sections[l] === 'completed').length;
+
   return (
     <div>
       <SectionHeading
         eyebrow={mode === 'simulation' ? 'Step 3 — Run · simulation' : 'Step 3 — Run'}
         title={
           mode === 'simulation'
-            ? 'The simulation is running.'
+            ? 'The simulated runtime, end to end.'
             : starting
               ? 'Starting the pipeline…'
-              : 'The pipeline is running.'
+              : 'The runtime, end to end.'
         }
         body={
           mode === 'simulation'
-            ? 'A scripted replay of the real pipeline — no model calls, nothing leaves your browser. The statistics, the trend finding, and every decision below were recomputed from the inputs you just edited, and each one is appended to a real SHA-256 hash chain as it happens.'
+            ? 'A scripted replay of the real pipeline — no model calls, nothing leaves your browser. Every phase, agent, and decision below was recomputed from the inputs you just edited, and each decision is appended to a real SHA-256 hash chain as it happens.'
             : 'Real LLM runtime. Deterministic statistics are pre-computed and consumed verbatim by 13 section agents (A–M). Every decision below is appended to the hash chain as it happens — grounded in the obligation graph.'
         }
       />
 
-      {mode === 'simulation' && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
-          <span style={{ ...mono, fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-4)' }}>Playback</span>
-          {[1, 4].map((s) => (
-            <button
-              key={s}
-              onClick={() => onSpeedChange(s)}
-              style={{
-                ...mono,
-                fontSize: 10.5,
-                padding: '4px 11px',
-                borderRadius: 999,
-                cursor: 'pointer',
-                border: '1px solid',
-                borderColor: speed === s ? 'var(--orange)' : 'var(--rule)',
-                background: speed === s ? 'var(--orange)' : 'transparent',
-                color: speed === s ? '#fff' : 'var(--ink-3)',
-              }}
-            >
-              {s}×
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Phase stepper */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 22 }}>
-        {PHASES.map((phase) => {
-          const status = runState.phases[phase] ?? 'pending';
-          return (
-            <Chip key={phase} tone={status === 'completed' ? 'done' : status === 'started' ? 'active' : 'neutral'}>
-              {status === 'started' && <span className="signal-dot" />}
-              {PHASE_LABELS[phase]}
-            </Chip>
-          );
-        })}
-      </div>
-
-      {/* Section agents A–M */}
-      <div style={{ marginTop: 22 }}>
-        <div className="eyebrow" style={{ marginBottom: 10 }}>Section agents A–M</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {SECTION_LETTERS.map((letter) => {
-            const status = runState.sections[letter] ?? 'pending';
-            return (
-              <span
-                key={letter}
-                title={`Section ${letter}`}
+      {/* Runtime stats strip */}
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          gap: 28,
+          marginTop: 24,
+          padding: '14px 18px',
+          border: '1px solid var(--rule)',
+          borderRadius: 'var(--r-2)',
+          background: 'var(--paper)',
+        }}
+      >
+        <RuntimeStat label="Elapsed" value={fmtClock(elapsed)} accent={running} />
+        <RuntimeStat label="Progress" value={`${pct}%`} />
+        <RuntimeStat label="Decisions" value={String(runState.decisions.length)} />
+        <RuntimeStat label="Sections" value={`${sectionsDone}/13`} />
+        {mode === 'simulation' && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
+            <span style={{ ...mono, fontSize: 9.5, textTransform: 'uppercase', color: 'var(--ink-4)' }}>Playback</span>
+            {[1, 4].map((s) => (
+              <button
+                key={s}
+                onClick={() => onSpeedChange(s)}
                 style={{
                   ...mono,
-                  width: 30,
-                  height: 30,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 12,
-                  borderRadius: 'var(--r-1)',
+                  fontSize: 10.5,
+                  padding: '4px 11px',
+                  borderRadius: 999,
+                  cursor: 'pointer',
                   border: '1px solid',
-                  borderColor: status === 'pending' ? 'var(--rule)' : 'var(--orange)',
-                  background: status === 'completed' ? 'var(--orange)' : 'transparent',
-                  color: status === 'completed' ? '#fff' : status === 'started' ? 'var(--orange)' : 'var(--ink-4)',
+                  borderColor: speed === s ? 'var(--orange)' : 'var(--rule)',
+                  background: speed === s ? 'var(--orange)' : 'transparent',
+                  color: speed === s ? '#fff' : 'var(--ink-3)',
                 }}
               >
-                {letter}
-              </span>
-            );
-          })}
+                {s}×
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Progress bar */}
+      <div style={{ height: 3, background: 'var(--rule)', borderRadius: 2, marginTop: 10, overflow: 'hidden' }}>
+        <div
+          style={{
+            height: '100%',
+            width: `${pct}%`,
+            background: 'var(--orange)',
+            borderRadius: 2,
+            transition: 'width 480ms var(--ease-out)',
+          }}
+        />
+      </div>
+
+      {/* Timeline + agents/decisions */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, marginTop: 26, alignItems: 'flex-start' }}>
+        {/* Phase timeline */}
+        <div style={{ flex: '0 1 240px', minWidth: 210 }}>
+          <div className="eyebrow" style={{ marginBottom: 12 }}>Pipeline phases</div>
+          <PhaseTimeline runState={runState} now={now} />
+        </div>
+
+        {/* Section agents + decision stream */}
+        <div style={{ flex: '1 1 440px', minWidth: 320 }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Section agents A–M</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {SECTION_LETTERS.map((letter) => {
+              const status = runState.sections[letter] ?? 'pending';
+              return (
+                <span
+                  key={letter}
+                  title={`Section ${letter}`}
+                  style={{
+                    ...mono,
+                    width: 30,
+                    height: 30,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    borderRadius: 'var(--r-1)',
+                    border: '1px solid',
+                    borderColor: status === 'pending' ? 'var(--rule)' : 'var(--orange)',
+                    background: status === 'completed' ? 'var(--orange)' : 'transparent',
+                    color: status === 'completed' ? '#fff' : status === 'started' ? 'var(--orange)' : 'var(--ink-4)',
+                    animation: status === 'started' ? 'rgPulseDot 1.4s ease-out infinite' : undefined,
+                    transition: 'background var(--t-fast) var(--ease), color var(--t-fast) var(--ease)',
+                  }}
+                >
+                  {letter}
+                </span>
+              );
+            })}
+          </div>
+
+          <div className="eyebrow" style={{ margin: '22px 0 10px' }}>
+            Decision stream · {runState.decisions.length} traced{mode === 'simulation' && ' · simulated'}
+          </div>
+          <div aria-live="polite" style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-2)', maxHeight: 320, overflowY: 'auto' }}>
+            {runState.decisions.length === 0 && (
+              <div style={{ padding: 18, fontSize: 13.5, color: 'var(--ink-4)' }}>
+                Waiting for the first traced decision…
+              </div>
+            )}
+            {[...runState.decisions].reverse().map((d) => (
+              <div
+                key={d.seq}
+                style={{ padding: '12px 16px', borderBottom: '1px solid var(--rule)', animation: 'rgFadeUp 260ms var(--ease-out) both' }}
+              >
+                <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  <span style={{ ...mono, fontSize: 10, color: 'var(--ink-4)' }}>#{d.seq}</span>
+                  <strong style={{ fontSize: 13.5, color: 'var(--ink)' }}>{d.decision}</strong>
+                  {d.section && <Chip tone="neutral">{d.section.split('_')[0]}</Chip>}
+                </div>
+                <p style={{ margin: '6px 0 8px', fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)' }}>{d.reason}</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {d.basis.map((b) => (
+                    <Chip
+                      key={b}
+                      tone={mode === 'simulation' ? 'sim' : 'active'}
+                      title={mode === 'simulation' ? 'Simulated citation — illustrative only, not resolved against the obligation graph' : undefined}
+                    >
+                      {b}
+                    </Chip>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Live decision ticker */}
+      {/* End-to-end runtime log */}
       <div style={{ marginTop: 26 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>
-          Decision ticker · {runState.decisions.length} traced
-          {mode === 'simulation' && ' · simulated'}
+          Runtime log · run start → artifacts
         </div>
-        <div aria-live="polite" style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-2)', maxHeight: 340, overflowY: 'auto' }}>
-          {runState.decisions.length === 0 && (
-            <div style={{ padding: 18, fontSize: 13.5, color: 'var(--ink-4)' }}>
-              Waiting for the first traced decision…
-            </div>
-          )}
-          {[...runState.decisions].reverse().map((d) => (
-            <div key={d.seq} style={{ padding: '12px 16px', borderBottom: '1px solid var(--rule)' }}>
-              <div style={{ display: 'flex', gap: 10, alignItems: 'baseline', flexWrap: 'wrap' }}>
-                <span style={{ ...mono, fontSize: 10, color: 'var(--ink-4)' }}>#{d.seq}</span>
-                <strong style={{ fontSize: 13.5, color: 'var(--ink)' }}>{d.decision}</strong>
-                {d.section && <Chip tone="neutral">{d.section.split('_')[0]}</Chip>}
-              </div>
-              <p style={{ margin: '6px 0 8px', fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)' }}>{d.reason}</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {d.basis.map((b) => (
-                  <Chip
-                    key={b}
-                    tone={mode === 'simulation' ? 'sim' : 'active'}
-                    title={mode === 'simulation' ? 'Simulated citation — illustrative only, not resolved against the obligation graph' : undefined}
-                  >
-                    {b}
-                  </Chip>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        <RuntimeLog log={runState.log} />
       </div>
 
       {runState.error && (
@@ -899,12 +1124,14 @@ function ResultsStep({
   mode,
   complete,
   trace,
+  previewHtml,
   onDownload,
   onRestart,
 }: {
   mode: DemoMode;
   complete: CompleteInfo;
   trace: TraceResponse | null;
+  previewHtml: string | null;
   onDownload: (name: string) => void;
   onRestart: () => void;
 }) {
@@ -918,8 +1145,8 @@ function ResultsStep({
         title={mode === 'simulation' ? 'Simulated draft delivered. Local chain verified.' : 'Draft delivered. Trace verified.'}
         body={
           mode === 'simulation'
-            ? 'Download the watermarked simulated draft below — its numbers and conclusions came from your edited inputs. Then inspect the decision chain: every simulated decision was hashed with SHA-256 and the full chain re-verified, right here in your browser.'
-            : 'Download the human-review-ready draft below. Then inspect the hero artifact: the hash-chained decision trace — every decision with its reason and its obligation citations.'
+            ? 'Preview the watermarked simulated draft below, download it as PDF or DOCX — its numbers and conclusions came from your edited inputs — then inspect the decision chain: every simulated decision was hashed with SHA-256 and the full chain re-verified, right here in your browser.'
+            : 'Preview and download the human-review-ready draft below. Then inspect the hero artifact: the hash-chained decision trace — every decision with its reason and its obligation citations.'
         }
       />
 
@@ -940,20 +1167,71 @@ function ResultsStep({
         )}
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 18 }}>
-        {complete.artifacts.map((a: ArtifactInfo) => (
-          <button
-            key={a.name}
-            className="btn btn-ghost"
-            style={{ fontSize: 13 }}
-            onClick={() => onDownload(a.name)}
-          >
-            ↓ {a.name}
-            <span style={{ ...mono, fontSize: 10, color: 'var(--ink-4)', marginLeft: 6 }}>
-              {(a.size_bytes / 1024).toFixed(0)} KB
-            </span>
-          </button>
-        ))}
+      {/* Document preview + downloads */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 26, marginTop: 24, alignItems: 'stretch' }}>
+        {previewHtml && (
+          <div style={{ flex: '1 1 460px', minWidth: 320, display: 'flex', flexDirection: 'column' }}>
+            <div className="eyebrow" style={{ marginBottom: 10 }}>
+              Document preview{mode === 'simulation' && ' · watermarked'}
+            </div>
+            <iframe
+              title="PSUR draft preview"
+              sandbox=""
+              srcDoc={previewHtml}
+              style={{
+                width: '100%',
+                flex: 1,
+                minHeight: 480,
+                border: '1px solid var(--rule)',
+                borderRadius: 'var(--r-2)',
+                background: '#fff',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+        )}
+
+        <div style={{ flex: '0 1 300px', minWidth: 260 }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Downloads</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {complete.artifacts.map((a: ArtifactInfo, i) => {
+              const primary = i === 0;
+              return (
+                <button
+                  key={a.name}
+                  className={primary ? 'btn btn-orange' : 'btn btn-ghost'}
+                  style={{ justifyContent: 'space-between', fontSize: 13, width: '100%' }}
+                  onClick={() => onDownload(a.name)}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                    <span
+                      style={{
+                        ...mono,
+                        fontSize: 9,
+                        padding: '2px 6px',
+                        borderRadius: 'var(--r-1)',
+                        border: '1px solid',
+                        borderColor: primary ? 'rgba(255,255,255,0.5)' : 'var(--rule-strong)',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {extOf(a.name) || 'FILE'}
+                    </span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>↓ {a.name}</span>
+                  </span>
+                  <span style={{ ...mono, fontSize: 10, opacity: 0.75, flexShrink: 0, marginLeft: 8 }}>
+                    {(a.size_bytes / 1024).toFixed(0)} KB
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {mode === 'simulation' && (
+            <p style={{ fontSize: 12, lineHeight: 1.55, color: 'var(--ink-4)', marginTop: 12 }}>
+              Both documents are generated in your browser and watermarked SIMULATED on every page.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Decision trace — the hero artifact */}
@@ -1059,6 +1337,10 @@ const EMPTY_RUN_STATE: RunState = {
   phases: {},
   sections: {},
   decisions: [],
+  log: [],
+  phaseTimes: {},
+  startedAt: null,
+  endedAt: null,
   error: null,
   busy: false,
 };
@@ -1082,7 +1364,9 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
   const [complete, setComplete] = useState<CompleteInfo | null>(null);
   const [trace, setTrace] = useState<TraceResponse | null>(null);
   const [simArtifacts, setSimArtifacts] = useState<SimArtifact[]>([]);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const logIdRef = useRef(0);
 
   // Simulation playback speed (1× scripted, 4× fast-forward).
   const [speed, setSpeedState] = useState(1);
@@ -1128,8 +1412,15 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  /** Shared SSE/sim event reducer for the run view. */
+  /** Shared SSE/sim event reducer — feeds phases, agents, decisions, timings, and the runtime log. */
   const applyRunEvent = useCallback((ev: Record<string, unknown>) => {
+    const nowMs = Date.now();
+    const appendLog = (s: RunState, kind: LogLine['kind'], text: string): LogLine[] => {
+      const line: LogLine = { id: logIdRef.current++, t: s.startedAt ? nowMs - s.startedAt : 0, kind, text };
+      const log = [...s.log, line];
+      return log.length > 500 ? log.slice(-400) : log;
+    };
+
     const kind = ev.kind;
     if (kind === 'progress') {
       const phase = ev.phase as Phase;
@@ -1137,9 +1428,18 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
       const section = typeof ev.section === 'string' ? ev.section : undefined;
       setRunState((s) => {
         const next: RunState = { ...s, phases: { ...s.phases, [phase]: status } };
+        const existing = s.phaseTimes[phase];
+        if (!existing) {
+          next.phaseTimes = { ...s.phaseTimes, [phase]: { start: nowMs } };
+        } else if (status === 'completed' && !section) {
+          next.phaseTimes = { ...s.phaseTimes, [phase]: { start: existing.start, end: nowMs } };
+        }
         if (section) {
           const letter = section.charAt(0).toUpperCase();
           next.sections = { ...s.sections, [letter]: status };
+          next.log = appendLog(s, 'agent', `agent ${letter} · ${sectionPretty(section)} — ${status}`);
+        } else {
+          next.log = appendLog(s, 'phase', `${PHASE_LABELS[phase] ?? phase} ${status}`);
         }
         return next;
       });
@@ -1151,12 +1451,23 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
         basis: Array.isArray(ev.regulatory_basis) ? (ev.regulatory_basis as string[]) : [],
         section: typeof ev.section === 'string' ? ev.section : undefined,
       };
-      setRunState((s) =>
-        s.decisions.some((d) => d.seq === tick.seq) ? s : { ...s, decisions: [...s.decisions, tick] },
-      );
+      setRunState((s) => {
+        if (s.decisions.some((d) => d.seq === tick.seq)) return s;
+        return {
+          ...s,
+          decisions: [...s.decisions, tick],
+          log: appendLog(s, 'decision', `decision #${tick.seq} · ${tick.decision}`),
+        };
+      });
     } else if (kind === 'error') {
       const message = typeof ev.message === 'string' ? ev.message : 'The pipeline reported an error.';
-      setRunState((s) => ({ ...s, error: message, busy: message.toLowerCase().includes('busy') }));
+      setRunState((s) => ({
+        ...s,
+        error: message,
+        busy: message.toLowerCase().includes('busy'),
+        endedAt: nowMs,
+        log: appendLog(s, 'error', message),
+      }));
     }
   }, []);
 
@@ -1166,6 +1477,15 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
     setComplete(null);
     setTrace(null);
     setSimArtifacts([]);
+    setPreviewHtml(null);
+  }, []);
+
+  const markRunStarted = useCallback(() => {
+    setRunState({ ...EMPTY_RUN_STATE, startedAt: Date.now() });
+  }, []);
+
+  const markRunEnded = useCallback(() => {
+    setRunState((s) => (s.endedAt === null ? { ...s, endedAt: Date.now() } : s));
   }, []);
 
   // -- Simulated run (signed out): scripted, local, abortable ---------------
@@ -1175,6 +1495,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
     setStep('run');
     setStarting(false);
     resetRunOutputs();
+    markRunStarted();
 
     const abort = new AbortController();
     abortRef.current = abort;
@@ -1189,14 +1510,16 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
         onEvent: (ev) => applyRunEvent(ev as unknown as Record<string, unknown>),
       });
     } catch {
-      setRunState((s) => ({ ...s, error: 'The simulation hit an unexpected error. Run it again.' }));
+      setRunState((s) => ({ ...s, error: 'The simulation hit an unexpected error. Run it again.', endedAt: Date.now() }));
       return;
     }
     if (!result) return; // aborted by restart/unmount
+    markRunEnded();
 
     setSimArtifacts(result.artifacts);
     setRunId(result.processInstanceId);
     setTrace(result.trace);
+    setPreviewHtml(result.previewHtml);
     setComplete({
       artifacts: result.artifacts.map((a) => ({
         name: a.name,
@@ -1206,7 +1529,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
       validation: result.validation,
     });
     setStep('results');
-  }, [defaults, edited, applyRunEvent, resetRunOutputs]);
+  }, [defaults, edited, applyRunEvent, resetRunOutputs, markRunStarted, markRunEnded]);
 
   // -- Live run (signed in): the real pipeline over authenticated SSE -------
   const startLiveRun = useCallback(async () => {
@@ -1277,6 +1600,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
 
     setRunId(createdRunId);
     setStarting(false);
+    markRunStarted();
 
     const abort = new AbortController();
     abortRef.current = abort;
@@ -1308,6 +1632,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
         setRunState((s) => ({ ...s, error: 'The live stream was interrupted. The trace keeps its partial chain.' }));
       }
     }
+    markRunEnded();
 
     if (completed) {
       setComplete(completed);
@@ -1321,21 +1646,48 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
       }
       setStep('results');
     }
-  }, [defaults, edited, apiJson, streamSse, applyRunEvent, resetRunOutputs]);
+  }, [defaults, edited, apiJson, streamSse, applyRunEvent, resetRunOutputs, markRunStarted, markRunEnded]);
 
   const startRun = useCallback(() => {
     if (mode === 'simulation') void startSimulatedRun();
     else void startLiveRun();
   }, [mode, startSimulatedRun, startLiveRun]);
 
+  // Live mode: pull the first HTML artifact for the inline document preview.
+  useEffect(() => {
+    if (mode !== 'live' || step !== 'results' || previewHtml || !complete || !runId) return;
+    const htmlArtifact = complete.artifacts.find((a) => a.content_type.includes('html'));
+    if (!htmlArtifact) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const headers: Record<string, string> = {};
+        if (token) headers.Authorization = `Bearer ${token}`;
+        const res = await fetch(
+          `${API_BASE}/api/psur/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(htmlArtifact.name)}`,
+          { headers },
+        );
+        if (!res.ok || cancelled) return;
+        const text = await res.text();
+        if (!cancelled) setPreviewHtml(text);
+      } catch {
+        // No preview — downloads still work.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, step, previewHtml, complete, runId, getToken]);
+
   // -- Artifact downloads ----------------------------------------------------
-  // Simulation: serve the locally generated content. Live: authenticated
+  // Simulation: serve the locally generated blobs. Live: authenticated
   // fetch → blob (plain <a href> can't carry the bearer token).
   const downloadArtifact = useCallback(
     async (name: string) => {
       if (mode === 'simulation') {
         const artifact = simArtifacts.find((a) => a.name === name);
-        if (artifact) saveBlob(new Blob([artifact.content], { type: artifact.contentType }), name);
+        if (artifact) saveBlob(artifact.blob, name);
         return;
       }
       if (!runId) return;
@@ -1365,6 +1717,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper)', color: 'var(--ink)', display: 'flex', flexDirection: 'column' }}>
+      <style>{RUNTIME_KEYFRAMES}</style>
       <nav
         style={{
           height: 64,
@@ -1428,6 +1781,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
             mode={mode}
             complete={complete}
             trace={trace}
+            previewHtml={previewHtml}
             onDownload={(name) => void downloadArtifact(name)}
             onRestart={restart}
           />
