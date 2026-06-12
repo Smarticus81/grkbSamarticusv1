@@ -256,7 +256,8 @@ export function App() {
     <QueryClientProvider client={queryClient}>
       <Switch>
         <Route path="/" component={LandingPage} />
-        {/* Public PSUR walkthrough demo — intentionally outside the protected shell. */}
+        {/* PSUR walkthrough — public route, but mode-aware: signed-in users get
+            the real pipeline, signed-out visitors get the client-side simulation. */}
         <Route path="/demo/psur" component={PsurDemo} />
         <Route path="/pricing" component={Pricing} />
         <Route path="/app" component={ProtectedAppShell} />

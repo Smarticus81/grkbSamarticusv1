@@ -1,5 +1,7 @@
 /**
- * PSUR demo bridge — public routes (no Clerk/JWT) mounted at /api/psur.
+ * PSUR generator bridge — mounted at /api/psur BEHIND the auth+tenancy
+ * middleware (see apps/api/src/index.ts). The real pipeline requires sign-in;
+ * signed-out visitors get a client-side simulated run in the web app instead.
  *
  * Proxies the Python PSUR service (env PSUR_SERVICE_URL) and acts as the ONLY
  * writer of decision-trace entries for demo runs:
@@ -27,6 +29,7 @@ import {
   type TraceEventInput,
 } from '@regground/core';
 import { getContext } from '../context.js';
+import type { AuthedRequest } from '../middleware/auth.js';
 import { CitationResolver } from '../psur/obligation-map.js';
 import {
   ArtifactListSchema,
@@ -44,7 +47,11 @@ import {
 // Constants & injectable dependencies
 // ---------------------------------------------------------------------------
 
-/** All demo runs are traced under this tenant. */
+/**
+ * Fallback tenant for runs without an auth context (router unit tests mount
+ * the router standalone). In the deployed app, auth+tenancy run first and
+ * every run is traced under the signed-in caller's tenant.
+ */
 export const PSUR_DEMO_TENANT = 'psur-demo';
 
 /** Stale-run safety net: a slot held longer than this is reclaimed. */
@@ -331,10 +338,13 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
     }
 
     // Start the hash chain BEFORE the pipeline so the run is traced from birth.
+    // Runs belong to the signed-in caller's tenant (auth+tenancy middleware);
+    // the demo tenant is only the standalone-router fallback.
+    const tenantId = (req as AuthedRequest).user?.tenantId ?? PSUR_DEMO_TENANT;
     const processInstanceId = `psur-demo-${randomUUID()}`;
     let ctx: TraceContext;
     try {
-      ctx = await getTrace().startTrace(processInstanceId, PSUR_DEMO_TENANT);
+      ctx = await getTrace().startTrace(processInstanceId, tenantId);
     } catch (err) {
       return res.status(503).json({
         error: 'decision trace unavailable — refusing to run untraced',
