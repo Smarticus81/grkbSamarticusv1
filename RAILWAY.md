@@ -61,9 +61,12 @@ For each service: **Settings → Networking → Generate Domain**. Then update t
 
 ## PSUR demo service (Python)
 
-The public PSUR demo at `/demo/psur` drives a Python FastAPI service that wraps
-the real PSUR pipeline. It lives in the **bestpsurgenerator** repo (deployed
-from its `Dockerfile.psur`), not in this monorepo.
+The PSUR demo at `/demo/psur` has two modes: signed-out visitors get a fully
+client-side simulation (no backend needed), while signed-in users drive a
+Python FastAPI service that wraps the real PSUR pipeline. The service lives in
+the **bestpsurgenerator** repo (deployed from its `Dockerfile.psur`), not in
+this monorepo. If `PSUR_SERVICE_URL` is unset or the service is down, the
+live-mode demo returns 502 on `/api/psur/defaults`.
 
 1. Create a fourth Railway service, `psur-service`, pointing at the
    bestpsurgenerator repo with `Dockerfile.psur` as its config. Give it the
@@ -78,8 +81,9 @@ from its `Dockerfile.psur`), not in this monorepo.
    DEMO_MAX_CONCURRENT_RUNS  = 1    # global concurrency cap (optional, default 1)
    ```
 
-The `/api/psur` routes are public (no Clerk) but rate-limited by the caps
-above; demo runs are traced under the `psur-demo` tenant in Postgres.
+The `/api/psur` routes require sign-in (Clerk/JWT bearer token) and are
+additionally rate-limited by the caps above; runs are traced under the
+signed-in caller's tenant in Postgres.
 
 ## Deploy
 
