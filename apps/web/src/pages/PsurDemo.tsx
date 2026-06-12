@@ -1,51 +1,56 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, ReactNode, SetStateAction } from 'react';
 import { Link } from 'wouter';
+import { SignInButton, SignUpButton, useAuth } from '@clerk/clerk-react';
 import { createAuthenticatedSse } from '../lib/queryClient.js';
+import {
+  SIMULATED_DEFAULTS,
+  runPsurSimulation,
+  type ArtifactInfo,
+  type ColumnSpec,
+  type CompleteInfo,
+  type Defaults,
+  type InputDefault,
+  type JsonInput,
+  type SimArtifact,
+  type SimRunResult,
+  type TableInput,
+  type TraceResponse,
+} from '../lib/psurSimulation.js';
 import { SmarticusWordmark } from '../components/ui/logos.js';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
 
 /**
- * /demo/psur — public four-step walkthrough of the PSUR demo.
+ * /demo/psur — the PSUR walkthrough, in two modes:
+ *
+ * LIVE (signed in, or dev without Clerk): the real generation pipeline behind
+ * /api/psur, streamed over authenticated SSE, with graph-grounded decision
+ * traces written under the caller's tenant.
+ *
+ * SIMULATION (signed out): the identical four-step experience, driven by a
+ * scripted client-side engine. Every conclusion is recomputed from the
+ * visitor's edited inputs, the hash chain is real SHA-256 built and verified
+ * locally, and the downloadable draft is watermarked SIMULATED on every page.
+ * Nothing leaves the browser; sign-up unlocks the real engine.
  *
  * 1. Intro    — the 2-weeks-to-20-minutes story.
  * 2. Inputs   — editable mock data pack (content editable, structure locked).
- * 3. Run      — live SSE stream: phases, section agents A–M, decision ticker.
+ * 3. Run      — live stream: phases, section agents A–M, decision ticker.
  * 4. Results  — artifact downloads, validation summary, and the hero artifact:
  *               the hash-chained decision trace with a verification badge.
- *
- * Only the active step is on screen; a slim progress rail shows position.
  */
 
 const API_BASE: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000';
 
-/** Public SSE reader — same helper the app uses, with no auth token. */
-const streamSse = createAuthenticatedSse(async () => null);
+/** Clerk is mounted by main.tsx only when the publishable key exists. */
+const clerkAvailable = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+type DemoMode = 'live' | 'simulation';
+type GetToken = () => Promise<string | null>;
 
 // ---------------------------------------------------------------------------
-// Contract types (mirror apps/api/src/psur/schemas.ts)
+// Contract types local to this page
 // ---------------------------------------------------------------------------
-
-interface ColumnSpec {
-  name: string;
-  type: string;
-  required: boolean;
-}
-interface TableInput {
-  kind: 'table';
-  columns: ColumnSpec[];
-  rows: Record<string, unknown>[];
-}
-interface JsonInput {
-  kind: 'json';
-  value: Record<string, unknown>;
-}
-type InputDefault = TableInput | JsonInput;
-
-interface Defaults {
-  period: { start: string; end: string };
-  inputs: Record<string, InputDefault>;
-}
 
 interface DecisionTick {
   seq: number;
@@ -53,36 +58,6 @@ interface DecisionTick {
   reason: string;
   basis: string[];
   section?: string;
-}
-
-interface ArtifactInfo {
-  name: string;
-  content_type: string;
-  size_bytes: number;
-}
-interface CompleteInfo {
-  artifacts: ArtifactInfo[];
-  validation: { passed: boolean; error_count: number };
-}
-
-interface TraceEntryView {
-  sequenceNumber: number;
-  eventType: string;
-  decision?: string;
-  humanSummary?: string;
-  reasons?: string[];
-  currentHash: string;
-  regulatoryContext?: {
-    citations?: string[];
-    obligationIds?: string[];
-    unresolved_citation?: string[];
-    section?: string;
-  };
-}
-interface TraceResponse {
-  processInstanceId: string;
-  entries: TraceEntryView[];
-  verification: { valid: boolean; verifiedEntries: number; totalEntries: number };
 }
 
 const PHASES = [
@@ -163,14 +138,29 @@ function cellToString(value: unknown): string {
   return String(value);
 }
 
-async function publicJson<T>(path: string, init?: RequestInit): Promise<{ status: number; body: T }> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
-  });
-  const text = await res.text();
-  const body = (text ? JSON.parse(text) : undefined) as T;
-  return { status: res.status, body };
+/** JSON helper that attaches the Clerk bearer token when one is available. */
+function createJsonClient(getToken: GetToken) {
+  return async function json<T>(path: string, init?: RequestInit): Promise<{ status: number; body: T }> {
+    const token = await getToken();
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...((init?.headers as Record<string, string>) ?? {}),
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+    const text = await res.text();
+    const body = (text ? JSON.parse(text) : undefined) as T;
+    return { status: res.status, body };
+  };
+}
+
+function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ---------------------------------------------------------------------------
@@ -185,7 +175,7 @@ function Chip({
   title,
 }: {
   children: ReactNode;
-  tone?: 'neutral' | 'active' | 'done' | 'warn';
+  tone?: 'neutral' | 'active' | 'done' | 'warn' | 'sim';
   title?: string;
 }) {
   const palette: Record<string, CSSProperties> = {
@@ -193,6 +183,8 @@ function Chip({
     active: { borderColor: 'var(--orange)', color: 'var(--orange)', background: 'var(--paper)' },
     done: { borderColor: 'var(--orange)', color: '#fff', background: 'var(--orange)' },
     warn: { borderColor: 'var(--err)', color: 'var(--err)', background: 'var(--paper)' },
+    // Simulation: on-brand orange, dashed — unmistakably "not the real thing".
+    sim: { borderColor: 'var(--orange)', borderStyle: 'dashed', color: 'var(--orange)', background: 'var(--paper)' },
   };
   return (
     <span
@@ -226,6 +218,55 @@ function SectionHeading({ eyebrow, title, body }: { eyebrow: string; title: stri
       {body && (
         <p style={{ margin: '14px 0 0', maxWidth: 660, fontSize: 15.5, lineHeight: 1.55, color: 'var(--ink-2)' }}>{body}</p>
       )}
+    </div>
+  );
+}
+
+/** Sign-up / sign-in pair (modal when Clerk is mounted, pricing link otherwise). */
+function AuthCtaButtons({ compact = false }: { compact?: boolean }) {
+  const size: CSSProperties = compact ? { fontSize: 12.5, padding: '7px 14px' } : {};
+  if (!clerkAvailable) {
+    return (
+      <Link href="/pricing" className="btn btn-ghost" style={{ textDecoration: 'none', ...size }}>
+        See pricing
+      </Link>
+    );
+  }
+  return (
+    <span style={{ display: 'inline-flex', gap: 10, flexWrap: 'wrap' }}>
+      <SignUpButton mode="modal">
+        <button className="btn btn-orange" style={size}>
+          Create a free account
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+      </SignUpButton>
+      <SignInButton mode="modal">
+        <button className="btn btn-ghost" style={size}>Sign in</button>
+      </SignInButton>
+    </span>
+  );
+}
+
+/** Persistent strip shown in simulation mode — never lets the visitor mistake the simulation for the real run. */
+function SimulationBanner() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 14,
+        padding: '12px 28px',
+        borderBottom: '1px solid var(--rule)',
+        background: 'var(--paper-deep)',
+      }}
+    >
+      <Chip tone="sim">Simulation</Chip>
+      <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)', flex: 1, minWidth: 280 }}>
+        Everything on this page is a scripted simulation that runs entirely in your browser — no AI agents,
+        no obligation graph, and nothing leaves this page. The real engine is reserved for signed-in users.
+      </span>
+      <AuthCtaButtons compact />
     </div>
   );
 }
@@ -301,12 +342,16 @@ function ProgressRail({ step }: { step: StepId }) {
 // Step 1: Intro
 // ---------------------------------------------------------------------------
 
-function IntroStep({ onStart }: { onStart: () => void }) {
+function IntroStep({ mode, onStart }: { mode: DemoMode; onStart: () => void }) {
   return (
     <div style={{ maxWidth: 760 }}>
       <SectionHeading
-        eyebrow="The keynote demo"
-        title="A PSUR takes two weeks to assemble. Watch one draft itself in under 20 minutes."
+        eyebrow={mode === 'simulation' ? 'The keynote demo · simulation' : 'The keynote demo'}
+        title={
+          mode === 'simulation'
+            ? 'A PSUR takes two weeks to assemble. Watch a simulated one draft itself in under a minute.'
+            : 'A PSUR takes two weeks to assemble. Watch one draft itself in under 20 minutes.'
+        }
       />
       <p style={{ margin: '18px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
         A <strong style={{ color: 'var(--ink)' }}>Periodic Safety Update Report (PSUR)</strong> is the
@@ -315,25 +360,58 @@ function IntroStep({ onStart }: { onStart: () => void }) {
         benefit–risk conclusion, all reconciled against the risk file. Assembling one by hand takes a
         quality team a minimum of two weeks.
       </p>
-      <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
-        This demo runs the real generation pipeline on a realistic mock data pack and produces a
-        human-review-ready draft in under 20 minutes — a <strong style={{ color: 'var(--ink)' }}>99%
-        reduction in data-to-draft time</strong>. The downloadable report is the proof of capability. The
-        product is what you will watch being built alongside it: a{' '}
-        <strong style={{ color: 'var(--ink)' }}>hash-chained decision trace</strong>, grounded in the
-        obligation graph, where every decision cites a reason and, where a regulation genuinely drives
-        it, the regulation itself.
-      </p>
+      {mode === 'simulation' ? (
+        <>
+          <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+            What you are about to watch is a <strong style={{ color: 'var(--ink)' }}>faithful, fully
+            simulated replay</strong> of our real generation pipeline — the same four steps, the same 13
+            section agents (A–M), the same decision ticker. The statistics, the EU MDR Article 88 trend
+            finding, and the benefit–risk conclusion are all <strong style={{ color: 'var(--ink)' }}>recomputed
+            live from the data you can edit in step 2</strong>. The hash chain at the end is real SHA-256,
+            built and verified in your browser. The draft you download is watermarked SIMULATED on every page.
+          </p>
+          <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+            The real engine — grounded LLM section agents, the obligation knowledge graph, and an auditable
+            decision trace written under your own tenant — runs only for signed-in users.
+          </p>
+        </>
+      ) : (
+        <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+          This demo runs the real generation pipeline on a realistic mock data pack and produces a
+          human-review-ready draft in under 20 minutes — a <strong style={{ color: 'var(--ink)' }}>99%
+          reduction in data-to-draft time</strong>. The downloadable report is the proof of capability. The
+          product is what you will watch being built alongside it: a{' '}
+          <strong style={{ color: 'var(--ink)' }}>hash-chained decision trace</strong>, grounded in the
+          obligation graph, where every decision cites a reason and, where a regulation genuinely drives
+          it, the regulation itself.
+        </p>
+      )}
       <ol style={{ margin: '20px 0 0', paddingLeft: 18, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.8 }}>
-        <li>Review (and edit) the mock inputs — content is editable, structure is locked.</li>
+        <li>
+          Review (and edit) the mock inputs — content is editable, structure is locked.
+          {mode === 'simulation' && ' Push the numbers around: the simulation recomputes its conclusions from your edits.'}
+        </li>
         <li>Watch the pipeline stream live: phases, 13 section agents (A–M), and a decision ticker.</li>
         <li>Download the draft and inspect the verified decision trace.</li>
       </ol>
-      <div style={{ marginTop: 28 }}>
+      <div style={{ marginTop: 28, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         <button className="btn btn-orange" onClick={onStart}>
-          Start
+          {mode === 'simulation' ? 'Run the simulation' : 'Start'}
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
+        {mode === 'simulation' && clerkAvailable && (
+          <span style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>
+            or{' '}
+            <SignUpButton mode="modal">
+              <button
+                style={{ border: 0, background: 'transparent', padding: 0, color: 'var(--orange)', cursor: 'pointer', font: 'inherit', textDecoration: 'underline' }}
+              >
+                create a free account
+              </button>
+            </SignUpButton>{' '}
+            to run the real engine on this same data pack.
+          </span>
+        )}
       </div>
     </div>
   );
@@ -522,6 +600,7 @@ function JsonEditor({
 }
 
 function InputsStep({
+  mode,
   defaults,
   edited,
   setEdited,
@@ -529,6 +608,7 @@ function InputsStep({
   onBack,
   onRun,
 }: {
+  mode: DemoMode;
   defaults: Defaults | null;
   edited: Record<string, InputDefault>;
   setEdited: Dispatch<SetStateAction<Record<string, InputDefault>>>;
@@ -571,7 +651,11 @@ function InputsStep({
       <SectionHeading
         eyebrow="Step 2 — Inputs"
         title="The mock data pack."
-        body="Content is editable; structure is locked. Change any number or narrative and the run — and its traced calculations — will change with it. Columns and field names cannot be added, removed, or renamed; structural edits are rejected with a precise error."
+        body={
+          mode === 'simulation'
+            ? 'Content is editable; structure is locked. This is where the simulation earns its keep: change any number — add complaint rows until the rate crosses the PMS-plan trend threshold, for instance — and the Article 88 trend finding and the benefit–risk conclusion will recompute from your edits.'
+            : 'Content is editable; structure is locked. Change any number or narrative and the run — and its traced calculations — will change with it. Columns and field names cannot be added, removed, or renamed; structural edits are rejected with a precise error.'
+        }
       />
       <div style={{ ...mono, fontSize: 11, color: 'var(--ink-3)', marginTop: 14 }}>
         REPORTING PERIOD {defaults.period.start} → {defaults.period.end}
@@ -623,7 +707,7 @@ function InputsStep({
       <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
         <button className="btn btn-ghost" onClick={onBack}>Back</button>
         <button className="btn btn-orange" onClick={onRun}>
-          Run the pipeline
+          {mode === 'simulation' ? 'Run the simulation' : 'Run the pipeline'}
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </div>
@@ -644,15 +728,21 @@ interface RunState {
 }
 
 function RunStep({
+  mode,
   runState,
   starting,
   startError,
+  speed,
+  onSpeedChange,
   onRetry,
   onBack,
 }: {
+  mode: DemoMode;
   runState: RunState;
   starting: boolean;
   startError: string | null;
+  speed: number;
+  onSpeedChange: (next: number) => void;
   onRetry: () => void;
   onBack: () => void;
 }) {
@@ -671,10 +761,45 @@ function RunStep({
   return (
     <div>
       <SectionHeading
-        eyebrow="Step 3 — Run"
-        title={starting ? 'Starting the pipeline…' : 'The pipeline is running.'}
-        body="Real LLM runtime. Deterministic statistics are pre-computed and consumed verbatim by 13 section agents (A–M). Every decision below is appended to the hash chain as it happens — grounded in the obligation graph."
+        eyebrow={mode === 'simulation' ? 'Step 3 — Run · simulation' : 'Step 3 — Run'}
+        title={
+          mode === 'simulation'
+            ? 'The simulation is running.'
+            : starting
+              ? 'Starting the pipeline…'
+              : 'The pipeline is running.'
+        }
+        body={
+          mode === 'simulation'
+            ? 'A scripted replay of the real pipeline — no model calls, nothing leaves your browser. The statistics, the trend finding, and every decision below were recomputed from the inputs you just edited, and each one is appended to a real SHA-256 hash chain as it happens.'
+            : 'Real LLM runtime. Deterministic statistics are pre-computed and consumed verbatim by 13 section agents (A–M). Every decision below is appended to the hash chain as it happens — grounded in the obligation graph.'
+        }
       />
+
+      {mode === 'simulation' && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
+          <span style={{ ...mono, fontSize: 10, textTransform: 'uppercase', color: 'var(--ink-4)' }}>Playback</span>
+          {[1, 4].map((s) => (
+            <button
+              key={s}
+              onClick={() => onSpeedChange(s)}
+              style={{
+                ...mono,
+                fontSize: 10.5,
+                padding: '4px 11px',
+                borderRadius: 999,
+                cursor: 'pointer',
+                border: '1px solid',
+                borderColor: speed === s ? 'var(--orange)' : 'var(--rule)',
+                background: speed === s ? 'var(--orange)' : 'transparent',
+                color: speed === s ? '#fff' : 'var(--ink-3)',
+              }}
+            >
+              {s}×
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Phase stepper */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 22 }}>
@@ -725,8 +850,9 @@ function RunStep({
       <div style={{ marginTop: 26 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>
           Decision ticker · {runState.decisions.length} traced
+          {mode === 'simulation' && ' · simulated'}
         </div>
-        <div style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-2)', maxHeight: 340, overflowY: 'auto' }}>
+        <div aria-live="polite" style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-2)', maxHeight: 340, overflowY: 'auto' }}>
           {runState.decisions.length === 0 && (
             <div style={{ padding: 18, fontSize: 13.5, color: 'var(--ink-4)' }}>
               Waiting for the first traced decision…
@@ -742,7 +868,13 @@ function RunStep({
               <p style={{ margin: '6px 0 8px', fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)' }}>{d.reason}</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                 {d.basis.map((b) => (
-                  <Chip key={b} tone="active">{b}</Chip>
+                  <Chip
+                    key={b}
+                    tone={mode === 'simulation' ? 'sim' : 'active'}
+                    title={mode === 'simulation' ? 'Simulated citation — illustrative only, not resolved against the obligation graph' : undefined}
+                  >
+                    {b}
+                  </Chip>
                 ))}
               </div>
             </div>
@@ -764,14 +896,16 @@ function RunStep({
 // ---------------------------------------------------------------------------
 
 function ResultsStep({
-  runId,
+  mode,
   complete,
   trace,
+  onDownload,
   onRestart,
 }: {
-  runId: string;
+  mode: DemoMode;
   complete: CompleteInfo;
   trace: TraceResponse | null;
+  onDownload: (name: string) => void;
   onRestart: () => void;
 }) {
   const verification = trace?.verification ?? null;
@@ -780,45 +914,52 @@ function ResultsStep({
   return (
     <div>
       <SectionHeading
-        eyebrow="Step 4 — Results"
-        title="Draft delivered. Trace verified."
-        body="Download the human-review-ready draft below. Then inspect the hero artifact: the hash-chained decision trace — every decision with its reason and its obligation citations."
+        eyebrow={mode === 'simulation' ? 'Step 4 — Results · simulation' : 'Step 4 — Results'}
+        title={mode === 'simulation' ? 'Simulated draft delivered. Local chain verified.' : 'Draft delivered. Trace verified.'}
+        body={
+          mode === 'simulation'
+            ? 'Download the watermarked simulated draft below — its numbers and conclusions came from your edited inputs. Then inspect the decision chain: every simulated decision was hashed with SHA-256 and the full chain re-verified, right here in your browser.'
+            : 'Download the human-review-ready draft below. Then inspect the hero artifact: the hash-chained decision trace — every decision with its reason and its obligation citations.'
+        }
       />
 
-      {/* Validation + artifacts */}
+      {/* Validation + verification badges */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 20, alignItems: 'center' }}>
+        {mode === 'simulation' && <Chip tone="sim">Simulated run</Chip>}
         <Chip tone={complete.validation.passed ? 'done' : 'warn'}>
           Validation {complete.validation.passed ? 'passed' : 'failed'} · {complete.validation.error_count} error(s)
         </Chip>
         {verification && (
           <Chip tone={verification.valid ? 'done' : 'warn'} title={`${verification.verifiedEntries}/${verification.totalEntries} entries verified`}>
             {verification.valid
-              ? `Hash chain verified · ${verification.verifiedEntries} entries`
+              ? mode === 'simulation'
+                ? `Hash chain verified locally · ${verification.verifiedEntries} entries`
+                : `Hash chain verified · ${verification.verifiedEntries} entries`
               : 'Hash chain verification FAILED'}
           </Chip>
         )}
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 18 }}>
-        {complete.artifacts.map((a) => (
-          <a
+        {complete.artifacts.map((a: ArtifactInfo) => (
+          <button
             key={a.name}
             className="btn btn-ghost"
-            style={{ textDecoration: 'none', fontSize: 13 }}
-            href={`${API_BASE}/api/psur/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(a.name)}`}
+            style={{ fontSize: 13 }}
+            onClick={() => onDownload(a.name)}
           >
             ↓ {a.name}
             <span style={{ ...mono, fontSize: 10, color: 'var(--ink-4)', marginLeft: 6 }}>
               {(a.size_bytes / 1024).toFixed(0)} KB
             </span>
-          </a>
+          </button>
         ))}
       </div>
 
       {/* Decision trace — the hero artifact */}
       <div style={{ marginTop: 30 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>
-          The decision trace · {decisions.length} decisions
+          The decision trace · {decisions.length} decisions{mode === 'simulation' && ' · simulated'}
         </div>
         <div style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-2)', maxHeight: 420, overflowY: 'auto' }}>
           {decisions.map((e) => {
@@ -843,6 +984,12 @@ function ResultsStep({
                       unresolved · {c}
                     </Chip>
                   ))}
+                  {mode === 'simulation' &&
+                    (ctx.citations ?? []).map((c) => (
+                      <Chip key={c} tone="sim" title="Simulated citation — illustrative only, not resolved against the obligation graph">
+                        {c}
+                      </Chip>
+                    ))}
                 </div>
                 <div style={{ ...mono, fontSize: 9.5, color: 'var(--ink-4)', marginTop: 8, wordBreak: 'break-all' }}>
                   sha256 {e.currentHash.slice(0, 24)}…
@@ -856,22 +1003,48 @@ function ResultsStep({
         </div>
       </div>
 
-      {/* Audit pack / trace explorer */}
-      <div style={{ marginTop: 22, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
-        {trace && (
-          <Link
-            href={`/app/trails/${trace.processInstanceId}`}
-            className="btn btn-ghost"
-            style={{ textDecoration: 'none', fontSize: 13 }}
-          >
-            Open in Trace Explorer + export Audit Pack (sign-in required)
-          </Link>
-        )}
-        <button className="btn btn-orange" onClick={onRestart}>Run it again</button>
-      </div>
+      {mode === 'simulation' ? (
+        /* The conversion moment: the simulation just proved the experience —
+           the real engine is one sign-up away. */
+        <div
+          style={{
+            marginTop: 30,
+            border: '1px dashed var(--orange)',
+            borderRadius: 'var(--r-2)',
+            padding: '24px 26px',
+            maxWidth: 720,
+          }}
+        >
+          <div className="eyebrow" style={{ marginBottom: 10 }}>What you just watched was a simulation</div>
+          <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--ink-2)' }}>
+            No AI was called and no regulation was actually consulted — but the real engine produces exactly
+            this experience with <strong style={{ color: 'var(--ink)' }}>grounded LLM section agents</strong>,
+            citations resolved against the <strong style={{ color: 'var(--ink)' }}>obligation knowledge
+            graph</strong>, and a decision trace written under your own tenant that an auditor can verify.
+            Create a free account and run it on this same data pack.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 18, alignItems: 'center' }}>
+            <AuthCtaButtons />
+            <button className="btn btn-ghost" onClick={onRestart}>Replay the simulation</button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ marginTop: 22, display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'center' }}>
+          {trace && (
+            <Link
+              href={`/app/trails/${trace.processInstanceId}`}
+              className="btn btn-ghost"
+              style={{ textDecoration: 'none', fontSize: 13 }}
+            >
+              Open in Trace Explorer + export Audit Pack
+            </Link>
+          )}
+          <button className="btn btn-orange" onClick={onRestart}>Run it again</button>
+        </div>
+      )}
       {trace && (
         <p style={{ ...mono, fontSize: 10.5, color: 'var(--ink-4)', marginTop: 12 }}>
-          PROCESS INSTANCE {trace.processInstanceId}
+          {mode === 'simulation' ? 'SIMULATED PROCESS INSTANCE' : 'PROCESS INSTANCE'} {trace.processInstanceId}
         </p>
       )}
     </div>
@@ -890,8 +1063,11 @@ const EMPTY_RUN_STATE: RunState = {
   busy: false,
 };
 
-export function PsurDemo() {
+function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }) {
   const [step, setStep] = useState<StepId>('intro');
+
+  const apiJson = useMemo(() => createJsonClient(getToken), [getToken]);
+  const streamSse = useMemo(() => createAuthenticatedSse(getToken), [getToken]);
 
   // Inputs
   const [defaults, setDefaults] = useState<Defaults | null>(null);
@@ -905,16 +1081,36 @@ export function PsurDemo() {
   const [runState, setRunState] = useState<RunState>(EMPTY_RUN_STATE);
   const [complete, setComplete] = useState<CompleteInfo | null>(null);
   const [trace, setTrace] = useState<TraceResponse | null>(null);
+  const [simArtifacts, setSimArtifacts] = useState<SimArtifact[]>([]);
   const abortRef = useRef<AbortController | null>(null);
 
-  // Fetch the mock pack when entering the inputs step (once).
+  // Simulation playback speed (1× scripted, 4× fast-forward).
+  const [speed, setSpeedState] = useState(1);
+  const speedRef = useRef(1);
+  const setSpeed = useCallback((next: number) => {
+    speedRef.current = next;
+    setSpeedState(next);
+  }, []);
+
+  // Load the data pack when entering the inputs step (once).
+  // Simulation mode is instant and offline; live mode fetches from the API.
   useEffect(() => {
     if (step !== 'inputs' || defaults || loadError) return;
+    if (mode === 'simulation') {
+      const sim = clone(SIMULATED_DEFAULTS);
+      setDefaults(sim);
+      setEdited(clone(sim.inputs));
+      return;
+    }
     let cancelled = false;
     (async () => {
       try {
-        const { status, body } = await publicJson<Defaults>('/api/psur/defaults');
+        const { status, body } = await apiJson<Defaults>('/api/psur/defaults');
         if (cancelled) return;
+        if (status === 401) {
+          setLoadError('Your session has expired. Sign in again to run the real pipeline.');
+          return;
+        }
         if (status !== 200) {
           setLoadError('The PSUR demo service did not respond. Please try again shortly.');
           return;
@@ -928,18 +1124,96 @@ export function PsurDemo() {
     return () => {
       cancelled = true;
     };
-  }, [step, defaults, loadError]);
+  }, [step, defaults, loadError, mode, apiJson]);
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  const startRun = useCallback(async () => {
-    if (!defaults) return;
-    setStep('run');
-    setStarting(true);
+  /** Shared SSE/sim event reducer for the run view. */
+  const applyRunEvent = useCallback((ev: Record<string, unknown>) => {
+    const kind = ev.kind;
+    if (kind === 'progress') {
+      const phase = ev.phase as Phase;
+      const status = ev.status as Status;
+      const section = typeof ev.section === 'string' ? ev.section : undefined;
+      setRunState((s) => {
+        const next: RunState = { ...s, phases: { ...s.phases, [phase]: status } };
+        if (section) {
+          const letter = section.charAt(0).toUpperCase();
+          next.sections = { ...s.sections, [letter]: status };
+        }
+        return next;
+      });
+    } else if (kind === 'decision') {
+      const tick: DecisionTick = {
+        seq: Number(ev.seq ?? 0),
+        decision: String(ev.decision ?? ''),
+        reason: String(ev.reason ?? ''),
+        basis: Array.isArray(ev.regulatory_basis) ? (ev.regulatory_basis as string[]) : [],
+        section: typeof ev.section === 'string' ? ev.section : undefined,
+      };
+      setRunState((s) =>
+        s.decisions.some((d) => d.seq === tick.seq) ? s : { ...s, decisions: [...s.decisions, tick] },
+      );
+    } else if (kind === 'error') {
+      const message = typeof ev.message === 'string' ? ev.message : 'The pipeline reported an error.';
+      setRunState((s) => ({ ...s, error: message, busy: message.toLowerCase().includes('busy') }));
+    }
+  }, []);
+
+  const resetRunOutputs = useCallback(() => {
     setStartError(null);
     setRunState(EMPTY_RUN_STATE);
     setComplete(null);
     setTrace(null);
+    setSimArtifacts([]);
+  }, []);
+
+  // -- Simulated run (signed out): scripted, local, abortable ---------------
+  const startSimulatedRun = useCallback(async () => {
+    if (!defaults) return;
+    abortRef.current?.abort();
+    setStep('run');
+    setStarting(false);
+    resetRunOutputs();
+
+    const abort = new AbortController();
+    abortRef.current = abort;
+
+    let result: SimRunResult | null = null;
+    try {
+      result = await runPsurSimulation({
+        period: defaults.period,
+        inputs: edited,
+        signal: abort.signal,
+        speed: () => speedRef.current,
+        onEvent: (ev) => applyRunEvent(ev as unknown as Record<string, unknown>),
+      });
+    } catch {
+      setRunState((s) => ({ ...s, error: 'The simulation hit an unexpected error. Run it again.' }));
+      return;
+    }
+    if (!result) return; // aborted by restart/unmount
+
+    setSimArtifacts(result.artifacts);
+    setRunId(result.processInstanceId);
+    setTrace(result.trace);
+    setComplete({
+      artifacts: result.artifacts.map((a) => ({
+        name: a.name,
+        content_type: a.contentType,
+        size_bytes: a.sizeBytes,
+      })),
+      validation: result.validation,
+    });
+    setStep('results');
+  }, [defaults, edited, applyRunEvent, resetRunOutputs]);
+
+  // -- Live run (signed in): the real pipeline over authenticated SSE -------
+  const startLiveRun = useCallback(async () => {
+    if (!defaults) return;
+    setStep('run');
+    setStarting(true);
+    resetRunOutputs();
 
     const payload = {
       period: defaults.period,
@@ -953,16 +1227,21 @@ export function PsurDemo() {
 
     let createdRunId: string;
     try {
-      const { status, body } = await publicJson<{
+      const { status, body } = await apiJson<{
         runId?: string;
         processInstanceId?: string;
         error?: string;
         detail?: unknown;
       }>('/api/psur/runs', { method: 'POST', body: JSON.stringify(payload) });
 
+      if (status === 401) {
+        setStartError('Your session has expired. Sign in again to run the real pipeline.');
+        setStarting(false);
+        return;
+      }
       if (status === 409) {
         setRunState((s) => ({ ...s, busy: true }));
-        setStartError('Another visitor is running the demo right now — it only runs one PSUR at a time. Please try again in a few minutes.');
+        setStartError('Another run is in progress right now — the demo only runs one PSUR at a time. Please try again in a few minutes.');
         setStarting(false);
         return;
       }
@@ -1014,38 +1293,13 @@ export function PsurDemo() {
             return;
           }
           const ev = raw as Record<string, unknown>;
-          const kind = ev.kind;
-          if (kind === 'progress') {
-            const phase = ev.phase as Phase;
-            const status = ev.status as Status;
-            const section = typeof ev.section === 'string' ? ev.section : undefined;
-            setRunState((s) => {
-              const next: RunState = { ...s, phases: { ...s.phases, [phase]: status } };
-              if (section) {
-                const letter = section.charAt(0).toUpperCase();
-                next.sections = { ...s.sections, [letter]: status };
-              }
-              return next;
-            });
-          } else if (kind === 'decision') {
-            const tick: DecisionTick = {
-              seq: Number(ev.seq ?? 0),
-              decision: String(ev.decision ?? ''),
-              reason: String(ev.reason ?? ''),
-              basis: Array.isArray(ev.regulatory_basis) ? (ev.regulatory_basis as string[]) : [],
-              section: typeof ev.section === 'string' ? ev.section : undefined,
-            };
-            setRunState((s) =>
-              s.decisions.some((d) => d.seq === tick.seq) ? s : { ...s, decisions: [...s.decisions, tick] },
-            );
-          } else if (kind === 'complete') {
+          if (ev.kind === 'complete') {
             completed = {
               artifacts: (ev.artifacts as ArtifactInfo[]) ?? [],
               validation: (ev.validation as CompleteInfo['validation']) ?? { passed: false, error_count: 0 },
             };
-          } else if (kind === 'error') {
-            const message = typeof ev.message === 'string' ? ev.message : 'The pipeline reported an error.';
-            setRunState((s) => ({ ...s, error: message, busy: message.toLowerCase().includes('busy') }));
+          } else {
+            applyRunEvent(ev);
           }
         },
       });
@@ -1058,7 +1312,7 @@ export function PsurDemo() {
     if (completed) {
       setComplete(completed);
       try {
-        const { status, body } = await publicJson<TraceResponse>(
+        const { status, body } = await apiJson<TraceResponse>(
           `/api/psur/runs/${encodeURIComponent(createdRunId)}/trace`,
         );
         if (status === 200) setTrace(body);
@@ -1067,17 +1321,47 @@ export function PsurDemo() {
       }
       setStep('results');
     }
-  }, [defaults, edited]);
+  }, [defaults, edited, apiJson, streamSse, applyRunEvent, resetRunOutputs]);
+
+  const startRun = useCallback(() => {
+    if (mode === 'simulation') void startSimulatedRun();
+    else void startLiveRun();
+  }, [mode, startSimulatedRun, startLiveRun]);
+
+  // -- Artifact downloads ----------------------------------------------------
+  // Simulation: serve the locally generated content. Live: authenticated
+  // fetch → blob (plain <a href> can't carry the bearer token).
+  const downloadArtifact = useCallback(
+    async (name: string) => {
+      if (mode === 'simulation') {
+        const artifact = simArtifacts.find((a) => a.name === name);
+        if (artifact) saveBlob(new Blob([artifact.content], { type: artifact.contentType }), name);
+        return;
+      }
+      if (!runId) return;
+      const token = await getToken();
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/psur/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(name)}`,
+          { headers },
+        );
+        if (!res.ok) return;
+        saveBlob(await res.blob(), name);
+      } catch {
+        // Download silently unavailable; the run view still holds the trace.
+      }
+    },
+    [mode, simArtifacts, runId, getToken],
+  );
 
   const restart = useCallback(() => {
     abortRef.current?.abort();
     setRunId(null);
-    setRunState(EMPTY_RUN_STATE);
-    setComplete(null);
-    setTrace(null);
-    setStartError(null);
+    resetRunOutputs();
     setStep('inputs');
-  }, []);
+  }, [resetRunOutputs]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--paper)', color: 'var(--ink)', display: 'flex', flexDirection: 'column' }}>
@@ -1095,7 +1379,15 @@ export function PsurDemo() {
           <SmarticusWordmark size={15} tagline={false} />
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <span className="eyebrow">PSUR demo · data → draft in 20 minutes</span>
+          <span className="eyebrow">
+            {mode === 'simulation' ? 'PSUR demo · simulation mode' : 'PSUR demo · data → draft in 20 minutes'}
+          </span>
+          <Chip tone={mode === 'live' ? 'done' : 'sim'}>{mode === 'live' ? 'Live pipeline' : 'Simulation'}</Chip>
+          {mode === 'live' && clerkAvailable && (
+            <Link href="/app" className="btn btn-ghost" style={{ textDecoration: 'none', fontSize: 12.5, padding: '7px 14px' }}>
+              Command Center
+            </Link>
+          )}
           <ThemeToggle />
         </div>
       </nav>
@@ -1104,33 +1396,83 @@ export function PsurDemo() {
         <ProgressRail step={step} />
       </div>
 
+      {mode === 'simulation' && <SimulationBanner />}
+
       <main style={{ flex: 1, padding: '36px 28px 64px', maxWidth: 1040, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-        {step === 'intro' && <IntroStep onStart={() => setStep('inputs')} />}
+        {step === 'intro' && <IntroStep mode={mode} onStart={() => setStep('inputs')} />}
         {step === 'inputs' && (
           <InputsStep
+            mode={mode}
             defaults={defaults}
             edited={edited}
             setEdited={setEdited}
             loadError={loadError}
             onBack={() => setStep('intro')}
-            onRun={() => void startRun()}
+            onRun={startRun}
           />
         )}
         {step === 'run' && (
           <RunStep
+            mode={mode}
             runState={runState}
             starting={starting}
             startError={startError}
-            onRetry={() => void startRun()}
+            speed={speed}
+            onSpeedChange={setSpeed}
+            onRetry={startRun}
             onBack={() => setStep('inputs')}
           />
         )}
-        {step === 'results' && runId && complete && (
-          <ResultsStep runId={runId} complete={complete} trace={trace} onRestart={restart} />
+        {step === 'results' && complete && (
+          <ResultsStep
+            mode={mode}
+            complete={complete}
+            trace={trace}
+            onDownload={(name) => void downloadArtifact(name)}
+            onRestart={restart}
+          />
         )}
       </main>
     </div>
   );
+}
+
+function DemoSplash() {
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: 'var(--paper)',
+        color: 'var(--ink)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 16,
+      }}
+    >
+      <SmarticusWordmark size={16} tagline={false} />
+      <span style={{ ...mono, fontSize: 11, textTransform: 'uppercase', color: 'var(--ink-3)' }}>
+        Preparing the demo…
+      </span>
+    </div>
+  );
+}
+
+/** Picks the mode from auth state; remounts the core on sign-in so a visitor who converts mid-demo lands cleanly in the live pipeline. */
+function ClerkAwarePsurDemo() {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+  if (!isLoaded) return <DemoSplash />;
+  const mode: DemoMode = isSignedIn ? 'live' : 'simulation';
+  return <PsurDemoCore key={mode} mode={mode} getToken={getToken} />;
+}
+
+export function PsurDemo() {
+  if (!clerkAvailable) {
+    // Dev without Clerk: mirror the app shell's open-access behaviour.
+    return <PsurDemoCore mode="live" getToken={async () => null} />;
+  }
+  return <ClerkAwarePsurDemo />;
 }
 
 export default PsurDemo;
