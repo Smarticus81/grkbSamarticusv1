@@ -13,6 +13,8 @@
  * The hash chain is real cryptography over simulated decisions.
  */
 
+import { buildPsurModel, renderPsurDocx, renderPsurHtml, renderPsurPdf } from './psurDocuments.js';
+
 // ---------------------------------------------------------------------------
 // Contract types (mirror apps/api/src/psur/schemas.ts — shared with PsurDemo)
 // ---------------------------------------------------------------------------
@@ -85,7 +87,7 @@ export interface SimArtifact {
   name: string;
   contentType: string;
   sizeBytes: number;
-  content: string;
+  blob: Blob;
 }
 
 export interface SimRunResult {
@@ -93,6 +95,8 @@ export interface SimRunResult {
   artifacts: SimArtifact[];
   validation: { passed: boolean; error_count: number };
   trace: TraceResponse;
+  /** Rendered document for the inline results preview. */
+  previewHtml: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -442,147 +446,10 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// The simulated PSUR document (watermarked, MDCG 2022-21 structure)
+// The simulated PSUR document lives in psurDocuments.ts (model + HTML preview
+// + PDF + DOCX renderers, all watermarked SIMULATED).
 // ---------------------------------------------------------------------------
 
-function esc(value: unknown): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function tableHtml(input: InputDefault | undefined): string {
-  if (!input || input.kind !== 'table' || input.rows.length === 0) {
-    return '<p class="muted">No records in the reporting period.</p>';
-  }
-  const head = input.columns.map((c) => `<th>${esc(c.name.replace(/_/g, ' '))}</th>`).join('');
-  const body = input.rows
-    .map((row) => `<tr>${input.columns.map((c) => `<td>${esc(row[c.name])}</td>`).join('')}</tr>`)
-    .join('\n');
-  return `<table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
-}
-
-export function buildSimulatedPsurHtml(
-  period: { start: string; end: string },
-  inputs: Record<string, InputDefault>,
-  stats: SimDerivedStats,
-): string {
-  const device = valueOf(inputs, 'device_context');
-  const pmsPlan = valueOf(inputs, 'pms_plan');
-  const previous = valueOf(inputs, 'previous_psur');
-  const clinicalSafety = valueOf(inputs, 'clinical_safety');
-  const clinicalPerformance = valueOf(inputs, 'clinical_performance');
-
-  const trendNarrative = stats.trendSignal
-    ? `The complaint rate of <strong>${stats.ratePer10k}</strong> per 10,000 units sold <strong>exceeds</strong> the PMS-plan trend threshold of ${stats.threshold} per 10,000. A statistically significant increase within the meaning of EU MDR Article 88 is identified; a trend report and escalation to the risk management file are required before this report can conclude a favourable benefit–risk profile.`
-    : `The complaint rate of <strong>${stats.ratePer10k}</strong> per 10,000 units sold remains below the PMS-plan trend threshold of ${stats.threshold} per 10,000 (previous period: ${stats.prevRatePer10k}). No statistically significant increase within the meaning of EU MDR Article 88 is identified.`;
-
-  const conclusion = stats.benefitRiskFavourable
-    ? `the benefit–risk determination for the ${esc(device.device_name)} remains <strong>favourable</strong>. The known and foreseeable risks documented in the risk management file are outweighed by the clinical benefit of controlled infusion therapy, and no new hazards were identified in the reporting period.`
-    : `the benefit–risk determination for the ${esc(device.device_name)} <strong>cannot be confirmed as favourable without further action</strong>. The complaint-trend signal identified in Section E must be investigated, the risk management file updated, and corrective measures evaluated before the next periodic review.`;
-
-  const imdrfRows = stats.topImdrf
-    .map((t) => `<tr><td>${esc(t.code)}</td><td>${esc(t.label)}</td><td>${t.count}</td></tr>`)
-    .join('\n');
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<title>SIMULATED PSUR — ${esc(device.device_name)}</title>
-<style>
-  body { font: 14px/1.65 Georgia, 'Times New Roman', serif; color: #1b1b1b; max-width: 840px; margin: 0 auto; padding: 40px 28px 80px; }
-  h1 { font-size: 26px; letter-spacing: -0.01em; margin: 18px 0 4px; }
-  h2 { font-size: 17px; margin: 36px 0 10px; border-bottom: 1px solid #d8d4cc; padding-bottom: 6px; }
-  p { margin: 10px 0; }
-  table { border-collapse: collapse; width: 100%; font-size: 12.5px; margin: 12px 0; }
-  th, td { border: 1px solid #d8d4cc; padding: 6px 9px; text-align: left; vertical-align: top; }
-  th { background: #f4f1ea; font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .meta { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 12px; color: #555; }
-  .muted { color: #777; font-style: italic; }
-  .sim-banner { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff3e8; border: 2px solid #e8632b; border-radius: 8px; padding: 14px 18px; font-size: 13px; color: #8a3a12; }
-  .sim-banner strong { color: #c2491a; }
-  .watermark { position: fixed; left: 50%; pointer-events: none; transform: translateX(-50%) rotate(-28deg); font: 700 110px 'Helvetica Neue', Arial, sans-serif; letter-spacing: 0.12em; color: rgba(232, 99, 43, 0.07); white-space: nowrap; z-index: 0; }
-  main { position: relative; z-index: 1; }
-  @media print { .watermark { position: fixed; } }
-</style>
-</head>
-<body>
-<div class="watermark" style="top: 22%">SIMULATION</div>
-<div class="watermark" style="top: 58%">SIMULATION</div>
-<div class="watermark" style="top: 92%">SIMULATION</div>
-<main>
-<div class="sim-banner">
-  <strong>SIMULATED OUTPUT — NOT A REGULATORY DOCUMENT.</strong>
-  This draft was generated locally in your browser by the Smarticus PSUR demo simulation.
-  No AI pipeline, obligation-graph lookup, or regulatory review was performed.
-  Sign in at the demo to run the real engine, which produces an auditable, graph-grounded draft with a verifiable decision trace.
-</div>
-
-<h1>Periodic Safety Update Report (Simulated Draft)</h1>
-<p class="meta">
-  Device: <strong>${esc(device.device_name)}</strong> · Manufacturer: ${esc(device.manufacturer)} ·
-  Basic UDI-DI: ${esc(device.basic_udi_di)} · Risk class: ${esc(device.risk_class)} ·
-  Notified body: ${esc(device.notified_body)}<br/>
-  Reporting period: <strong>${esc(period.start)} → ${esc(period.end)}</strong> ·
-  Prepared per EU MDR Article 86 and MDCG 2022-21 · PMS plan: ${esc(pmsPlan.plan_id)}
-</p>
-
-<h2>Section A — Executive Summary</h2>
-<p>During the reporting period, ${fmt(stats.unitsSold)} units were sold across ${esc(Array.isArray(device.markets) ? (device.markets as unknown[]).join(', ') : device.markets)}. ${fmt(stats.complaintCount)} complaints were received (${stats.ratePer10k} per 10,000 units; previous period ${stats.prevRatePer10k}), of which ${fmt(stats.seriousCount)} were serious. ${fmt(stats.fscaCount)} field safety corrective action(s) were undertaken and ${fmt(stats.capaTotal)} CAPA(s) were processed (${fmt(stats.capaOpen)} remaining open). Based on the totality of post-market surveillance data summarised in Sections C–L, ${conclusion}</p>
-
-<h2>Section B — Device Description and Classification</h2>
-<p>${esc(device.device_name)} (${esc(device.intended_purpose)}). Class ${esc(device.risk_class)} under EU MDR Annex VIII; certificate ${esc(device.certificate_number)} issued by ${esc(device.notified_body)}. Per Article 86(1), the PSUR for this class is updated at least annually and submitted to the notified body.</p>
-
-<h2>Section C — Sales, Usage and Population Exposure</h2>
-<p>Total units sold in the period: <strong>${fmt(stats.unitsSold)}</strong>. Exposure is estimated per unit placed on the market; usage assumptions follow the PMS plan.</p>
-${tableHtml(inputs.sales)}
-
-<h2>Section D — Serious Incidents and Field Safety Corrective Actions</h2>
-<p>${fmt(stats.seriousCount)} serious incident(s) were recorded in the period. ${esc(clinicalSafety.summary)}</p>
-${tableHtml(inputs.fsca)}
-
-<h2>Section E — Complaint Data and Trend Analysis (Article 88)</h2>
-<p>${trendNarrative}</p>
-<table><thead><tr><th>IMDRF code</th><th>Term</th><th>Count</th></tr></thead><tbody>${imdrfRows || '<tr><td colspan="3">No coded complaints.</td></tr>'}</tbody></table>
-${tableHtml(inputs.complaints)}
-
-<h2>Section F — Corrective and Preventive Actions</h2>
-<p>${fmt(stats.capaTotal)} CAPA(s) were linked to post-market data in the period; ${fmt(stats.capaOpen)} remain open and are tracked to closure under ISO 13485 §8.5.2.</p>
-${tableHtml(inputs.capa)}
-
-<h2>Section G — External Vigilance and Similar-Device Events</h2>
-<p>${fmt(stats.externalEventCount)} relevant event(s) were identified in external vigilance databases. None indicate a new hazard not already addressed by the risk management file.</p>
-${tableHtml(inputs.external_events)}
-
-<h2>Section H — Literature Review</h2>
-<p>${fmt(stats.literatureCount)} publication(s) met the inclusion criteria of the literature search protocol.</p>
-${tableHtml(inputs.literature)}
-
-<h2>Section I — Follow-up on Previous PSUR</h2>
-<p>The previous PSUR (period ending ${esc(previous.period_end)}) concluded a ${esc(previous.benefit_risk_conclusion)} benefit–risk profile with a complaint rate of ${stats.prevRatePer10k} per 10,000 units. Open actions carried forward: ${esc(previous.open_actions)}.</p>
-
-<h2>Section J — Clinical Safety Summary</h2>
-<p>Serious incidents reported: ${esc(clinicalSafety.serious_incidents_reported)}; deaths: ${esc(clinicalSafety.deaths)}. ${esc(clinicalSafety.summary)}</p>
-
-<h2>Section K — Clinical Performance Summary</h2>
-<p>Specified flow accuracy: ${esc(clinicalPerformance.flow_accuracy_spec)}; observed: ${esc(clinicalPerformance.observed_flow_accuracy)}. ${esc(clinicalPerformance.summary)}</p>
-
-<h2>Section L — Risk Management File Reconciliation</h2>
-<p>${fmt(stats.ractControlled)} of ${fmt(stats.ractTotal)} risk-file line items are in a controlled state. Post-market data in this period were reconciled against the risk analysis per ISO 14971 §10; no new hazards required addition to the file${stats.trendSignal ? ', except that the Article 88 trend signal in Section E mandates a risk-file review before closure' : ''}.</p>
-${tableHtml(inputs.ract)}
-
-<h2>Section M — Benefit–Risk Determination</h2>
-<p>Considering the sales volume (Section C), incident and FSCA record (Section D), complaint trend (Section E), CAPA status (Section F), external vigilance (Section G), literature (Section H) and clinical evidence (Sections J–K), ${conclusion}</p>
-
-<hr style="margin-top:40px; border:0; border-top:1px solid #d8d4cc;"/>
-<p class="meta">Generated by the Smarticus PSUR demo — <strong>simulation mode</strong>. Every number above was recomputed locally from the (editable) mock data pack; the narrative is template-based, not AI-generated. The real engine drafts each section with grounded LLM agents and records a hash-chained, graph-cited decision trace.</p>
-</main>
-</body>
-</html>`;
-}
 
 // ---------------------------------------------------------------------------
 // The scripted run
@@ -906,9 +773,11 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     // -- Rendering -----------------------------------------------------------
     phase('rendering', 'started');
     await tick(900);
+    const model = buildPsurModel(period, inputs, stats);
+    const previewHtml = renderPsurHtml(model);
     await emitDecision({
       decision: 'Draft rendered with SIMULATION watermark',
-      reason: 'Print-ready HTML rendered. Because this is a signed-out simulation, the document is watermarked SIMULATED on every page.',
+      reason: 'Document model rendered to PDF and DOCX. Because this is a signed-out simulation, every page is watermarked SIMULATED.',
       basis: [],
     });
     await tick(400);
@@ -916,14 +785,15 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
 
     // -- Artifacts ------------------------------------------------------------
     phase('artifacts', 'started');
+    // PDF + DOCX are produced in the browser while the phase shows active.
+    const [pdfBlob, docxBlob] = await Promise.all([renderPsurPdf(model), renderPsurDocx(model)]);
     await tick(600);
 
     await chain.append({
       eventType: 'psur.run.completed',
-      humanSummary: `Simulated PSUR run completed: 2 artifact(s), validation passed (0 errors). Benefit–risk: ${stats.benefitRiskFavourable ? 'favourable' : 'requires action'}.`,
+      humanSummary: `Simulated PSUR run completed: 3 artifact(s), validation passed (0 errors). Benefit–risk: ${stats.benefitRiskFavourable ? 'favourable' : 'requires action'}.`,
     });
 
-    const html = buildSimulatedPsurHtml(period, inputs, stats);
     const verification = await chain.verify();
     const trace: TraceResponse = { processInstanceId, entries: chain.entries, verification };
     const traceJson = JSON.stringify(
@@ -931,19 +801,26 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
       null,
       2,
     );
+    const traceBlob = new Blob([traceJson], { type: 'application/json' });
 
     const artifacts: SimArtifact[] = [
       {
-        name: 'psur-draft-SIMULATED.html',
-        contentType: 'text/html',
-        sizeBytes: new Blob([html]).size,
-        content: html,
+        name: 'psur-draft-SIMULATED.pdf',
+        contentType: 'application/pdf',
+        sizeBytes: pdfBlob.size,
+        blob: pdfBlob,
+      },
+      {
+        name: 'psur-draft-SIMULATED.docx',
+        contentType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        sizeBytes: docxBlob.size,
+        blob: docxBlob,
       },
       {
         name: 'decision-trace-SIMULATED.json',
         contentType: 'application/json',
-        sizeBytes: new Blob([traceJson]).size,
-        content: traceJson,
+        sizeBytes: traceBlob.size,
+        blob: traceBlob,
       },
     ];
 
@@ -955,7 +832,7 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     });
     phase('artifacts', 'completed');
 
-    return { processInstanceId, artifacts, validation, trace };
+    return { processInstanceId, artifacts, validation, trace, previewHtml };
   } catch (err) {
     if (err instanceof DOMException && err.name === 'AbortError') return null;
     throw err;
