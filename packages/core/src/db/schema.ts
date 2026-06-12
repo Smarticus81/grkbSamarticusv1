@@ -54,6 +54,11 @@ export const traceEventTypeEnum = pgEnum('trace_event_type', [
   'COMPLIANCE_CHECK_PASSED',
   'COMPLIANCE_CHECK_FAILED',
   'COMPLIANCE_PIPELINE_COMPLETED',
+  // PSUR demo pipeline events (bridged from the Python PSUR service)
+  'psur.run.started',
+  'psur.decision',
+  'psur.run.completed',
+  'psur.run.failed',
 ]);
 
 export const evidenceStatusEnum = pgEnum('evidence_status', [

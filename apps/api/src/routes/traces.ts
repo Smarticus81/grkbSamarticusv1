@@ -4,7 +4,11 @@ import { renderAuditPackMarkdown, type ObligationLookup } from '@regground/core'
 import { getContext } from '../context.js';
 
 const router: Router = Router();
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// Plain UUIDs (sandbox/process runs) plus the PSUR demo's prefixed form
+// ("psur-demo-<uuid>") so demo chains are viewable/exportable via the same
+// trace surface (TraceExplorer, audit-pack export) for signed-in users.
+const UUID_RE =
+  /^(psur-demo-)?[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isUuid(value: string): boolean {
   return UUID_RE.test(value);

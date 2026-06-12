@@ -391,6 +391,31 @@ export class ObligationGraph {
     }
   }
 
+  /**
+   * Find obligation IDs whose citation/title/text match every term group.
+   * Each group is an OR-list of case-insensitive substrings; all groups must
+   * match (AND across groups). Used by the citation→obligation resolver to
+   * ground free-text regulatory citations in real graph nodes.
+   */
+  async findObligationIdsByTerms(termGroups: string[][]): Promise<string[]> {
+    if (termGroups.length === 0) return [];
+    const groups = termGroups.map((g) => g.map((t) => t.toLowerCase()));
+    const session = this.session();
+    try {
+      const result = await session.run(
+        `MATCH (o:Obligation)
+         WITH o, toLower(coalesce(o.sourceCitation, '') + ' ' + coalesce(o.title, '') + ' ' + coalesce(o.text, '')) AS haystack
+         WHERE all(grp IN $groups WHERE any(term IN grp WHERE haystack CONTAINS term))
+         RETURN o.obligationId AS id
+         ORDER BY id`,
+        { groups },
+      );
+      return result.records.map((r) => r.get('id') as string);
+    } finally {
+      await session.close();
+    }
+  }
+
   async getRequiredEvidence(obligationId: string): Promise<string[]> {
     const session = this.session();
     try {
