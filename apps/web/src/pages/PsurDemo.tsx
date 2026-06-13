@@ -71,6 +71,23 @@ interface LogLine {
   text: string;
 }
 
+/** One row from GET /api/psur/runs — the signed-in user's durable run history. */
+interface PsurRunSummary {
+  runId: string;
+  processInstanceId: string;
+  status: 'running' | 'completed' | 'failed';
+  deviceName: string | null;
+  reportType: string | null;
+  periodStart: string;
+  periodEnd: string;
+  validationPassed: boolean | null;
+  errorCount: number | null;
+  artifacts: ArtifactInfo[];
+  error: string | null;
+  createdAt: string;
+  finishedAt: string | null;
+}
+
 const PHASES = [
   'discovery',
   'parsing',
@@ -1330,6 +1347,161 @@ function ResultsStep({
 }
 
 // ---------------------------------------------------------------------------
+// Your runs — durable, per-user run history
+// ---------------------------------------------------------------------------
+
+function fmtRunDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function YourRunsPanel({
+  runs,
+  loading,
+  busyRunId,
+  onReopen,
+  onDownload,
+  onRefresh,
+}: {
+  runs: PsurRunSummary[];
+  loading: boolean;
+  busyRunId: string | null;
+  onReopen: (run: PsurRunSummary) => void;
+  onDownload: (runId: string, name: string) => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <div
+      style={{
+        marginTop: 36,
+        maxWidth: 760,
+        border: '1px solid var(--rule)',
+        borderRadius: 14,
+        background: 'var(--paper)',
+        padding: '20px 22px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div className="eyebrow">Your runs</div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          style={{
+            ...mono,
+            fontSize: 10.5,
+            textTransform: 'uppercase',
+            padding: '5px 11px',
+            borderRadius: 999,
+            border: '1px solid var(--rule)',
+            background: 'var(--paper)',
+            color: 'var(--ink-3)',
+            cursor: loading ? 'default' : 'pointer',
+            opacity: loading ? 0.6 : 1,
+          }}
+        >
+          {loading ? 'Loading…' : 'Refresh'}
+        </button>
+      </div>
+
+      {runs.length === 0 ? (
+        <p style={{ margin: '14px 0 0', fontSize: 14, lineHeight: 1.55, color: 'var(--ink-3)' }}>
+          {loading ? 'Loading your run history…' : 'No saved runs yet. Every PSUR you run is saved here automatically.'}
+        </p>
+      ) : (
+        <ul style={{ listStyle: 'none', margin: '16px 0 0', padding: 0, display: 'grid', gap: 12 }}>
+          {runs.map((run) => {
+            const isBusy = busyRunId === run.runId;
+            const completed = run.status === 'completed';
+            const docx = run.artifacts.find((a) => a.name.toLowerCase().endsWith('.docx'));
+            return (
+              <li
+                key={run.runId}
+                style={{
+                  border: '1px solid var(--rule)',
+                  borderRadius: 10,
+                  padding: '14px 16px',
+                  display: 'grid',
+                  gap: 10,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <Chip tone={completed ? 'done' : run.status === 'failed' ? 'warn' : 'active'}>{run.status}</Chip>
+                  {completed && run.validationPassed != null && (
+                    <Chip tone={run.validationPassed ? 'done' : 'warn'}>
+                      {run.validationPassed ? 'validation passed' : `${run.errorCount ?? 0} validation errors`}
+                    </Chip>
+                  )}
+                  <span style={{ ...mono, fontSize: 10.5, color: 'var(--ink-4)' }}>{fmtRunDate(run.createdAt)}</span>
+                </div>
+
+                <div style={{ fontSize: 14, lineHeight: 1.5, color: 'var(--ink-2)' }}>
+                  <strong style={{ color: 'var(--ink-1)' }}>{run.deviceName ?? 'PSUR run'}</strong>
+                  {run.reportType ? ` · ${run.reportType}` : ''}
+                  <span style={{ color: 'var(--ink-3)' }}>{` · ${run.periodStart} → ${run.periodEnd}`}</span>
+                </div>
+
+                {run.status === 'failed' && run.error && (
+                  <div style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--err)' }}>{run.error}</div>
+                )}
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => onReopen(run)}
+                    disabled={!completed || isBusy}
+                    style={{
+                      ...mono,
+                      fontSize: 10.5,
+                      textTransform: 'uppercase',
+                      padding: '6px 13px',
+                      borderRadius: 999,
+                      border: '1px solid var(--orange)',
+                      background: 'var(--orange)',
+                      color: '#fff',
+                      cursor: !completed || isBusy ? 'default' : 'pointer',
+                      opacity: !completed || isBusy ? 0.5 : 1,
+                    }}
+                  >
+                    {isBusy ? 'Opening…' : 'Re-open'}
+                  </button>
+                  {completed && docx && (
+                    <button
+                      type="button"
+                      onClick={() => onDownload(run.runId, docx.name)}
+                      style={{
+                        ...mono,
+                        fontSize: 10.5,
+                        textTransform: 'uppercase',
+                        padding: '6px 13px',
+                        borderRadius: 999,
+                        border: '1px solid var(--rule)',
+                        background: 'var(--paper)',
+                        color: 'var(--ink-2)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Download DOCX
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
@@ -1367,6 +1539,11 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const logIdRef = useRef(0);
+
+  // Your runs — durable, per-user history (live mode only).
+  const [pastRuns, setPastRuns] = useState<PsurRunSummary[]>([]);
+  const [pastRunsLoading, setPastRunsLoading] = useState(false);
+  const [reopeningRunId, setReopeningRunId] = useState<string | null>(null);
 
   // Simulation playback speed (1× scripted, 4× fast-forward).
   const [speed, setSpeedState] = useState(1);
@@ -1653,6 +1830,74 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
     else void startLiveRun();
   }, [mode, startSimulatedRun, startLiveRun]);
 
+  // -- Your runs: durable per-user history (live mode only) ------------------
+  const refreshRuns = useCallback(async () => {
+    if (mode !== 'live') return;
+    setPastRunsLoading(true);
+    try {
+      const { status, body } = await apiJson<{ runs?: PsurRunSummary[] }>('/api/psur/runs');
+      if (status === 200 && Array.isArray(body.runs)) setPastRuns(body.runs);
+    } catch {
+      // History is best-effort; the live pipeline still works without it.
+    } finally {
+      setPastRunsLoading(false);
+    }
+  }, [mode, apiJson]);
+
+  // Load history on the intro step, and refresh it after each run finishes.
+  useEffect(() => {
+    if (mode !== 'live') return;
+    if (step === 'intro' || step === 'results') void refreshRuns();
+  }, [mode, step, refreshRuns]);
+
+  const downloadFromRun = useCallback(
+    async (forRunId: string, name: string) => {
+      const token = await getToken();
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/psur/runs/${encodeURIComponent(forRunId)}/artifacts/${encodeURIComponent(name)}`,
+          { headers },
+        );
+        if (!res.ok) return;
+        saveBlob(await res.blob(), name);
+      } catch {
+        // Download silently unavailable.
+      }
+    },
+    [getToken],
+  );
+
+  const reopenRun = useCallback(
+    async (run: PsurRunSummary) => {
+      if (run.status !== 'completed') return;
+      setReopeningRunId(run.runId);
+      abortRef.current?.abort();
+      resetRunOutputs();
+      setPreviewHtml(null);
+      setRunId(run.runId);
+      setComplete({
+        artifacts: run.artifacts,
+        validation: {
+          passed: run.validationPassed ?? false,
+          error_count: run.errorCount ?? 0,
+        },
+      });
+      try {
+        const { status, body } = await apiJson<TraceResponse>(
+          `/api/psur/runs/${encodeURIComponent(run.runId)}/trace`,
+        );
+        setTrace(status === 200 ? body : null);
+      } catch {
+        setTrace(null);
+      }
+      setReopeningRunId(null);
+      setStep('results');
+    },
+    [apiJson, resetRunOutputs],
+  );
+
   // Live mode: pull the first HTML artifact for the inline document preview.
   useEffect(() => {
     if (mode !== 'live' || step !== 'results' || previewHtml || !complete || !runId) return;
@@ -1753,6 +1998,16 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
 
       <main style={{ flex: 1, padding: '36px 28px 64px', maxWidth: 1040, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
         {step === 'intro' && <IntroStep mode={mode} onStart={() => setStep('inputs')} />}
+        {step === 'intro' && mode === 'live' && (
+          <YourRunsPanel
+            runs={pastRuns}
+            loading={pastRunsLoading}
+            busyRunId={reopeningRunId}
+            onReopen={(run) => void reopenRun(run)}
+            onDownload={(forRunId, name) => void downloadFromRun(forRunId, name)}
+            onRefresh={() => void refreshRuns()}
+          />
+        )}
         {step === 'inputs' && (
           <InputsStep
             mode={mode}

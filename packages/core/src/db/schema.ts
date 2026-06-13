@@ -672,6 +672,46 @@ export const apiKeys = pgTable(
   }),
 );
 
+// === PSUR Runs — per-user durable record of PSUR generator runs ===
+// The hash-chained decision trace lives in decision_trace_entries (keyed by
+// processInstanceId / traceId). This table is the operational index that lets a
+// signed-in user list and re-open THEIR runs — it survives API restarts (the
+// in-memory bridge registry does not) and is always scoped by userId + tenantId.
+export const psurRuns = pgTable(
+  'psur_runs',
+  {
+    // The Python service run id (12-hex). Unique per run.
+    runId: varchar('run_id', { length: 64 }).primaryKey(),
+    // Trace-chain identifiers (durable link to decision_trace_entries).
+    processInstanceId: varchar('process_instance_id', { length: 128 }).notNull(),
+    traceId: varchar('trace_id', { length: 128 }).notNull(),
+    // Ownership — every query is scoped by these.
+    tenantId: varchar('tenant_id', { length: 128 }).notNull(),
+    userId: varchar('user_id', { length: 128 }).notNull(),
+    // Run metadata.
+    status: varchar('status', { length: 16 }).default('running').notNull(), // running | completed | failed
+    deviceName: text('device_name'),
+    reportType: varchar('report_type', { length: 64 }),
+    periodStart: varchar('period_start', { length: 32 }).notNull(),
+    periodEnd: varchar('period_end', { length: 32 }).notNull(),
+    validationPassed: boolean('validation_passed'),
+    errorCount: integer('error_count'),
+    artifacts: jsonb('artifacts')
+      .$type<Array<{ name: string; content_type: string; size_bytes: number }>>()
+      .default([])
+      .notNull(),
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+  },
+  (t) => ({
+    userTimeIdx: index('psur_runs_user_time_idx').on(t.userId, t.createdAt),
+    tenantTimeIdx: index('psur_runs_tenant_time_idx').on(t.tenantId, t.createdAt),
+    instIdx: index('psur_runs_inst_idx').on(t.processInstanceId),
+  }),
+);
+
 export type Workspace = typeof workspaces.$inferSelect;
 export type NewWorkspace = typeof workspaces.$inferInsert;
 export type ProcessDefinitionRow = typeof processDefinitions.$inferSelect;
@@ -708,3 +748,5 @@ export type TenantQuotaRow = typeof tenantQuotas.$inferSelect;
 export type NewTenantQuota = typeof tenantQuotas.$inferInsert;
 export type ManagedAgentRunRow = typeof managedAgentRuns.$inferSelect;
 export type NewManagedAgentRun = typeof managedAgentRuns.$inferInsert;
+export type PsurRunRow = typeof psurRuns.$inferSelect;
+export type NewPsurRun = typeof psurRuns.$inferInsert;

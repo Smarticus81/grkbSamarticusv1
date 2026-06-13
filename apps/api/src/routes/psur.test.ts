@@ -182,8 +182,6 @@ const servers: Server[] = [];
 
 async function startHarness(opts: {
   serviceOptions?: FakeServiceOptions;
-  runsPerIpPerDay?: number;
-  maxConcurrentRuns?: number;
 } = {}): Promise<Harness> {
   const trace = new InMemoryTraceService();
   const service = fakePsurService(opts.serviceOptions);
@@ -195,8 +193,6 @@ async function startHarness(opts: {
       fetchImpl: service.fetchImpl,
       traceService: trace as unknown as PsurTraceService,
       resolver: new CitationResolver(mockGraph()),
-      runsPerIpPerDay: opts.runsPerIpPerDay ?? 100,
-      maxConcurrentRuns: opts.maxConcurrentRuns ?? 10,
     }),
   );
   const server = createServer(app);
@@ -303,22 +299,16 @@ describe('POST /api/psur/runs', () => {
     expect(await res.json()).toEqual({ detail });
   });
 
-  it('enforces the per-IP daily run cap with 429', async () => {
-    const h = await startHarness({ runsPerIpPerDay: 1 });
-    expect((await postRun(h.baseUrl)).status).toBe(202);
-    const second = await postRun(h.baseUrl);
-    expect(second.status).toBe(429);
-    const body = (await second.json()) as { error: string };
-    expect(body.error).toMatch(/limit/i);
-  });
-
-  it('enforces the global concurrency cap with 409 demo_busy', async () => {
-    const h = await startHarness({ maxConcurrentRuns: 1 });
-    expect((await postRun(h.baseUrl)).status).toBe(202);
-    const second = await postRun(h.baseUrl);
-    expect(second.status).toBe(409);
-    const body = (await second.json()) as { detail: string };
-    expect(body.detail).toBe('demo_busy');
+  it('allows repeated and concurrent runs without any demo caps', async () => {
+    const h = await startHarness();
+    // No per-IP daily cap and no global concurrency cap: a user can run a PSUR
+    // anytime, and many runs may be in flight at once.
+    const results = await Promise.all([
+      postRun(h.baseUrl),
+      postRun(h.baseUrl),
+      postRun(h.baseUrl),
+    ]);
+    for (const res of results) expect(res.status).toBe(202);
   });
 
   it('passes through upstream 409 demo_busy', async () => {
