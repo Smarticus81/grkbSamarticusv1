@@ -1,7 +1,17 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { randomUUID, createHash } from 'node:crypto';
-import { getDB, schema, eq, desc, and, VALID_SCOPES, ScopeSchema } from '@regground/core';
+import {
+  getDB,
+  schema,
+  eq,
+  desc,
+  and,
+  VALID_SCOPES,
+  ScopeSchema,
+  withTenant,
+  type TenantTransaction,
+} from '@regground/core';
 
 const { apiKeys } = schema;
 
@@ -37,6 +47,10 @@ function requireTenantId(req: Express.Request): string {
   return tenantId;
 }
 
+function tenantDb<T>(tenantId: string, fn: (db: TenantTransaction) => Promise<T>): Promise<T> {
+  return withTenant(getDB(), tenantId, fn);
+}
+
 // ---------------------------------------------------------------------------
 // Validation schemas
 // ---------------------------------------------------------------------------
@@ -61,8 +75,7 @@ const CreateKeySchema = z.object({
 router.get('/', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
-    const db = getDB();
-    const rows = await db
+    const rows = await tenantDb(tenantId, (db) => db
       .select({
         id: apiKeys.id,
         name: apiKeys.name,
@@ -78,7 +91,7 @@ router.get('/', async (req, res) => {
       })
       .from(apiKeys)
       .where(eq(apiKeys.tenantId, tenantId))
-      .orderBy(desc(apiKeys.createdAt));
+      .orderBy(desc(apiKeys.createdAt)));
     res.json(rows);
   } catch (e: unknown) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
@@ -96,12 +109,11 @@ router.post('/', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
     const rawKey = generateApiKey(parsed.data.mode);
-    const db = getDB();
     const expiresAt = parsed.data.expiresInDays
       ? new Date(Date.now() + parsed.data.expiresInDays * 86_400_000)
       : null;
 
-    const [row] = await db
+    const [row] = await tenantDb(tenantId, (db) => db
       .insert(apiKeys)
       .values({
         tenantId,
@@ -114,7 +126,7 @@ router.post('/', async (req, res) => {
         expiresAt,
         metadata: parsed.data.metadata,
       })
-      .returning();
+      .returning());
 
     res.status(201).json({
       id: row!.id,
@@ -142,12 +154,11 @@ router.post('/', async (req, res) => {
 router.patch('/:id/revoke', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
-    const db = getDB();
-    const [row] = await db
+    const [row] = await tenantDb(tenantId, (db) => db
       .update(apiKeys)
       .set({ active: false })
       .where(and(eq(apiKeys.id, req.params.id!), eq(apiKeys.tenantId, tenantId)))
-      .returning();
+      .returning());
     if (!row) return res.status(404).json({ error: 'API key not found' });
     res.json({ id: row.id, active: false });
   } catch (e: unknown) {
@@ -161,12 +172,11 @@ router.patch('/:id/revoke', async (req, res) => {
 router.patch('/:id/activate', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
-    const db = getDB();
-    const [row] = await db
+    const [row] = await tenantDb(tenantId, (db) => db
       .update(apiKeys)
       .set({ active: true })
       .where(and(eq(apiKeys.id, req.params.id!), eq(apiKeys.tenantId, tenantId)))
-      .returning();
+      .returning());
     if (!row) return res.status(404).json({ error: 'API key not found' });
     res.json({ id: row.id, active: true });
   } catch (e: unknown) {
@@ -180,11 +190,10 @@ router.patch('/:id/activate', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
-    const db = getDB();
-    const [row] = await db
+    const [row] = await tenantDb(tenantId, (db) => db
       .delete(apiKeys)
       .where(and(eq(apiKeys.id, req.params.id!), eq(apiKeys.tenantId, tenantId)))
-      .returning();
+      .returning());
     if (!row) return res.status(404).json({ error: 'API key not found' });
     res.status(204).end();
   } catch (e: unknown) {

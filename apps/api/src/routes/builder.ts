@@ -29,6 +29,8 @@ import {
   SemanticContextBroker,
   templateToWorkflowDraft,
   summarizeTemplate,
+  withTenant,
+  type TenantTransaction,
 } from '@regground/core';
 import { listTasks, getTask, ProcessRegistry, registerAllProcesses } from '@regground/sandbox';
 import { synthesizeAgentContext } from '../services/AgentContextSynthesizer.js';
@@ -41,12 +43,20 @@ function isUuid(v: unknown): v is string {
   return typeof v === 'string' && UUID_RE.test(v);
 }
 
+function isUserAttachmentSlot(slot: string): boolean {
+  return !slot.startsWith('__');
+}
+
 const router: Router = Router();
 
 function requireTenantId(req: Express.Request): string {
   const tenantId = req.tenantId;
   if (!tenantId) throw new Error('Missing tenantId on request');
   return tenantId;
+}
+
+function tenantDb<T>(tenantId: string, fn: (db: TenantTransaction) => Promise<T>): Promise<T> {
+  return withTenant(getDB(), tenantId, fn);
 }
 
 const SaveSchema = z.object({
@@ -65,7 +75,9 @@ const SaveSchema = z.object({
 });
 
 const AttachSchema = z.object({
-  slot: z.string().min(1).max(200),
+  slot: z.string().min(1).max(200).refine(isUserAttachmentSlot, {
+    message: 'slot names starting with "__" are reserved for system metadata',
+  }),
   filename: z.string().min(1).max(256),
   content: z.string().max(2_000_000), // ~2MB cap on raw text/JSON
   contentType: z.string().max(128).default('text/plain'),
@@ -75,11 +87,11 @@ const AttachSchema = z.object({
 router.get('/agents', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
-    const rows = await getDB()
+    const rows = await tenantDb(tenantId, (db) => db
       .select()
       .from(builderAgents)
       .where(eq(builderAgents.tenantId, tenantId))
-      .orderBy(desc(builderAgents.updatedAt));
+      .orderBy(desc(builderAgents.updatedAt)));
     res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
@@ -112,11 +124,11 @@ router.get('/agents/:id', async (req, res) => {
     const tenantId = requireTenantId(req);
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: 'id required' });
-    const [row] = await getDB()
+    const [row] = await tenantDb(tenantId, (db) => db
       .select()
       .from(builderAgents)
       .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
-      .limit(1);
+      .limit(1));
     if (!row) return res.status(404).json({ error: 'agent not found' });
     res.json(row);
   } catch (e) {
@@ -130,7 +142,6 @@ router.post('/agents', async (req, res) => {
   if (!parsed.success) return res.status(400).json({ errors: parsed.error.errors });
   try {
     const tenantId = requireTenantId(req);
-    const db = getDB();
     const requiresGroundedRun = parsed.data.deployTarget === 'claude-managed-agents';
     const groundedRunManifest = parsed.data.sourceRunId
       ? await getGroundedRunManifest(parsed.data.sourceRunId, tenantId)
@@ -153,51 +164,85 @@ router.post('/agents', async (req, res) => {
       });
     }
 
-    const [existing] = await db
-      .select()
-      .from(builderAgents)
-      .where(and(eq(builderAgents.tenantId, tenantId), eq(builderAgents.name, parsed.data.name)))
-      .limit(1);
+    const result = await tenantDb(tenantId, async (db) => {
+      const [existing] = await db
+        .select()
+        .from(builderAgents)
+        .where(and(eq(builderAgents.tenantId, tenantId), eq(builderAgents.name, parsed.data.name)))
+        .limit(1);
 
-    if (existing) {
-      // Re-synthesise context only when the user changed something material
-      // (regulations, role, description, riskBand) or never synthesised one.
-      const existingCtx = (existing.attachedData as Record<string, unknown> | null)?.__context as
-        | { generatedAt?: string }
-        | undefined;
-      const materialChanged =
-        JSON.stringify(existing.regulations ?? []) !== JSON.stringify(parsed.data.regulations)
-        || existing.processId !== parsed.data.processId
-        || existing.riskBand !== parsed.data.riskBand
-        || (existing.description ?? null) !== (parsed.data.description ?? null);
-      let nextAttachedData: typeof existing.attachedData = existing.attachedData ?? {};
-      if (!existingCtx || materialChanged) {
-        const ctx = await synthesizeAgentContext({
-          processId: parsed.data.processId,
-          processTitle: parsed.data.processTitle,
-          taskId: parsed.data.taskId ?? null,
-          regulations: parsed.data.regulations,
-          description: parsed.data.description ?? null,
-          riskBand: parsed.data.riskBand,
-        });
-        nextAttachedData = { ...nextAttachedData, __context: ctx };
+      if (existing) {
+        // Re-synthesise context only when the user changed something material
+        // (regulations, role, description, riskBand) or never synthesised one.
+        const existingCtx = (existing.attachedData as Record<string, unknown> | null)?.__context as
+          | { generatedAt?: string }
+          | undefined;
+        const materialChanged =
+          JSON.stringify(existing.regulations ?? []) !== JSON.stringify(parsed.data.regulations)
+          || existing.processId !== parsed.data.processId
+          || existing.riskBand !== parsed.data.riskBand
+          || (existing.description ?? null) !== (parsed.data.description ?? null);
+        let nextAttachedData: typeof existing.attachedData = existing.attachedData ?? {};
+        if (!existingCtx || materialChanged) {
+          const ctx = await synthesizeAgentContext({
+            processId: parsed.data.processId,
+            processTitle: parsed.data.processTitle,
+            taskId: parsed.data.taskId ?? null,
+            regulations: parsed.data.regulations,
+            description: parsed.data.description ?? null,
+            riskBand: parsed.data.riskBand,
+          });
+          nextAttachedData = { ...nextAttachedData, __context: ctx };
+        }
+        if (groundedRunManifest) {
+          nextAttachedData = {
+            ...nextAttachedData,
+            __groundedRunManifest: groundedRunManifest,
+            __input: {
+              filename: 'input.json',
+              sizeBytes: JSON.stringify(groundedRunManifest.inputSnapshot).length,
+              content: JSON.stringify(groundedRunManifest.inputSnapshot, null, 2),
+              contentType: 'application/json',
+              attachedAt: new Date().toISOString(),
+            },
+          };
+        }
+        const [row] = await db
+          .update(builderAgents)
+          .set({
+            processId: parsed.data.processId,
+            processTitle: parsed.data.processTitle,
+            taskId: parsed.data.taskId ?? null,
+            regulations: parsed.data.regulations,
+            evidenceStatus: parsed.data.evidenceStatus,
+            guardrails: parsed.data.guardrails,
+            outputFormat: parsed.data.outputFormat ?? null,
+            deployTarget: parsed.data.deployTarget ?? null,
+            riskBand: parsed.data.riskBand,
+            description: parsed.data.description ?? null,
+            attachedData: nextAttachedData,
+            updatedAt: new Date(),
+          })
+          .where(and(eq(builderAgents.id, existing.id), eq(builderAgents.tenantId, tenantId)))
+          .returning();
+        return { status: 200, row };
       }
-      if (groundedRunManifest) {
-        nextAttachedData = {
-          ...nextAttachedData,
-          __groundedRunManifest: groundedRunManifest,
-          __input: {
-            filename: 'input.json',
-            sizeBytes: JSON.stringify(groundedRunManifest.inputSnapshot).length,
-            content: JSON.stringify(groundedRunManifest.inputSnapshot, null, 2),
-            contentType: 'application/json',
-            attachedAt: new Date().toISOString(),
-          },
-        };
-      }
+
+      const initialCtx = await synthesizeAgentContext({
+        processId: parsed.data.processId,
+        processTitle: parsed.data.processTitle,
+        taskId: parsed.data.taskId ?? null,
+        regulations: parsed.data.regulations,
+        description: parsed.data.description ?? null,
+        riskBand: parsed.data.riskBand,
+      });
+
       const [row] = await db
-        .update(builderAgents)
-        .set({
+        .insert(builderAgents)
+        .values({
+          tenantId,
+          createdBy: isUuid(req.user?.sub) ? req.user!.sub : null,
+          name: parsed.data.name,
           processId: parsed.data.processId,
           processTitle: parsed.data.processTitle,
           taskId: parsed.data.taskId ?? null,
@@ -208,55 +253,24 @@ router.post('/agents', async (req, res) => {
           deployTarget: parsed.data.deployTarget ?? null,
           riskBand: parsed.data.riskBand,
           description: parsed.data.description ?? null,
-          attachedData: nextAttachedData,
-          updatedAt: new Date(),
+          attachedData: groundedRunManifest
+            ? {
+                __context: initialCtx,
+                __groundedRunManifest: groundedRunManifest,
+                __input: {
+                  filename: 'input.json',
+                  sizeBytes: JSON.stringify(groundedRunManifest.inputSnapshot).length,
+                  content: JSON.stringify(groundedRunManifest.inputSnapshot, null, 2),
+                  contentType: 'application/json',
+                  attachedAt: new Date().toISOString(),
+                },
+              }
+            : { __context: initialCtx },
         })
-        .where(eq(builderAgents.id, existing.id))
         .returning();
-      return res.json(row);
-    }
-
-    const initialCtx = await synthesizeAgentContext({
-      processId: parsed.data.processId,
-      processTitle: parsed.data.processTitle,
-      taskId: parsed.data.taskId ?? null,
-      regulations: parsed.data.regulations,
-      description: parsed.data.description ?? null,
-      riskBand: parsed.data.riskBand,
+      return { status: 201, row };
     });
-
-    const [row] = await db
-      .insert(builderAgents)
-      .values({
-        tenantId,
-        createdBy: isUuid(req.user?.sub) ? req.user!.sub : null,
-        name: parsed.data.name,
-        processId: parsed.data.processId,
-        processTitle: parsed.data.processTitle,
-        taskId: parsed.data.taskId ?? null,
-        regulations: parsed.data.regulations,
-        evidenceStatus: parsed.data.evidenceStatus,
-        guardrails: parsed.data.guardrails,
-        outputFormat: parsed.data.outputFormat ?? null,
-        deployTarget: parsed.data.deployTarget ?? null,
-        riskBand: parsed.data.riskBand,
-        description: parsed.data.description ?? null,
-        attachedData: groundedRunManifest
-          ? {
-              __context: initialCtx,
-              __groundedRunManifest: groundedRunManifest,
-              __input: {
-                filename: 'input.json',
-                sizeBytes: JSON.stringify(groundedRunManifest.inputSnapshot).length,
-                content: JSON.stringify(groundedRunManifest.inputSnapshot, null, 2),
-                contentType: 'application/json',
-                attachedAt: new Date().toISOString(),
-              },
-            }
-          : { __context: initialCtx },
-      })
-      .returning();
-    res.status(201).json(row);
+    res.status(result.status).json(result.row);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
@@ -271,11 +285,11 @@ router.patch('/agents/:id', async (req, res) => {
     const tenantId = requireTenantId(req);
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: 'id required' });
-    const [row] = await getDB()
+    const [row] = await tenantDb(tenantId, (db) => db
       .update(builderAgents)
       .set({ name: parsed.data.name.trim(), updatedAt: new Date() })
       .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
-      .returning();
+      .returning());
     if (!row) return res.status(404).json({ error: 'agent not found' });
     res.json(row);
   } catch (e) {
@@ -292,31 +306,34 @@ router.patch('/agents/:id/attach', async (req, res) => {
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: 'id required' });
 
-    const db = getDB();
-    const [existing] = await db
-      .select()
-      .from(builderAgents)
-      .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
-      .limit(1);
-    if (!existing) return res.status(404).json({ error: 'agent not found' });
+    const row = await tenantDb(tenantId, async (db) => {
+      const [existing] = await db
+        .select()
+        .from(builderAgents)
+        .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
+        .limit(1);
+      if (!existing) return null;
 
-    const next = {
-      ...(existing.attachedData ?? {}),
-      [parsed.data.slot]: {
-        filename: parsed.data.filename,
-        sizeBytes: parsed.data.content.length,
-        content: parsed.data.content,
-        contentType: parsed.data.contentType,
-        attachedAt: new Date().toISOString(),
-      },
-    };
-    const evidenceStatus = { ...(existing.evidenceStatus ?? {}), [parsed.data.slot]: 'connected' };
+      const next = {
+        ...(existing.attachedData ?? {}),
+        [parsed.data.slot]: {
+          filename: parsed.data.filename,
+          sizeBytes: parsed.data.content.length,
+          content: parsed.data.content,
+          contentType: parsed.data.contentType,
+          attachedAt: new Date().toISOString(),
+        },
+      };
+      const evidenceStatus = { ...(existing.evidenceStatus ?? {}), [parsed.data.slot]: 'connected' };
 
-    const [row] = await db
-      .update(builderAgents)
-      .set({ attachedData: next, evidenceStatus, updatedAt: new Date() })
-      .where(eq(builderAgents.id, id))
-      .returning();
+      const [updated] = await db
+        .update(builderAgents)
+        .set({ attachedData: next, evidenceStatus, updatedAt: new Date() })
+        .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
+        .returning();
+      return updated;
+    });
+    if (!row) return res.status(404).json({ error: 'agent not found' });
     res.json(row);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
@@ -330,25 +347,31 @@ router.delete('/agents/:id/attach/:slot', async (req, res) => {
     const id = req.params.id;
     const slot = req.params.slot;
     if (!id || !slot) return res.status(400).json({ error: 'id and slot required' });
+    if (!isUserAttachmentSlot(slot)) {
+      return res.status(400).json({ error: 'slot names starting with "__" are reserved for system metadata' });
+    }
 
-    const db = getDB();
-    const [existing] = await db
-      .select()
-      .from(builderAgents)
-      .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
-      .limit(1);
-    if (!existing) return res.status(404).json({ error: 'agent not found' });
+    const row = await tenantDb(tenantId, async (db) => {
+      const [existing] = await db
+        .select()
+        .from(builderAgents)
+        .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
+        .limit(1);
+      if (!existing) return null;
 
-    const nextAttached = { ...(existing.attachedData ?? {}) };
-    delete nextAttached[slot];
-    const nextStatus = { ...(existing.evidenceStatus ?? {}) };
-    if (nextStatus[slot] === 'connected') nextStatus[slot] = 'missing';
+      const nextAttached = { ...(existing.attachedData ?? {}) };
+      delete nextAttached[slot];
+      const nextStatus = { ...(existing.evidenceStatus ?? {}) };
+      if (nextStatus[slot] === 'connected') nextStatus[slot] = 'missing';
 
-    const [row] = await db
-      .update(builderAgents)
-      .set({ attachedData: nextAttached, evidenceStatus: nextStatus, updatedAt: new Date() })
-      .where(eq(builderAgents.id, id))
-      .returning();
+      const [updated] = await db
+        .update(builderAgents)
+        .set({ attachedData: nextAttached, evidenceStatus: nextStatus, updatedAt: new Date() })
+        .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
+        .returning();
+      return updated;
+    });
+    if (!row) return res.status(404).json({ error: 'agent not found' });
     res.json(row);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
@@ -362,11 +385,11 @@ router.post('/agents/:id/launch', async (req, res) => {
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: 'id required' });
 
-    const [agent] = await getDB()
+    const [agent] = await tenantDb(tenantId, (db) => db
       .select()
       .from(builderAgents)
       .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
-      .limit(1);
+      .limit(1));
     if (!agent) return res.status(404).json({ error: 'agent not found' });
     if (!agent.taskId) {
       return res.status(409).json({
@@ -449,10 +472,10 @@ router.delete('/agents/:id', async (req, res) => {
     const tenantId = requireTenantId(req);
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: 'id required' });
-    const [row] = await getDB()
+    const [row] = await tenantDb(tenantId, (db) => db
       .delete(builderAgents)
       .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
-      .returning();
+      .returning());
     if (!row) return res.status(404).json({ error: 'agent not found' });
     res.status(204).end();
   } catch (e) {
@@ -655,7 +678,7 @@ const WorkflowUpdateSchema = z.object({
 router.get('/workflows', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
-    const rows = await getDB()
+    const rows = await tenantDb(tenantId, (db) => db
       .select({
         id: processWorkflows.id,
         name: processWorkflows.name,
@@ -669,7 +692,7 @@ router.get('/workflows', async (req, res) => {
       })
       .from(processWorkflows)
       .where(eq(processWorkflows.tenantId, tenantId))
-      .orderBy(desc(processWorkflows.updatedAt));
+      .orderBy(desc(processWorkflows.updatedAt)));
     res.json(rows);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
@@ -682,11 +705,11 @@ router.get('/workflows/:id', async (req, res) => {
     const tenantId = requireTenantId(req);
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: 'id required' });
-    const [row] = await getDB()
+    const [row] = await tenantDb(tenantId, (db) => db
       .select()
       .from(processWorkflows)
       .where(and(eq(processWorkflows.id, id), eq(processWorkflows.tenantId, tenantId)))
-      .limit(1);
+      .limit(1));
     if (!row) return res.status(404).json({ error: 'workflow not found' });
     res.json(row);
   } catch (e) {
@@ -714,11 +737,11 @@ router.patch('/workflows/:id', async (req, res) => {
     if (v.source !== undefined) patch.source = v.source;
     if (v.sourceTemplateId !== undefined) patch.sourceTemplateId = v.sourceTemplateId;
 
-    const [row] = await getDB()
+    const [row] = await tenantDb(tenantId, (db) => db
       .update(processWorkflows)
       .set(patch)
       .where(and(eq(processWorkflows.id, id), eq(processWorkflows.tenantId, tenantId)))
-      .returning();
+      .returning());
     if (!row) return res.status(404).json({ error: 'workflow not found' });
     res.json(row);
   } catch (e) {
@@ -735,7 +758,7 @@ router.post('/workflows', async (req, res) => {
       return res.status(400).json({ error: 'Invalid request', issues: parsed.error.issues });
     }
     const v = parsed.data;
-    const [row] = await getDB()
+    const [row] = await tenantDb(tenantId, (db) => db
       .insert(processWorkflows)
       .values({
         tenantId,
@@ -759,7 +782,7 @@ router.post('/workflows', async (req, res) => {
           updatedAt: new Date(),
         },
       })
-      .returning();
+      .returning());
     res.status(201).json(row);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
@@ -772,10 +795,10 @@ router.delete('/workflows/:id', async (req, res) => {
     const tenantId = requireTenantId(req);
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: 'id required' });
-    const [row] = await getDB()
+    const [row] = await tenantDb(tenantId, (db) => db
       .delete(processWorkflows)
       .where(and(eq(processWorkflows.id, id), eq(processWorkflows.tenantId, tenantId)))
-      .returning();
+      .returning());
     if (!row) return res.status(404).json({ error: 'workflow not found' });
     res.status(204).end();
   } catch (e) {

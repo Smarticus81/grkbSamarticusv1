@@ -148,7 +148,7 @@ export class InMemoryTraceService {
     return ctx;
   }
 
-  async logEvent(ctx: { processInstanceId: string; traceId: string }, event: any) {
+  async logEvent(ctx: { processInstanceId: string; traceId: string; tenantId?: string }, event: any) {
     const seq = this.seqByTrace.get(ctx.traceId) ?? 0;
     const chain = this.chains.get(ctx.processInstanceId) ?? [];
     const previousHash = seq === 0 ? '0'.repeat(64) : chain[chain.length - 1].currentHash;
@@ -171,7 +171,7 @@ export class InMemoryTraceService {
       complianceAssertion: event.complianceAssertion ?? {},
     };
     const currentHash = DecisionTraceService.computeHash(payload);
-    const entry = { ...payload, currentHash, createdAt: new Date(), id: chain.length };
+    const entry = { ...payload, tenantId: ctx.tenantId, currentHash, createdAt: new Date(), id: chain.length };
     chain.push(entry);
     this.chains.set(ctx.processInstanceId, chain);
     this.byTraceId.set(ctx.traceId, chain);

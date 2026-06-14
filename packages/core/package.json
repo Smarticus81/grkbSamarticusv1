@@ -15,6 +15,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:push": "drizzle-kit push:pg",
+    "db:tenant-upgrade": "tsx src/db/apply-sql.cli.ts src/db/tenant-upgrade.sql",
+    "db:rls": "tsx src/db/apply-sql.cli.ts src/db/rls.sql",
+    "db:secure": "pnpm db:push && pnpm db:tenant-upgrade && pnpm db:rls",
     "seed:graph": "tsx src/graph/seed.cli.ts",
     "embed:graph": "tsx src/graph/embed.cli.ts",
     "check:coverage": "tsx src/graph/coverage.cli.ts"

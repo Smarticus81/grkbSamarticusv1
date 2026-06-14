@@ -13,7 +13,13 @@
  * The hash chain is real cryptography over simulated decisions.
  */
 
-import { buildPsurModel, renderPsurDocx, renderPsurHtml, renderPsurPdf } from './psurDocuments.js';
+import {
+  buildPsurModel,
+  renderPsurDocx,
+  renderPsurHtml,
+  renderPsurPdf,
+  validatePsurModelConsistency,
+} from './psurDocuments.js';
 
 // ---------------------------------------------------------------------------
 // Contract types (mirror apps/api/src/psur/schemas.ts — shared with PsurDemo)
@@ -47,7 +53,7 @@ export interface ArtifactInfo {
 }
 export interface CompleteInfo {
   artifacts: ArtifactInfo[];
-  validation: { passed: boolean; error_count: number };
+  validation: { passed: boolean; error_count: number; errors?: string[] };
 }
 
 export interface TraceEntryView {
@@ -81,7 +87,7 @@ export type SimEvent =
       regulatory_basis: string[];
       section?: string;
     }
-  | { kind: 'complete'; artifacts: ArtifactInfo[]; validation: { passed: boolean; error_count: number } };
+  | { kind: 'complete'; artifacts: ArtifactInfo[]; validation: { passed: boolean; error_count: number; errors?: string[] } };
 
 export interface SimArtifact {
   name: string;
@@ -93,7 +99,7 @@ export interface SimArtifact {
 export interface SimRunResult {
   processInstanceId: string;
   artifacts: SimArtifact[];
-  validation: { passed: boolean; error_count: number };
+  validation: { passed: boolean; error_count: number; errors?: string[] };
   trace: TraceResponse;
   /** Rendered document for the inline results preview. */
   previewHtml: string;
@@ -122,13 +128,17 @@ export const SIMULATED_DEFAULTS: Defaults = {
       ],
       [
         { quarter: '2025-Q1', region: 'EU', units_sold: 18420 },
-        { quarter: '2025-Q1', region: 'Non-EU', units_sold: 6210 },
+        { quarter: '2025-Q1', region: 'UK', units_sold: 2140 },
+        { quarter: '2025-Q1', region: 'Non-EU', units_sold: 4070 },
         { quarter: '2025-Q2', region: 'EU', units_sold: 19105 },
-        { quarter: '2025-Q2', region: 'Non-EU', units_sold: 6885 },
+        { quarter: '2025-Q2', region: 'UK', units_sold: 2385 },
+        { quarter: '2025-Q2', region: 'Non-EU', units_sold: 4500 },
         { quarter: '2025-Q3', region: 'EU', units_sold: 20340 },
-        { quarter: '2025-Q3', region: 'Non-EU', units_sold: 7150 },
+        { quarter: '2025-Q3', region: 'UK', units_sold: 2510 },
+        { quarter: '2025-Q3', region: 'Non-EU', units_sold: 4640 },
         { quarter: '2025-Q4', region: 'EU', units_sold: 21075 },
-        { quarter: '2025-Q4', region: 'Non-EU', units_sold: 7415 },
+        { quarter: '2025-Q4', region: 'UK', units_sold: 2745 },
+        { quarter: '2025-Q4', region: 'Non-EU', units_sold: 4670 },
       ],
     ),
     complaints: table(
@@ -289,6 +299,11 @@ const IMDRF_LABELS: Record<string, string> = {
 
 export interface SimDerivedStats {
   unitsSold: number;
+  ukUnitsSold: number;
+  ukMdrApplies: boolean;
+  reportType: 'PSUR' | 'PMSR';
+  euCadenceCitation: string;
+  ukCadenceCitation: string;
   complaintCount: number;
   seriousCount: number;
   ratePer10k: number;
@@ -321,6 +336,23 @@ function valueOf(inputs: Record<string, InputDefault>, name: string): Record<str
   return input?.kind === 'json' ? input.value : {};
 }
 
+function isUkMarket(value: unknown): boolean {
+  const normalized = String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+  return normalized === 'UK' || normalized === 'GB' || normalized === 'UNITEDKINGDOM' || normalized === 'GREATBRITAIN';
+}
+
+function marketValues(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string') return [];
+  return value
+    .split(/[;,/|]+/)
+    .map((market) => market.trim())
+    .filter(Boolean);
+}
+
 export function deriveSimStats(inputs: Record<string, InputDefault>): SimDerivedStats {
   const sales = rowsOf(inputs, 'sales');
   const complaints = rowsOf(inputs, 'complaints');
@@ -329,6 +361,18 @@ export function deriveSimStats(inputs: Record<string, InputDefault>): SimDerived
   const ract = rowsOf(inputs, 'ract');
 
   const unitsSold = sales.reduce((sum, row) => sum + num(row.units_sold), 0);
+  const ukUnitsSold = sales
+    .filter((row) => isUkMarket(row.region))
+    .reduce((sum, row) => sum + num(row.units_sold), 0);
+  const markets = valueOf(inputs, 'device_context').markets;
+  const ukMdrApplies =
+    ukUnitsSold > 0 ||
+    marketValues(markets).some((m) => isUkMarket(m));
+  const riskClass = String(valueOf(inputs, 'device_context').risk_class ?? '').trim().toUpperCase();
+  const classI = riskClass === 'I' || riskClass === 'CLASS I';
+  const reportType: 'PSUR' | 'PMSR' = classI ? 'PMSR' : 'PSUR';
+  const euCadenceCitation = reportType === 'PMSR' ? 'EU MDR Art. 85' : 'EU MDR Art. 86(1)';
+  const ukCadenceCitation = reportType === 'PMSR' ? 'UK MDR 2024 Reg 44ZL' : 'UK MDR 2024 Reg 44ZM(6)';
   const complaintCount = complaints.length;
   const seriousCount = complaints.filter(
     (row) => String(row.severity ?? '').toLowerCase() === 'serious' || row.patient_harm === true,
@@ -352,6 +396,11 @@ export function deriveSimStats(inputs: Record<string, InputDefault>): SimDerived
 
   return {
     unitsSold,
+    ukUnitsSold,
+    ukMdrApplies,
+    reportType,
+    euCadenceCitation,
+    ukCadenceCitation,
     complaintCount,
     seriousCount,
     ratePer10k,
@@ -458,6 +507,7 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
 interface ScriptDecision {
   decision: string;
   reason: string;
+  reasonOverride?: string;
   basis: string[];
   section?: string;
 }
@@ -615,15 +665,15 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
       kind: 'decision',
       seq,
       decision: d.decision,
-      reason: d.reason,
+      reason: d.reasonOverride ?? d.reason,
       regulatory_basis: d.basis,
       ...(d.section ? { section: d.section } : {}),
     });
     await chain.append({
       eventType: 'psur.decision',
       decision: d.decision,
-      reasons: [d.reason],
-      humanSummary: d.reason,
+      reasons: [d.reasonOverride ?? d.reason],
+      humanSummary: d.reasonOverride ?? d.reason,
       regulatoryContext: { citations: d.basis, ...(d.section ? { section: d.section } : {}) },
     });
   };
@@ -664,9 +714,21 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     await tick(800);
     const device = valueOf(inputs, 'device_context');
     await emitDecision({
-      decision: 'PSUR cadence resolved from device class',
+      decision: `${stats.reportType} cadence resolved from device class`,
       reason: `Device class ${String(device.risk_class ?? 'IIb')} → PSUR updated at least annually and submitted to the notified body.`,
-      basis: ['EU MDR Art. 86(1)'],
+      reasonOverride:
+        stats.reportType === 'PMSR'
+          ? `Device class ${String(device.risk_class ?? 'I')} -> PMSR path selected; report is kept available to competent authorities and updated when necessary.`
+          : `Device class ${String(device.risk_class ?? 'IIb')} -> PSUR path selected; report is updated at least annually and submitted to the notified body.`,
+      basis: [stats.euCadenceCitation],
+    });
+    await tick(500);
+    await emitDecision({
+      decision: stats.ukMdrApplies ? 'UK MDR path activated' : 'UK MDR path not activated',
+      reason: stats.ukMdrApplies
+        ? `${fmt(stats.ukUnitsSold)} UK unit(s) sold or UK market listed in device context -> UK MDR post-market reporting cadence is included in the report.`
+        : 'No UK sales and no UK market in the device context -> UK MDR cadence is not applied to this simulated run.',
+      basis: stats.ukMdrApplies ? [stats.ukCadenceCitation] : [],
     });
     await tick(500);
     await emitDecision({
@@ -774,10 +836,13 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     phase('rendering', 'started');
     await tick(900);
     const model = buildPsurModel(period, inputs, stats);
+    const consistencyAudit = validatePsurModelConsistency(inputs, stats, model);
     const previewHtml = renderPsurHtml(model);
     await emitDecision({
       decision: 'Draft rendered with SIMULATION watermark',
-      reason: 'Document model rendered to PDF and DOCX. Because this is a signed-out simulation, every page is watermarked SIMULATED.',
+      reason: consistencyAudit.passed
+        ? 'Document model rendered to PDF and DOCX after consistency audit: charts, tables, reconciliation rows and conclusions match the edited data pack.'
+        : `Document model rendered with ${consistencyAudit.findings.length} consistency finding(s): ${consistencyAudit.findings.join('; ')}`,
       basis: [],
     });
     await tick(400);
@@ -791,7 +856,7 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
 
     await chain.append({
       eventType: 'psur.run.completed',
-      humanSummary: `Simulated PSUR run completed: 3 artifact(s), validation passed (0 errors). Benefit–risk: ${stats.benefitRiskFavourable ? 'favourable' : 'requires action'}.`,
+      humanSummary: `Simulated PSUR run completed: 3 artifact(s), validation ${consistencyAudit.passed ? 'passed' : 'failed'} (${consistencyAudit.findings.length} error(s)). Benefit–risk: ${stats.benefitRiskFavourable ? 'favourable' : 'requires action'}.`,
     });
 
     const verification = await chain.verify();
@@ -824,7 +889,11 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
       },
     ];
 
-    const validation = { passed: true, error_count: 0 };
+    const validation = {
+      passed: consistencyAudit.passed,
+      error_count: consistencyAudit.findings.length,
+      errors: consistencyAudit.findings,
+    };
     onEvent({
       kind: 'complete',
       artifacts: artifacts.map((a) => ({ name: a.name, content_type: a.contentType, size_bytes: a.sizeBytes })),

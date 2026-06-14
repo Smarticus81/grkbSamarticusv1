@@ -2,9 +2,11 @@ import { useCallback, useMemo } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import {
   createAuthenticatedApi,
+  createAuthenticatedBlob,
   createAuthenticatedSse,
   api as unauthApi,
   type StreamSseOptions,
+  type BlobResponse,
 } from '../lib/queryClient.js';
 
 // Build-time constant — true only when a Clerk publishable key is present.
@@ -14,6 +16,7 @@ const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 interface AuthenticatedApiReturn {
   api: <T>(path: string, init?: RequestInit) => Promise<T>;
+  blob: (path: string, init?: RequestInit) => Promise<BlobResponse>;
   streamSse: (path: string, options: StreamSseOptions) => Promise<void>;
   isSignedIn: boolean;
   orgId: string | null;
@@ -40,9 +43,14 @@ function useClerkApi(): AuthenticatedApiReturn {
     () => createAuthenticatedSse(getTokenStable),
     [getTokenStable],
   );
+  const authenticatedBlob = useMemo(
+    () => createAuthenticatedBlob(getTokenStable),
+    [getTokenStable],
+  );
 
   return {
     api: authenticatedApi,
+    blob: authenticatedBlob,
     streamSse: authenticatedSse,
     isSignedIn: isSignedIn ?? false,
     orgId: orgId ?? null,
@@ -55,8 +63,9 @@ function useClerkApi(): AuthenticatedApiReturn {
 // ---------------------------------------------------------------------------
 function useDevApi(): AuthenticatedApiReturn {
   const stableApi = useMemo(() => unauthApi, []);
-  const streamSse = useMemo(() => createAuthenticatedSse(async () => null), []);
-  return { api: stableApi, streamSse, isSignedIn: false, orgId: null, userId: null };
+  const blob = useMemo(() => createAuthenticatedBlob(async () => null, { requireToken: false }), []);
+  const streamSse = useMemo(() => createAuthenticatedSse(async () => null, { requireToken: false }), []);
+  return { api: stableApi, blob, streamSse, isSignedIn: false, orgId: null, userId: null };
 }
 
 /**

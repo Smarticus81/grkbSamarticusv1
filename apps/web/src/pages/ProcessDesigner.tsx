@@ -17,6 +17,7 @@ import {
   type Icon,
 } from '@phosphor-icons/react';
 import { useAuthenticatedApi } from '../auth/useApi.js';
+import { workspaceScopeKey } from '../lib/workspaceScope.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -367,8 +368,9 @@ function draftToCanvasNodes(draft: WorkflowDraft): CanvasNode[] {
 // ─── Component ────────────────────────────────────────────────────────────
 
 export function ProcessDesigner() {
-  const { api } = useAuthenticatedApi();
+  const { api, orgId, userId } = useAuthenticatedApi();
   const [, navigate] = useLocation();
+  const activeWorkspaceKey = workspaceScopeKey({ orgId, userId });
 
   // ── Core canvas state ──
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
@@ -490,10 +492,45 @@ export function ProcessDesigner() {
     setTimeout(() => fitView(loadedNodes, canvasRef, setZoom, setPan), 50);
   }, []);
 
-  const loadedOnce = useRef(false);
+  const loadedWorkspaceKey = useRef<string | null>(null);
   useEffect(() => {
-    if (loadedOnce.current) return;
-    loadedOnce.current = true;
+    if (loadedWorkspaceKey.current === activeWorkspaceKey) return;
+    loadedWorkspaceKey.current = activeWorkspaceKey;
+    setNodes([]);
+    setEdges([]);
+    setSelectedId(null);
+    setWorkflowName('Untitled agent workflow');
+    setWorkflowMeta({ jurisdiction: '', processType: '', regulations: [] });
+    setZoom(1);
+    setPan({ x: 60, y: 60 });
+    setDragState(null);
+    setPendingEdge(null);
+    setHoverPort(null);
+    setDropPreview(null);
+    setEditingLabel(null);
+    setJustDropped(null);
+    setChatOpen(false);
+    setChat([
+      {
+        role: 'assistant',
+        content: 'Pick a starter template on the left, describe a process here, or add steps directly on the canvas.',
+        ts: new Date().toISOString(),
+      },
+    ]);
+    setChatInput('');
+    setChatBusy(false);
+    setJurisdiction('');
+    setProcessType('');
+    setCatalog(null);
+    setTemplates(null);
+    setSavedWorkflows(null);
+    setActiveWorkflowId(null);
+    setSaving(false);
+    setToast(null);
+    setToastError(false);
+    setLastSavedFingerprint(null);
+    setPaletteOpen(false);
+    setDetailsOpen(false);
     void (async () => {
       try { const c = await api<{ snapshot: CatalogSnapshot }>('/api/builder/catalog'); setCatalog(c.snapshot); } catch { /* */ }
       try { const t = await api<{ templates: TemplateSummary[] }>('/api/builder/templates'); setTemplates(t.templates); } catch { setTemplates([]); }
@@ -511,7 +548,7 @@ export function ProcessDesigner() {
         }
       } catch { /* */ }
     })();
-  }, [api, applyLoadedWorkflow, loadDraft, refreshWorkflows]);
+  }, [activeWorkspaceKey, api, applyLoadedWorkflow, loadDraft, refreshWorkflows]);
 
   // ── Save ──
   const saveCurrent = useCallback(async (): Promise<SavedWorkflowRow | null> => {

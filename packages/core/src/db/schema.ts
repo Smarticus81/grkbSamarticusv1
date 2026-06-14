@@ -81,6 +81,7 @@ export const memberRoleEnum = pgEnum('member_role', ['owner', 'admin', 'member',
 
 export const tenants = pgTable('tenants', {
   id: uuid('id').primaryKey().defaultRandom(),
+  tenantKey: varchar('tenant_key', { length: 128 }).notNull().unique(),
   clerkOrgId: varchar('clerk_org_id', { length: 128 }).unique(),
   name: text('name').notNull(),
   plan: tenantPlanEnum('plan').default('free').notNull(),

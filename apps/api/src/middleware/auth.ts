@@ -27,6 +27,7 @@ interface JwtClaims {
 // ---------------------------------------------------------------------------
 
 const WEAK_SECRETS = new Set(['change-me', 'change-me-in-production']);
+const PLATFORM_ADMIN_ROLES = new Set(['platform_admin', 'regground_admin']);
 
 // ---------------------------------------------------------------------------
 // Boot-time validation (call once from index.ts before listen)
@@ -195,3 +196,24 @@ export function auth(req: AuthedRequest, res: Response, next: NextFunction): voi
   });
 }
 
+export function isPlatformAdmin(
+  user: AuthedRequest['user'],
+  env: NodeJS.ProcessEnv = process.env,
+): boolean {
+  if (!user) return false;
+  if (user.roles.some((role) => PLATFORM_ADMIN_ROLES.has(role))) return true;
+
+  const allowList = (env.PLATFORM_ADMIN_USER_IDS ?? '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return allowList.includes(user.sub);
+}
+
+export function requirePlatformAdmin(req: AuthedRequest, res: Response, next: NextFunction): void {
+  if (!isPlatformAdmin(req.user)) {
+    res.status(403).json({ error: 'platform admin role required' });
+    return;
+  }
+  next();
+}

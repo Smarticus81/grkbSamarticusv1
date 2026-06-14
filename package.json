@@ -8,9 +8,10 @@
     "dev": "concurrently \"pnpm --filter @regground/api dev\" \"pnpm --filter @regground/web dev\"",
     "build": "pnpm -r build",
     "check": "pnpm -r check",
-    "test": "pnpm -r test",
+    "test": "node --test scripts/*.test.mjs && pnpm -r test",
     "test:harness": "pnpm --filter @regground/sandbox test:harness",
     "db:push": "pnpm --filter @regground/core db:push",
+    "db:secure": "pnpm --filter @regground/core db:secure",
     "seed:graph": "pnpm --filter @regground/core seed:graph",
     "seed:all": "pnpm seed:graph",
     "embed:graph": "pnpm --filter @regground/core embed:graph",
@@ -20,7 +21,9 @@
     "eval:all": "pnpm --filter @regground/evals eval:all",
     "bench": "pnpm --filter @regground/evals bench",
     "bench:update": "pnpm --filter @regground/evals bench:update",
-    "check:graph": "node scripts/check-graph-quality.mjs"
+    "env:doctor": "node scripts/env-doctor.mjs",
+    "check:graph": "node scripts/check-graph-quality.mjs",
+    "smoke:prod": "node scripts/production-smoke.mjs"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

@@ -8,11 +8,12 @@
  * promoted into an agent.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { useAuthenticatedApi } from '../auth/useApi.js';
 import { PageHeader } from '../components/ui/PageHeader.js';
 import { EmptyState } from '../components/ui/EmptyState.js';
+import { workspaceScopeKey } from '../lib/workspaceScope.js';
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 
@@ -308,7 +309,7 @@ function sessionState(events: ManagedEvent[], streaming: boolean): { label: stri
 
 export function Builder() {
   const [, navigate] = useLocation();
-  const { api, streamSse } = useAuthenticatedApi();
+  const { api, streamSse, orgId, userId } = useAuthenticatedApi();
 
   const [agents, setAgents] = useState<SavedAgent[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -324,20 +325,33 @@ export function Builder() {
   const [streaming, setStreaming] = useState(false);
   const streamAbortRef = useRef<AbortController | null>(null);
 
-  const refresh = async () => {
+  const activeWorkspaceKey = workspaceScopeKey({ orgId, userId });
+
+  const refresh = useCallback(async () => {
     try {
       setAgents(await api<SavedAgent[]>('/api/builder/agents'));
     } catch {
       setAgents([]);
     }
-  };
+  }, [api]);
 
   useEffect(() => {
+    streamAbortRef.current?.abort();
+    setAgents(null);
+    setBusy(null);
+    setToast(null);
+    setRenamingId(null);
+    setRenameValue('');
+    setActiveRunAgent(null);
+    setActiveRunId(null);
+    setRunMessage('');
+    setStreamEvents([]);
+    setStreaming(false);
     void refresh();
     return () => {
       streamAbortRef.current?.abort();
     };
-  }, []);
+  }, [refresh, activeWorkspaceKey]);
 
   async function remove(a: SavedAgent) {
     if (!confirm(`Delete "${a.name}"? This can't be undone.`)) return;

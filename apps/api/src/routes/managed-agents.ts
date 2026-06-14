@@ -21,6 +21,8 @@ import {
   desc,
   ManagedAgentClient,
   ManagedAgentError,
+  withTenant,
+  type TenantTransaction,
 } from '@regground/core';
 import { buildPromptManifest } from '../services/ManagedAgentPromptManifest.js';
 
@@ -55,6 +57,18 @@ function requireTenantId(req: Request): string {
   const tenantId = (req as unknown as { tenantId?: string }).tenantId;
   if (!tenantId) throw new Error('Missing tenantId on request');
   return tenantId;
+}
+
+function tenantDb<T>(tenantId: string, fn: (db: TenantTransaction) => Promise<T>): Promise<T> {
+  return withTenant(getDB(), tenantId, fn);
+}
+
+function managedRunScope(runId: string, agentId: string | undefined, tenantId: string) {
+  return and(
+    eq(managedAgentRuns.id, runId),
+    eq(managedAgentRuns.builderAgentId, agentId ?? ''),
+    eq(managedAgentRuns.tenantId, tenantId),
+  );
 }
 
 function runInputObject(input: unknown): Record<string, unknown> {
@@ -176,12 +190,11 @@ router.post('/agents/:id/deploy', async (req: Request, res: Response) => {
     const parsed = DeploySchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ errors: parsed.error.errors });
 
-    const db = getDB();
-    const [agent] = await db
+    const [agent] = await tenantDb(tenantId, (db) => db
       .select()
       .from(builderAgents)
       .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
-      .limit(1);
+      .limit(1));
     if (!agent) return res.status(404).json({ error: 'agent not found' });
     const groundedManifest = getGroundedManifestSummary(agent);
     const validation = groundedManifest?.validation as { strictGatePass?: boolean } | undefined;
@@ -229,15 +242,15 @@ router.post('/agents/:id/deploy', async (req: Request, res: Response) => {
       deployedAt: new Date().toISOString(),
     };
 
-    const [updated] = await db
+    const [updated] = await tenantDb(tenantId, (db) => db
       .update(builderAgents)
       .set({
         deployTarget: 'claude-managed-agents',
         providerRuntime: runtime,
         updatedAt: new Date(),
       })
-      .where(eq(builderAgents.id, id))
-      .returning();
+      .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
+      .returning());
 
     res.json({
       agent: updated,
@@ -280,12 +293,11 @@ router.post('/agents/:id/runs', async (req: Request, res: Response) => {
     const parsed = RunSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ errors: parsed.error.errors });
 
-    const db = getDB();
-    const [agent] = await db
+    const [agent] = await tenantDb(tenantId, (db) => db
       .select()
       .from(builderAgents)
       .where(and(eq(builderAgents.id, id), eq(builderAgents.tenantId, tenantId)))
-      .limit(1);
+      .limit(1));
     if (!agent) return res.status(404).json({ error: 'agent not found' });
 
     const runtime = agent.providerRuntime as {
@@ -319,7 +331,7 @@ router.post('/agents/:id/runs', async (req: Request, res: Response) => {
     });
 
     // Create run record
-    const [run] = await db
+    const [run] = await tenantDb(tenantId, (db) => db
       .insert(managedAgentRuns)
       .values({
         tenantId,
@@ -336,7 +348,7 @@ router.post('/agents/:id/runs', async (req: Request, res: Response) => {
           groundedRun: groundedManifest,
         },
       })
-      .returning();
+      .returning());
 
     res.status(201).json(run);
   } catch (e) {
@@ -360,7 +372,7 @@ router.get('/agents/:id/runs', async (req: Request, res: Response) => {
     const id = req.params.id;
     if (!id) return res.status(400).json({ error: 'id required' });
 
-    const rows = await getDB()
+    const rows = await tenantDb(tenantId, (db) => db
       .select()
       .from(managedAgentRuns)
       .where(
@@ -370,7 +382,7 @@ router.get('/agents/:id/runs', async (req: Request, res: Response) => {
         ),
       )
       .orderBy(desc(managedAgentRuns.createdAt))
-      .limit(50);
+      .limit(50));
 
     res.json(rows);
   } catch (e) {
@@ -388,17 +400,13 @@ router.get('/agents/:id/runs/:runId', async (req: Request, res: Response) => {
     const runId = req.params.runId;
     if (!runId) return res.status(400).json({ error: 'runId required' });
 
-    const [run] = await getDB()
+    const [run] = await tenantDb(tenantId, (db) => db
       .select()
       .from(managedAgentRuns)
       .where(
-        and(
-          eq(managedAgentRuns.id, runId),
-          eq(managedAgentRuns.builderAgentId, req.params.id ?? ''),
-          eq(managedAgentRuns.tenantId, tenantId),
-        ),
+        managedRunScope(runId, req.params.id, tenantId),
       )
-      .limit(1);
+      .limit(1));
 
     if (!run) return res.status(404).json({ error: 'run not found' });
     res.json(run);
@@ -419,43 +427,55 @@ router.post('/agents/:id/runs/:runId/save', async (req: Request, res: Response) 
     const runId = req.params.runId;
     if (!runId) return res.status(400).json({ error: 'runId required' });
 
-    const db = getDB();
-    const [run] = await db
-      .select()
-      .from(managedAgentRuns)
-      .where(
-        and(
-          eq(managedAgentRuns.id, runId),
-          eq(managedAgentRuns.builderAgentId, req.params.id ?? ''),
-          eq(managedAgentRuns.tenantId, tenantId),
-        ),
-      )
-      .limit(1);
+    const result = await tenantDb(tenantId, async (db) => {
+      const [run] = await db
+        .select()
+        .from(managedAgentRuns)
+        .where(
+          managedRunScope(runId, req.params.id, tenantId),
+        )
+        .limit(1);
 
-    if (!run) return res.status(404).json({ error: 'run not found' });
-    const outputSnapshot =
-      run.outputSnapshot && typeof run.outputSnapshot === 'object' && !Array.isArray(run.outputSnapshot)
-        ? run.outputSnapshot as Record<string, unknown>
-        : {};
-    if (typeof outputSnapshot.text !== 'string' && typeof outputSnapshot.error !== 'string') {
-      return res.status(409).json({
-        error: 'no_result',
-        message: 'There is no provider result to save yet.',
+      if (!run) return { status: 404 as const, body: { error: 'run not found' } };
+      const outputSnapshot =
+        run.outputSnapshot && typeof run.outputSnapshot === 'object' && !Array.isArray(run.outputSnapshot)
+          ? run.outputSnapshot as Record<string, unknown>
+          : {};
+      if (typeof outputSnapshot.text !== 'string' && typeof outputSnapshot.error !== 'string') {
+        return {
+          status: 409 as const,
+          body: {
+            error: 'no_result',
+            message: 'There is no provider result to save yet.',
+          },
+        };
+      }
+
+      const [updated] = await db
+        .update(managedAgentRuns)
+        .set({
+          outputSnapshot: {
+            ...outputSnapshot,
+            savedAt: new Date().toISOString(),
+          },
+        })
+        .where(
+          and(
+            eq(managedAgentRuns.id, runId),
+            eq(managedAgentRuns.builderAgentId, req.params.id ?? ''),
+            eq(managedAgentRuns.tenantId, tenantId),
+          ),
+        )
+        .returning();
+
+      return { status: 200 as const, body: updated };
+    });
+    if (result.status !== 200) {
+      return res.status(result.status).json({
+        ...result.body,
       });
     }
-
-    const [updated] = await db
-      .update(managedAgentRuns)
-      .set({
-        outputSnapshot: {
-          ...outputSnapshot,
-          savedAt: new Date().toISOString(),
-        },
-      })
-      .where(eq(managedAgentRuns.id, runId))
-      .returning();
-
-    res.json(updated);
+    res.json(result.body);
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
@@ -473,8 +493,7 @@ router.get('/agents/:id/runs/:runId/stream', async (req: Request, res: Response)
     const runId = req.params.runId;
     if (!runId) return res.status(400).json({ error: 'runId required' });
 
-    const db = getDB();
-    const [run] = await db
+    const [run] = await tenantDb(tenantId, (db) => db
       .select()
       .from(managedAgentRuns)
       .where(
@@ -484,7 +503,7 @@ router.get('/agents/:id/runs/:runId/stream', async (req: Request, res: Response)
           eq(managedAgentRuns.tenantId, tenantId),
         ),
       )
-      .limit(1);
+      .limit(1));
 
     if (!run) return res.status(404).json({ error: 'run not found' });
     if (!run.externalSessionId) {
@@ -523,13 +542,13 @@ router.get('/agents/:id/runs/:runId/stream', async (req: Request, res: Response)
             userMessageSentAt: sentAt,
           };
           eventLog.push({ type: 'user.message.sent', atIso: sentAt, textLength: initialMessage.length });
-          await db
+          await tenantDb(tenantId, (db) => db
             .update(managedAgentRuns)
             .set({
               inputSnapshot: nextInputSnapshot,
               eventLog,
             })
-            .where(eq(managedAgentRuns.id, runId));
+            .where(managedRunScope(runId, req.params.id, tenantId)));
         },
       })) {
         eventLog.push(event);
@@ -543,7 +562,7 @@ router.get('/agents/:id/runs/:runId/stream', async (req: Request, res: Response)
         // Session finished
         if (isTerminalManagedEvent(event)) {
           const status = event.type === 'session.status_idle' && !providerError ? 'completed' : 'failed';
-          await db
+          await tenantDb(tenantId, (db) => db
             .update(managedAgentRuns)
             .set({
               status,
@@ -551,7 +570,7 @@ router.get('/agents/:id/runs/:runId/stream', async (req: Request, res: Response)
               eventLog,
               finishedAt: new Date(),
             })
-            .where(eq(managedAgentRuns.id, runId));
+            .where(managedRunScope(runId, req.params.id, tenantId)));
 
           res.write(`event: stream.end\ndata: ${JSON.stringify({ status })}\n\n`);
           break;
@@ -559,7 +578,7 @@ router.get('/agents/:id/runs/:runId/stream', async (req: Request, res: Response)
       }
     } catch (streamErr) {
       // If the upstream stream errors, persist what we have and notify the client
-      await db
+      await tenantDb(tenantId, (db) => db
         .update(managedAgentRuns)
         .set({
           status: 'failed',
@@ -567,7 +586,7 @@ router.get('/agents/:id/runs/:runId/stream', async (req: Request, res: Response)
           eventLog,
           finishedAt: new Date(),
         })
-        .where(eq(managedAgentRuns.id, runId));
+        .where(managedRunScope(runId, req.params.id, tenantId)));
 
       const errMsg = providerErrorMessage(streamErr);
       res.write(`event: stream.error\ndata: ${JSON.stringify({ error: errMsg })}\n\n`);

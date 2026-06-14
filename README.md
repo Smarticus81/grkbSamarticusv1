@@ -11,10 +11,14 @@ A model-agnostic, regulation-agnostic compliance enforcement platform.
 ```bash
 pnpm install
 cp .env.example .env
-pnpm db:push
+pnpm db:secure
 pnpm seed:graph
 pnpm dev
 ```
+
+`pnpm db:secure` pushes the Drizzle schema, backfills stable tenant keys for
+existing tenants, and applies Postgres row-level security policies. Use it for
+local setup and production database upgrades before serving multi-tenant traffic.
 
 ## Workspace layout
 

@@ -23,3 +23,6 @@ secs.txt
 plan.md
 _tmp_*
 *.docx
+
+# Runtime upload artifacts (user data, not source)
+apps/api/uploads/

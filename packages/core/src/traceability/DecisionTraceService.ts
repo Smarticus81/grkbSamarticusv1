@@ -134,6 +134,7 @@ export class DecisionTraceService {
     return {
       id: row.id,
       processInstanceId: row.processInstanceId,
+      tenantId: row.tenantId,
       traceId: row.traceId,
       sequenceNumber: row.sequenceNumber,
       previousHash: row.previousHash,

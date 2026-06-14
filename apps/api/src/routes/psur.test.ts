@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { ChainVerifier, InMemoryTraceService, type DecisionTraceEntry } from '@regground/core';
 import { createPsurRouter, type PsurTraceService } from './psur.js';
 import { CitationResolver, type CitationGraph } from '../psur/obligation-map.js';
+import type { AuthedRequest } from '../middleware/auth.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures: a scripted fake Python PSUR service injected as fetchImpl
@@ -103,6 +104,7 @@ interface FakeService {
 function fakePsurService(options: FakeServiceOptions = {}): FakeService {
   const requests: FakeService['requests'] = [];
   const events = options.events ?? SCRIPTED_EVENTS;
+  let runCounter = 0;
 
   const fetchImpl = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
@@ -114,7 +116,9 @@ function fakePsurService(options: FakeServiceOptions = {}): FakeService {
       return Response.json(DEFAULTS_PAYLOAD);
     }
     if (method === 'POST' && url.pathname === '/runs') {
-      const r = options.runsResponse ?? { status: 200, body: { run_id: 'run-001' } };
+      runCounter += 1;
+      const runId = `run-${String(runCounter).padStart(3, '0')}`;
+      const r = options.runsResponse ?? { status: 200, body: { run_id: runId } };
       return Response.json(r.body, { status: r.status });
     }
     if (method === 'GET' && /^\/runs\/[^/]+\/events$/.test(url.pathname)) {
@@ -182,10 +186,31 @@ const servers: Server[] = [];
 
 async function startHarness(opts: {
   serviceOptions?: FakeServiceOptions;
+  allowAnonymous?: boolean;
 } = {}): Promise<Harness> {
   const trace = new InMemoryTraceService();
   const service = fakePsurService(opts.serviceOptions);
   const app = express();
+  app.use((req, _res, next) => {
+    const tenantId = req.header('x-test-tenant');
+    const userId = req.header('x-test-user');
+    const tenantContextOnly = req.header('x-test-tenant-context-only') === 'true';
+    if (tenantContextOnly && tenantId) {
+      req.tenantId = tenantId;
+      next();
+      return;
+    }
+    if (tenantId || userId) {
+      const resolvedTenantId = tenantId ?? 'tenant-a';
+      (req as AuthedRequest).user = {
+        sub: userId ?? 'user-a',
+        tenantId: resolvedTenantId,
+        roles: ['member'],
+      };
+      req.tenantId = resolvedTenantId;
+    }
+    next();
+  });
   app.use(
     '/api/psur',
     createPsurRouter({
@@ -193,6 +218,7 @@ async function startHarness(opts: {
       fetchImpl: service.fetchImpl,
       traceService: trace as unknown as PsurTraceService,
       resolver: new CitationResolver(mockGraph()),
+      allowAnonymous: opts.allowAnonymous ?? true,
     }),
   );
   const server = createServer(app);
@@ -214,10 +240,14 @@ afterEach(async () => {
   }
 });
 
-async function postRun(baseUrl: string, body: unknown = RUN_REQUEST): Promise<Response> {
+async function postRun(
+  baseUrl: string,
+  body: unknown = RUN_REQUEST,
+  headers: Record<string, string> = {},
+): Promise<Response> {
   return fetch(`${baseUrl}/api/psur/runs`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   });
 }
@@ -248,6 +278,14 @@ async function readSse(res: Response): Promise<SseMessage[]> {
 // ---------------------------------------------------------------------------
 
 describe('GET /api/psur/defaults', () => {
+  it('denies unauthenticated live-pipeline access unless anonymous mode is explicitly enabled', async () => {
+    const h = await startHarness({ allowAnonymous: false });
+    const res = await fetch(`${h.baseUrl}/api/psur/defaults`);
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: 'authentication required for live PSUR pipeline' });
+    expect(h.service.requests).toHaveLength(0);
+  });
+
   it('proxies the Python service defaults', async () => {
     const h = await startHarness();
     const res = await fetch(`${h.baseUrl}/api/psur/defaults`);
@@ -260,7 +298,7 @@ describe('GET /api/psur/defaults', () => {
 });
 
 describe('POST /api/psur/runs', () => {
-  it('creates a run, starts a trace under the demo tenant, and returns ids', async () => {
+  it('creates a run, starts a trace under the standalone demo fallback tenant, and returns ids', async () => {
     const h = await startHarness();
     const res = await postRun(h.baseUrl);
     expect(res.status).toBe(202);
@@ -279,6 +317,19 @@ describe('POST /api/psur/runs', () => {
     expect(forwarded?.body).toEqual(RUN_REQUEST);
   });
 
+  it('starts authenticated run traces under the caller tenant', async () => {
+    const h = await startHarness();
+    const res = await postRun(h.baseUrl, RUN_REQUEST, {
+      'x-test-tenant': 'tenant-a',
+      'x-test-user': 'user-1',
+    });
+    expect(res.status).toBe(202);
+    const body = (await res.json()) as { processInstanceId: string };
+
+    const chain = await h.trace.getTraceChain(body.processInstanceId);
+    expect(chain.map((e) => e.tenantId)).toEqual(['tenant-a', 'tenant-a']);
+  });
+
   it('rejects malformed payloads (unknown input name) before touching the service', async () => {
     const h = await startHarness();
     const res = await postRun(h.baseUrl, {
@@ -287,6 +338,67 @@ describe('POST /api/psur/runs', () => {
     });
     expect(res.status).toBe(400);
     expect(h.service.requests.filter((r) => r.method === 'POST')).toHaveLength(0);
+  });
+
+  it('rejects locked-structure edits before creating an upstream run', async () => {
+    const h = await startHarness();
+    const res = await postRun(h.baseUrl, {
+      period: { start: '2025-01-01', end: '2025-12-31' },
+      inputs: {
+        sales: {
+          rows: [
+            { region: 'EEA', units: 1200, unexpected_column: 'mutated structure' },
+          ],
+        },
+        device_context: { value: { device_name: 'Acme Stapler', device_class: 'IIb' } },
+      },
+    });
+
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { error: string; detail: Array<{ loc: Array<string | number>; msg: string }> };
+    expect(body.error).toContain('input structure is locked');
+    expect(body.detail[0]?.loc).toEqual(['inputs', 'sales', 'rows', 0]);
+    expect(body.detail[0]?.msg).toContain('region, units');
+    expect(h.service.requests.some((r) => r.method === 'GET' && r.path === '/defaults')).toBe(true);
+    expect(h.service.requests.some((r) => r.method === 'POST' && r.path === '/runs')).toBe(false);
+  });
+
+  it('rejects a payload that changes an input from json to table rows', async () => {
+    const h = await startHarness();
+    const res = await postRun(h.baseUrl, {
+      period: { start: '2025-01-01', end: '2025-12-31' },
+      inputs: {
+        sales: { rows: [{ region: 'EEA', units: 1200 }] },
+        device_context: { rows: [] },
+      },
+    });
+
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { detail: Array<{ loc: Array<string | number>; msg: string }> };
+    expect(body.detail).toContainEqual({
+      loc: ['inputs', 'device_context'],
+      msg: 'expected json value for this locked input',
+    });
+    expect(h.service.requests.some((r) => r.method === 'POST' && r.path === '/runs')).toBe(false);
+  });
+
+  it('rejects declared column type violations at the bridge boundary', async () => {
+    const h = await startHarness();
+    const res = await postRun(h.baseUrl, {
+      period: { start: '2025-01-01', end: '2025-12-31' },
+      inputs: {
+        sales: { rows: [{ region: 'EEA', units: 'not-a-number' }] },
+        device_context: { value: { device_name: 'Acme Stapler', device_class: 'IIb' } },
+      },
+    });
+
+    expect(res.status).toBe(422);
+    const body = (await res.json()) as { detail: Array<{ loc: Array<string | number>; msg: string }> };
+    expect(body.detail).toContainEqual({
+      loc: ['inputs', 'sales', 'rows', 0, 'units'],
+      msg: 'expected integer',
+    });
+    expect(h.service.requests.some((r) => r.method === 'POST' && r.path === '/runs')).toBe(false);
   });
 
   it('passes through 422 structural violations from the Python service', async () => {
@@ -309,6 +421,35 @@ describe('POST /api/psur/runs', () => {
       postRun(h.baseUrl),
     ]);
     for (const res of results) expect(res.status).toBe(202);
+  });
+
+  it('refuses duplicate upstream run ids instead of overwriting another run record', async () => {
+    const h = await startHarness({
+      serviceOptions: { runsResponse: { status: 200, body: { run_id: 'fixed-run-id' } } },
+    });
+    const first = await postRun(h.baseUrl, RUN_REQUEST, {
+      'x-test-tenant': 'tenant-a',
+      'x-test-user': 'user-a',
+    });
+    const second = await postRun(h.baseUrl, RUN_REQUEST, {
+      'x-test-tenant': 'tenant-b',
+      'x-test-user': 'user-b',
+    });
+
+    expect(first.status).toBe(202);
+    expect(second.status).toBe(502);
+    expect(await second.json()).toEqual({ error: 'PSUR service returned a duplicate run id' });
+
+    const ownerStream = await fetch(`${h.baseUrl}/api/psur/runs/fixed-run-id/stream`, {
+      headers: { Accept: 'text/event-stream', 'x-test-tenant': 'tenant-a', 'x-test-user': 'user-a' },
+    });
+    expect(ownerStream.status).toBe(200);
+    await readSse(ownerStream);
+
+    const blockedStream = await fetch(`${h.baseUrl}/api/psur/runs/fixed-run-id/stream`, {
+      headers: { Accept: 'text/event-stream', 'x-test-tenant': 'tenant-b', 'x-test-user': 'user-b' },
+    });
+    expect(blockedStream.status).toBe(404);
   });
 
   it('passes through upstream 409 demo_busy', async () => {
@@ -396,6 +537,45 @@ describe('GET /api/psur/runs/:id/stream', () => {
     const res = await fetch(`${h.baseUrl}/api/psur/runs/nope/stream`);
     expect(res.status).toBe(404);
   });
+
+  it('keeps live streams isolated by tenant even for the same user id', async () => {
+    const h = await startHarness();
+    const ownerHeaders = { 'x-test-tenant': 'tenant-a', 'x-test-user': 'user-1' };
+    const otherTenantHeaders = { 'x-test-tenant': 'tenant-b', 'x-test-user': 'user-1' };
+    const created = (await (await postRun(h.baseUrl, RUN_REQUEST, ownerHeaders)).json()) as {
+      runId: string;
+      processInstanceId: string;
+    };
+
+    const blocked = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}/stream`, {
+      headers: { Accept: 'text/event-stream', ...otherTenantHeaders },
+    });
+    expect(blocked.status).toBe(404);
+
+    const allowed = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}/stream`, {
+      headers: { Accept: 'text/event-stream', ...ownerHeaders },
+    });
+    expect(allowed.status).toBe(200);
+    await readSse(allowed);
+  });
+
+  it('keeps signed-in and anonymous tenant-context runs isolated from each other', async () => {
+    const h = await startHarness();
+    const ownerHeaders = { 'x-test-tenant': 'tenant-a', 'x-test-user': 'user-1' };
+    const tenantOnlyHeaders = { 'x-test-tenant': 'tenant-a', 'x-test-tenant-context-only': 'true' };
+
+    const signedInRun = (await (await postRun(h.baseUrl, RUN_REQUEST, ownerHeaders)).json()) as { runId: string };
+    const tenantOnlyBlocked = await fetch(`${h.baseUrl}/api/psur/runs/${signedInRun.runId}/stream`, {
+      headers: { Accept: 'text/event-stream', ...tenantOnlyHeaders },
+    });
+    expect(tenantOnlyBlocked.status).toBe(404);
+
+    const anonymousRun = (await (await postRun(h.baseUrl, RUN_REQUEST, tenantOnlyHeaders)).json()) as { runId: string };
+    const signedInBlocked = await fetch(`${h.baseUrl}/api/psur/runs/${anonymousRun.runId}/trace`, {
+      headers: ownerHeaders,
+    });
+    expect(signedInBlocked.status).toBe(404);
+  });
 });
 
 describe('artifacts proxy', () => {
@@ -423,6 +603,19 @@ describe('artifacts proxy', () => {
       `${h.baseUrl}/api/psur/runs/${created.runId}/artifacts/${encodeURIComponent('../secrets')}`,
     );
     expect(res.status).toBe(400);
+  });
+
+  it('keeps artifact downloads isolated by tenant', async () => {
+    const h = await startHarness();
+    const ownerHeaders = { 'x-test-tenant': 'tenant-a', 'x-test-user': 'user-1' };
+    const otherTenantHeaders = { 'x-test-tenant': 'tenant-b', 'x-test-user': 'user-1' };
+    const created = (await (await postRun(h.baseUrl, RUN_REQUEST, ownerHeaders)).json()) as { runId: string };
+
+    const blocked = await fetch(
+      `${h.baseUrl}/api/psur/runs/${created.runId}/artifacts/PSUR_AcmeStapler_2025.json`,
+      { headers: otherTenantHeaders },
+    );
+    expect(blocked.status).toBe(404);
   });
 });
 
@@ -467,7 +660,7 @@ describe('trace + verification (the hero artifact)', () => {
     }
   });
 
-  it('exposes a public verification badge endpoint', async () => {
+  it('exposes a minimal verification badge endpoint', async () => {
     const h = await startHarness();
     const created = (await (await postRun(h.baseUrl)).json()) as { runId: string };
     await readSse(await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}/stream`));
@@ -476,5 +669,22 @@ describe('trace + verification (the hero artifact)', () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { verification: { valid: boolean } };
     expect(body.verification.valid).toBe(true);
+  });
+
+  it('keeps trace and verification endpoints isolated by tenant', async () => {
+    const h = await startHarness();
+    const ownerHeaders = { 'x-test-tenant': 'tenant-a', 'x-test-user': 'user-1' };
+    const otherTenantHeaders = { 'x-test-tenant': 'tenant-b', 'x-test-user': 'user-1' };
+    const created = (await (await postRun(h.baseUrl, RUN_REQUEST, ownerHeaders)).json()) as { runId: string };
+
+    const trace = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}/trace`, {
+      headers: otherTenantHeaders,
+    });
+    const verification = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}/verification`, {
+      headers: otherTenantHeaders,
+    });
+
+    expect(trace.status).toBe(404);
+    expect(verification.status).toBe(404);
   });
 });

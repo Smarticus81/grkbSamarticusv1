@@ -20,6 +20,8 @@ import sandbox from './routes/sandbox.js';
 import builder from './routes/builder.js';
 import managedAgents from './routes/managed-agents.js';
 import usage from './routes/usage.js';
+import workspace from './routes/workspace.js';
+import readiness from './routes/readiness.js';
 import validateDraft from './routes/validate-draft.js';
 import clerkWebhook from './routes/clerk-webhook.js';
 import psur from './routes/psur.js';
@@ -135,6 +137,9 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', service: 'regground-api', version: '0.1.0' });
 });
 
+// --- Production readiness (unauthenticated, non-secret config status) -----
+app.use('/ready', readiness);
+
 // --- Public graph stats (no auth) ------------------------------------------
 // Aggregate counts only (obligations, regulations, jurisdictions) — consumed
 // by the signed-out landing page. Mounted BEFORE the auth middleware; the
@@ -147,9 +152,9 @@ app.use('/api', auth, tenancy);
 // --- PSUR generator bridge (sign-in required) ------------------------------
 // Mounted AFTER the /api auth+tenancy middleware: the real pipeline is only
 // available to signed-in users. Signed-out visitors get a fully client-side
-// simulated run in the web app instead. The router keeps its own demo guard
-// (per-IP daily cap + global concurrency cap) and traces runs under the
-// caller's tenant.
+// simulated run in the web app instead. Authenticated runs are multi-user and
+// tenant-scoped; the upstream PSUR service may still enforce its own capacity
+// limits and returns demo_busy when saturated.
 app.use('/api/psur', psur);
 
 // --- Stricter rate limit on /api/api-keys (30 req / 15 min per IP) -------
@@ -168,6 +173,7 @@ app.use('/api/sandbox', sandbox);
 app.use('/api/builder', builder);
 app.use('/api/builder', managedAgents);
 app.use('/api/usage', usage);
+app.use('/api/workspace', workspace);
 app.use('/api/validate-draft', validateDraft);
 
 // ---------------------------------------------------------------------------
@@ -178,5 +184,5 @@ const port = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
 const host = process.env.API_HOST ?? '0.0.0.0';
 app.listen(port, host, () => {
   console.log(`Regulatory Ground API listening on http://${host}:${port}`);
-  console.log('Routes: /api/graph, /api/traces, /api/api-keys, /api/sandbox, /api/builder, /api/usage, /api/psur, /health');
+  console.log('Routes: /api/graph, /api/traces, /api/api-keys, /api/sandbox, /api/builder, /api/usage, /api/workspace, /api/psur, /health, /ready');
 });

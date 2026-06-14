@@ -5,7 +5,15 @@
  */
 
 import { Router } from 'express';
-import { getDB, schema, eq, gte, desc, sql } from '@regground/core';
+import {
+  getDB,
+  schema,
+  eq,
+  desc,
+  sql,
+  withTenant,
+  type TenantTransaction,
+} from '@regground/core';
 
 const { usageEvents, tenantQuotas, tenants } = schema;
 
@@ -17,6 +25,10 @@ function requireTenantId(req: Express.Request): string {
   return tenantId;
 }
 
+function tenantDb<T>(tenantId: string, fn: (db: TenantTransaction) => Promise<T>): Promise<T> {
+  return withTenant(getDB(), tenantId, fn);
+}
+
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
   const idx = Math.min(sorted.length - 1, Math.floor(p * sorted.length));
@@ -26,7 +38,6 @@ function percentile(sorted: number[], p: number): number {
 router.get('/summary', async (req, res) => {
   try {
     const tenantId = requireTenantId(req);
-    const db = getDB();
 
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -34,7 +45,7 @@ router.get('/summary', async (req, res) => {
     const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0);
 
-    const events = await db
+    const events = await tenantDb(tenantId, (db) => db
       .select({
         toolName: usageEvents.toolName,
         latencyMs: usageEvents.latencyMs,
@@ -46,7 +57,7 @@ router.get('/summary', async (req, res) => {
       .from(usageEvents)
       .where(sql`${usageEvents.tenantId} = ${tenantId} AND ${usageEvents.occurredAt} >= ${thirtyDaysAgo}`)
       .orderBy(desc(usageEvents.occurredAt))
-      .limit(5000);
+      .limit(5000));
 
     const latencies: number[] = [];
     let okCount = 0;
@@ -92,12 +103,12 @@ router.get('/summary', async (req, res) => {
     try {
       const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenantId);
       if (isUuid) {
-        const [q] = await db
+        const [q] = await tenantDb(tenantId, (db) => db
           .select()
           .from(tenantQuotas)
           .where(eq(tenantQuotas.tenantId, tenantId))
           .orderBy(desc(tenantQuotas.periodStart))
-          .limit(1);
+          .limit(1));
         if (q) {
           quota = {
             monthlyRequestLimit: q.monthlyRequestLimit,

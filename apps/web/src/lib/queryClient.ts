@@ -41,6 +41,26 @@ export interface StreamSseOptions {
   onEvent: (message: SseMessage) => void | Promise<void>;
 }
 
+export interface AuthenticatedRequestOptions {
+  requireToken?: boolean;
+}
+
+export class AuthTokenRequiredError extends Error {
+  constructor() {
+    super('Authentication is required. Sign in again to continue.');
+    this.name = 'AuthTokenRequiredError';
+  }
+}
+
+async function getRequiredToken(
+  getToken: () => Promise<string | null>,
+  options?: AuthenticatedRequestOptions,
+): Promise<string | null> {
+  const token = await getToken();
+  if (!token && options?.requireToken !== false) throw new AuthTokenRequiredError();
+  return token;
+}
+
 /**
  * Unauthenticated API helper — use for health checks and public endpoints.
  */
@@ -64,12 +84,13 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
  */
 export function createAuthenticatedApi(
   getToken: () => Promise<string | null>,
+  authOptions?: AuthenticatedRequestOptions,
 ) {
   return async function authenticatedApi<T>(
     path: string,
     init?: RequestInit,
   ): Promise<T> {
-    const token = await getToken();
+    const token = await getRequiredToken(getToken, authOptions);
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(init?.headers as Record<string, string> ?? {}),
@@ -86,6 +107,40 @@ export function createAuthenticatedApi(
     const text = await res.text();
     if (!text) return undefined as T;
     return JSON.parse(text) as T;
+  };
+}
+
+export interface BlobResponse {
+  blob: Blob;
+  filename: string | null;
+  contentType: string | null;
+}
+
+function filenameFromDisposition(value: string | null): string | null {
+  if (!value) return null;
+  const utf8 = value.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (utf8) return decodeURIComponent(utf8.replace(/^"|"$/g, ''));
+  const plain = value.match(/filename="?([^";]+)"?/i)?.[1];
+  return plain ?? null;
+}
+
+export function createAuthenticatedBlob(
+  getToken: () => Promise<string | null>,
+  authOptions?: AuthenticatedRequestOptions,
+) {
+  return async function authenticatedBlob(path: string, init?: RequestInit): Promise<BlobResponse> {
+    const token = await getRequiredToken(getToken, authOptions);
+    const headers: Record<string, string> = {
+      ...(init?.headers as Record<string, string> ?? {}),
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+    if (!res.ok) throw await apiError(res);
+    return {
+      blob: await res.blob(),
+      filename: filenameFromDisposition(res.headers.get('content-disposition')),
+      contentType: res.headers.get('content-type'),
+    };
   };
 }
 
@@ -136,12 +191,13 @@ async function readSseStream(
  */
 export function createAuthenticatedSse(
   getToken: () => Promise<string | null>,
+  authOptions?: AuthenticatedRequestOptions,
 ) {
   return async function streamSse(
     path: string,
     options: StreamSseOptions,
   ): Promise<void> {
-    const token = await getToken();
+    const token = await getRequiredToken(getToken, authOptions);
     const headers: Record<string, string> = { Accept: 'text/event-stream' };
     if (token) headers.Authorization = `Bearer ${token}`;
 

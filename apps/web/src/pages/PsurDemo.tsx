@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, Dispatch, ReactNode, SetStateAction } from 'react';
-import { Link } from 'wouter';
-import { SignInButton, SignUpButton, useAuth } from '@clerk/clerk-react';
-import { createAuthenticatedSse } from '../lib/queryClient.js';
+import { Link, useLocation } from 'wouter';
+import { OrganizationSwitcher, SignInButton, SignUpButton, UserButton, useAuth, useClerk } from '@clerk/clerk-react';
+import { useAuthenticatedApi } from '../auth/useApi.js';
+import { AuthTokenRequiredError, createAuthenticatedSse } from '../lib/queryClient.js';
+import {
+  workspaceContextDisplay,
+  type ServerWorkspaceContext,
+} from '../lib/workspaceContext.js';
 import {
   SIMULATED_DEFAULTS,
   runPsurSimulation,
@@ -23,15 +28,16 @@ import { ThemeToggle } from '../components/ui/ThemeToggle.js';
 /**
  * /demo/psur — the PSUR walkthrough, in two modes:
  *
- * LIVE (signed in, or dev without Clerk): the real generation pipeline behind
- * /api/psur, streamed over authenticated SSE, with graph-grounded decision
- * traces written under the caller's tenant.
+ * LIVE (signed in): the real generation pipeline behind /api/psur, streamed
+ * over authenticated SSE, with graph-grounded decision traces written under
+ * the caller's tenant.
  *
- * SIMULATION (signed out): the identical four-step experience, driven by a
- * scripted client-side engine. Every conclusion is recomputed from the
- * visitor's edited inputs, the hash chain is real SHA-256 built and verified
- * locally, and the downloadable PDF/DOCX drafts are watermarked SIMULATED on
- * every page. Nothing leaves the browser; sign-up unlocks the real engine.
+ * SIMULATION (signed out, or auth not configured): the identical four-step
+ * experience, driven by a scripted client-side engine. Every conclusion is
+ * recomputed from the visitor's edited inputs, the hash chain is real SHA-256
+ * built and verified locally, and the downloadable PDF/DOCX drafts are
+ * watermarked SIMULATED on every page. Nothing leaves the browser; sign-up
+ * unlocks the real engine.
  *
  * 1. Intro    — the 2-weeks-to-20-minutes story.
  * 2. Inputs   — editable mock data pack (content editable, structure locked).
@@ -48,7 +54,25 @@ const API_BASE: string = import.meta.env.VITE_API_URL ?? 'http://localhost:4000'
 /** Clerk is mounted by main.tsx only when the publishable key exists. */
 const clerkAvailable = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-type DemoMode = 'live' | 'simulation';
+export type DemoMode = 'live' | 'simulation';
+export type DemoModeSelection = DemoMode | 'loading';
+
+export function selectPsurDemoMode(input: {
+  clerkAvailable: boolean;
+  isLoaded: boolean;
+  isSignedIn: boolean | undefined;
+  publicDemoRoute?: boolean;
+}): DemoModeSelection {
+  if (input.publicDemoRoute) return 'simulation';
+  if (!input.clerkAvailable) return 'simulation';
+  if (!input.isLoaded) return 'loading';
+  return input.isSignedIn ? 'live' : 'simulation';
+}
+
+export function shouldShowLiveWorkspaceControls(input: { mode: DemoMode; clerkAvailable: boolean }): boolean {
+  return input.mode === 'live' && input.clerkAvailable;
+}
+
 type GetToken = () => Promise<string | null>;
 
 // ---------------------------------------------------------------------------
@@ -166,16 +190,32 @@ function cellToString(value: unknown): string {
   return String(value);
 }
 
-/** JSON helper that attaches the Clerk bearer token when one is available. */
-function createJsonClient(getToken: GetToken) {
+function sessionExpiredMessage(): string {
+  return 'Your session has expired. Sign in again to run the real pipeline.';
+}
+
+function isAuthTokenRequired(err: unknown): boolean {
+  return err instanceof AuthTokenRequiredError;
+}
+
+export async function liveFetch(getToken: GetToken, path: string, init?: RequestInit): Promise<Response> {
+  const token = await getToken();
+  if (!token) throw new AuthTokenRequiredError();
+  const headers: Record<string, string> = {
+    ...((init?.headers as Record<string, string>) ?? {}),
+    Authorization: `Bearer ${token}`,
+  };
+  return fetch(`${API_BASE}${path}`, { ...init, headers });
+}
+
+/** JSON helper for the signed-in live pipeline. Requires a Clerk bearer token. */
+export function createJsonClient(getToken: GetToken) {
   return async function json<T>(path: string, init?: RequestInit): Promise<{ status: number; body: T }> {
-    const token = await getToken();
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...((init?.headers as Record<string, string>) ?? {}),
     };
-    if (token) headers.Authorization = `Bearer ${token}`;
-    const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+    const res = await liveFetch(getToken, path, { ...init, headers });
     const text = await res.text();
     const body = (text ? JSON.parse(text) : undefined) as T;
     return { status: res.status, body };
@@ -298,7 +338,79 @@ function AuthCtaButtons({ compact = false }: { compact?: boolean }) {
 }
 
 /** Persistent strip shown in simulation mode — never lets the visitor mistake the simulation for the real run. */
-function SimulationBanner() {
+function LiveWorkspaceControls() {
+  const { signOut } = useClerk();
+  const { api, isSignedIn, orgId, userId } = useAuthenticatedApi();
+  const workspace = useMemo(() => ({ orgId: orgId ?? null, userId: userId ?? null }), [orgId, userId]);
+  const [serverWorkspace, setServerWorkspace] = useState<ServerWorkspaceContext | null>(null);
+  const [workspaceError, setWorkspaceError] = useState(false);
+  const workspaceDisplay = workspaceContextDisplay(workspace, serverWorkspace);
+
+  useEffect(() => {
+    let active = true;
+    setServerWorkspace(null);
+    setWorkspaceError(false);
+    if (!isSignedIn) return () => { active = false; };
+
+    void api<ServerWorkspaceContext>('/api/workspace/me')
+      .then((context) => {
+        if (active) setServerWorkspace(context);
+      })
+      .catch(() => {
+        if (active) setWorkspaceError(true);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [api, isSignedIn, workspace]);
+
+  return (
+    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+      <div
+        title={workspaceError ? 'Workspace sync unavailable' : workspaceDisplay.subtitle}
+        style={{
+          minWidth: 150,
+          maxWidth: 220,
+          padding: '7px 9px',
+          border: '1px solid var(--rule)',
+          borderRadius: 'var(--r-2)',
+          background: 'var(--surface)',
+        }}
+      >
+        <div style={{ fontSize: 11.5, color: 'var(--ink)', fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {workspaceDisplay.title}
+        </div>
+        <div style={{ marginTop: 2, fontFamily: 'var(--mono)', fontSize: 9.5, color: workspaceDisplay.inactive ? 'var(--err)' : 'var(--ink-4)' }}>
+          {workspaceError ? 'sync unavailable' : workspaceDisplay.shortKey}
+        </div>
+      </div>
+      <OrganizationSwitcher
+        hidePersonal={false}
+        appearance={{
+          elements: {
+            organizationSwitcherTrigger: {
+              minHeight: '30px',
+              fontSize: '12px',
+              border: '1px solid var(--rule)',
+              borderRadius: 'var(--r-2)',
+            },
+          },
+        }}
+      />
+      <UserButton appearance={{ elements: { avatarBox: { width: 28, height: 28 } } }} />
+      <button
+        className="btn btn-ghost"
+        onClick={() => void signOut({ redirectUrl: '/' })}
+        style={{ fontSize: 12.5, padding: '7px 11px' }}
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
+function SimulationBanner({ showSimulationSignup }: { showSimulationSignup: boolean }) {
   return (
     <div
       style={{
@@ -316,7 +428,15 @@ function SimulationBanner() {
         Everything on this page is a scripted simulation that runs entirely in your browser — no AI agents,
         no obligation graph, and nothing leaves this page. The real engine is reserved for signed-in users.
       </span>
-      <AuthCtaButtons compact />
+      {showSimulationSignup ? (
+        <AuthCtaButtons compact />
+      ) : clerkAvailable ? (
+        <Link href="/app/psur/build" className="btn btn-orange" style={{ textDecoration: 'none', fontSize: 12.5, padding: '7px 14px' }}>
+          Open live builder
+        </Link>
+      ) : (
+        <AuthCtaButtons compact />
+      )}
     </div>
   );
 }
@@ -392,7 +512,15 @@ function ProgressRail({ step }: { step: StepId }) {
 // Step 1: Intro
 // ---------------------------------------------------------------------------
 
-function IntroStep({ mode, onStart }: { mode: DemoMode; onStart: () => void }) {
+function IntroStep({
+  mode,
+  onStart,
+  showSimulationSignup,
+}: {
+  mode: DemoMode;
+  onStart: () => void;
+  showSimulationSignup: boolean;
+}) {
   return (
     <div style={{ maxWidth: 760 }}>
       <SectionHeading
@@ -450,7 +578,7 @@ function IntroStep({ mode, onStart }: { mode: DemoMode; onStart: () => void }) {
           {mode === 'simulation' ? 'Run the simulation' : 'Start'}
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
-        {mode === 'simulation' && clerkAvailable && (
+        {mode === 'simulation' && showSimulationSignup && (
           <span style={{ fontSize: 13.5, color: 'var(--ink-3)' }}>
             or{' '}
             <SignUpButton mode="modal">
@@ -1144,6 +1272,7 @@ function ResultsStep({
   previewHtml,
   onDownload,
   onRestart,
+  showSimulationSignup,
 }: {
   mode: DemoMode;
   complete: CompleteInfo;
@@ -1151,9 +1280,11 @@ function ResultsStep({
   previewHtml: string | null;
   onDownload: (name: string) => void;
   onRestart: () => void;
+  showSimulationSignup: boolean;
 }) {
   const verification = trace?.verification ?? null;
   const decisions = (trace?.entries ?? []).filter((e) => e.eventType === 'psur.decision');
+  const validationErrors = complete.validation.errors ?? [];
 
   return (
     <div>
@@ -1183,6 +1314,27 @@ function ResultsStep({
           </Chip>
         )}
       </div>
+
+      {validationErrors.length > 0 && (
+        <div
+          style={{
+            marginTop: 14,
+            border: '1px solid var(--err)',
+            borderRadius: 'var(--r-2)',
+            padding: '12px 14px',
+            color: 'var(--err)',
+            fontSize: 13,
+            lineHeight: 1.55,
+          }}
+        >
+          <strong>Validation findings</strong>
+          <ul style={{ margin: '8px 0 0', paddingLeft: 18 }}>
+            {validationErrors.map((finding) => (
+              <li key={finding}>{finding}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Document preview + downloads */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 26, marginTop: 24, alignItems: 'stretch' }}>
@@ -1319,7 +1471,15 @@ function ResultsStep({
             Create a free account and run it on this same data pack.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 18, alignItems: 'center' }}>
-            <AuthCtaButtons />
+            {showSimulationSignup ? (
+              <AuthCtaButtons />
+            ) : clerkAvailable ? (
+              <Link href="/app/psur/build" className="btn btn-orange" style={{ textDecoration: 'none' }}>
+                Open live builder
+              </Link>
+            ) : (
+              <AuthCtaButtons />
+            )}
             <button className="btn btn-ghost" onClick={onRestart}>Replay the simulation</button>
           </div>
         </div>
@@ -1517,8 +1677,23 @@ const EMPTY_RUN_STATE: RunState = {
   busy: false,
 };
 
-function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }) {
+function requestedRunIdFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  const id = new URLSearchParams(window.location.search).get('run');
+  return id && /^[A-Za-z0-9._-]+$/.test(id) ? id : null;
+}
+
+function PsurDemoCore({
+  mode,
+  getToken,
+  showSimulationSignup,
+}: {
+  mode: DemoMode;
+  getToken: GetToken;
+  showSimulationSignup: boolean;
+}) {
   const [step, setStep] = useState<StepId>('intro');
+  const requestedRunId = useMemo(() => requestedRunIdFromUrl(), []);
 
   const apiJson = useMemo(() => createJsonClient(getToken), [getToken]);
   const streamSse = useMemo(() => createAuthenticatedSse(getToken), [getToken]);
@@ -1544,6 +1719,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
   const [pastRuns, setPastRuns] = useState<PsurRunSummary[]>([]);
   const [pastRunsLoading, setPastRunsLoading] = useState(false);
   const [reopeningRunId, setReopeningRunId] = useState<string | null>(null);
+  const requestedRunHandledRef = useRef(false);
 
   // Simulation playback speed (1× scripted, 4× fast-forward).
   const [speed, setSpeedState] = useState(1);
@@ -1569,7 +1745,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
         const { status, body } = await apiJson<Defaults>('/api/psur/defaults');
         if (cancelled) return;
         if (status === 401) {
-          setLoadError('Your session has expired. Sign in again to run the real pipeline.');
+          setLoadError(sessionExpiredMessage());
           return;
         }
         if (status !== 200) {
@@ -1578,8 +1754,10 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
         }
         setDefaults(body);
         setEdited(clone(body.inputs));
-      } catch {
-        if (!cancelled) setLoadError('The PSUR demo service did not respond. Please try again shortly.');
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(isAuthTokenRequired(err) ? sessionExpiredMessage() : 'The PSUR demo service did not respond. Please try again shortly.');
+        }
       }
     })();
     return () => {
@@ -1735,7 +1913,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
       }>('/api/psur/runs', { method: 'POST', body: JSON.stringify(payload) });
 
       if (status === 401) {
-        setStartError('Your session has expired. Sign in again to run the real pipeline.');
+        setStartError(sessionExpiredMessage());
         setStarting(false);
         return;
       }
@@ -1769,8 +1947,8 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
         return;
       }
       createdRunId = body.runId;
-    } catch {
-      setStartError('The API is unreachable. Please try again shortly.');
+    } catch (err) {
+      setStartError(isAuthTokenRequired(err) ? sessionExpiredMessage() : 'The API is unreachable. Please try again shortly.');
       setStarting(false);
       return;
     }
@@ -1804,9 +1982,14 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
           }
         },
       });
-    } catch {
+    } catch (err) {
       if (!abort.signal.aborted) {
-        setRunState((s) => ({ ...s, error: 'The live stream was interrupted. The trace keeps its partial chain.' }));
+        setRunState((s) => ({
+          ...s,
+          error: isAuthTokenRequired(err)
+            ? sessionExpiredMessage()
+            : 'The live stream was interrupted. The trace keeps its partial chain.',
+        }));
       }
     }
     markRunEnded();
@@ -1852,17 +2035,15 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
 
   const downloadFromRun = useCallback(
     async (forRunId: string, name: string) => {
-      const token = await getToken();
-      const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
       try {
-        const res = await fetch(
-          `${API_BASE}/api/psur/runs/${encodeURIComponent(forRunId)}/artifacts/${encodeURIComponent(name)}`,
-          { headers },
+        const res = await liveFetch(
+          getToken,
+          `/api/psur/runs/${encodeURIComponent(forRunId)}/artifacts/${encodeURIComponent(name)}`,
         );
         if (!res.ok) return;
         saveBlob(await res.blob(), name);
-      } catch {
+      } catch (err) {
+        if (isAuthTokenRequired(err)) setStartError(sessionExpiredMessage());
         // Download silently unavailable.
       }
     },
@@ -1898,6 +2079,15 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
     [apiJson, resetRunOutputs],
   );
 
+  useEffect(() => {
+    if (mode !== 'live' || !requestedRunId || requestedRunHandledRef.current) return;
+    if (pastRunsLoading) return;
+    const run = pastRuns.find((r) => r.runId === requestedRunId);
+    if (!run) return;
+    requestedRunHandledRef.current = true;
+    if (run.status === 'completed') void reopenRun(run);
+  }, [mode, requestedRunId, pastRuns, pastRunsLoading, reopenRun]);
+
   // Live mode: pull the first HTML artifact for the inline document preview.
   useEffect(() => {
     if (mode !== 'live' || step !== 'results' || previewHtml || !complete || !runId) return;
@@ -1906,17 +2096,15 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
     let cancelled = false;
     (async () => {
       try {
-        const token = await getToken();
-        const headers: Record<string, string> = {};
-        if (token) headers.Authorization = `Bearer ${token}`;
-        const res = await fetch(
-          `${API_BASE}/api/psur/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(htmlArtifact.name)}`,
-          { headers },
+        const res = await liveFetch(
+          getToken,
+          `/api/psur/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(htmlArtifact.name)}`,
         );
         if (!res.ok || cancelled) return;
         const text = await res.text();
         if (!cancelled) setPreviewHtml(text);
-      } catch {
+      } catch (err) {
+        if (isAuthTokenRequired(err) && !cancelled) setRunState((s) => ({ ...s, error: sessionExpiredMessage() }));
         // No preview — downloads still work.
       }
     })();
@@ -1936,17 +2124,15 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
         return;
       }
       if (!runId) return;
-      const token = await getToken();
-      const headers: Record<string, string> = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
       try {
-        const res = await fetch(
-          `${API_BASE}/api/psur/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(name)}`,
-          { headers },
+        const res = await liveFetch(
+          getToken,
+          `/api/psur/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(name)}`,
         );
         if (!res.ok) return;
         saveBlob(await res.blob(), name);
-      } catch {
+      } catch (err) {
+        if (isAuthTokenRequired(err)) setRunState((s) => ({ ...s, error: sessionExpiredMessage() }));
         // Download silently unavailable; the run view still holds the trace.
       }
     },
@@ -1965,26 +2151,31 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
       <style>{RUNTIME_KEYFRAMES}</style>
       <nav
         style={{
-          height: 64,
+          minHeight: 64,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 28px',
+          gap: 16,
+          flexWrap: 'wrap',
+          padding: '10px 28px',
           borderBottom: '1px solid var(--rule)',
         }}
       >
         <Link href="/" style={{ textDecoration: 'none', border: 0, color: 'var(--ink)', display: 'inline-flex' }}>
           <SmarticusWordmark size={15} tagline={false} />
         </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap', minWidth: 0 }}>
           <span className="eyebrow">
             {mode === 'simulation' ? 'PSUR demo · simulation mode' : 'PSUR demo · data → draft in 20 minutes'}
           </span>
           <Chip tone={mode === 'live' ? 'done' : 'sim'}>{mode === 'live' ? 'Live pipeline' : 'Simulation'}</Chip>
-          {mode === 'live' && clerkAvailable && (
+          {shouldShowLiveWorkspaceControls({ mode, clerkAvailable }) && (
+            <>
             <Link href="/app" className="btn btn-ghost" style={{ textDecoration: 'none', fontSize: 12.5, padding: '7px 14px' }}>
               Command Center
             </Link>
+            <LiveWorkspaceControls />
+            </>
           )}
           <ThemeToggle />
         </div>
@@ -1994,10 +2185,16 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
         <ProgressRail step={step} />
       </div>
 
-      {mode === 'simulation' && <SimulationBanner />}
+      {mode === 'simulation' && <SimulationBanner showSimulationSignup={showSimulationSignup} />}
 
       <main style={{ flex: 1, padding: '36px 28px 64px', maxWidth: 1040, width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
-        {step === 'intro' && <IntroStep mode={mode} onStart={() => setStep('inputs')} />}
+      {step === 'intro' && (
+        <IntroStep
+          mode={mode}
+          onStart={() => setStep('inputs')}
+          showSimulationSignup={showSimulationSignup}
+        />
+      )}
         {step === 'intro' && mode === 'live' && (
           <YourRunsPanel
             runs={pastRuns}
@@ -2039,6 +2236,7 @@ function PsurDemoCore({ mode, getToken }: { mode: DemoMode; getToken: GetToken }
             previewHtml={previewHtml}
             onDownload={(name) => void downloadArtifact(name)}
             onRestart={restart}
+            showSimulationSignup={showSimulationSignup}
           />
         )}
       </main>
@@ -2068,18 +2266,33 @@ function DemoSplash() {
   );
 }
 
-/** Picks the mode from auth state; remounts the core on sign-in so a visitor who converts mid-demo lands cleanly in the live pipeline. */
+/** Picks the mode from auth state and route: public demo stays simulated; workspace builder runs live. */
 function ClerkAwarePsurDemo() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
-  if (!isLoaded) return <DemoSplash />;
-  const mode: DemoMode = isSignedIn ? 'live' : 'simulation';
-  return <PsurDemoCore key={mode} mode={mode} getToken={getToken} />;
+  const [path] = useLocation();
+  const publicDemoRoute = path.split('?')[0] === '/demo/psur';
+  const mode = selectPsurDemoMode({ clerkAvailable, isLoaded, isSignedIn, publicDemoRoute });
+  if (mode === 'loading') return <DemoSplash />;
+  return (
+    <PsurDemoCore
+      key={`${path}:${mode}`}
+      mode={mode}
+      getToken={getToken}
+      showSimulationSignup={publicDemoRoute && !isSignedIn}
+    />
+  );
 }
 
 export function PsurDemo() {
+  const fallbackMode = selectPsurDemoMode({ clerkAvailable, isLoaded: true, isSignedIn: false });
   if (!clerkAvailable) {
-    // Dev without Clerk: mirror the app shell's open-access behaviour.
-    return <PsurDemoCore mode="live" getToken={async () => null} />;
+    return (
+      <PsurDemoCore
+        mode={fallbackMode === 'loading' ? 'simulation' : fallbackMode}
+        getToken={async () => null}
+        showSimulationSignup={false}
+      />
+    );
   }
   return <ClerkAwarePsurDemo />;
 }

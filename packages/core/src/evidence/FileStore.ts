@@ -1,9 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { mkdir, writeFile, readFile, unlink, stat } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, inArray } from 'drizzle-orm';
 import { getDB, type RegGroundDB } from '../db/connection.js';
 import { workspaceFiles, type WorkspaceFileRow } from '../db/schema.js';
+
+export interface FileScope {
+  tenantId: string;
+  workspaceId?: string;
+}
 
 export interface FileUploadInput {
   workspaceId: string;
@@ -17,6 +22,7 @@ export interface FileUploadInput {
 export interface FileRecord {
   id: string;
   workspaceId: string;
+  tenantId: string;
   fileId: string;
   name: string;
   mimeType: string;
@@ -24,6 +30,21 @@ export interface FileRecord {
   contentHash: string;
   metadata: Record<string, unknown>;
   createdAt: Date;
+}
+
+export function validateWorkspaceFileName(name: string): string {
+  const trimmed = name.trim();
+  if (
+    trimmed.length === 0 ||
+    trimmed === '.' ||
+    trimmed === '..' ||
+    trimmed.includes('/') ||
+    trimmed.includes('\\') ||
+    trimmed.includes('\0')
+  ) {
+    throw new Error('Invalid workspace file name');
+  }
+  return trimmed;
 }
 
 /**
@@ -42,10 +63,11 @@ export class FileStore {
 
   async upload(input: FileUploadInput): Promise<FileRecord> {
     const fileId = `file-${randomUUID().slice(0, 12)}`;
+    const safeName = validateWorkspaceFileName(input.name);
     const contentHash = createHash('sha256').update(input.data).digest('hex');
     const dir = join(this.basePath, input.workspaceId, fileId);
     await mkdir(dir, { recursive: true });
-    const storageKey = join(dir, input.name);
+    const storageKey = join(dir, safeName);
     await writeFile(storageKey, input.data);
 
     const [row] = await this.db
@@ -54,7 +76,7 @@ export class FileStore {
         workspaceId: input.workspaceId,
         tenantId: input.tenantId,
         fileId,
-        name: input.name,
+        name: safeName,
         mimeType: input.mimeType,
         sizeBytes: input.data.length,
         contentHash,
@@ -66,32 +88,32 @@ export class FileStore {
     return this.rowToRecord(row!);
   }
 
-  async getByFileId(fileId: string): Promise<FileRecord | null> {
+  async getByFileId(fileId: string, scope: FileScope): Promise<FileRecord | null> {
     const rows = await this.db
       .select()
       .from(workspaceFiles)
-      .where(eq(workspaceFiles.fileId, fileId))
+      .where(this.fileScopeWhere(fileId, scope))
       .limit(1);
     if (rows.length === 0) return null;
     return this.rowToRecord(rows[0]!);
   }
 
-  async listByWorkspace(workspaceId: string): Promise<FileRecord[]> {
+  async listByWorkspace(workspaceId: string, tenantId: string): Promise<FileRecord[]> {
     const rows = await this.db
       .select()
       .from(workspaceFiles)
-      .where(eq(workspaceFiles.workspaceId, workspaceId))
+      .where(and(eq(workspaceFiles.workspaceId, workspaceId), eq(workspaceFiles.tenantId, tenantId)))
       .orderBy(workspaceFiles.createdAt);
     return rows.map((r) => this.rowToRecord(r));
   }
 
-  async readContent(fileId: string): Promise<Buffer | null> {
-    const record = await this.getByFileId(fileId);
+  async readContent(fileId: string, scope: FileScope): Promise<Buffer | null> {
+    const record = await this.getByFileId(fileId, scope);
     if (!record) return null;
     const row = await this.db
       .select()
       .from(workspaceFiles)
-      .where(eq(workspaceFiles.fileId, fileId))
+      .where(this.fileScopeWhere(fileId, scope))
       .limit(1);
     if (row.length === 0) return null;
     try {
@@ -101,11 +123,11 @@ export class FileStore {
     }
   }
 
-  async deleteFile(fileId: string): Promise<boolean> {
+  async deleteFile(fileId: string, scope: FileScope): Promise<boolean> {
     const rows = await this.db
       .select()
       .from(workspaceFiles)
-      .where(eq(workspaceFiles.fileId, fileId))
+      .where(this.fileScopeWhere(fileId, scope))
       .limit(1);
     if (rows.length === 0) return false;
     const row = rows[0]!;
@@ -119,23 +141,45 @@ export class FileStore {
 
     const deleted = await this.db
       .delete(workspaceFiles)
-      .where(eq(workspaceFiles.fileId, fileId))
+      .where(this.fileScopeWhere(fileId, scope))
       .returning();
     return deleted.length > 0;
   }
 
-  async getMultipleByFileIds(fileIds: string[]): Promise<FileRecord[]> {
+  async getMultipleByFileIds(fileIds: string[], scope: FileScope): Promise<FileRecord[]> {
     if (fileIds.length === 0) return [];
-    const rows = await this.db.select().from(workspaceFiles);
-    return rows
-      .filter((r) => fileIds.includes(r.fileId))
-      .map((r) => this.rowToRecord(r));
+    const rows = await this.db
+      .select()
+      .from(workspaceFiles)
+      .where(this.fileIdsScopeWhere(fileIds, scope));
+    return rows.map((r) => this.rowToRecord(r));
+  }
+
+  private fileScopeWhere(fileId: string, scope: FileScope) {
+    return scope.workspaceId
+      ? and(
+          eq(workspaceFiles.fileId, fileId),
+          eq(workspaceFiles.tenantId, scope.tenantId),
+          eq(workspaceFiles.workspaceId, scope.workspaceId),
+        )
+      : and(eq(workspaceFiles.fileId, fileId), eq(workspaceFiles.tenantId, scope.tenantId));
+  }
+
+  private fileIdsScopeWhere(fileIds: string[], scope: FileScope) {
+    return scope.workspaceId
+      ? and(
+          inArray(workspaceFiles.fileId, fileIds),
+          eq(workspaceFiles.tenantId, scope.tenantId),
+          eq(workspaceFiles.workspaceId, scope.workspaceId),
+        )
+      : and(inArray(workspaceFiles.fileId, fileIds), eq(workspaceFiles.tenantId, scope.tenantId));
   }
 
   private rowToRecord(row: WorkspaceFileRow): FileRecord {
     return {
       id: row.id,
       workspaceId: row.workspaceId,
+      tenantId: row.tenantId,
       fileId: row.fileId,
       name: row.name,
       mimeType: row.mimeType,

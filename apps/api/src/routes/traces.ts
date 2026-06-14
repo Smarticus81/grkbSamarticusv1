@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { renderAuditPackMarkdown, type ObligationLookup } from '@regground/core';
-import { getContext } from '../context.js';
+import {
+  ChainVerifier,
+  renderAuditPackMarkdown,
+  type DecisionTraceEntry,
+  type ObligationLookup,
+} from '@regground/core';
+import { getContext, type AppContext } from '../context.js';
 
-const router: Router = Router();
 // Plain UUIDs (sandbox/process runs) plus the PSUR demo's prefixed form
 // ("psur-demo-<uuid>") so demo chains are viewable/exportable via the same
 // trace surface (TraceExplorer, audit-pack export) for signed-in users.
@@ -23,47 +27,13 @@ function emptyVerification() {
   };
 }
 
-router.get('/:processInstanceId', async (req, res) => {
-  const processInstanceId = req.params.processInstanceId!;
-  if (!isUuid(processInstanceId)) return res.json([]);
-  try {
-    const chain = await getContext().traceService.getTraceChain(processInstanceId);
-    res.json(chain);
-  } catch (err) {
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Could not load trace.' });
-  }
-});
+function requestTenantId(req: Express.Request): string | null {
+  return req.tenantId ?? req.user?.tenantId ?? null;
+}
 
-router.get('/:processInstanceId/verify', async (req, res) => {
-  const processInstanceId = req.params.processInstanceId!;
-  if (!isUuid(processInstanceId)) return res.json(emptyVerification());
-  try {
-    const verification = await getContext().chainVerifier.verifyChain(processInstanceId);
-    res.json(verification);
-  } catch (err) {
-    res.status(500).json({ error: err instanceof Error ? err.message : 'Could not verify trace.' });
-  }
-});
-
-router.get('/:processInstanceId/export.jsonl', async (req, res) => {
-  if (!isUuid(req.params.processInstanceId!)) return res.status(404).json({ error: 'trace not found' });
-  const jsonl = await getContext().traceExporter.toJSONL(req.params.processInstanceId!);
-  res.setHeader('Content-Type', 'application/x-ndjson');
-  res.send(jsonl);
-});
-
-router.get('/:processInstanceId/export.dot', async (req, res) => {
-  if (!isUuid(req.params.processInstanceId!)) return res.status(404).json({ error: 'trace not found' });
-  const dot = await getContext().traceExporter.toDOT(req.params.processInstanceId!);
-  res.setHeader('Content-Type', 'text/vnd.graphviz');
-  res.send(dot);
-});
-
-router.get('/:processInstanceId/audit-report', async (req, res) => {
-  if (!isUuid(req.params.processInstanceId!)) return res.status(404).json({ error: 'trace not found' });
-  const report = await getContext().traceExporter.toAuditReport(req.params.processInstanceId!);
-  res.json(report);
-});
+function sameTenant(chain: DecisionTraceEntry[], tenantId: string): boolean {
+  return chain.length > 0 && chain.every((entry) => entry.tenantId === tenantId);
+}
 
 const auditPackQuerySchema = z.object({
   format: z.enum(['json', 'markdown']).default('json'),
@@ -71,10 +41,14 @@ const auditPackQuerySchema = z.object({
   download: z.enum(['1', 'true']).optional(),
 });
 
+export interface TraceRouterOptions {
+  context?: AppContext;
+}
+
 /** Graph-backed obligation enrichment; assembleAuditPack downgrades to a note if it throws. */
-export function graphObligationLookup(): ObligationLookup {
+export function graphObligationLookup(context: AppContext = getContext()): ObligationLookup {
   return async (obligationId: string) => {
-    const node = await getContext().graph.getObligation(obligationId);
+    const node = await context.graph.getObligation(obligationId);
     if (!node) return null;
     return {
       title: node.title,
@@ -85,48 +59,131 @@ export function graphObligationLookup(): ObligationLookup {
   };
 }
 
-router.get('/:processInstanceId/audit-pack', async (req, res) => {
-  const processInstanceId = req.params.processInstanceId!;
-  if (!isUuid(processInstanceId)) return res.status(404).json({ error: 'trace not found' });
+export function createTracesRouter(opts: TraceRouterOptions = {}): Router {
+  const router: Router = Router();
+  const ctx = () => opts.context ?? getContext();
 
-  const query = auditPackQuerySchema.safeParse(req.query);
-  if (!query.success) {
-    return res.status(400).json({ error: 'Invalid query', issues: query.error.issues });
+  async function authorizedChain(
+    req: Express.Request,
+    processInstanceId: string,
+  ): Promise<{ status: 200; chain: DecisionTraceEntry[] } | { status: 403 | 404; error: string }> {
+    if (!isUuid(processInstanceId)) return { status: 404, error: 'trace not found' };
+    const tenantId = requestTenantId(req);
+    if (!tenantId) return { status: 403, error: 'no tenant context' };
+    const chain = await ctx().traceService.getTraceChain(processInstanceId);
+    if (!sameTenant(chain, tenantId)) return { status: 404, error: 'trace not found' };
+    return { status: 200, chain };
   }
-  const { format, include, download } = query.data;
 
-  try {
-    const pack = await getContext().traceExporter.toAuditPack(
-      processInstanceId,
-      graphObligationLookup(),
-    );
+  router.get('/:processInstanceId', async (req, res) => {
+    const processInstanceId = req.params.processInstanceId!;
+    if (!isUuid(processInstanceId)) return res.json([]);
+    try {
+      const auth = await authorizedChain(req, processInstanceId);
+      if (auth.status !== 200) return res.status(auth.status).json({ error: auth.error });
+      res.json(auth.chain);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Could not load trace.' });
+    }
+  });
 
-    if (format === 'markdown') {
-      res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+  router.get('/:processInstanceId/verify', async (req, res) => {
+    const processInstanceId = req.params.processInstanceId!;
+    if (!isUuid(processInstanceId)) return res.json(emptyVerification());
+    try {
+      const auth = await authorizedChain(req, processInstanceId);
+      if (auth.status !== 200) return res.status(auth.status).json({ error: auth.error });
+      res.json(new ChainVerifier().verifyEntries(auth.chain));
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Could not verify trace.' });
+    }
+  });
+
+  router.get('/:processInstanceId/export.jsonl', async (req, res) => {
+    const processInstanceId = req.params.processInstanceId!;
+    try {
+      const auth = await authorizedChain(req, processInstanceId);
+      if (auth.status !== 200) return res.status(auth.status).json({ error: auth.error });
+      const jsonl = await ctx().traceExporter.toJSONL(processInstanceId);
+      res.setHeader('Content-Type', 'application/x-ndjson');
+      res.send(jsonl);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Could not export trace.' });
+    }
+  });
+
+  router.get('/:processInstanceId/export.dot', async (req, res) => {
+    const processInstanceId = req.params.processInstanceId!;
+    try {
+      const auth = await authorizedChain(req, processInstanceId);
+      if (auth.status !== 200) return res.status(auth.status).json({ error: auth.error });
+      const dot = await ctx().traceExporter.toDOT(processInstanceId);
+      res.setHeader('Content-Type', 'text/vnd.graphviz');
+      res.send(dot);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Could not export trace.' });
+    }
+  });
+
+  router.get('/:processInstanceId/audit-report', async (req, res) => {
+    const processInstanceId = req.params.processInstanceId!;
+    try {
+      const auth = await authorizedChain(req, processInstanceId);
+      if (auth.status !== 200) return res.status(auth.status).json({ error: auth.error });
+      const report = await ctx().traceExporter.toAuditReport(processInstanceId);
+      res.json(report);
+    } catch (err) {
+      res.status(500).json({ error: err instanceof Error ? err.message : 'Could not build audit report.' });
+    }
+  });
+
+  router.get('/:processInstanceId/audit-pack', async (req, res) => {
+    const processInstanceId = req.params.processInstanceId!;
+
+    const query = auditPackQuerySchema.safeParse(req.query);
+    if (!query.success) {
+      return res.status(400).json({ error: 'Invalid query', issues: query.error.issues });
+    }
+    const { format, include, download } = query.data;
+
+    try {
+      const auth = await authorizedChain(req, processInstanceId);
+      if (auth.status !== 200) return res.status(auth.status).json({ error: auth.error });
+
+      const pack = await ctx().traceExporter.toAuditPack(
+        processInstanceId,
+        graphObligationLookup(ctx()),
+      );
+
+      if (format === 'markdown') {
+        res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+        if (download) {
+          res.setHeader(
+            'Content-Disposition',
+            `attachment; filename="audit-pack-${processInstanceId}.md"`,
+          );
+        }
+        return res.send(renderAuditPackMarkdown(pack));
+      }
+
       if (download) {
         res.setHeader(
           'Content-Disposition',
-          `attachment; filename="audit-pack-${processInstanceId}.md"`,
+          `attachment; filename="audit-pack-${processInstanceId}.json"`,
         );
       }
-      return res.send(renderAuditPackMarkdown(pack));
+      if (include === 'markdown') {
+        return res.json({ ...pack, markdown: renderAuditPackMarkdown(pack) });
+      }
+      return res.json(pack);
+    } catch (err) {
+      res
+        .status(500)
+        .json({ error: err instanceof Error ? err.message : 'Could not build audit pack.' });
     }
+  });
 
-    if (download) {
-      res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="audit-pack-${processInstanceId}.json"`,
-      );
-    }
-    if (include === 'markdown') {
-      return res.json({ ...pack, markdown: renderAuditPackMarkdown(pack) });
-    }
-    return res.json(pack);
-  } catch (err) {
-    res
-      .status(500)
-      .json({ error: err instanceof Error ? err.message : 'Could not build audit pack.' });
-  }
-});
+  return router;
+}
 
-export default router;
+export default createTracesRouter();

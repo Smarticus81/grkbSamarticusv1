@@ -10,6 +10,8 @@ type DrizzleTransaction = PgTransaction<
   ExtractTablesWithRelations<typeof schema>
 >;
 
+export type TenantTransaction = DrizzleTransaction;
+
 /**
  * Execute a function within a tenant-scoped transaction.
  *

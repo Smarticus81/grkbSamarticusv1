@@ -91,7 +91,10 @@ export class DynamicGroundedAgent extends BaseGroundedAgent<
     // Resolve attached files
     let fileContext: FileContext[] | undefined;
     if (this.fileStore && this.agentConfig.attachedFileIds.length > 0) {
-      const files = await this.fileStore.getMultipleByFileIds(this.agentConfig.attachedFileIds);
+      const files = await this.fileStore.getMultipleByFileIds(this.agentConfig.attachedFileIds, {
+        tenantId: traceCtx.tenantId,
+        workspaceId: this._context!.workspaceId,
+      });
       fileContext = files.map((f) => ({
         fileId: f.fileId,
         name: f.name,

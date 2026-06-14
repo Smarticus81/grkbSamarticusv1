@@ -2,8 +2,8 @@
 # Regulatory Ground - Web (Vite static build, served via `serve`)
 # Build context: repo root
 #
-# At build time, set VITE_API_URL via Railway build args / env so the
-# bundled JS points at your deployed API service.
+# At build time, set Vite public values via Railway build args / env so the
+# bundled JS points at your deployed API service and boots with auth enabled.
 
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
@@ -20,7 +20,15 @@ RUN pnpm install --frozen-lockfile
 
 FROM deps AS build
 ARG VITE_API_URL
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_SESSION_IDLE_TIMEOUT_MINUTES
+ARG VITE_SESSION_AWAY_TIMEOUT_MINUTES
+ARG VITE_SESSION_WARNING_SECONDS
 ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_CLERK_PUBLISHABLE_KEY=${VITE_CLERK_PUBLISHABLE_KEY}
+ENV VITE_SESSION_IDLE_TIMEOUT_MINUTES=${VITE_SESSION_IDLE_TIMEOUT_MINUTES}
+ENV VITE_SESSION_AWAY_TIMEOUT_MINUTES=${VITE_SESSION_AWAY_TIMEOUT_MINUTES}
+ENV VITE_SESSION_WARNING_SECONDS=${VITE_SESSION_WARNING_SECONDS}
 COPY . .
 RUN pnpm --filter @regground/web build
 
@@ -32,4 +40,4 @@ COPY --from=build /app/apps/web/dist ./dist
 
 EXPOSE 5173
 # Railway injects $PORT; the current Railway-provided domain targets 5173.
-CMD ["sh", "-c", "serve -s dist -l ${PORT:-5173}"]
+CMD ["sh", "-c", "serve -s dist -l tcp://0.0.0.0:${PORT:-5173}"]

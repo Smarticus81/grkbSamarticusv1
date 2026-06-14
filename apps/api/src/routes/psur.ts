@@ -7,7 +7,7 @@
  * writer of decision-trace entries for demo runs:
  *
  *   GET  /api/psur/defaults                  — mock-input pack from the Python service
- *   POST /api/psur/runs                      — start a run (trace started under the demo tenant)
+ *   POST /api/psur/runs                      — start a run (trace started under the caller's tenant)
  *   GET  /api/psur/runs/:id                  — run status proxy
  *   GET  /api/psur/runs/:id/stream           — SSE relay; decision events appended to the hash chain
  *   GET  /api/psur/runs/:id/artifacts        — artifact list proxy
@@ -29,7 +29,9 @@ import {
   eq,
   and,
   desc,
+  withTenant,
   type DecisionTraceEntry,
+  type TenantTransaction,
   type TraceContext,
   type TraceEventInput,
 } from '@regground/core';
@@ -45,7 +47,11 @@ import {
   RunCreatedSchema,
   RunRequestSchema,
   type CompleteEvent,
+  type DefaultsResponse,
   type DecisionEvent,
+  type InputDefault,
+  type RunInput,
+  type RunRequest,
 } from '../psur/schemas.js';
 
 // ---------------------------------------------------------------------------
@@ -61,6 +67,10 @@ export const PSUR_DEMO_TENANT = 'psur-demo';
 
 /** Cap on remembered runs kept in memory (durable history lives in Postgres). */
 const MAX_REMEMBERED_RUNS = 200;
+
+function tenantDb<T>(tenantId: string, fn: (db: TenantTransaction) => Promise<T>): Promise<T> {
+  return withTenant(getDB(), tenantId, fn);
+}
 
 /** Structural subset of DecisionTraceService used by the bridge (mockable). */
 export interface PsurTraceService {
@@ -80,6 +90,8 @@ export interface PsurRouterOptions {
   resolver?: CitationResolver;
   /** Clock (injectable for tests). */
   now?: () => Date;
+  /** Explicit test/dev opt-in for standalone router mounts without auth middleware. */
+  allowAnonymous?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,6 +101,11 @@ export interface PsurRouterOptions {
 interface SseFrame {
   event: string;
   data: string;
+}
+
+interface StructuralIssue {
+  loc: Array<string | number>;
+  msg: string;
 }
 
 /** Incrementally parse an SSE byte stream into frames, invoking onFrame per frame. */
@@ -141,6 +158,114 @@ function writeSseError(res: Response, message: string, extra: Record<string, unk
   writeSse(res, 'error', JSON.stringify({ kind: 'error', message, ...extra }));
 }
 
+function sameMembers(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const expected = new Set(a);
+  return b.every((value) => expected.has(value));
+}
+
+function valueMatchesColumnType(value: unknown, columnType: string): boolean {
+  const t = columnType.toLowerCase();
+  if (t.includes('bool')) return typeof value === 'boolean';
+  if (t.includes('int')) return typeof value === 'number' && Number.isInteger(value);
+  if (t.includes('number') || t.includes('float') || t.includes('decimal')) {
+    return typeof value === 'number' && Number.isFinite(value);
+  }
+  if (t.includes('date')) return typeof value === 'string' && !Number.isNaN(Date.parse(value));
+  if (t.includes('json') || t.includes('object') || t.includes('array')) {
+    return typeof value === 'object' && value !== null;
+  }
+  return typeof value === 'string';
+}
+
+function validateTableRows(
+  name: string,
+  input: Extract<RunInput, { rows: Record<string, unknown>[] }>,
+  defaults: Extract<InputDefault, { kind: 'table' }>,
+): StructuralIssue[] {
+  const issues: StructuralIssue[] = [];
+  const expectedColumns = defaults.columns.map((column) => column.name);
+
+  for (const [rowIndex, row] of input.rows.entries()) {
+    const actualColumns = Object.keys(row);
+    if (!sameMembers(expectedColumns, actualColumns)) {
+      issues.push({
+        loc: ['inputs', name, 'rows', rowIndex],
+        msg: `row columns must exactly match locked template columns: ${expectedColumns.join(', ')}`,
+      });
+      continue;
+    }
+
+    for (const column of defaults.columns) {
+      const value = row[column.name];
+      const empty = value === undefined || value === null || value === '';
+      if (column.required && empty) {
+        issues.push({
+          loc: ['inputs', name, 'rows', rowIndex, column.name],
+          msg: 'required value is missing',
+        });
+        continue;
+      }
+      if (!empty && !valueMatchesColumnType(value, column.type)) {
+        issues.push({
+          loc: ['inputs', name, 'rows', rowIndex, column.name],
+          msg: `expected ${column.type}`,
+        });
+      }
+    }
+  }
+
+  return issues;
+}
+
+function validateJsonValue(
+  name: string,
+  input: Extract<RunInput, { value: Record<string, unknown> }>,
+  defaults: Extract<InputDefault, { kind: 'json' }>,
+): StructuralIssue[] {
+  const expectedKeys = Object.keys(defaults.value);
+  const actualKeys = Object.keys(input.value);
+  if (sameMembers(expectedKeys, actualKeys)) return [];
+  return [{
+    loc: ['inputs', name, 'value'],
+    msg: `json fields must exactly match locked template fields: ${expectedKeys.join(', ')}`,
+  }];
+}
+
+function validateRunStructure(payload: RunRequest, defaults: DefaultsResponse): StructuralIssue[] {
+  const issues: StructuralIssue[] = [];
+  const expectedInputs = Object.keys(defaults.inputs);
+  const actualInputs = Object.keys(payload.inputs);
+  const payloadInputs = payload.inputs as Record<string, RunInput | undefined>;
+  const defaultInputs = defaults.inputs as Record<string, InputDefault>;
+
+  if (!sameMembers(expectedInputs, actualInputs)) {
+    issues.push({
+      loc: ['inputs'],
+      msg: `input set must exactly match locked template inputs: ${expectedInputs.join(', ')}`,
+    });
+  }
+
+  for (const [name, defaultInput] of Object.entries(defaultInputs)) {
+    const input = payloadInputs[name];
+    if (!input) continue;
+
+    if (defaultInput.kind === 'table') {
+      if (!('rows' in input)) {
+        issues.push({ loc: ['inputs', name], msg: 'expected table rows for this locked input' });
+      } else {
+        issues.push(...validateTableRows(name, input, defaultInput));
+      }
+    } else if (!('value' in input)) {
+      issues.push({ loc: ['inputs', name], msg: 'expected json value for this locked input' });
+    } else {
+      issues.push(...validateJsonValue(name, input, defaultInput));
+    }
+  }
+
+  return issues;
+}
+
 // ---------------------------------------------------------------------------
 // Router factory
 // ---------------------------------------------------------------------------
@@ -175,6 +300,20 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   // Self-contained body parsing (no-op when the app already parsed JSON).
   router.use(express.json({ limit: '10mb' }));
 
+  router.use((req, res, next) => {
+    if (opts.allowAnonymous === true) {
+      next();
+      return;
+    }
+    const user = (req as AuthedRequest).user;
+    const tenantId = user?.tenantId ?? (req as { tenantId?: string }).tenantId;
+    if (user?.sub && tenantId) {
+      next();
+      return;
+    }
+    res.status(401).json({ error: 'authentication required for live PSUR pipeline' });
+  });
+
   const serviceUrl = () =>
     (opts.serviceUrl ?? process.env.PSUR_SERVICE_URL ?? 'http://localhost:8000').replace(/\/+$/, '');
   const doFetch: typeof fetch = opts.fetchImpl ?? fetch;
@@ -191,12 +330,55 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   /** runId → record. Insertion-ordered; oldest inactive evicted past the cap. */
   const runs = new Map<string, RunRecord>();
 
+  async function fetchDefaultsForValidation(): Promise<
+    | { ok: true; defaults: DefaultsResponse }
+    | { ok: false; status: number; body: { error: string; detail?: unknown } }
+  > {
+    try {
+      const upstream = await doFetch(`${serviceUrl()}/defaults`);
+      if (!upstream.ok) {
+        return {
+          ok: false,
+          status: 502,
+          body: { error: `PSUR service returned ${upstream.status} for /defaults` },
+        };
+      }
+      const parsed = DefaultsResponseSchema.safeParse(await upstream.json());
+      if (!parsed.success) {
+        return {
+          ok: false,
+          status: 502,
+          body: {
+            error: 'PSUR service /defaults response failed validation',
+            detail: parsed.error.flatten(),
+          },
+        };
+      }
+      return { ok: true, defaults: parsed.data };
+    } catch (err) {
+      return {
+        ok: false,
+        status: 502,
+        body: {
+          error: 'PSUR service unreachable',
+          detail: err instanceof Error ? err.message : String(err),
+        },
+      };
+    }
+  }
+
   function clientIp(req: Request): string {
     return req.ip ?? req.socket.remoteAddress ?? 'unknown';
   }
 
   function releaseRun(rec: RunRecord): void {
     rec.active = false;
+  }
+
+  function canAccessRun(req: Request, rec: RunRecord): boolean {
+    const { userId, tenantId } = caller(req);
+    if (rec.tenantId !== tenantId) return false;
+    return persistedUserId(rec) === persistedCallerUserId(userId);
   }
 
   function rememberRun(rec: RunRecord): void {
@@ -219,7 +401,7 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
 
   async function persistRunStart(rec: RunRecord, period: { start: string; end: string }): Promise<void> {
     try {
-      await getDB()
+      await tenantDb(rec.tenantId, (db) => db
         .insert(schema.psurRuns)
         .values({
           runId: rec.runId,
@@ -231,10 +413,18 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
           periodStart: period.start,
           periodEnd: period.end,
         })
-        .onConflictDoNothing();
+        .onConflictDoNothing());
     } catch (err) {
       console.warn('[psur] failed to persist run start:', err instanceof Error ? err.message : err);
     }
+  }
+
+  function persistedUserId(rec: RunRecord): string {
+    return rec.userId ?? 'anonymous';
+  }
+
+  function persistedCallerUserId(userId: string | null): string {
+    return userId ?? 'anonymous';
   }
 
   /** Enrich a run row with device/report metadata from the Python status (best-effort). */
@@ -255,7 +445,7 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   async function persistRunCompletion(rec: RunRecord, event: CompleteEvent): Promise<void> {
     const meta = await fetchRunMeta(rec.runId);
     try {
-      await getDB()
+      await tenantDb(rec.tenantId, (db) => db
         .update(schema.psurRuns)
         .set({
           status: 'completed',
@@ -267,7 +457,13 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
           updatedAt: now(),
           finishedAt: now(),
         })
-        .where(eq(schema.psurRuns.runId, rec.runId));
+        .where(
+          and(
+            eq(schema.psurRuns.runId, rec.runId),
+            eq(schema.psurRuns.tenantId, rec.tenantId),
+            eq(schema.psurRuns.userId, persistedUserId(rec)),
+          ),
+        ));
     } catch (err) {
       console.warn('[psur] failed to persist run completion:', err instanceof Error ? err.message : err);
     }
@@ -275,10 +471,16 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
 
   async function persistRunFailure(rec: RunRecord, message: string): Promise<void> {
     try {
-      await getDB()
+      await tenantDb(rec.tenantId, (db) => db
         .update(schema.psurRuns)
         .set({ status: 'failed', error: message, updatedAt: now(), finishedAt: now() })
-        .where(eq(schema.psurRuns.runId, rec.runId));
+        .where(
+          and(
+            eq(schema.psurRuns.runId, rec.runId),
+            eq(schema.psurRuns.tenantId, rec.tenantId),
+            eq(schema.psurRuns.userId, persistedUserId(rec)),
+          ),
+        ));
     } catch (err) {
       console.warn('[psur] failed to persist run failure:', err instanceof Error ? err.message : err);
     }
@@ -303,6 +505,8 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
       artifacts: Array<{ name: string; content_type: string; size_bytes: number }>;
       error: string | null;
       finishedAt: Date | null;
+      tenantId: string;
+      userId: string;
     },
   >(row: T): Promise<T> {
     if (row.status !== 'running') return row;
@@ -345,10 +549,17 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
         finishedAt,
       };
       try {
-        await getDB()
+        await tenantDb(row.tenantId, (db) => db
           .update(schema.psurRuns)
           .set({ ...patch, updatedAt: finishedAt })
-          .where(and(eq(schema.psurRuns.runId, row.runId), eq(schema.psurRuns.status, 'running')));
+          .where(
+            and(
+              eq(schema.psurRuns.runId, row.runId),
+              eq(schema.psurRuns.tenantId, row.tenantId),
+              eq(schema.psurRuns.userId, row.userId),
+              eq(schema.psurRuns.status, 'running'),
+            ),
+          ));
       } catch (err) {
         console.warn('[psur] failed to reconcile completed run:', err instanceof Error ? err.message : err);
       }
@@ -359,10 +570,17 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
       const message = typeof py.error === 'string' && py.error ? py.error : 'run failed';
       const patch = { status: 'failed' as const, error: message, finishedAt };
       try {
-        await getDB()
+        await tenantDb(row.tenantId, (db) => db
           .update(schema.psurRuns)
           .set({ ...patch, updatedAt: finishedAt })
-          .where(and(eq(schema.psurRuns.runId, row.runId), eq(schema.psurRuns.status, 'running')));
+          .where(
+            and(
+              eq(schema.psurRuns.runId, row.runId),
+              eq(schema.psurRuns.tenantId, row.tenantId),
+              eq(schema.psurRuns.userId, row.userId),
+              eq(schema.psurRuns.status, 'running'),
+            ),
+          ));
       } catch (err) {
         console.warn('[psur] failed to reconcile failed run:', err instanceof Error ? err.message : err);
       }
@@ -385,17 +603,20 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
     const { userId, tenantId } = caller(req);
     const rec = runs.get(id);
     if (rec) {
-      if (userId && rec.userId && rec.userId !== userId) return null;
+      if (!canAccessRun(req, rec)) return null;
       return { runId: rec.runId, processInstanceId: rec.processInstanceId };
     }
     try {
-      const conds = [eq(schema.psurRuns.runId, id), eq(schema.psurRuns.tenantId, tenantId)];
-      if (userId) conds.push(eq(schema.psurRuns.userId, userId));
-      const rows = await getDB()
+      const conds = [
+        eq(schema.psurRuns.runId, id),
+        eq(schema.psurRuns.tenantId, tenantId),
+        eq(schema.psurRuns.userId, persistedCallerUserId(userId)),
+      ];
+      const rows = await tenantDb(tenantId, (db) => db
         .select({ runId: schema.psurRuns.runId, processInstanceId: schema.psurRuns.processInstanceId })
         .from(schema.psurRuns)
         .where(and(...conds))
-        .limit(1);
+        .limit(1));
       return rows[0] ?? null;
     } catch {
       return null;
@@ -450,26 +671,9 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   // GET /defaults — proxy the mock-input pack
   // -------------------------------------------------------------------------
   router.get('/defaults', async (_req, res) => {
-    try {
-      const upstream = await doFetch(`${serviceUrl()}/defaults`);
-      if (!upstream.ok) {
-        return res
-          .status(502)
-          .json({ error: `PSUR service returned ${upstream.status} for /defaults` });
-      }
-      const parsed = DefaultsResponseSchema.safeParse(await upstream.json());
-      if (!parsed.success) {
-        return res
-          .status(502)
-          .json({ error: 'PSUR service /defaults response failed validation', detail: parsed.error.flatten() });
-      }
-      res.json(parsed.data);
-    } catch (err) {
-      res.status(502).json({
-        error: 'PSUR service unreachable',
-        detail: err instanceof Error ? err.message : String(err),
-      });
-    }
+    const defaults = await fetchDefaultsForValidation();
+    if (!defaults.ok) return res.status(defaults.status).json(defaults.body);
+    return res.json(defaults.defaults);
   });
 
   // -------------------------------------------------------------------------
@@ -486,6 +690,16 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
 
     // No per-IP or global concurrency caps: every user can run a PSUR anytime,
     // and many users (and runs) may proceed concurrently.
+
+    const defaults = await fetchDefaultsForValidation();
+    if (!defaults.ok) return res.status(defaults.status).json(defaults.body);
+    const structureIssues = validateRunStructure(parsed.data, defaults.defaults);
+    if (structureIssues.length > 0) {
+      return res.status(422).json({
+        detail: structureIssues,
+        error: 'input structure is locked; reset the affected input to default and try again',
+      });
+    }
 
     // Start the hash chain BEFORE the pipeline so the run is traced from birth.
     // Runs belong to the signed-in caller's tenant (auth+tenancy middleware);
@@ -531,6 +745,19 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
     if (!created.success) {
       return res.status(502).json({ error: 'PSUR service run-created response failed validation' });
     }
+    if (runs.has(created.data.run_id)) {
+      try {
+        await getTrace().logEvent(ctx, {
+          eventType: 'psur.run.failed',
+          actor: 'psur-bridge',
+          humanSummary: `PSUR service returned duplicate run id ${created.data.run_id}; refusing to bind it to another tenant/user run.`,
+          outputData: { runId: created.data.run_id, reason: 'duplicate upstream run id' },
+        });
+      } catch {
+        /* trace start already exists; do not mask the collision response */
+      }
+      return res.status(502).json({ error: 'PSUR service returned a duplicate run id' });
+    }
 
     const rec: RunRecord = {
       runId: created.data.run_id,
@@ -571,12 +798,16 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   router.get('/runs', async (req, res) => {
     const { userId, tenantId } = caller(req);
     try {
-      const conds = [eq(schema.psurRuns.tenantId, tenantId)];
-      if (userId) conds.push(eq(schema.psurRuns.userId, userId));
-      const rows = await getDB()
+      const conds = [
+        eq(schema.psurRuns.tenantId, tenantId),
+        eq(schema.psurRuns.userId, persistedCallerUserId(userId)),
+      ];
+      const rows = await tenantDb(tenantId, (db) => db
         .select({
           runId: schema.psurRuns.runId,
           processInstanceId: schema.psurRuns.processInstanceId,
+          tenantId: schema.psurRuns.tenantId,
+          userId: schema.psurRuns.userId,
           status: schema.psurRuns.status,
           deviceName: schema.psurRuns.deviceName,
           reportType: schema.psurRuns.reportType,
@@ -592,7 +823,7 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
         .from(schema.psurRuns)
         .where(and(...conds))
         .orderBy(desc(schema.psurRuns.createdAt))
-        .limit(100);
+        .limit(100));
       // Self-heal any rows left at `running` (closed tab / API restart) so the
       // saved history reflects the run's true terminal state.
       const reconciled = await Promise.all(rows.map((row) => reconcileRow(row)));
@@ -632,10 +863,7 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   router.get('/runs/:id/stream', async (req, res) => {
     const rec = runs.get(req.params.id!);
     if (!rec) return res.status(404).json({ error: 'run not found' });
-    const { userId } = caller(req);
-    if (userId && rec.userId && rec.userId !== userId) {
-      return res.status(404).json({ error: 'run not found' });
-    }
+    if (!canAccessRun(req, rec)) return res.status(404).json({ error: 'run not found' });
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -800,7 +1028,7 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   });
 
   // -------------------------------------------------------------------------
-  // GET /runs/:id/trace — chain entries + verification (public demo viewer)
+  // GET /runs/:id/trace — chain entries + verification for the owning tenant
   // -------------------------------------------------------------------------
   router.get('/runs/:id/trace', async (req, res) => {
     const rec = await resolveRun(req, req.params.id!);
@@ -818,7 +1046,7 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   });
 
   // -------------------------------------------------------------------------
-  // GET /runs/:id/verification — minimal public hash-chain verification badge
+  // GET /runs/:id/verification — minimal hash-chain verification badge
   // -------------------------------------------------------------------------
   router.get('/runs/:id/verification', async (req, res) => {
     const rec = await resolveRun(req, req.params.id!);

@@ -28,12 +28,18 @@ import {
   schema,
   eq,
   and,
+  withTenant,
   assembleAuditPack,
   renderAuditPackMarkdown,
   type AuditPackDecision,
+  type TenantTransaction,
 } from '@regground/core';
 
 const { groundedRuns } = schema;
+
+function tenantDb<T>(tenantId: string, fn: (db: TenantTransaction) => Promise<T>): Promise<T> {
+  return withTenant(getDB(), tenantId, fn);
+}
 
 /** Lazy, cached LLM facade. Built on first run; graceful if no providers. */
 let _llm: LLMAbstraction | null | undefined;
@@ -64,6 +70,25 @@ interface StoredRun {
 }
 const RUNS = new Map<string, StoredRun>();
 const MAX_RUNS = 100;
+
+function requestTenantId(req: AuthedRequest): string | null {
+  return req.tenantId ?? req.user?.tenantId ?? null;
+}
+
+function requireTenantId(req: AuthedRequest, res: Response): string | null {
+  const tenantId = requestTenantId(req);
+  if (!tenantId) {
+    res.status(403).json({ error: 'no tenant context' });
+    return null;
+  }
+  return tenantId;
+}
+
+function ownedRun(runId: string, tenantId: string): StoredRun | null {
+  const run = RUNS.get(runId);
+  if (!run || run.tenantId !== tenantId) return null;
+  return run;
+}
 
 export interface GroundedRunManifest {
   runId: string;
@@ -214,11 +239,11 @@ export async function getGroundedRunManifest(runId: string, tenantId: string): P
     if (manifest) return manifest;
   }
 
-  const [row] = await getDB()
+  const [row] = await tenantDb(tenantId, (db) => db
     .select()
     .from(groundedRuns)
     .where(and(eq(groundedRuns.runId, runId), eq(groundedRuns.tenantId, tenantId)))
-    .limit(1);
+    .limit(1));
   return (row?.manifest as unknown as GroundedRunManifest | undefined) ?? null;
 }
 
@@ -227,7 +252,7 @@ async function persistGroundedRun(runId: string, run: StoredRun): Promise<void> 
   if (!manifest) {
     throw new Error('Cannot persist grounded run without a lane result.');
   }
-  await getDB()
+  await tenantDb(run.tenantId, (db) => db
     .insert(groundedRuns)
     .values({
       runId,
@@ -254,7 +279,7 @@ async function persistGroundedRun(runId: string, run: StoredRun): Promise<void> 
         manifest: manifest as unknown as Record<string, unknown>,
         manifestHash: manifest.manifestHash,
       },
-    });
+    }));
 }
 
 /* ── GET /api/sandbox/tasks ─────────────────────────────────────────── */
@@ -296,6 +321,9 @@ const RunBodySchema = z.object({
 });
 
 router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const taskId = req.params.id;
   if (!taskId) return res.status(400).json({ error: 'task id required' });
   const def = getTask(taskId);
@@ -338,7 +366,7 @@ router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
       inputSnapshot: inputParsed.data,
       taskId: def.id,
       taskName: def.name,
-      tenantId: req.tenantId ?? req.user?.tenantId ?? 'dev',
+      tenantId,
       mode,
       createdAtIso: new Date().toISOString(),
     };
@@ -351,9 +379,14 @@ router.post('/tasks/:id/run', async (req: AuthedRequest, res) => {
 });
 
 /* ── GET /api/sandbox/runs/:runId/stream  (SSE) ─────────────────────── */
-router.get('/runs/:runId/stream', (req, res: Response) => {
+router.get('/runs/:runId/stream', (req: AuthedRequest, res: Response) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const runId = req.params.runId;
-  const stored = RUNS.get(runId);
+  if (!runId) return res.status(400).json({ error: 'runId required' });
+  const stored = ownedRun(runId, tenantId);
+  if (!stored && RUNS.has(runId)) return res.status(404).json({ error: 'run not found' });
   // Replay-only stream: by the time the client subscribes, the run has
   // typically completed (it's fast). If not stored yet, poll briefly.
   res.setHeader('Content-Type', 'text/event-stream');
@@ -369,7 +402,7 @@ router.get('/runs/:runId/stream', (req, res: Response) => {
     let s = stored;
     while (!s && attempts < 60 && !cancelled) {
       await new Promise((r) => setTimeout(r, 100));
-      s = RUNS.get(runId);
+      s = ownedRun(runId, tenantId);
       attempts += 1;
     }
     if (!s) {
@@ -391,7 +424,9 @@ router.get('/runs/:runId/stream', (req, res: Response) => {
 
 /* ── GET /api/sandbox/runs/recent ──────────────────────────────────── */
 router.get('/runs/recent', (req: AuthedRequest, res) => {
-  const tenantId = req.tenantId ?? req.user?.tenantId ?? 'dev';
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const limit = Math.min(Number(req.query.limit ?? 10), 50);
   const out: Array<{
     runId: string;
@@ -421,25 +456,37 @@ router.get('/runs/recent', (req: AuthedRequest, res) => {
 });
 
 /* ── GET /api/sandbox/runs/:runId/result ────────────────────────────── */
-router.get('/runs/:runId/result', (req, res) => {
+router.get('/runs/:runId/result', (req: AuthedRequest, res) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const runId = req.params.runId;
-  const s = RUNS.get(runId);
+  if (!runId) return res.status(400).json({ error: 'runId required' });
+  const s = ownedRun(runId, tenantId);
   if (!s) return res.status(404).json({ error: 'run not found' });
   res.json(s.result);
 });
 
 /* ── GET /api/sandbox/runs/:runId/trace ─────────────────────────────── */
-router.get('/runs/:runId/trace', (req, res) => {
+router.get('/runs/:runId/trace', (req: AuthedRequest, res) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const runId = req.params.runId;
-  const s = RUNS.get(runId);
+  if (!runId) return res.status(400).json({ error: 'runId required' });
+  const s = ownedRun(runId, tenantId);
   if (!s) return res.status(404).json({ error: 'run not found' });
   res.json(sandboxTrace(runId, s));
 });
 
 /* ── GET /api/sandbox/runs/:runId/trace/verify ──────────────────────── */
-router.get('/runs/:runId/trace/verify', (req, res) => {
+router.get('/runs/:runId/trace/verify', (req: AuthedRequest, res) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const runId = req.params.runId;
-  const s = RUNS.get(runId);
+  if (!runId) return res.status(400).json({ error: 'runId required' });
+  const s = ownedRun(runId, tenantId);
   if (!s) return res.status(404).json({ error: 'run not found' });
   res.json(sandboxVerification(sandboxTrace(runId, s)));
 });
@@ -476,7 +523,9 @@ function decisionFromSandboxEntry(entry: SandboxTraceEntry): AuditPackDecision {
 
 router.get('/runs/:runId/audit-pack', async (req: AuthedRequest, res) => {
   const runId = req.params.runId!;
-  const tenantId = req.user?.tenantId ?? 'dev';
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const format = req.query.format === 'markdown' ? 'markdown' : 'json';
   const includeMarkdown = req.query.include === 'markdown';
   const download = req.query.download === '1' || req.query.download === 'true';
@@ -535,9 +584,13 @@ router.get('/runs/:runId/audit-pack', async (req: AuthedRequest, res) => {
 });
 
 /* ── POST /api/sandbox/runs/:runId/judge ────────────────────────────── */
-router.post('/runs/:runId/judge', async (req, res) => {
+router.post('/runs/:runId/judge', async (req: AuthedRequest, res) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const runId = req.params.runId;
-  const s = RUNS.get(runId);
+  if (!runId) return res.status(400).json({ error: 'runId required' });
+  const s = ownedRun(runId, tenantId);
   if (!s) return res.status(404).json({ error: 'run not found' });
   const def = getTask(s.taskId);
   if (!def) return res.status(404).json({ error: 'task not found' });
@@ -559,11 +612,13 @@ router.post('/runs/:runId/judge', async (req, res) => {
 
 /* ── GET /api/sandbox/tasks/:id/download ────────────────────────────── */
 router.get('/tasks/:id/download', async (req: AuthedRequest, res) => {
+  const tenantId = requireTenantId(req, res);
+  if (!tenantId) return;
+
   const taskId = req.params.id;
   if (!taskId) return res.status(400).json({ error: 'taskId required' });
   const def = getTask(taskId);
   if (!def) return res.status(404).json({ error: 'task not found' });
-  const tenantId = req.user?.tenantId ?? 'dev';
   const apiKey = (req.header('x-bundle-api-key') ?? 'sandbox-demo-key');
   const baseUrl: string = req.header('x-bundle-base-url') ?? `${req.protocol}://${req.get('host') ?? 'localhost:4000'}`;
 

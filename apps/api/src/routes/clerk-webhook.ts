@@ -86,9 +86,67 @@ function normalizePlan(raw: unknown): TenantPlan {
   return 'free';
 }
 
+function organizationName(data: Record<string, unknown>): string {
+  return (data.name as string | undefined) ?? (data.slug as string | undefined) ?? 'Unnamed organization';
+}
+
+function userEmail(data: Record<string, unknown>): string {
+  const primaryEmailAddressId = data.primary_email_address_id as string | undefined;
+  const emailAddresses = data.email_addresses as Array<Record<string, unknown>> | undefined;
+  const primary = emailAddresses?.find((email) => email.id === primaryEmailAddressId);
+  const firstEmail = primary ?? emailAddresses?.[0];
+  const email =
+    (firstEmail?.email_address as string | undefined) ??
+    (data.email_address as string | undefined) ??
+    (typeof data.identifier === 'string' && data.identifier.includes('@') ? data.identifier : undefined);
+  return email ?? 'unknown@unknown.local';
+}
+
+async function upsertOrganization(clerkOrgId: string, orgName: string, plan: TenantPlan): Promise<void> {
+  const db = getDB();
+  await db
+    .insert(schema.tenants)
+    .values({ tenantKey: clerkOrgId, clerkOrgId, name: orgName, plan, deletedAt: null })
+    .onConflictDoUpdate({
+      target: schema.tenants.tenantKey,
+      set: { clerkOrgId, name: orgName, plan, deletedAt: null },
+    });
+}
+
+async function upsertUser(clerkUserId: string, email: string): Promise<void> {
+  const db = getDB();
+  await db
+    .insert(schema.users)
+    .values({ clerkUserId, email })
+    .onConflictDoUpdate({
+      target: schema.users.clerkUserId,
+      set: { email },
+    });
+}
+
+async function upsertPersonalTenant(clerkUserId: string, email: string): Promise<void> {
+  const db = getDB();
+  await db
+    .insert(schema.tenants)
+    .values({
+      tenantKey: clerkUserId,
+      clerkOrgId: null,
+      name: email ? `Personal workspace (${email})` : 'Personal workspace',
+      plan: 'free',
+      deletedAt: null,
+    })
+    .onConflictDoUpdate({
+      target: schema.tenants.tenantKey,
+      set: {
+        name: email ? `Personal workspace (${email})` : 'Personal workspace',
+        deletedAt: null,
+      },
+    });
+}
+
 async function handleOrganizationCreated(data: Record<string, unknown>): Promise<void> {
   const clerkOrgId = data.id as string | undefined;
-  const orgName = (data.name as string | undefined) ?? (data.slug as string | undefined) ?? 'Unnamed organization';
+  const orgName = organizationName(data);
   const plan = normalizePlan((data.public_metadata as Record<string, unknown> | undefined)?.plan);
 
   if (!clerkOrgId) {
@@ -96,14 +154,7 @@ async function handleOrganizationCreated(data: Record<string, unknown>): Promise
     return;
   }
 
-  const db = getDB();
-  await db
-    .insert(schema.tenants)
-    .values({ clerkOrgId, name: orgName, plan })
-    .onConflictDoUpdate({
-      target: schema.tenants.clerkOrgId,
-      set: { name: orgName, plan },
-    });
+  await upsertOrganization(clerkOrgId, orgName, plan);
   console.log('[clerk-webhook] organization upserted', { clerkOrgId, orgName, plan });
 }
 
@@ -122,31 +173,25 @@ async function handleOrganizationDeleted(data: Record<string, unknown>): Promise
   console.log('[clerk-webhook] organization soft-deleted', { clerkOrgId });
 }
 
-async function handleUserCreated(data: Record<string, unknown>): Promise<void> {
+export async function handleUserCreated(data: Record<string, unknown>): Promise<void> {
   const clerkUserId = data.id as string | undefined;
-  const email =
-    ((data.email_addresses as Array<Record<string, unknown>> | undefined)?.[0]
-      ?.email_address as string | undefined) ?? 'unknown@unknown.local';
+  const email = userEmail(data);
 
   if (!clerkUserId) {
     console.warn('[clerk-webhook] user.created missing id', data);
     return;
   }
 
-  const db = getDB();
-  await db
-    .insert(schema.users)
-    .values({ clerkUserId, email })
-    .onConflictDoUpdate({
-      target: schema.users.clerkUserId,
-      set: { email },
-    });
+  await upsertUser(clerkUserId, email);
+  await upsertPersonalTenant(clerkUserId, email);
   console.log('[clerk-webhook] user upserted', { clerkUserId, email });
 }
 
-async function handleOrganizationMembershipCreated(data: Record<string, unknown>): Promise<void> {
-  const clerkOrgId = (data.organization as Record<string, unknown> | undefined)?.id as string | undefined;
-  const clerkUserId = (data.public_user_data as Record<string, unknown> | undefined)?.user_id as string | undefined;
+export async function handleOrganizationMembershipCreated(data: Record<string, unknown>): Promise<void> {
+  const organization = data.organization as Record<string, unknown> | undefined;
+  const publicUserData = data.public_user_data as Record<string, unknown> | undefined;
+  const clerkOrgId = organization?.id as string | undefined;
+  const clerkUserId = publicUserData?.user_id as string | undefined;
   const rawRole = data.role as string | undefined;
 
   if (!clerkOrgId || !clerkUserId) {
@@ -161,11 +206,19 @@ async function handleOrganizationMembershipCreated(data: Record<string, unknown>
     'member';
 
   const db = getDB();
+  await upsertOrganization(
+    clerkOrgId,
+    organizationName(organization ?? {}),
+    normalizePlan((organization?.public_metadata as Record<string, unknown> | undefined)?.plan),
+  );
+  const email = userEmail(publicUserData ?? {});
+  await upsertUser(clerkUserId, email);
+  await upsertPersonalTenant(clerkUserId, email);
 
   const tenant = await db
     .select({ id: schema.tenants.id })
     .from(schema.tenants)
-    .where(eq(schema.tenants.clerkOrgId, clerkOrgId))
+    .where(eq(schema.tenants.tenantKey, clerkOrgId))
     .limit(1);
   const user = await db
     .select({ id: schema.users.id })
@@ -202,7 +255,7 @@ async function handleOrganizationMembershipDeleted(data: Record<string, unknown>
   const tenant = await db
     .select({ id: schema.tenants.id })
     .from(schema.tenants)
-    .where(eq(schema.tenants.clerkOrgId, clerkOrgId))
+    .where(eq(schema.tenants.tenantKey, clerkOrgId))
     .limit(1);
   const user = await db
     .select({ id: schema.users.id })

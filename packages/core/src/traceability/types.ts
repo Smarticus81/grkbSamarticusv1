@@ -53,6 +53,7 @@ export interface TraceEventInput {
 export interface DecisionTraceEntry {
   id?: number;
   processInstanceId: string;
+  tenantId?: string;
   traceId: string;
   sequenceNumber: number;
   previousHash: string;

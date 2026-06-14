@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { getContext } from '../context.js';
+import { requirePlatformAdmin } from '../middleware/auth.js';
 
 const router: Router = Router();
 
@@ -50,14 +51,14 @@ const UpsertSchema = z.object({
   metadata: z.record(z.unknown()).default({}),
 });
 
-router.post('/obligations', async (req, res) => {
+router.post('/obligations', requirePlatformAdmin, async (req, res) => {
   const parsed = UpsertSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ errors: parsed.error.errors });
   await getContext().graph.upsertObligation(parsed.data);
   res.status(201).json({ ok: true });
 });
 
-router.delete('/obligations/:id', async (req, res) => {
+router.delete('/obligations/:id', requirePlatformAdmin, async (req, res) => {
   await getContext().graph.deleteObligation(req.params.id!);
   res.status(204).end();
 });
