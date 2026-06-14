@@ -18,6 +18,10 @@ coverage
 # Vite temp files
 vite.config.ts.timestamp-*
 
+# TypeScript incremental build cache (stale copies break clean builds)
+*.tsbuildinfo
+**/*.tsbuildinfo
+
 # Security — never commit secrets or temp files
 secs.txt
 plan.md

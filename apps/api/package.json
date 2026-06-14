@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.json",
+    "build": "pnpm --filter \"@regground/api^...\" build && tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/apps/api/src/index.js",
     "test": "vitest run --passWithNoTests"
