@@ -25,7 +25,11 @@ export async function withTenant<T>(
   fn: (tx: DrizzleTransaction) => Promise<T>,
 ): Promise<T> {
   return db.transaction(async (tx) => {
-    await tx.execute(sql`SET LOCAL app.tenant_id = ${tenantId}`);
+    // Use set_config(name, value, is_local=true) rather than `SET LOCAL ... = $1`.
+    // Postgres's SET command does not accept bind parameters, so a parameterized
+    // SET raises `syntax error at or near "$1"`. set_config is a function and
+    // binds normally; is_local=true scopes it to the current transaction.
+    await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true)`);
     return fn(tx);
   });
 }
