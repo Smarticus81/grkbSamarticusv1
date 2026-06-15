@@ -43,12 +43,12 @@ interface CreateKeyResponse {
 const AVAILABLE_SCOPES = [
   { id: 'graph:read',         label: 'Read requirement map',     desc: 'Query requirements, citations, cross-refs.' },
   { id: 'graph:write',        label: 'Write requirement map',    desc: 'Add or modify requirement files.' },
-  { id: 'compliance:check',   label: 'Compliance check',          desc: 'Run readiness + validation gates.' },
-  { id: 'traces:read',        label: 'Read audit packs',          desc: 'Pull hash-chained audit logs.' },
-  { id: 'processes:read',     label: 'Read agent workflows',      desc: 'List agent templates, workflows, and runs.' },
-  { id: 'processes:write',    label: 'Run agents',                desc: 'Trigger governed agent executions.' },
-  { id: 'evidence:read',      label: 'Read evidence',             desc: 'Pull required evidence catalog and bindings.' },
-  { id: 'evidence:write',     label: 'Upload evidence',           desc: 'Submit new evidence objects.' },
+  { id: 'compliance:check',   label: 'Compliance check',          desc: 'Run readiness and validation checks.' },
+  { id: 'traces:read',        label: 'Read audit packs',          desc: 'Pull tamper-evident audit logs.' },
+  { id: 'processes:read',     label: 'Read module workflows',      desc: 'List modules, workflows, and runs.' },
+  { id: 'processes:write',    label: 'Run modules',               desc: 'Trigger controlled module runs.' },
+  { id: 'evidence:read',      label: 'Read source records',        desc: 'Pull required source record catalog and bindings.' },
+  { id: 'evidence:write',     label: 'Upload source records',      desc: 'Submit new source record objects.' },
 ];
 
 type ToolChoice =
@@ -64,7 +64,7 @@ type ToolChoice =
 
 const TOOL_OPTIONS: { id: ToolChoice; label: string; mark: string; tagline: string }[] = [
   { id: 'cursor',           label: 'Cursor',            mark: '⌘',   tagline: 'AI code editor' },
-  { id: 'claude-code',      label: 'Claude Code',       mark: '▪',   tagline: 'Anthropic CLI' },
+  { id: 'claude-code',      label: 'Claude Code',       mark: '▪',   tagline: 'CLI tool' },
   { id: 'windsurf',         label: 'Windsurf',          mark: '◈',   tagline: 'Codeium IDE' },
   { id: 'vscode',           label: 'VS Code + Copilot', mark: '⟨⟩',  tagline: 'Microsoft IDE' },
   { id: 'github-workspace', label: 'GitHub Workspace',  mark: '⊙',   tagline: 'Browser-based IDE' },
@@ -75,7 +75,7 @@ const TOOL_OPTIONS: { id: ToolChoice; label: string; mark: string; tagline: stri
 ];
 
 function buildIntegrationPrompt(tool: ToolChoice, apiKey: string, processType: string): string {
-  const desc = processType.trim() || 'compliance-aware agent for the QMS process I described';
+  const desc = processType.trim() || 'module for the QMS process I described';
   const mcpConfigs: Partial<Record<ToolChoice, string>> = {
     cursor: `Add this to .cursor/mcp.json in the project root:
 
@@ -119,7 +119,7 @@ claude mcp add smarticus npx @regground/mcp-server@latest \\
 
   return `You are building ${desc}.
 
-Smarticus is the regulatory ground for this agent. Before you run, before you respond, and before you write anything to disk, you MUST:
+Smarticus provides requirement checks for this module. Before you run, before you respond, and before you write anything to disk, you MUST:
 
   1. Call regground_check_qualification to confirm you have the right inputs.
   2. Call regground_discover_obligations or regground_search_obligations to find the requirements that govern your output.
@@ -135,7 +135,7 @@ You now have eleven Smarticus tools available. Discover them by listing MCP tool
 
 Hand-off
 --------
-When the user asks you a regulatory question, do not guess. Look it up. When you draft something, ground it. When you finish, validate it. The decision trail is hash-chained — your work will be auditable.`;
+When the user asks you a regulatory question, do not guess. Look it up. When you draft something, cite the requirement. When you finish, validate it. The audit trail is tamper-evident.`;
 }
 
 interface Props {
@@ -301,7 +301,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PageHeader
         eyebrow="Connect"
-        title="Point any AI tool at the ground."
+        title="Connect any AI tool to the requirements."
         subtitle="Smarticus runs as an MCP server — the same protocol Cursor, Claude Code, Windsurf, and VS Code already speak. Get a key, paste a snippet, and your AI starts citing requirements within seconds."
         actions={
           <div style={{ display: 'flex', gap: 6, padding: 4, border: '1px solid var(--rule)', borderRadius: 'var(--r-2)' }}>
@@ -370,7 +370,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
             <section>
               <div className="eyebrow" style={{ marginBottom: 8 }}>Step 1 · Pick your tool</div>
               <h2 style={{ margin: '0 0 6px', fontSize: 18, fontWeight: 500, letterSpacing: '-0.015em' }}>
-                Where does your agent live?
+                Where does your module run?
               </h2>
               <p style={{ margin: '0 0 18px', fontSize: 13.5, color: 'var(--ink-3)', maxWidth: 580, lineHeight: 1.55 }}>
                 Pick the tool you already use. We'll generate the exact integration steps for it.
@@ -437,7 +437,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                     body={
                       hasKey
                         ? "You're set — your key is below."
-                        : 'A scoped API key tells Smarticus who you are and what you can do. We default to the read-only scopes that are safe for an agent to hold.'
+                        : 'A scoped API key tells Smarticus who you are and what you can do. We default to read-only scopes.'
                     }
                   >
                     {!hasKey && (
@@ -447,11 +447,11 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                     )}
                   </Step>
 
-                  <Step n={2} done={processDesc.trim().length > 0} title="Describe your agent (optional)">
+                  <Step n={2} done={processDesc.trim().length > 0} title="Describe your module (optional)">
                     <textarea
                       value={processDesc}
                       onChange={(e) => setProcessDesc(e.target.value)}
-                      placeholder="e.g. a CAPA triage agent that reads complaints and drafts an investigation plan"
+                      placeholder="e.g. CAPA triage module that reads complaints and drafts an investigation plan"
                       rows={3}
                       style={{
                         width: '100%',
@@ -462,7 +462,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                       }}
                     />
                     <div style={{ marginTop: 6, fontSize: 11.5, color: 'var(--ink-3)' }}>
-                      We bake this into the prompt so your agent knows what it's doing.
+                      This goes into the prompt so your module has process context.
                     </div>
                   </Step>
 
@@ -496,15 +496,15 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                     </div>
                   </Step>
 
-                  <Step n={4} done={firstCallDetected} title="Verify the connection" body={firstCallDetected ? undefined : "After you paste the prompt into your tool and ask its agent something, we'll detect the first call here."}>
+                  <Step n={4} done={firstCallDetected} title="Verify the connection" body={firstCallDetected ? undefined : "After you paste the prompt into your tool and ask a regulatory question, we'll detect the first call here."}>
                     {firstCallDetected ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                         <span className="badge badge-ok" style={{ fontSize: 10 }}>FIRST CALL DETECTED</span>
                         <span style={{ fontSize: 13, color: 'var(--ink-2)' }}>
-                          Your tool just hit the ground. Every call from here on is hash-chained.
+                          Your tool reached the requirements library. Every call from here on is recorded in a tamper-evident audit trail.
                         </span>
                         <Link href={latestRunId ? `/app/trails/${latestRunId}` : '/app/trails'} className="btn btn-orange" style={{ fontSize: 12 }}>
-                          {latestRunId ? 'View this trail →' : 'View decision trails →'}
+                          {latestRunId ? 'View this audit trail →' : 'View audit trails →'}
                         </Link>
                       </div>
                     ) : (
@@ -599,7 +599,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
             {!loading && keys.length === 0 && !showForm && (
               <EmptyState
                 title="Your first key opens the door."
-                body="API keys are how Smarticus knows who's calling. Each one is scoped — pick only what your agent actually needs. We'll show you the full key once."
+                body="API keys identify the caller. Each one is scoped; pick only what the module needs. We'll show you the full key once."
                 primaryAction={{ label: 'Create your first key', onClick: () => setShowForm(true) }}
               />
             )}
@@ -828,7 +828,7 @@ function CreateKeyModal({
           <input
             value={keyName}
             onChange={(e) => setKeyName(e.target.value)}
-            placeholder="e.g. CAPA triage agent — production"
+            placeholder="e.g. CAPA triage module — production"
             style={{ ...inputStyle, width: '100%', fontSize: 13 }}
           />
         </div>

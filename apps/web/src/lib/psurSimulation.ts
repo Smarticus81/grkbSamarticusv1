@@ -610,7 +610,7 @@ const SECTION_AGENTS: { section: string; title: string; decision: (s: SimDerived
     title: 'Clinical performance',
     decision: () => ({
       decision: 'Section K drafted',
-      reason: 'Observed flow accuracy compared against specification; PMCF evidence cited for continued performance.',
+      reason: 'Observed flow accuracy compared against specification; PMCF source data cited for continued performance.',
       basis: ['EU MDR Annex XIV Part B', 'MDCG 2022-21 §3.9'],
     }),
   },
@@ -756,7 +756,7 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     await tick(1100);
     await emitDecision({
       decision: 'Complaint rate computed',
-      reason: `${fmt(stats.complaintCount)} complaints over ${fmt(stats.unitsSold)} units → ${stats.ratePer10k} per 10,000 units (previous period: ${stats.prevRatePer10k}). Deterministic computation; section agents consume this verbatim.`,
+      reason: `${fmt(stats.complaintCount)} complaints over ${fmt(stats.unitsSold)} units → ${stats.ratePer10k} per 10,000 units (previous period: ${stats.prevRatePer10k}). Deterministic computation; section modules consume this verbatim.`,
       basis: ['EU MDR Art. 88'],
     });
     await tick(700);
@@ -814,7 +814,7 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     await tick(1200);
     await emitDecision({
       decision: 'Section H remediated',
-      reason: 'Out-of-window citation moved to background context and excluded from period evidence; section regenerated and re-audited clean.',
+      reason: 'Out-of-window citation moved to background context and excluded from period source data; section regenerated and re-audited clean.',
       basis: ['MEDDEV 2.7/1 rev 4'],
       section: 'H_literature',
     });
@@ -862,7 +862,7 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     const verification = await chain.verify();
     const trace: TraceResponse = { processInstanceId, entries: chain.entries, verification };
     const traceJson = JSON.stringify(
-      { disclaimer: 'SIMULATED decision trace generated locally in the browser — not produced by the real pipeline.', ...trace },
+      { disclaimer: 'SIMULATED audit trail generated locally in the browser; not produced by the signed-in builder.', ...trace },
       null,
       2,
     );

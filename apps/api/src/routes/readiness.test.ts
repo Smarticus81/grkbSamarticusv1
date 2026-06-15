@@ -79,6 +79,16 @@ describe('evaluateProductionReadiness', () => {
     ]);
   });
 
+  it('accepts trailing-dot HTTPS origins after normalization', () => {
+    const report = evaluateProductionReadiness({
+      ...productionEnv,
+      ALLOWED_ORIGINS: 'https://app.example.com.',
+    });
+
+    expect(report.status).toBe('ready');
+    expect(report.checks.find((check) => check.id === 'cors')?.ok).toBe(true);
+  });
+
   it('reports development mode as degraded when critical configuration is present', () => {
     const report = evaluateProductionReadiness({
       ...productionEnv,
@@ -89,6 +99,26 @@ describe('evaluateProductionReadiness', () => {
     expect(report.status).toBe('degraded');
     expect(report.production).toBe(false);
     expect(report.checks.find((check) => check.id === 'node-env')?.ok).toBe(false);
+  });
+
+  it('accepts no-Clerk local development when auth bypass is enabled', () => {
+    const report = evaluateProductionReadiness({
+      ...productionEnv,
+      NODE_ENV: 'development',
+      AUTH_BYPASS_DEV: 'true',
+      ALLOWED_ORIGINS: 'http://localhost:5173',
+      NEO4J_URI: 'neo4j://localhost:7687',
+      CLERK_SECRET_KEY: '',
+      CLERK_WEBHOOK_SIGNING_SECRET: '',
+      PSUR_SERVICE_URL: 'http://localhost:8000',
+    });
+
+    expect(report.status).toBe('degraded');
+    expect(report.production).toBe(false);
+    expect(report.checks.filter((check) => !check.ok).map((check) => check.id)).toEqual(['node-env']);
+    expect(report.checks.find((check) => check.id === 'auth-bypass')?.ok).toBe(true);
+    expect(report.checks.find((check) => check.id === 'clerk-api')?.ok).toBe(true);
+    expect(report.checks.find((check) => check.id === 'clerk-webhook')?.ok).toBe(true);
   });
 
   it('adds live Postgres/RLS and Neo4j checks in deep mode', async () => {

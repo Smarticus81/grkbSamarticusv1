@@ -34,14 +34,14 @@ const NAV_GROUPS: {
   items: { href: string; label: string; exact?: boolean; tag?: string }[];
 }[] = [
   {
-    heading: 'Agent OS',
-    caption: 'Build, run, and orchestrate agents.',
+    heading: 'Dashboard',
+    caption: 'Configure modules and review outputs.',
     items: [
-      { href: '/app',          label: 'Command Center', exact: true },
-      { href: '/app/sandbox',  label: 'Agent Builds' },
+      { href: '/app',          label: 'Dashboard', exact: true },
+      { href: '/app/sandbox',  label: 'Modules' },
       { href: '/app/psur',     label: 'PSUR Builder' },
-      { href: '/app/builder',  label: 'Managed Agents' },
-      { href: '/app/designer', label: 'Workflow Studio' },
+      { href: '/app/builder',  label: 'Modules in Routine Use' },
+      { href: '/app/designer', label: 'Workflow Builder' },
     ],
   },
 ];
@@ -172,7 +172,7 @@ function ClerkSidebarAuthControls() {
           {workspaceDisplay.shortKey}
         </div>
         <div style={{ marginTop: 5, fontSize: 10.5, color: workspaceDisplay.inactive ? 'var(--danger)' : 'var(--ink-4)' }}>
-          {workspaceError ? 'Workspace sync unavailable' : workspaceDisplay.inactive ? 'Inactive tenant' : workspaceDisplay.subtitle}
+          {workspaceError ? 'Workspace sync unavailable' : workspaceDisplay.inactive ? 'Inactive workspace' : workspaceDisplay.subtitle}
         </div>
       </div>
       <OrganizationSwitcher
@@ -284,7 +284,7 @@ function AppShell() {
               padding: '9px 14px',
             }}
           >
-            Start Agent Build
+            Configure Module
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </Link>
         </div>

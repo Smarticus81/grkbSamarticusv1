@@ -214,7 +214,7 @@ const PALETTE_CATEGORIES = [
     label: 'Work',
     nodes: [
       { kind: 'task' as WorkflowNodeKind, label: 'Step', desc: 'A general work step' },
-      { kind: 'agent_task' as WorkflowNodeKind, label: 'AI step', desc: 'Handled by an AI agent' },
+      { kind: 'agent_task' as WorkflowNodeKind, label: 'Module step', desc: 'Handled by a configured module' },
       { kind: 'human_task' as WorkflowNodeKind, label: 'Manual step', desc: 'Done by a person' },
       { kind: 'subprocess' as WorkflowNodeKind, label: 'Sub-process', desc: 'Run another workflow' },
     ],
@@ -222,7 +222,7 @@ const PALETTE_CATEGORIES = [
   {
     label: 'Compliance',
     nodes: [
-      { kind: 'evidence_capture' as WorkflowNodeKind, label: 'Collect evidence', desc: 'Gather a required record' },
+      { kind: 'evidence_capture' as WorkflowNodeKind, label: 'Collect source data', desc: 'Gather a required record' },
       { kind: 'hitl_gate' as WorkflowNodeKind, label: 'Approval', desc: 'Someone must sign off' },
       { kind: 'compliance_check' as WorkflowNodeKind, label: 'Check compliance', desc: 'Verify regulatory rules' },
       { kind: 'notification' as WorkflowNodeKind, label: 'Send notice', desc: 'Notify the right people' },
@@ -234,7 +234,7 @@ const PALETTE_CATEGORIES = [
 
 const AUTOMATION_LABEL: Record<AutomationKind, string> = {
   system: 'Automated',
-  agent: 'AI agent',
+  agent: 'Module',
   human: 'Manual review',
   hybrid: 'Mixed',
 };
@@ -376,7 +376,7 @@ export function ProcessDesigner() {
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
   const [edges, setEdges] = useState<WorkflowEdge[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [workflowName, setWorkflowName] = useState('Untitled agent workflow');
+  const [workflowName, setWorkflowName] = useState('Untitled workflow');
   const [workflowMeta, setWorkflowMeta] = useState({ jurisdiction: '', processType: '', regulations: [] as string[] });
 
   // ── Interaction state ──
@@ -446,7 +446,7 @@ export function ProcessDesigner() {
     const loadedNodes = draftToCanvasNodes(row.draft);
     setNodes(loadedNodes);
     setEdges([...row.draft.edges]);
-    setWorkflowName(row.name || row.draft.name || 'Untitled agent workflow');
+    setWorkflowName(row.name || row.draft.name || 'Untitled workflow');
     setWorkflowMeta({
       jurisdiction: row.jurisdiction || row.draft.jurisdiction,
       processType: row.processType || row.draft.processType,
@@ -460,7 +460,7 @@ export function ProcessDesigner() {
     setPaletteOpen(false);
     setChatOpen(false);
     setLastSavedFingerprint(workflowFingerprint(
-      row.name || row.draft.name || 'Untitled agent workflow',
+      row.name || row.draft.name || 'Untitled workflow',
       {
         jurisdiction: row.jurisdiction || row.draft.jurisdiction,
         processType: row.processType || row.draft.processType,
@@ -476,7 +476,7 @@ export function ProcessDesigner() {
     const loadedNodes = draftToCanvasNodes(draft);
     setNodes(loadedNodes);
     setEdges([...draft.edges]);
-    setWorkflowName(draft.name || 'Untitled agent workflow');
+    setWorkflowName(draft.name || 'Untitled workflow');
     setWorkflowMeta({
       jurisdiction: draft.jurisdiction,
       processType: draft.processType,
@@ -499,7 +499,7 @@ export function ProcessDesigner() {
     setNodes([]);
     setEdges([]);
     setSelectedId(null);
-    setWorkflowName('Untitled agent workflow');
+    setWorkflowName('Untitled workflow');
     setWorkflowMeta({ jurisdiction: '', processType: '', regulations: [] });
     setZoom(1);
     setPan({ x: 60, y: 60 });
@@ -560,7 +560,7 @@ export function ProcessDesigner() {
     try {
       let name = workflowName.trim();
       if (!activeWorkflowId && (!name || name === 'Untitled workflow' || name === 'Untitled agent workflow')) {
-        const prompted = window.prompt('Name this workflow:', name || 'Untitled agent workflow') ?? '';
+        const prompted = window.prompt('Name this workflow:', name || 'Untitled workflow') ?? '';
         if (!prompted.trim()) return null;
         name = prompted.trim();
       }
@@ -606,12 +606,12 @@ export function ProcessDesigner() {
 
   const buildManagedAgents = useCallback(async () => {
     if (nodes.length === 0) {
-      showToast('Add at least one workflow step before building agents.', true);
+      showToast('Add at least one workflow step before configuring modules.', true);
       return;
     }
     const saved = await saveCurrent();
     if (!saved) return;
-    showToast('Workflow saved. Continue with a validated agent build.');
+    showToast('Workflow saved. Continue with module qualification.');
     navigate(`/app/sandbox?workflow=${encodeURIComponent(saved.id)}`);
   }, [navigate, nodes.length, saveCurrent, showToast]);
 
@@ -654,7 +654,7 @@ export function ProcessDesigner() {
       const saved = await api<SavedWorkflowRow>(activeWorkflowId ? `/api/builder/workflows/${activeWorkflowId}` : '/api/builder/workflows', {
         method: activeWorkflowId ? 'PATCH' : 'POST',
         body: JSON.stringify({
-          name: r.draft.name || 'Untitled agent workflow',
+          name: r.draft.name || 'Untitled workflow',
           processType: r.draft.processType || processType || 'GENERIC',
           jurisdiction: r.draft.jurisdiction || jurisdiction || 'GLOBAL',
           draft: r.draft,
@@ -680,7 +680,7 @@ export function ProcessDesigner() {
       let assistantMsg = `Built "${r.draft.name}" with ${r.draft.nodes.length} steps.`;
       if (sc) {
         const mode = sc.retrieval.embeddingsAvailable ? 'semantic+structural' : 'structural-only';
-        assistantMsg += ` Grounded against ${sc.retrieval.totalAuthoritative} obligations (${mode}).`;
+        assistantMsg += ` Checked against ${sc.retrieval.totalAuthoritative} applicable requirements (${mode}).`;
         if (sc.ambiguities.length > 0) {
           assistantMsg += `\n\nOpen questions: ${sc.ambiguities.map((a) => `• ${a}`).join('\n')}`;
         }
@@ -738,7 +738,7 @@ export function ProcessDesigner() {
     if (nodes.length > 0 && !window.confirm('Start a new workflow? Unsaved changes will be lost.')) return;
     setNodes([]);
     setEdges([]);
-    setWorkflowName('Untitled agent workflow');
+    setWorkflowName('Untitled workflow');
     setWorkflowMeta({ jurisdiction: '', processType: '', regulations: [] });
     setJurisdiction('');
     setProcessType('');
@@ -1104,7 +1104,7 @@ function DesignerHeader(props: {
         padding: '0 20px', height: 56, gap: 16,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0, flex: 1 }}>
-          <Link href="/app" style={{ color: 'var(--ink-3)', textDecoration: 'none', fontSize: 13, flexShrink: 0 }}>{'\u2190'} Command Center</Link>
+          <Link href="/app" style={{ color: 'var(--ink-3)', textDecoration: 'none', fontSize: 13, flexShrink: 0 }}>{'\u2190'} Dashboard</Link>
           <div style={{ width: 1, height: 20, background: 'var(--rule)', flexShrink: 0 }} />
           {editingName ? (
             <input
@@ -1165,7 +1165,7 @@ function DesignerHeader(props: {
           <HdrBtn onClick={props.onToggleDetails} active={props.detailsOpen} title="Jurisdiction and process type">
             Scope
           </HdrBtn>
-          <HdrBtn onClick={props.onToggleChat} active={props.chatOpen} title="Describe an agent workflow in plain language">
+          <HdrBtn onClick={props.onToggleChat} active={props.chatOpen} title="Describe a workflow in plain language">
             Generate
           </HdrBtn>
           <HdrBtn onClick={props.onFit} title="Fit workflow to screen">Fit</HdrBtn>
@@ -1185,7 +1185,7 @@ function DesignerHeader(props: {
           <button
             onClick={props.onBuildAgents}
             disabled={props.saving || props.stepCount === 0}
-            title={props.stepCount === 0 ? 'Add at least one step first' : 'Save this workflow and continue to validated agent builds'}
+            title={props.stepCount === 0 ? 'Add at least one step first' : 'Save this workflow and continue to module qualification'}
             style={{
               background: 'var(--orange)', color: 'var(--on-accent)', border: 0, borderRadius: 8,
               padding: '8px 16px', fontSize: 13, fontWeight: 650,
@@ -1193,7 +1193,7 @@ function DesignerHeader(props: {
               opacity: props.saving || props.stepCount === 0 ? 0.55 : 1,
             }}
           >
-            Build agents
+            Configure modules
           </button>
         </div>
       </div>
@@ -1220,7 +1220,7 @@ function DesignerHeader(props: {
             <option value="">Any process type</option>
             {props.catalog?.processTypes.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
-          <HdrBtn onClick={props.onNewWorkflow} title="Start a blank agent workflow">New workflow</HdrBtn>
+          <HdrBtn onClick={props.onNewWorkflow} title="Start a blank workflow">New workflow</HdrBtn>
         </div>
       )}
 
@@ -1409,7 +1409,7 @@ function NodePalette(props: {
             {!props.savedWorkflows && <div style={{ fontSize: 12, color: 'var(--ink-3)' }}>Loading...</div>}
             {props.savedWorkflows?.length === 0 && (
               <div style={{ fontSize: 12, color: 'var(--ink-3)', lineHeight: 1.5 }}>
-                Nothing saved yet. Build an agent workflow on the canvas, then click Save workflow.
+                Nothing saved yet. Build a workflow on the canvas, then click Save workflow.
               </div>
             )}
             {props.savedWorkflows?.map(w => (
@@ -1804,7 +1804,7 @@ function NodeInspector(props: {
             <div style={inspLabelStyle}>Handled by</div>
             <select value={node.automation} onChange={e => onChange({ automation: e.target.value as AutomationKind })} style={inspInputStyle}>
               <option value="system">Automated</option>
-              <option value="agent">AI agent</option>
+              <option value="agent">Module</option>
               <option value="human">Manual review</option>
               <option value="hybrid">Mixed</option>
             </select>

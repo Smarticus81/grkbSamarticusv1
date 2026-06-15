@@ -35,6 +35,7 @@ function hasHttpsOriginList(value: string | undefined): boolean {
   return value!
     .split(',')
     .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean)
     .every((origin) => isHttpsUrl(origin) && !isLocalUrl(origin));
 }
@@ -63,6 +64,14 @@ function isLocalUrl(value: string | undefined): boolean {
 
 function isHttpsUrl(value: string | undefined): boolean {
   return parseUrl(value)?.protocol === 'https:';
+}
+
+function normalizeOrigin(value: string): string {
+  const url = parseUrl(value);
+  if (!url) return value;
+  const hostname = url.hostname.replace(/\.$/, '');
+  const port = url.port ? `:${url.port}` : '';
+  return `${url.protocol}//${hostname}${port}`;
 }
 
 function isNeo4jTlsUri(value: string | undefined): boolean {
@@ -108,11 +117,15 @@ export function evaluateProductionReadiness(env: NodeJS.ProcessEnv = process.env
     {
       id: 'auth-bypass',
       label: 'Development auth bypass',
-      ok: env.AUTH_BYPASS_DEV !== 'true',
+      ok: production ? env.AUTH_BYPASS_DEV !== 'true' : true,
       severity: 'critical',
-      message: env.AUTH_BYPASS_DEV === 'true'
-        ? 'AUTH_BYPASS_DEV must be false or unset in production.'
-        : 'AUTH_BYPASS_DEV is not enabled.',
+      message: production
+        ? env.AUTH_BYPASS_DEV === 'true'
+          ? 'AUTH_BYPASS_DEV must be false or unset in production.'
+          : 'AUTH_BYPASS_DEV is not enabled.'
+        : env.AUTH_BYPASS_DEV === 'true'
+          ? 'AUTH_BYPASS_DEV is enabled for local no-Clerk development.'
+          : 'AUTH_BYPASS_DEV is not enabled; local protected routes require bearer tokens.',
     },
     {
       id: 'cors',
@@ -153,20 +166,26 @@ export function evaluateProductionReadiness(env: NodeJS.ProcessEnv = process.env
     {
       id: 'clerk-api',
       label: 'Clerk API verification',
-      ok: production ? isLiveClerkSecret(env.CLERK_SECRET_KEY) : hasValue(env.CLERK_SECRET_KEY),
+      ok: production ? isLiveClerkSecret(env.CLERK_SECRET_KEY) : true,
       severity: 'critical',
       message: production
         ? 'CLERK_SECRET_KEY must be a production sk_live_ key for bearer token verification.'
-        : 'CLERK_SECRET_KEY is configured for local/development bearer token verification.',
+        : hasValue(env.CLERK_SECRET_KEY)
+          ? 'CLERK_SECRET_KEY is configured for local/development bearer token verification.'
+          : 'CLERK_SECRET_KEY is optional when local development uses custom JWTs or AUTH_BYPASS_DEV.',
     },
     {
       id: 'clerk-webhook',
       label: 'Clerk webhook verification',
-      ok: hasValue(env.CLERK_WEBHOOK_SIGNING_SECRET),
+      ok: production ? hasValue(env.CLERK_WEBHOOK_SIGNING_SECRET) : true,
       severity: 'critical',
-      message: hasValue(env.CLERK_WEBHOOK_SIGNING_SECRET)
-        ? 'CLERK_WEBHOOK_SIGNING_SECRET is configured for tenant/user provisioning.'
-        : 'CLERK_WEBHOOK_SIGNING_SECRET is required for tenant and membership provisioning.',
+      message: production
+        ? hasValue(env.CLERK_WEBHOOK_SIGNING_SECRET)
+          ? 'CLERK_WEBHOOK_SIGNING_SECRET is configured for tenant/user provisioning.'
+          : 'CLERK_WEBHOOK_SIGNING_SECRET is required for tenant and membership provisioning.'
+        : hasValue(env.CLERK_WEBHOOK_SIGNING_SECRET)
+          ? 'CLERK_WEBHOOK_SIGNING_SECRET is configured for local tenant/user provisioning tests.'
+          : 'CLERK_WEBHOOK_SIGNING_SECRET is optional outside production.',
     },
     {
       id: 'psur-service',

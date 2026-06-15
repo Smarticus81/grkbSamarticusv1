@@ -4,18 +4,22 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const CRITICAL_KEYS = [
+const DEVELOPMENT_REQUIRED_KEYS = [
   'DATABASE_URL',
   'NEO4J_URI',
   'NEO4J_USER',
   'NEO4J_PASSWORD',
   'JWT_SECRET',
-  'VITE_CLERK_PUBLISHABLE_KEY',
-  'CLERK_SECRET_KEY',
-  'CLERK_WEBHOOK_SIGNING_SECRET',
   'ALLOWED_ORIGINS',
   'VITE_API_URL',
   'PSUR_SERVICE_URL',
+];
+
+const PRODUCTION_REQUIRED_KEYS = [
+  ...DEVELOPMENT_REQUIRED_KEYS,
+  'VITE_CLERK_PUBLISHABLE_KEY',
+  'CLERK_SECRET_KEY',
+  'CLERK_WEBHOOK_SIGNING_SECRET',
 ];
 
 const LLM_KEYS = ['OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY'];
@@ -81,10 +85,22 @@ export function isHttpsUrl(value) {
   }
 }
 
+export function normalizeOrigin(value) {
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.replace(/\.$/, '');
+    const port = url.port ? `:${url.port}` : '';
+    return `${url.protocol}//${hostname}${port}`;
+  } catch {
+    return value;
+  }
+}
+
 export function allHttpsOrigins(value) {
   return value
     .split(',')
     .map((origin) => origin.trim())
+    .map(normalizeOrigin)
     .filter(Boolean)
     .every((origin) => isHttpsUrl(origin) && !isLocal(origin));
 }
@@ -126,7 +142,8 @@ export function inspectDuplicates(occurrences, issues) {
     const effective = values[values.length - 1];
     const previousUsable = values.slice(0, -1).some(({ value }) => hasValue(value) && !isLocal(value));
     const shadowedByEmptyOrLocal = previousUsable && (!hasValue(effective.value) || isLocal(effective.value));
-    const severity = shadowedByEmptyOrLocal && (CRITICAL_KEYS.includes(key) || LLM_KEYS.includes(key))
+    const criticalKeys = new Set([...PRODUCTION_REQUIRED_KEYS, ...LLM_KEYS]);
+    const severity = shadowedByEmptyOrLocal && criticalKeys.has(key)
       ? 'error'
       : 'warning';
     const locations = values.map(({ line, value }) => `line ${line} ${shape(key, value)}`).join(', ');
@@ -140,7 +157,8 @@ export function inspectDuplicates(occurrences, issues) {
 }
 
 export function inspectRequiredValues(occurrences, issues, production) {
-  for (const key of CRITICAL_KEYS) {
+  const requiredKeys = production ? PRODUCTION_REQUIRED_KEYS : DEVELOPMENT_REQUIRED_KEYS;
+  for (const key of requiredKeys) {
     const value = effectiveValue(occurrences, key);
     if (!hasValue(value)) {
       addIssue(issues, 'error', `${key} is empty or missing.`);

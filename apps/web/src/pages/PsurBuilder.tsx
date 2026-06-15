@@ -138,8 +138,8 @@ export function PsurBuilder() {
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PageHeader
         eyebrow="PSUR Builder"
-        title="Build post-market reports."
-        subtitle="Your workspace for PSUR and PMSR runs, artifacts, validation status, and decision traces."
+        title="Generate post-market reports."
+        subtitle="Runs, outputs, validation status, and audit trail for each report."
         actions={
           <button className="btn btn-orange" onClick={() => navigate(psurWorkspaceBuilderPath())} style={{ fontSize: 13 }}>
             Open builder
@@ -154,19 +154,19 @@ export function PsurBuilder() {
           <SummaryCard
             label="Runs"
             value={runs ? `${summary.completedRuns}/${summary.totalRuns}` : 'Loading'}
-            body={`${summary.runningRuns} running, ${summary.failedRuns} failed. This list is loaded from your signed-in tenant workspace.`}
+            body={`${summary.runningRuns} running, ${summary.failedRuns} failed. This list is workspace-restricted.`}
           />
           <SummaryCard
-            label="Artifacts"
+            label="Outputs"
             value={runs ? `${summary.artifactCount}` : 'Loading'}
             body={summary.latestCompletedRun
               ? `Latest completed report: ${summary.latestCompletedRun.deviceName ?? summary.latestCompletedRun.runId}.`
-              : 'Completed runs keep downloadable drafts, trace JSON, and validation outputs.'}
+              : 'Completed runs keep drafts, audit trail JSON, and validation outputs.'}
           />
           <SummaryCard
             label="Validation"
             value={runs ? `${summary.validatedRuns} verified` : 'Loading'}
-            body={`${summary.needsReviewRuns} completed run${summary.needsReviewRuns === 1 ? '' : 's'} need review. Decision traces are tenant-scoped and hash-chained.`}
+            body={`${summary.needsReviewRuns} completed run${summary.needsReviewRuns === 1 ? '' : 's'} need review. Audit trails are workspace-restricted and tamper-evident.`}
           />
         </div>
 
@@ -192,7 +192,7 @@ export function PsurBuilder() {
           <EmptyState
             eyebrow="No PSUR runs yet"
             title="Start with the builder."
-            body="Run the default data pack, edit the inputs, then come back here to reopen artifacts and trace proof."
+            body="Run the default data pack, edit inputs, then reopen outputs and audit trails."
             primaryAction={{ label: 'Open PSUR Builder', href: psurWorkspaceBuilderPath() }}
           />
         )}
@@ -229,10 +229,10 @@ export function PsurBuilder() {
                       )}
                     </div>
                     <div style={{ marginTop: 5, fontSize: 13, color: 'var(--ink-3)' }}>
-                      {run.periodStart} to {run.periodEnd} | {relTime(run.createdAt)} | {run.artifacts.length} artifact{run.artifacts.length === 1 ? '' : 's'}
+                      {run.periodStart} to {run.periodEnd} | {relTime(run.createdAt)} | {run.artifacts.length} output{run.artifacts.length === 1 ? '' : 's'}
                     </div>
                     <div style={{ marginTop: 4, fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-4)' }}>
-                      {run.runId} | trace {run.processInstanceId}
+                      {run.runId} | audit trail {run.processInstanceId}
                     </div>
                   </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -241,7 +241,7 @@ export function PsurBuilder() {
                         onClick={() => navigate(`/app/trails/${run.processInstanceId}`)}
                         style={{ fontSize: 12, padding: '7px 11px' }}
                       >
-                        Trace
+                        Audit trail
                       </button>
                       <button
                         className="btn btn-ghost"
@@ -257,7 +257,7 @@ export function PsurBuilder() {
                         onClick={() => void downloadAuditPack(run)}
                         style={{ fontSize: 12, padding: '7px 11px' }}
                       >
-                        {busy === `${run.runId}:audit-pack` ? 'Exporting...' : 'Audit Pack'}
+                        {busy === `${run.runId}:audit-pack` ? 'Exporting...' : 'Audit pack'}
                       </button>
                       <button
                         className="btn btn-orange"
