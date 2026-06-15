@@ -35,13 +35,13 @@ const TIERS: Tier[] = [
     id: 'sandbox',
     name: 'Launch',
     price: 'Free',
-    tagline: 'Launch medical-device agents on sample evidence before you commit anything.',
-    cta: { label: 'Start agent build', action: 'sandbox' },
+    tagline: 'Run medical-device modules on sample source data before using your own.',
+    cta: { label: 'Configure module', action: 'sandbox' },
     features: [
-      'Launch every medical-device agent template on built-in sample evidence',
-      `Browse ${REQUIREMENT_COUNT} requirements across ${REG_COUNT} semantic compliance buckets`,
-      `Use ${EVIDENCE_TYPE_COUNT} evidence types for runtime grounding`,
-      'Verify the hash chain on any agent run',
+      'Run every module on built-in sample source data',
+      `Browse ${REQUIREMENT_COUNT} requirements across ${REG_COUNT} data categories`,
+      `Use ${EVIDENCE_TYPE_COUNT} source data types for requirement checks`,
+      'Verify the tamper-evident chain on any module run',
     ],
   },
   {
@@ -54,10 +54,10 @@ const TIERS: Tier[] = [
     featured: true,
     features: [
       'Everything in Launch',
-      'Run managed agents on your own data — your tenant, never stored by us',
-      'Deploy reusable Claude Managed Agents with required-data slots and review gates',
-      'Design multi-agent workflows in the canvas',
-      'Export audit packs and full hash-chained decision trails',
+      'Run qualified modules on your own data in an access-controlled workspace',
+      'Release reusable modules with required-data slots and review criteria',
+      'Design module workflows in the canvas',
+      'Export audit packs and full tamper-evident audit trails',
       'Email support with a 1-business-day response',
     ],
   },
@@ -81,11 +81,11 @@ const TIERS: Tier[] = [
 const FAQ: { q: string; a: string }[] = [
   {
     q: 'Does Smarticus store our proprietary data?',
-    a: 'No. Agents query the requirements map; your payloads stay in your tenant. The decision trail records what was decided and which requirement supported it — not your underlying records.',
+    a: 'No. Modules query the regulatory requirements library; your payloads stay in your workspace. The audit trail records what was decided and which requirement supported it, not your underlying records.',
   },
   {
     q: 'Does this replace our QMS or our people?',
-    a: 'Neither. Smarticus prepares and checks the work and produces a defensible trail. Your QMS team owns final review and release. It grounds AI in the regulation — it is not a QMS of record.',
+    a: 'Neither. Smarticus prepares and checks the work and produces an audit trail. Your QMS team owns final review and release. It is not a QMS of record.',
   },
   {
     q: 'How is the developer tier billed?',
@@ -93,7 +93,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Which regulations are covered today?',
-    a: `The live graph currently contains ${REQUIREMENT_COUNT} requirements, ${EVIDENCE_TYPE_COUNT} evidence types, and ${REG_COUNT} semantic compliance buckets across medical-device regulations, standards, and QMS process areas.`,
+    a: `The regulatory requirements library contains ${REQUIREMENT_COUNT} requirements, ${EVIDENCE_TYPE_COUNT} source data types, and ${REG_COUNT} data categories across medical-device regulations, standards, and QMS process areas.`,
   },
 ];
 
@@ -143,7 +143,7 @@ export function Pricing() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
             <ThemeToggle />
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Start agent build
+              Configure module
             </button>
           </div>
         </div>
@@ -161,8 +161,7 @@ export function Pricing() {
           Free to prove. Priced to <span style={{ color: 'var(--orange)' }}>scale</span>.
         </h1>
         <p style={{ margin: '22px auto 0', maxWidth: 560, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)' }}>
-          Create grounded managed agents on sample data for free. Pay when you put your own data through and
-          start deploying defensible agent workflows.
+          Configure modules on sample data for free. Pay when you use your own data and release modules for routine use.
         </p>
       </section>
 
@@ -216,11 +215,11 @@ export function Pricing() {
           <div>
             <div className="eyebrow" style={{ marginBottom: 10 }}>Developers</div>
             <h2 style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-              Ground your own agents, metered by call.
+              Add requirement checks to your modules, metered by call.
             </h2>
             <p style={{ margin: '12px 0 0', fontSize: 14, color: 'var(--ink-2)', lineHeight: 1.55, maxWidth: 520 }}>
               The MCP server and Requirement API are usage-based: pay per qualification, discovery, and
-              validation call. Eleven tools, one snippet, every call hash-chained.
+              validation call. Eleven tools, one snippet, every call recorded in a tamper-evident audit trail.
             </p>
             <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
               <button className="btn btn-ghost" onClick={() => navigate('/app/connect')}>View developer docs</button>
@@ -255,7 +254,7 @@ export function Pricing() {
             See it produce a deliverable before you decide.
           </h2>
           <div style={{ marginTop: 26, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>Start agent build</button>
+            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>Configure module</button>
             <button
               className="btn btn-ghost"
               style={{ color: 'var(--paper)', borderColor: 'var(--ink-3)' }}
@@ -271,7 +270,7 @@ export function Pricing() {
       <footer style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 32px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--ink-3)', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
           <SmarticusMark size={14} />
-          <span>Smarticus · Regulatory ground</span>
+          <span>Smarticus · Post-market surveillance</span>
         </div>
         <button onClick={() => navigate('/')} style={{ background: 'none', border: 0, color: 'var(--ink-3)', fontSize: 13, cursor: 'pointer' }}>
           &larr; Back to home

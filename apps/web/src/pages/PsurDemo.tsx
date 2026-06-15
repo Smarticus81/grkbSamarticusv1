@@ -135,12 +135,12 @@ const PHASE_LABELS: Record<Phase, string> = {
   imdrf_coding: 'IMDRF coding',
   statistics: 'Statistics',
   charts: 'Charts',
-  generation: 'Section agents',
+  generation: 'Section modules',
   audit: 'Audit',
   remediation: 'Remediation',
   validation: 'Validation',
   rendering: 'Rendering',
-  artifacts: 'Artifacts',
+  artifacts: 'Outputs',
 };
 
 const SECTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'] as const;
@@ -425,14 +425,13 @@ function SimulationBanner({ showSimulationSignup }: { showSimulationSignup: bool
     >
       <Chip tone="sim">Simulation</Chip>
       <span style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--ink-2)', flex: 1, minWidth: 280 }}>
-        Everything on this page is a scripted simulation that runs entirely in your browser — no AI agents,
-        no obligation graph, and nothing leaves this page. The real engine is reserved for signed-in users.
+        This scripted simulation runs in your browser. No module calls, no requirements lookup, and nothing leaves this page.
       </span>
       {showSimulationSignup ? (
         <AuthCtaButtons compact />
       ) : clerkAvailable ? (
         <Link href="/app/psur/build" className="btn btn-orange" style={{ textDecoration: 'none', fontSize: 12.5, padding: '7px 14px' }}>
-          Open live builder
+          Open signed-in builder
         </Link>
       ) : (
         <AuthCtaButtons compact />
@@ -524,54 +523,20 @@ function IntroStep({
   return (
     <div style={{ maxWidth: 760 }}>
       <SectionHeading
-        eyebrow={mode === 'simulation' ? 'The keynote demo · simulation' : 'The keynote demo'}
+        eyebrow={mode === 'simulation' ? 'PSUR demo · simulation' : 'PSUR demo'}
         title={
           mode === 'simulation'
-            ? 'A PSUR takes two weeks to assemble. Watch a simulated one draft itself in under a minute.'
-            : 'A PSUR takes two weeks to assemble. Watch one draft itself in under 20 minutes.'
+            ? 'Generate a simulated PSUR from editable source data.'
+            : 'Generate a PSUR from controlled source data.'
         }
       />
       <p style={{ margin: '18px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
-        A <strong style={{ color: 'var(--ink)' }}>Periodic Safety Update Report (PSUR)</strong> is the
-        document EU MDR Article 86 requires medical-device manufacturers to produce on a fixed cadence:
-        sales, complaints, serious incidents, field safety corrective actions, trends, literature, and a
-        benefit–risk conclusion, all reconciled against the risk file. Assembling one by hand takes a
-        quality team a minimum of two weeks.
+        Generate an MDCG 2022-21 PSUR draft, review the source data, and inspect the audit trail.
       </p>
-      {mode === 'simulation' ? (
-        <>
-          <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
-            What you are about to watch is a <strong style={{ color: 'var(--ink)' }}>faithful, fully
-            simulated replay</strong> of our real generation pipeline — the runtime end to end: every phase,
-            all 13 section agents (A–M), and every traced decision, streamed live. The statistics, the EU MDR
-            Article 88 trend finding, and the benefit–risk conclusion are all{' '}
-            <strong style={{ color: 'var(--ink)' }}>recomputed live from the data you can edit in step 2</strong>.
-            The hash chain at the end is real SHA-256, built and verified in your browser. The draft downloads
-            as <strong style={{ color: 'var(--ink)' }}>PDF and DOCX</strong>, watermarked SIMULATED on every page.
-          </p>
-          <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
-            The real engine — grounded LLM section agents, the obligation knowledge graph, and an auditable
-            decision trace written under your own tenant — runs only for signed-in users.
-          </p>
-        </>
-      ) : (
-        <p style={{ margin: '14px 0 0', fontSize: 15.5, lineHeight: 1.6, color: 'var(--ink-2)' }}>
-          This demo runs the real generation pipeline on a realistic mock data pack and produces a
-          human-review-ready draft in under 20 minutes — a <strong style={{ color: 'var(--ink)' }}>99%
-          reduction in data-to-draft time</strong>. The downloadable report is the proof of capability. The
-          product is what you will watch being built alongside it: a{' '}
-          <strong style={{ color: 'var(--ink)' }}>hash-chained decision trace</strong>, grounded in the
-          obligation graph, where every decision cites a reason and, where a regulation genuinely drives
-          it, the regulation itself.
-        </p>
-      )}
       <ol style={{ margin: '20px 0 0', paddingLeft: 18, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.8 }}>
-        <li>
-          Review (and edit) the mock inputs — content is editable, structure is locked.
-          {mode === 'simulation' && ' Push the numbers around: the simulation recomputes its conclusions from your edits.'}
-        </li>
-        <li>Watch the runtime end to end: phases with live timings, 13 section agents (A–M), the decision stream, and the raw runtime log.</li>
-        <li>Preview the draft in place, download it{mode === 'simulation' ? ' as PDF or DOCX' : ''}, and inspect the verified decision trace.</li>
+        <li>Review and edit the mock source data.</li>
+        <li>Run the PSUR generation process.</li>
+        <li>Inspect the draft and audit trail.</li>
       </ol>
       <div style={{ marginTop: 28, display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
         <button className="btn btn-orange" onClick={onStart}>
@@ -833,7 +798,7 @@ function InputsStep({
         body={
           mode === 'simulation'
             ? 'Content is editable; structure is locked. This is where the simulation earns its keep: change any number — add complaint rows until the rate crosses the PMS-plan trend threshold, for instance — and the Article 88 trend finding and the benefit–risk conclusion will recompute from your edits.'
-            : 'Content is editable; structure is locked. Change any number or narrative and the run — and its traced calculations — will change with it. Columns and field names cannot be added, removed, or renamed; structural edits are rejected with a precise error.'
+            : 'Content is editable; structure is locked. Change any number or narrative and the run calculations will change with it. Columns and field names cannot be added, removed, or renamed; structural edits are rejected with a precise error.'
         }
       />
       <div style={{ ...mono, fontSize: 11, color: 'var(--ink-3)', marginTop: 14 }}>
@@ -1036,7 +1001,7 @@ function RuntimeLog({ log }: { log: LogLine[] }) {
         lineHeight: 1.85,
       }}
     >
-      {log.length === 0 && <span style={{ color: 'var(--ink-4)' }}>waiting for the runtime…</span>}
+      {log.length === 0 && <span style={{ color: 'var(--ink-4)' }}>waiting for the process...</span>}
       {log.map((line) => (
         <div key={line.id} style={{ display: 'flex', gap: 10, animation: 'rgFadeUp 200ms var(--ease-out) both' }}>
           <span style={{ color: 'var(--ink-4)', flexShrink: 0 }}>{(line.t / 1000).toFixed(1).padStart(6, ' ')}s</span>
@@ -1097,15 +1062,15 @@ function RunStep({
         eyebrow={mode === 'simulation' ? 'Step 3 — Run · simulation' : 'Step 3 — Run'}
         title={
           mode === 'simulation'
-            ? 'The simulated runtime, end to end.'
+            ? 'Simulated process run.'
             : starting
-              ? 'Starting the pipeline…'
-              : 'The runtime, end to end.'
+              ? 'Starting the process...'
+              : 'Process run.'
         }
         body={
           mode === 'simulation'
-            ? 'A scripted replay of the real pipeline — no model calls, nothing leaves your browser. Every phase, agent, and decision below was recomputed from the inputs you just edited, and each decision is appended to a real SHA-256 hash chain as it happens.'
-            : 'Real LLM runtime. Deterministic statistics are pre-computed and consumed verbatim by 13 section agents (A–M). Every decision below is appended to the hash chain as it happens — grounded in the obligation graph.'
+            ? 'A scripted replay: no model calls, nothing leaves your browser. Each decision is recorded in a tamper-evident chain.'
+            : 'The signed-in process uses controlled statistics and records each decision in a tamper-evident chain.'
         }
       />
 
@@ -1166,7 +1131,7 @@ function RunStep({
         />
       </div>
 
-      {/* Timeline + agents/decisions */}
+        {/* Timeline + modules/decisions */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 28, marginTop: 26, alignItems: 'flex-start' }}>
         {/* Phase timeline */}
         <div style={{ flex: '0 1 240px', minWidth: 210 }}>
@@ -1174,9 +1139,9 @@ function RunStep({
           <PhaseTimeline runState={runState} now={now} />
         </div>
 
-        {/* Section agents + decision stream */}
+        {/* Section modules + audit trail */}
         <div style={{ flex: '1 1 440px', minWidth: 320 }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Section agents A–M</div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Section modules A–M</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {SECTION_LETTERS.map((letter) => {
               const status = runState.sections[letter] ?? 'pending';
@@ -1208,12 +1173,12 @@ function RunStep({
           </div>
 
           <div className="eyebrow" style={{ margin: '22px 0 10px' }}>
-            Decision stream · {runState.decisions.length} traced{mode === 'simulation' && ' · simulated'}
+            Audit trail · {runState.decisions.length} decisions{mode === 'simulation' && ' · simulated'}
           </div>
           <div aria-live="polite" style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-2)', maxHeight: 320, overflowY: 'auto' }}>
             {runState.decisions.length === 0 && (
               <div style={{ padding: 18, fontSize: 13.5, color: 'var(--ink-4)' }}>
-                Waiting for the first traced decision…
+                Waiting for the first audit trail entry...
               </div>
             )}
             {[...runState.decisions].reverse().map((d) => (
@@ -1232,7 +1197,7 @@ function RunStep({
                     <Chip
                       key={b}
                       tone={mode === 'simulation' ? 'sim' : 'active'}
-                      title={mode === 'simulation' ? 'Simulated citation — illustrative only, not resolved against the obligation graph' : undefined}
+                      title={mode === 'simulation' ? 'Simulated citation; not resolved against the requirements library' : undefined}
                     >
                       {b}
                     </Chip>
@@ -1244,10 +1209,10 @@ function RunStep({
         </div>
       </div>
 
-      {/* End-to-end runtime log */}
+      {/* Process log */}
       <div style={{ marginTop: 26 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>
-          Runtime log · run start → artifacts
+          Process log · run start → outputs
         </div>
         <RuntimeLog log={runState.log} />
       </div>
@@ -1290,11 +1255,11 @@ function ResultsStep({
     <div>
       <SectionHeading
         eyebrow={mode === 'simulation' ? 'Step 4 — Results · simulation' : 'Step 4 — Results'}
-        title={mode === 'simulation' ? 'Simulated draft delivered. Local chain verified.' : 'Draft delivered. Trace verified.'}
+        title={mode === 'simulation' ? 'Simulated draft delivered. Local chain verified.' : 'Draft delivered. Audit trail verified.'}
         body={
           mode === 'simulation'
-            ? 'Preview the watermarked simulated draft below, download it as PDF or DOCX — its numbers and conclusions came from your edited inputs — then inspect the decision chain: every simulated decision was hashed with SHA-256 and the full chain re-verified, right here in your browser.'
-            : 'Preview and download the human-review-ready draft below. Then inspect the hero artifact: the hash-chained decision trace — every decision with its reason and its obligation citations.'
+            ? 'Preview the watermarked draft, download it as PDF or DOCX, then inspect the local tamper-evident audit trail.'
+            : 'Preview and download the draft. Then inspect the audit trail with reasons and requirement citations.'
         }
       />
 
@@ -1403,10 +1368,10 @@ function ResultsStep({
         </div>
       </div>
 
-      {/* Decision trace — the hero artifact */}
+      {/* Audit trail */}
       <div style={{ marginTop: 30 }}>
         <div className="eyebrow" style={{ marginBottom: 10 }}>
-          The decision trace · {decisions.length} decisions{mode === 'simulation' && ' · simulated'}
+          Audit trail · {decisions.length} decisions{mode === 'simulation' && ' · simulated'}
         </div>
         <div style={{ border: '1px solid var(--rule)', borderRadius: 'var(--r-2)', maxHeight: 420, overflowY: 'auto' }}>
           {decisions.map((e) => {
@@ -1424,16 +1389,16 @@ function ResultsStep({
                 )}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
                   {(ctx.obligationIds ?? []).map((id) => (
-                    <Chip key={id} tone="done" title="Resolved graph obligation">{id}</Chip>
+                    <Chip key={id} tone="done" title="Resolved applicable requirement">{id}</Chip>
                   ))}
                   {(ctx.unresolved_citation ?? []).map((c) => (
-                    <Chip key={c} tone="warn" title="Citation not yet seeded in the obligation graph — recorded, never guessed">
+                    <Chip key={c} tone="warn" title="Citation not yet in the requirements library; recorded, not guessed">
                       unresolved · {c}
                     </Chip>
                   ))}
                   {mode === 'simulation' &&
                     (ctx.citations ?? []).map((c) => (
-                      <Chip key={c} tone="sim" title="Simulated citation — illustrative only, not resolved against the obligation graph">
+                      <Chip key={c} tone="sim" title="Simulated citation; not resolved against the requirements library">
                         {c}
                       </Chip>
                     ))}
@@ -1464,18 +1429,16 @@ function ResultsStep({
         >
           <div className="eyebrow" style={{ marginBottom: 10 }}>What you just watched was a simulation</div>
           <p style={{ margin: 0, fontSize: 15, lineHeight: 1.6, color: 'var(--ink-2)' }}>
-            No AI was called and no regulation was actually consulted — but the real engine produces exactly
-            this experience with <strong style={{ color: 'var(--ink)' }}>grounded LLM section agents</strong>,
-            citations resolved against the <strong style={{ color: 'var(--ink)' }}>obligation knowledge
-            graph</strong>, and a decision trace written under your own tenant that an auditor can verify.
-            Create a free account and run it on this same data pack.
+            No model was called and no regulation was consulted. The signed-in builder resolves citations against the
+            <strong style={{ color: 'var(--ink)' }}> regulatory requirements library</strong> and records an
+            access-controlled audit trail for auditor review.
           </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 18, alignItems: 'center' }}>
             {showSimulationSignup ? (
               <AuthCtaButtons />
             ) : clerkAvailable ? (
               <Link href="/app/psur/build" className="btn btn-orange" style={{ textDecoration: 'none' }}>
-                Open live builder
+                Open signed-in builder
               </Link>
             ) : (
               <AuthCtaButtons />
@@ -1491,7 +1454,7 @@ function ResultsStep({
               className="btn btn-ghost"
               style={{ textDecoration: 'none', fontSize: 13 }}
             >
-              Open in Trace Explorer + export Audit Pack
+              Open audit trail and export audit pack
             </Link>
           )}
           <button className="btn btn-orange" onClick={onRestart}>Run it again</button>
@@ -1792,7 +1755,7 @@ function PsurDemoCore({
         if (section) {
           const letter = section.charAt(0).toUpperCase();
           next.sections = { ...s.sections, [letter]: status };
-          next.log = appendLog(s, 'agent', `agent ${letter} · ${sectionPretty(section)} — ${status}`);
+          next.log = appendLog(s, 'agent', `module ${letter} · ${sectionPretty(section)} — ${status}`);
         } else {
           next.log = appendLog(s, 'phase', `${PHASE_LABELS[phase] ?? phase} ${status}`);
         }
@@ -1988,7 +1951,7 @@ function PsurDemoCore({
           ...s,
           error: isAuthTokenRequired(err)
             ? sessionExpiredMessage()
-            : 'The live stream was interrupted. The trace keeps its partial chain.',
+            : 'The signed-in stream was interrupted. The audit trail keeps its partial chain.',
         }));
       }
     }
@@ -2166,13 +2129,13 @@ function PsurDemoCore({
         </Link>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap', minWidth: 0 }}>
           <span className="eyebrow">
-            {mode === 'simulation' ? 'PSUR demo · simulation mode' : 'PSUR demo · data → draft in 20 minutes'}
+            {mode === 'simulation' ? 'PSUR demo · simulation mode' : 'PSUR demo · data → draft'}
           </span>
-          <Chip tone={mode === 'live' ? 'done' : 'sim'}>{mode === 'live' ? 'Live pipeline' : 'Simulation'}</Chip>
+          <Chip tone={mode === 'live' ? 'done' : 'sim'}>{mode === 'live' ? 'Signed-in process' : 'Simulation'}</Chip>
           {shouldShowLiveWorkspaceControls({ mode, clerkAvailable }) && (
             <>
             <Link href="/app" className="btn btn-ghost" style={{ textDecoration: 'none', fontSize: 12.5, padding: '7px 14px' }}>
-              Command Center
+              Dashboard
             </Link>
             <LiveWorkspaceControls />
             </>

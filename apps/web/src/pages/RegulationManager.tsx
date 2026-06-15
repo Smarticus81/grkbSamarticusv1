@@ -206,12 +206,12 @@ export function RegulationManager() {
           <div style={{ minWidth: 0 }}>
             <div className="eyebrow" style={{ marginBottom: 8 }}>Requirements Map</div>
             <h1 style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.02em', margin: 0 }}>
-              Every requirement your agents must satisfy.
+              Requirements used by each module.
             </h1>
             <p style={{ fontSize: 13, color: 'var(--ink-3)', margin: '6px 0 0', maxWidth: 540, lineHeight: 1.5 }}>
               {total > 0
                 ? `${total} requirements across ${Object.keys(regs).length} regulations. Filter by process or search by citation.`
-                : 'Connect the requirements database to see live requirements.'}
+                : 'Connect the requirements database to see current requirements.'}
             </p>
             <div style={{ marginTop: 12, maxWidth: 420 }}>
               <RegulatorCompactStrip />
@@ -347,7 +347,7 @@ export function RegulationManager() {
                 Pick a <strong style={{ color: 'var(--ink-2)' }}>process tile</strong> to see only the requirements that
                 apply, or open any <strong style={{ color: 'var(--ink-2)' }}>regulation</strong> to browse it whole.
                 Every requirement here is bound to its source citation, jurisdiction, required-data list, and
-                cross-references — exactly what your agents query at run time.
+                cross-references used during module checks.
               </p>
               <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                 {[
@@ -481,7 +481,7 @@ export function RegulationManager() {
                   <span style={{ color: 'var(--ink)' }}>{selectedOb.kind}</span>
                 </>)}
                 {selectedOb.artifactType && (<>
-                  <span style={{ color: 'var(--ink-3)' }}>Artifact</span>
+                  <span style={{ color: 'var(--ink-3)' }}>Output type</span>
                   <span style={{ color: 'var(--ink)' }}>{selectedOb.artifactType}</span>
                 </>)}
               </div>

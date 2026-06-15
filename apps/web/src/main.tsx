@@ -63,8 +63,8 @@ if (authBootMode === 'clerk' && clerkPubKey) {
             Smarticus cannot start without login configuration.
           </h1>
           <p style={{ margin: '14px 0 0', lineHeight: 1.6, color: '#5a5147' }}>
-            Set <code>VITE_CLERK_PUBLISHABLE_KEY</code> for this production build so tenant workspaces,
-            agent builders, and PSUR runs are protected by sign-in.
+            Set <code>VITE_CLERK_PUBLISHABLE_KEY</code> for this production build so workspace data,
+            module configuration, and PSUR runs are protected by sign-in.
           </p>
         </main>
       </div>

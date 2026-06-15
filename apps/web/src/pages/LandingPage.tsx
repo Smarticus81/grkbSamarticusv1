@@ -26,17 +26,17 @@ const PRODUCTS: {
   {
     eyebrow: 'Authoring',
     title: 'PSUR Compiler.',
-    body: 'Two weeks of PSUR assembly becomes a human-review-ready draft in under 20 minutes \u2014 a 99% reduction in data-to-draft time. Every decision in the run is hash-chained and grounded in the obligation graph.',
+    body: 'Generates an MDCG 2022-21 PSUR draft from controlled source data.',
     bullets: [
-      'MDCG 2022-21 sections A\u2013M, drafted by 13 grounded agents',
+      'MDCG 2022-21 sections A\u2013M',
       'Deterministic statistics \u2014 numbers computed once, never fabricated',
-      'A graph-grounded decision trace: every decision cites its reason and regulation',
-      'Hash-chain verification and one-click audit pack',
+      'Audit trail: each decision cites its reason and requirement',
+      'Tamper-evident verification and one-click audit pack',
     ],
     cta: { label: 'Watch the demo', to: '/demo/psur' },
     visual: 'psur',
     before: 'Two weeks of manual assembly: sales, complaints, incidents, trends, literature \u2014 reconciled by hand.',
-    after: 'A draft structured to MDCG 2022-21 in under 20 minutes, with a verified decision trace behind every number.',
+    after: 'A draft structured to MDCG 2022-21, with a verified audit trail behind every number.',
   },
   {
     eyebrow: 'Vigilance',
@@ -48,7 +48,7 @@ const PRODUCTS: {
       'ISO 13485 \u00a78.2.2 required data trail',
       'Auto-coded with IMDRF Annex A through G',
     ],
-    cta: { label: 'Start build', to: '/app' },
+    cta: { label: 'Configure module', to: '/app' },
     visual: 'complaints',
     before: 'A spreadsheet triage with deadlines tracked manually across three regulations.',
     after: 'A single queue with SLA clocks mapped to EU MDR Art. 87, 21 CFR 803, and ISO 13485 \u00a78.2.2, with coded rationale.',
@@ -63,15 +63,15 @@ const PRODUCTS: {
       'Reviewable before connecting to production',
       'Versioned against IMDRF terminology releases',
     ],
-    cta: { label: 'Start build', to: '/app' },
+    cta: { label: 'Configure module', to: '/app' },
     visual: 'imdrf',
     before: 'Manual IMDRF coding with inconsistent annex coverage and no confidence scores.',
     after: 'Automated codes across Annexes A\u2013G with rationale, confidence, and version-locked terminology.',
   },
   {
-    eyebrow: 'The requirement control plane',
+    eyebrow: 'Regulatory requirements library',
     title: 'One map. Eight regulations. Every relationship.',
-    body: 'Your agents query Smarticus instead of re-reading the regulation. The control plane holds the requirements, cross-references, required data types, and constraints \u2014 versioned, citable, and replayable.',
+    body: 'Modules retrieve versioned requirements, cross-references, source data types, and constraints.',
     bullets: [
       `${OBLIGATION_COUNT} requirements across ${REG_COUNT} regulations and standards`,
       'Walks chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
@@ -80,8 +80,8 @@ const PRODUCTS: {
     ],
     cta: { label: 'Browse the requirements', to: '/app/requirements' },
     visual: 'graph',
-    before: 'Agents that parse PDF regulations at runtime with no cross-reference awareness.',
-    after: 'Requirement-aware agents that query a versioned map of requirements, constraints, required data types, and cross-references in milliseconds.',
+    before: 'Manual PDF checks with limited cross-reference awareness.',
+    after: 'Modules query versioned requirements, constraints, source data types, and cross-references.',
   },
 ];
 
@@ -473,7 +473,7 @@ export function LandingPage() {
           <div>
             <div className="eyebrow" style={{ marginBottom: 18 }}>
               <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
-              Compliance-constrained AI runtime
+              Regulatory requirements checks
             </div>
             <h1
               style={{
@@ -486,7 +486,7 @@ export function LandingPage() {
                 color: 'var(--ink)',
               }}
             >
-              Automate QMS work with strict Compliance Agents.
+              Audit-ready QMS outputs from controlled inputs.
             </h1>
             <p
               style={{
@@ -497,19 +497,17 @@ export function LandingPage() {
                 lineHeight: 1.55,
               }}
             >
-              Smarticus uses a deep knowledge base of Medical device regulations to constrain AI work for Quality Systems Work like CAPA, PMS, and regulatory compliance. The system guides AI Agent behavior and blocks unsupported output,
-             ensures compliance,
-              and records why each decision was made.
+              Smarticus checks QMS work against medical-device requirements and records the source for each decision.
             </p>
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
               <button className="btn btn-orange" onClick={() => navigate('/demo/psur')}>
-                Watch a PSUR draft itself in 20 minutes
+                Watch a PSUR draft
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               <button className="btn btn-ghost" onClick={() => navigate('/app/sandbox')}>
-                Run with graph controls
+                Run with requirement checks
               </button>
             </div>
             <p
@@ -522,36 +520,36 @@ export function LandingPage() {
                 color: 'var(--ink-4)',
               }}
             >
-              Live graph: {liveRequirements} requirements, {liveEvidenceTypes} evidence types, {liveSemanticBuckets} semantic buckets.
+              Requirements library: {liveRequirements} requirements, {liveEvidenceTypes} source data types, {liveSemanticBuckets} data categories.
             </p>
           </div>
 
-          <aside className="regulatory-panel" aria-label="Semantic compliance runtime">
-            <div className="eyebrow" style={{ marginBottom: 8 }}>Semantic compliance layer</div>
+          <aside className="regulatory-panel" aria-label="Regulatory requirements controls">
+            <div className="eyebrow" style={{ marginBottom: 8 }}>Regulatory requirements layer</div>
             <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
-              The graph constrains runtime.
+              Requirements define the checks.
             </h2>
             <div className="runtime-orbit" aria-hidden="true">
               <div className="runtime-core">
                 <div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--orange)' }}>Runtime</div>
+                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--orange)' }}>Routine use</div>
                   <div style={{ marginTop: 7, fontSize: 15, fontWeight: 650, lineHeight: 1.1, color: 'var(--ink)' }}>Allowed actions only</div>
                 </div>
               </div>
               <div className="runtime-node">
                 <div className="eyebrow" style={{ fontSize: 8 }}>EU MDR</div>
-                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Obligations</div>
+                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Requirements</div>
               </div>
               <div className="runtime-node">
                 <div className="eyebrow" style={{ fontSize: 8 }}>QMS</div>
-                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Evidence</div>
+                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Source data</div>
               </div>
               <div className="runtime-node">
                 <div className="eyebrow" style={{ fontSize: 8 }}>Guardrails</div>
                 <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Block / allow</div>
               </div>
               <div className="runtime-node">
-                <div className="eyebrow" style={{ fontSize: 8 }}>Trace</div>
+                <div className="eyebrow" style={{ fontSize: 8 }}>Audit trail</div>
                 <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Why recorded</div>
               </div>
               <span className="runtime-line l1" />
@@ -560,7 +558,7 @@ export function LandingPage() {
               <span className="runtime-line l4" />
             </div>
             <p style={{ margin: '16px 0 0', fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>
-              The graph supplies the boundaries before, during, and after execution. Your team reviews the result.
+              Requirements define inputs, checks, and outputs. Your team reviews the result.
             </p>
           </aside>
         </section>
@@ -645,11 +643,11 @@ export function LandingPage() {
           <div className="nav-mid" style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
             <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Products</button>
             <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Requirements</button>
-            <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Agent OS</button>
+            <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Workflow Builder</button>
             <button className="nav-link" onClick={() => navigate('/app/connect')}>Developers</button>
             <ThemeToggle />
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Start agent build
+              Configure module
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
@@ -671,11 +669,11 @@ export function LandingPage() {
         <div className="container" style={{ position: 'relative', padding: '92px 32px 48px' }}>
           <div className="eyebrow rise" style={{ marginBottom: 28 }}>
             <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
-            Medical Device Agent OS
+            Post-Market Surveillance Platform
           </div>
 
           <h1 className="hero-display rise-1" style={{ maxWidth: 1100 }}>
-            Managed AI agents for medical-device operations, <span className="accent">grounded and auditable</span>.
+            Audit-ready PSURs and QMS records from controlled inputs.
           </h1>
 
           <p
@@ -685,17 +683,16 @@ export function LandingPage() {
               color: 'var(--ink-2)',
             }}
           >
-            Smarticus gives QMS and Regulatory Affairs teams a control room for PSURs, complaints, IMDRF coding,
-            audits, PMS plans, CAPA, and change control. Agents do the work; the platform keeps the proof.
+            Configure modules for PSURs, complaints, IMDRF coding, audits, PMS plans, CAPA, and change control.
           </p>
 
           <div className="rise-3" style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Start agent build
+              Configure module
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button className="btn btn-ghost" onClick={() => navigate('/app/builder')}>
-              Open command center
+              Open Dashboard
             </button>
           </div>
 
@@ -717,7 +714,7 @@ export function LandingPage() {
         <div className="container">
           <div className="eyebrow" style={{ marginBottom: 14 }}>The problem</div>
           <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-            Generic AI is fast. QMS work has to be <span style={{ color: 'var(--orange)' }}>defensible</span>.
+            General-purpose tools are fast. QMS work has to be <span style={{ color: 'var(--orange)' }}>defensible</span>.
           </h2>
 
           <div className="pain-grid">
@@ -725,19 +722,19 @@ export function LandingPage() {
               <div style={{ marginBottom: 14 }}><PainIcon /></div>
               <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Missing requirements</h3>
               <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
-                AI outputs that reference rules incorrectly or invent requirements.
+                Outputs that reference rules incorrectly or invent requirements.
               </p>
             </div>
             <div className="pain-card">
               <div style={{ marginBottom: 14 }}><PainIcon /></div>
               <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Missing required data</h3>
               <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
-                AI drafts that sound complete but skip required records.
+                Drafts that sound complete but skip required records.
               </p>
             </div>
             <div className="pain-card">
               <div style={{ marginBottom: 14 }}><PainIcon /></div>
-              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>No decision trail</h3>
+              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>No audit trail</h3>
               <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
                 Decisions that cannot be replayed, defended, or verified.
               </p>
@@ -745,7 +742,7 @@ export function LandingPage() {
           </div>
 
           <p style={{ marginTop: 32, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
-            Smarticus fixes this by grounding every agent action in <strong style={{ color: 'var(--ink)' }}>requirements</strong>, <strong style={{ color: 'var(--ink)' }}>required data</strong>, and <strong style={{ color: 'var(--ink)' }}>decision trails</strong>.
+            Smarticus links each module run to <strong style={{ color: 'var(--ink)' }}>requirements</strong>, <strong style={{ color: 'var(--ink)' }}>required data</strong>, and <strong style={{ color: 'var(--ink)' }}>audit trails</strong>.
           </p>
         </div>
       </section>
@@ -754,11 +751,10 @@ export function LandingPage() {
       <section id="products" className="container" style={{ padding: '48px 32px 24px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
           <h2 style={{ fontSize: 'clamp(28px, 3.4vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0 }}>
-            Pre-built tools, bound to the rules.
+            Pre-built modules, tied to requirements.
           </h2>
           <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 14, maxWidth: 480 }}>
-            Each tool ships pre-bound to the requirements it must satisfy. Outputs
-            are checked against those requirements before they leave the agent.
+            Each module lists its inputs, outputs, and applicable requirements.
           </p>
         </div>
 
@@ -807,14 +803,13 @@ export function LandingPage() {
 
       {/* ── Section 4: Graph section (emotional center) ── */}
       <section id="graph" className="container" style={{ padding: '64px 32px 48px' }}>
-        <div className="eyebrow" style={{ marginBottom: 14 }}>The ground</div>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Requirements library</div>
         <h2 style={{ fontSize: 'clamp(34px, 4.6vw, 60px)', fontWeight: 500, letterSpacing: '-0.035em', margin: 0, lineHeight: 1.04, maxWidth: 980 }}>
-          The requirements map your agents can reason from.
+          The requirements library your modules use.
         </h2>
         <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
           One map holds <strong style={{ color: 'var(--ink)' }}>{REG_COUNT} regulations and standards</strong> with all
-          the relationships between them. Agents query the requirements map at readiness check
-          (before they execute) and at validation (before output leaves the agent).
+          the relationships between them. Modules check the requirements before and after each run.
         </p>
 
         {/* Stats counters */}
@@ -823,7 +818,7 @@ export function LandingPage() {
             { label: 'Requirements', value: OBLIGATION_COUNT },
             { label: 'Constraints', value: 98 },
             { label: 'Definitions', value: 55 },
-            { label: 'Required data types', value: 347 },
+            { label: 'Source data types', value: 347 },
             { label: 'Cross-references', value: '1,200+' },
             { label: 'Jurisdictions', value: REG_COUNT },
           ].map((s) => (
@@ -844,7 +839,7 @@ export function LandingPage() {
                 'Cross-references walk chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
                 'Versioned to source \u2014 replay any audit on the date it was conducted',
                 'Queryable by process, jurisdiction, required data type, or citation',
-                'Smarticus never sees your proprietary data \u2014 agents query the requirements map; payloads stay in your tenant',
+                'Smarticus never sees your proprietary data \u2014 modules query the requirements library; payloads stay in your workspace',
               ].map((b) => (
                 <li key={b}><CheckOrange /><span>{b}</span></li>
               ))}
@@ -862,20 +857,20 @@ export function LandingPage() {
       {/* ── Section 5: Agent OS preview ── */}
       <section id="builder" style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', padding: '64px 0' }}>
         <div className="container">
-          <div className="eyebrow" style={{ marginBottom: 14 }}>Agent OS</div>
+          <div className="eyebrow" style={{ marginBottom: 14 }}>Workflow Builder</div>
           <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-            Build by QMS intent, not by prompt.
+            Configure by QMS task, not by prompt.
           </h2>
           <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-            Choose a regulatory job. Smarticus assembles the agent, requirements, required data, and validation path.
+            Choose a regulatory job. Smarticus lists the module, requirements, source data, and validation path.
           </p>
 
           <div className="flow-steps" style={{ marginTop: 48, marginBottom: 48 }}>
             {[
               { step: '1', label: 'Choose QMS job' },
               { step: '2', label: 'Select requirements' },
-              { step: '3', label: 'Attach required data' },
-              { step: '4', label: 'Run template' },
+              { step: '3', label: 'Attach source data' },
+              { step: '4', label: 'Run module' },
               { step: '5', label: 'Export or connect' },
             ].map((s) => (
               <div key={s.step} className="flow-step">
@@ -887,7 +882,7 @@ export function LandingPage() {
 
           <div style={{ textAlign: 'center' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/builder')}>
-              Open Managed Agents
+              Open Modules in Routine Use
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
           </div>
@@ -898,10 +893,10 @@ export function LandingPage() {
       <section className="container" style={{ padding: '64px 32px' }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>For developers</div>
         <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-          Connect Smarticus requirement checks to your AI tools.
+          Connect Smarticus requirement checks to your tools.
         </h2>
         <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-          Connect any MCP-compatible agent to the Smarticus requirement control plane. Eleven tools, one line to install.
+          Connect any MCP-compatible tool to the Smarticus regulatory requirements library. Eleven tools, one line to install.
         </p>
 
         <pre style={{ marginTop: 28, fontSize: 14, padding: '18px 22px', maxWidth: 480 }}>
@@ -963,12 +958,12 @@ export function LandingPage() {
               color: 'var(--paper)', maxWidth: 1100, margin: 0,
             }}
           >
-            Give your QMS team managed agents they can <span style={{ color: 'var(--orange)' }}>trust</span>.
+            Give your QMS team modules with reviewable <span style={{ color: 'var(--orange)' }}>audit trails</span>.
           </h2>
 
           <div style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Start agent build
+              Configure module
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </button>
             <button
@@ -981,7 +976,7 @@ export function LandingPage() {
           </div>
 
           <p style={{ marginTop: 24, color: 'var(--ink-4)', fontSize: 14, maxWidth: 560 }}>
-            Smarticus does not replace QMS judgment. It prepares, checks, and traces the work so your team can review with confidence.
+            Smarticus does not replace QMS judgment. It prepares, checks, and records the work for review.
           </p>
         </div>
       </section>
@@ -1005,7 +1000,7 @@ export function LandingPage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <SmarticusMark size={14} />
-            <span>Smarticus \u00b7 Regulatory ground</span>
+            <span>Smarticus \u00b7 Post-market surveillance</span>
           </div>
           <span>2026 \u00b7 Built by Thinkertons</span>
         </div>

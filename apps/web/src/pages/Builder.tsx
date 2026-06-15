@@ -103,7 +103,7 @@ const processS: process[] = [
     id: 'psur-audit',
     taskId: 'template-compliance-evaluator',
     title: 'PSUR Content Review',
-    blurb: 'Review whether a PSUR draft\u2019s content satisfies each MDCG 2022-21 / EU MDR Art. 86 obligation.',
+    blurb: 'Review whether a PSUR draft\u2019s content satisfies each MDCG 2022-21 / EU MDR Art. 86 requirement.',
     regulations: ['EU MDR', 'MDCG 2022-21'],
     risk: 'HIGH',
     obligationCount: 13,
@@ -118,7 +118,7 @@ const processS: process[] = [
     id: 'psur-template-review',
     taskId: 'psur-template-reviewer',
     title: 'PSUR Template Reviewer',
-    blurb: 'Cross-reference a proposed PSUR template (section outline) against the obligations before change control.',
+    blurb: 'Compare a proposed PSUR section outline with applicable requirements.',
     regulations: ['EU MDR', 'MDCG 2022-21'],
     risk: 'MEDIUM',
     obligationCount: 13,
@@ -194,7 +194,7 @@ const processS: process[] = [
     obligationCount: 2,
     evidenceRows: [
       { label: 'Problem statement', required: true },
-      { label: 'Observations / evidence', required: true },
+      { label: 'Observations / source data', required: true },
       { label: 'Affected product / lot', required: true },
     ],
   },
@@ -244,14 +244,14 @@ const processS: process[] = [
     id: 'audit-finding-drafter',
     taskId: 'audit-finding-drafter',
     title: 'Audit Finding Drafter',
-    blurb: 'Draft a formal internal audit finding (statement, clause citation, evidence summary, response clock) from an auditor observation.',
+    blurb: 'Draft an audit finding from an auditor observation.',
     regulations: ['ISO 13485'],
     risk: 'MEDIUM',
     obligationCount: 5,
     evidenceRows: [
       { label: 'Auditor observation', required: true },
       { label: 'Clause observed', required: true },
-      { label: 'Evidence references', required: true },
+      { label: 'Source data references', required: true },
     ],
   },
 ];
@@ -259,7 +259,7 @@ const processS: process[] = [
 /* ── Helpers ───────────────────────────────────────────────────────── */
 
 function runtimeLabel(a: SavedAgent): string {
-  return a.providerRuntime?.agentId ? 'Ready' : 'Deploy';
+  return a.providerRuntime?.agentId ? 'Released' : 'Draft';
 }
 
 function runtimeTone(a: SavedAgent): { border: string; background: string; accent: string } {
@@ -292,7 +292,7 @@ function managedEventError(event: ManagedEvent): string | null {
   if (event.type !== 'session.error' && event.type !== 'session.status_failed') return null;
   if (typeof event.error === 'string') return event.error;
   if (event.error?.message) return event.error.message;
-  return 'The managed agent could not complete this run.';
+  return 'The module could not complete this run.';
 }
 
 function sessionState(events: ManagedEvent[], streaming: boolean): { label: string; tone: 'idle' | 'working' | 'done' | 'failed' } {
@@ -397,10 +397,10 @@ export function Builder() {
     setBusy(`deploy:${a.id}`);
     try {
       await api<unknown>(`/api/builder/agents/${a.id}/deploy`, { method: 'POST', body: '{}' });
-      setToast(`Deployed "${a.name}" to Claude Managed Agents.`);
+      setToast(`Released "${a.name}" for routine use.`);
       await refresh();
     } catch (e) {
-      setToast(e instanceof Error ? e.message : 'Deploy failed.');
+      setToast(e instanceof Error ? e.message : 'Release failed.');
     } finally {
       setBusy(null);
     }
@@ -410,11 +410,11 @@ export function Builder() {
   async function startManagedRun(a: SavedAgent) {
     const msg = runMessage.trim();
     if (!msg) {
-      setToast('Enter a message for the agent.');
+      setToast('Enter a record for the module.');
       return;
     }
     if (!a.providerRuntime?.agentId) {
-      setToast('Deploy this agent before starting a managed session.');
+      setToast('Release this module before routine use.');
       return;
     }
     setBusy(`mrun:${a.id}`);
@@ -437,9 +437,9 @@ export function Builder() {
           if (event === 'stream.error') {
             try {
               const parsed = JSON.parse(data) as { error?: string };
-              setToast(parsed.error ?? 'Managed session stream failed.');
+              setToast(parsed.error ?? 'Module session stream failed.');
             } catch {
-              setToast('Managed session stream failed.');
+              setToast('Module session stream failed.');
             }
             return;
           }
@@ -473,7 +473,7 @@ export function Builder() {
 
   async function saveCurrentResult(a: SavedAgent) {
     if (!activeRunId) {
-      setToast('Run the agent before saving a result.');
+      setToast('Run the module before saving a result.');
       return;
     }
     try {
@@ -496,7 +496,7 @@ export function Builder() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${a.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'agent-result'}.txt`;
+    link.download = `${a.name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'module-result'}.txt`;
     document.body.appendChild(link);
     link.click();
     link.remove();
@@ -521,16 +521,16 @@ export function Builder() {
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PageHeader
-        eyebrow="Managed Agents"
-        title="Run agents."
+        eyebrow="Modules in Routine Use"
+        title="Run qualified modules."
         subtitle="Paste the record. Get the decision."
         actions={
           <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')} style={{ fontSize: 13 }}>
-            New Agent Build
+            Configure Module
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         }
-        meta={<div style={{ color: 'var(--ink-3)', fontSize: 13 }}>{deployedCount} ready</div>}
+        meta={<div style={{ color: 'var(--ink-3)', fontSize: 13 }}>{deployedCount} released</div>}
       />
 
       <div style={{ padding: '28px 40px 80px', maxWidth: 1120, margin: '0 auto' }}>
@@ -559,10 +559,10 @@ export function Builder() {
 
         {agents !== null && agents.length === 0 && (
           <EmptyState
-            eyebrow="No runtime agents yet"
-            title="Build your first agent."
-            body="Start from a template, run it with real evidence, then come back here to operate it."
-            primaryAction={{ label: 'Choose Template', href: '/app/sandbox' }}
+            eyebrow="No modules in routine use"
+            title="Release your first module."
+            body="Choose a module, run it with source data, then release it for routine use."
+            primaryAction={{ label: 'Choose Module', href: '/app/sandbox' }}
           />
         )}
 
@@ -664,7 +664,7 @@ export function Builder() {
                             disabled={busy === `deploy:${a.id}`}
                             style={{ fontSize: 12, flex: 1 }}
                           >
-                            {busy === `deploy:${a.id}` ? 'Redeploying…' : 'Redeploy'}
+                            {busy === `deploy:${a.id}` ? 'Releasing...' : 'Release update'}
                           </button>
                         )}
                         {!deployed && (
@@ -674,7 +674,7 @@ export function Builder() {
                             disabled={busy === `deploy:${a.id}`}
                             style={{ fontSize: 12, flex: 1 }}
                           >
-                            {busy === `deploy:${a.id}` ? 'Deploying…' : 'Deploy'}
+                            {busy === `deploy:${a.id}` ? 'Releasing...' : 'Release'}
                           </button>
                         )}
                         {deployed && (
@@ -730,7 +730,7 @@ export function Builder() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', marginBottom: 18 }}>
               <div style={{ minWidth: 0 }}>
-                <div className="eyebrow" style={{ marginBottom: 6 }}>Run Agent</div>
+                <div className="eyebrow" style={{ marginBottom: 6 }}>Run Module</div>
                 <div style={{ fontSize: 24, fontWeight: 650, letterSpacing: '-0.035em', color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {activeAgent.name}
                 </div>
@@ -803,10 +803,10 @@ export function Builder() {
                 </div>
                 <div style={{ fontSize: 14, lineHeight: 1.7, color: activeError ? 'var(--err)' : activeText ? 'var(--ink)' : 'var(--ink-3)', whiteSpace: 'pre-wrap' }}>
                   {activeError || activeText || (streaming
-                    ? 'The agent is reading the record and preparing the outcome.'
+                    ? 'The module is reading the record and preparing the outcome.'
                     : activeState.tone === 'done'
-                      ? 'No written answer was returned by the managed agent.'
-                      : 'Run the agent to see the outcome here.')}
+                      ? 'No written answer was returned by the module.'
+                      : 'Run the module to see the outcome here.')}
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>

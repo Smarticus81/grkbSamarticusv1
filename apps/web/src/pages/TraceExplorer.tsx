@@ -162,7 +162,7 @@ function verdictLabel(v: Verdict): string {
   switch (v) {
     case 'satisfied': return 'Satisfied';
     case 'missed':    return 'Not satisfied';
-    case 'gated':     return 'Gate';
+    case 'gated':     return 'Acceptance criteria';
     case 'identified':return 'Applicable';
     case 'other':     return 'Decision';
   }
@@ -200,12 +200,12 @@ export function TraceExplorer({ initialId }: Props) {
       setChain(traceData);
       setVerification(verifyData);
       if (traceData.length === 0) {
-        setError(`No decision trail found for "${pid}". Run a managed agent template to generate one.`);
+        setError(`No audit trail found for "${pid}". Run a module to generate one.`);
       }
     } catch (err) {
       setChain([]);
       setVerification(null);
-      setError(err instanceof Error ? err.message : 'Could not load decision trail.');
+      setError(err instanceof Error ? err.message : 'Could not load audit trail.');
     } finally {
       setLoading(false);
     }
@@ -257,13 +257,13 @@ export function TraceExplorer({ initialId }: Props) {
   return (
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PageHeader
-        eyebrow="Decision Trails"
-        title="Every decision, hash-chained."
-        subtitle="Each Smarticus run records what was decided, why, and which requirement supported it. The chain is tamper-evident — this is the audit trail you hand to your notified body or FDA inspector."
+        eyebrow="Audit Trails"
+        title="Audit trail for each run."
+        subtitle="Each run records what was decided, why, and which requirement supported it. The chain is tamper-evident."
         actions={
           chain.length > 0 ? (
             <button className="btn btn-ghost" onClick={reset} style={{ fontSize: 13 }}>
-              Load another trail
+              Load another audit trail
             </button>
           ) : undefined
         }
@@ -282,7 +282,7 @@ export function TraceExplorer({ initialId }: Props) {
               className={pid.trim() ? 'btn btn-orange' : 'btn btn-ghost'}
               style={{ opacity: pid.trim() ? 1 : 0.5 }}
             >
-              {loading ? 'Loading…' : 'Open trail'}
+              {loading ? 'Loading…' : 'Open audit trail'}
             </button>
           </div>
         }
@@ -309,9 +309,9 @@ export function TraceExplorer({ initialId }: Props) {
         {showEmpty && (
           <EmptyState
             eyebrow="No audit pack loaded"
-            title="Paste a run ID, or launch an agent to generate proof."
-            body="Every medical-device agent run produces hash-chained decisions, citations, and evidence context. Paste a run ID above, or launch an agent template to generate your first audit pack."
-            primaryAction={{ label: 'Open Agent Templates', href: '/app/sandbox' }}
+            title="Paste a run ID, or run a module."
+            body="Each module run produces decisions, citations, and source data context."
+            primaryAction={{ label: 'Open Modules', href: '/app/sandbox' }}
             secondaryAction={{ label: 'See platform overview', href: '/' }}
           />
         )}
@@ -554,7 +554,7 @@ function DecisionCard({
             letterSpacing: '0.04em',
           }}
         >
-          <span>by {agent}</span>
+          <span>module {agent}</span>
           <span>
             {time.toLocaleString([], {
               month: 'short',

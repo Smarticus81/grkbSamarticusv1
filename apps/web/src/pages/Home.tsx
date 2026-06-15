@@ -133,46 +133,46 @@ export function Home() {
         <div className="hw-wrap" style={{ position: 'relative', padding: '56px 40px 44px' }}>
           <div className="eyebrow" style={{ marginBottom: 14 }}>
             <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
-            Medical Device Agent OS
+            Post-Market Surveillance Platform
           </div>
           <h1 style={{ fontSize: 'clamp(42px, 6vw, 78px)', fontWeight: 500, letterSpacing: '-0.06em', lineHeight: 0.92, margin: 0, maxWidth: 760 }}>
-            Build regulated agents from evidence.
+            Audit-ready PSURs from your source data.
           </h1>
           <p style={{ marginTop: 20, fontSize: 17, lineHeight: 1.6, color: 'var(--ink-2)', maxWidth: 610 }}>
-            Design the workflow, run a grounded build, then operate the validated Anthropic managed agent with decision traces.
+            Configure once, generate from controlled inputs, review with a full audit trail.
           </p>
           <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')} style={{ padding: '12px 22px', fontSize: 14.5 }}>
-              Start agent build
+              Configure a module
               <svg width="13" height="13" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
             <button className="btn btn-ghost" onClick={() => navigate('/app/designer')} style={{ fontSize: 14 }}>
-              Open Workflow Studio
+              Open Workflow Builder
             </button>
             <button className="btn btn-ghost" onClick={() => navigate('/app/builder')} style={{ fontSize: 14 }}>
-              Managed Agents
+              Modules in Routine Use
             </button>
             <button className="btn btn-ghost" onClick={() => navigate('/app/psur')} style={{ fontSize: 14 }}>
               PSUR Builder
             </button>
           </div>
           <div className="hw-metrics">
-            <Metric label="Agent templates" value={tasks ? String(taskCount) : '...'} />
-            <Metric label="Managed agents" value={agents ? String(agentCount) : '...'} />
+            <Metric label="Modules" value={tasks ? String(taskCount) : '...'} />
+            <Metric label="Modules in routine use" value={agents ? String(agentCount) : '...'} />
             <Metric label="PSUR runs" value={psurRuns ? String(psurRunCount) : '...'} />
-            <Metric label="Graph requirements" value={String(requirementCount)} />
-            <Metric label="Evidence types" value={String(evidenceTypeCount)} />
-            <Metric label="Semantic buckets" value={String(semanticBucketCount)} />
+            <Metric label="Regulatory requirements" value={String(requirementCount)} />
+            <Metric label="Source data types" value={String(evidenceTypeCount)} />
+            <Metric label="Data categories" value={String(semanticBucketCount)} />
           </div>
         </div>
       </section>
 
       <section className="hw-wrap" style={{ padding: '34px 40px 8px' }}>
         <div className="hw-actions">
-          <ActionCard label="Workflow Studio" title="Create the agentic workflow" body="Use chat or the canvas builder." onClick={() => navigate('/app/designer')} />
-          <ActionCard label="Agent Builds" title="Validate one grounded run" body="Run evidence through the graph." onClick={() => navigate('/app/sandbox')} />
-          <ActionCard label="PSUR Builder" title="Draft your post-market report" body="Run PSUR/PMSR data packs and reopen artifacts." onClick={() => navigate('/app/psur')} />
-          <ActionCard label="Managed Agents" title="Operate the passing agent" body="Deploy and stream the Anthropic runtime." onClick={() => navigate('/app/builder')} />
+          <ActionCard label="Workflow Builder" title="Define the report process" body="Set steps, reviewers, inputs, and outputs." onClick={() => navigate('/app/designer')} />
+          <ActionCard label="Modules" title="Qualify a source-traceable run" body="Run source data against requirements." onClick={() => navigate('/app/sandbox')} />
+          <ActionCard label="PSUR Builder" title="Draft your post-market report" body="Generate PSUR/PMSR drafts and reopen outputs." onClick={() => navigate('/app/psur')} />
+          <ActionCard label="Routine Use" title="Use a qualified module" body="Enter a record and review the result." onClick={() => navigate('/app/builder')} />
         </div>
       </section>
 
@@ -182,7 +182,7 @@ export function Home() {
           <div className="hw-continue" style={{ gridTemplateColumns: `repeat(${continuePanelCount}, minmax(0, 1fr))` }}>
             {hasRuns && (
               <div>
-                <div className="eyebrow" style={{ marginBottom: 10 }}>Evidence runs</div>
+                <div className="eyebrow" style={{ marginBottom: 10 }}>Source-traceable runs</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {runs!.map((r) => {
                     const score = r.withGraph ?? r.withoutGraph;
@@ -227,7 +227,7 @@ export function Home() {
             )}
             {hasAgents && (
               <div>
-                <div className="eyebrow" style={{ marginBottom: 10 }}>Managed agents</div>
+                <div className="eyebrow" style={{ marginBottom: 10 }}>Modules in routine use</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {agents!.map((a) => (
                     <button key={a.id} className="hw-row" onClick={() => navigate('/app/builder')}>
@@ -235,7 +235,7 @@ export function Home() {
                         <div style={{ fontSize: 13.5, fontWeight: 500, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
                         <div style={{ fontFamily: 'var(--mono)', fontSize: 10.5, color: 'var(--ink-4)', marginTop: 2 }}>{a.processTitle}</div>
                       </div>
-                      <span style={{ color: 'var(--ink-3)', fontSize: 13, flexShrink: 0 }}>Operate &rarr;</span>
+                      <span style={{ color: 'var(--ink-3)', fontSize: 13, flexShrink: 0 }}>Use &rarr;</span>
                     </button>
                   ))}
                 </div>

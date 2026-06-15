@@ -54,11 +54,21 @@ function parseOriginList(
   }
   const origins = raw
     .split(',')
-    .map((o) => o.trim())
+    .map((o) => normalizeCorsOrigin(o.trim()))
     .filter(Boolean);
   return origins.length === 1 ? origins[0]! : origins;
 }
 
+function normalizeCorsOrigin(raw: string): string {
+  try {
+    const url = new URL(raw);
+    const hostname = url.hostname.replace(/\.$/, '');
+    const port = url.port ? `:${url.port}` : '';
+    return `${url.protocol}//${hostname}${port}`;
+  } catch {
+    return raw;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Express app

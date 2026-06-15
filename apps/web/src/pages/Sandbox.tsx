@@ -312,17 +312,17 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     const lane = result?.withGraph ?? result?.withoutGraph;
     if (!result?.runId || !lane) {
       setSavedAgentOk(false);
-      setSavedAgentMsg('Run the template before creating a managed agent.');
+      setSavedAgentMsg('Run the module before release for routine use.');
       return;
     }
     if (!lane.score.strictGatePass) {
       setSavedAgentOk(false);
-      setSavedAgentMsg('This run did not pass the strict compliance gate. Resolve violations before creating a managed agent.');
+      setSavedAgentMsg('This run did not meet the acceptance criteria. Resolve issues before release for routine use.');
       return;
     }
     const name =
       agentName.trim() ||
-      `${detail.name} agent`;
+      `${detail.name} module`;
     const riskBand = riskBandForTask(detail.id);
     const regulations = regulationList(detail.regulation);
 
@@ -365,12 +365,12 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
     return (
       <div style={{ minHeight: '100vh', background: 'var(--paper)' }}>
         <header style={{ padding: '40px 40px 8px' }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Agent Templates</div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Modules</div>
           <h1 style={{ fontSize: 34, fontWeight: 500, letterSpacing: '-0.045em', margin: 0 }}>
-            Pick one grounded agent.
+            Choose a module.
           </h1>
           <p style={{ marginTop: 8, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 540, lineHeight: 1.55 }}>
-            Run it against real evidence. If it passes the gate, create the Anthropic managed agent.
+            Run it against your source data. Once it meets acceptance criteria, release it for routine use.
           </p>
         </header>
         <div style={{ padding: '24px 40px 56px' }}>
@@ -422,7 +422,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                     {t.oneLiner}
                   </div>
                 </div>
-                <span style={{ color: 'var(--orange)', fontSize: 12, fontWeight: 650 }}>Run build -&gt;</span>
+                <span style={{ color: 'var(--orange)', fontSize: 12, fontWeight: 650 }}>Run module -&gt;</span>
               </button>
             ))}
           </div>
@@ -453,7 +453,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             onClick={() => navigate('/app/sandbox')}
             style={GHOST_BUTTON}
           >
-            ← Agent templates
+            ← Modules
           </button>
           <h1 style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {detail.name}
@@ -467,14 +467,14 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
           />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={resetToSample} style={GHOST_BUTTON} disabled={running}>Reset evidence</button>
+          <button onClick={resetToSample} style={GHOST_BUTTON} disabled={running}>Reset source data</button>
           <button
             onClick={runProcess}
             disabled={running}
             className="btn-orange"
             style={{ fontSize: 14, padding: '10px 22px' }}
           >
-            {running ? 'Grounding…' : 'Run template'}
+            {running ? 'Running...' : 'Run module'}
           </button>
         </div>
       </header>
@@ -493,7 +493,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
         {/* ── LEFT: Input editor ─────────────────────────────────── */}
         <section style={CARD}>
           <div style={CARD_HEADER}>
-            <div className="eyebrow">Evidence input</div>
+            <div className="eyebrow">Source data input</div>
             <div style={{ display: 'flex', gap: 4, border: '1px solid var(--rule)', borderRadius: 6, padding: 2 }}>
               <TabButton active={editorTab === 'form'} onClick={() => setEditorTab('form')}>Form</TabButton>
               <TabButton active={editorTab === 'json'} onClick={() => setEditorTab('json')}>Advanced</TabButton>
@@ -552,13 +552,13 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
               <div className="eyebrow" style={{ marginBottom: 10 }}>Launch checklist</div>
               <ol style={{ margin: 0, paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-                  Add the <b style={{ color: 'var(--ink)' }}>real evidence</b> the agent should process, or run the starter input first.
+                  Add the <b style={{ color: 'var(--ink)' }}>source data</b> the module should process, or run the starter input first.
                 </li>
                 <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-                  Press <b style={{ color: 'var(--ink)' }}>Run template</b> to ground the work against requirements.
+                  Press <b style={{ color: 'var(--ink)' }}>Run module</b> to check the work against requirements.
                 </li>
                 <li style={{ fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.5 }}>
-                  Review the <b style={{ color: 'var(--ink)' }}>result</b>, requirement coverage, and audit trail before promotion.
+                  Review the <b style={{ color: 'var(--ink)' }}>result</b>, requirement coverage, and audit trail before release.
                 </li>
               </ol>
             </div>
@@ -592,20 +592,19 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
             <section style={{ ...CARD, padding: 18, background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-warm) 100%)', borderColor: 'var(--signal-edge)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
                 <div>
-                  <div className="eyebrow" style={{ marginBottom: 6 }}>Create managed agent</div>
+                  <div className="eyebrow" style={{ marginBottom: 6 }}>Release for routine use</div>
                   <h2 style={{ margin: 0, fontSize: 18, fontWeight: 650, letterSpacing: '-0.02em', color: 'var(--ink)' }}>
-                    Turn this validated run into an operating agent.
+                    Turn this qualified run into a reusable module.
                   </h2>
                 </div>
                 {savedAgentOk && (
                   <button onClick={() => navigate('/app/builder')} className="btn btn-orange" style={{ fontSize: 12 }}>
-                    Open Managed Agents
+                    Open Routine Use
                   </button>
                 )}
               </div>
               <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.55 }}>
-                Capture the exact evidence input, requirement grounding, and guardrails from this run. The managed agent
-                can then be deployed, versioned, and operated from the control plane.
+                Capture the source data input, requirement checks, and controls from this run. The module can then be versioned and used again.
               </p>
               {!canPromote && (
                 <div
@@ -621,7 +620,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   }}
                 >
                   <div style={{ fontWeight: 650, marginBottom: 6 }}>
-                    This run cannot create a managed agent until the strict compliance gate passes.
+                    This run cannot be released until acceptance criteria are met.
                   </div>
                   {promotionExplanations.length > 0 ? (
                     <div style={{ display: 'grid', gap: 10, marginTop: 10 }}>
@@ -660,7 +659,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                     </div>
                   ) : (
                     <div>
-                      Review the requirement coverage and audit trail above for the failed gate event.
+                      Review requirement coverage and the audit trail for unmet acceptance criteria.
                     </div>
                   )}
                 </div>
@@ -692,21 +691,21 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
                       <div style={{ fontSize: 14, fontWeight: 650, color: 'var(--ink)' }}>
-                        Managed Agent Runtime
+                        Qualified Module
                       </div>
                       <span style={{ ...SMALL_RUNTIME_PILL, color: 'var(--orange)', borderColor: 'rgba(255, 115, 0, 0.34)' }}>
-                        default runtime
+                        routine use
                       </span>
                     </div>
                     <div style={{ fontSize: 12.5, lineHeight: 1.55, color: 'var(--ink-3)' }}>
-                      This provisions a Claude agent, cloud environment, and live session stream behind a simple operator workflow.
+                      This stores the qualified input set and controls for repeated use.
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <input
                       value={agentName}
                       onChange={(e) => setAgentName(e.target.value)}
-                      placeholder={`${detail.name} managed agent`}
+                      placeholder={`${detail.name} module`}
                       disabled={savingAgent}
                       style={{
                         flex: 1,
@@ -726,13 +725,13 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                       className="btn-orange"
                       style={{ fontSize: 13, padding: '10px 18px' }}
                     >
-                      {savingAgent ? 'Creating…' : canPromote ? 'Create managed agent' : 'Gate blocked'}
+                      {savingAgent ? 'Creating...' : canPromote ? 'Release module' : 'Criteria not met'}
                     </button>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={SMALL_RUNTIME_PILL}>evidence snapshot</span>
-                    <span style={SMALL_RUNTIME_PILL}>guardrails on</span>
-                    <span style={SMALL_RUNTIME_PILL}>managed runtime</span>
+                    <span style={SMALL_RUNTIME_PILL}>source data snapshot</span>
+                    <span style={SMALL_RUNTIME_PILL}>controls on</span>
+                    <span style={SMALL_RUNTIME_PILL}>routine use</span>
                   </div>
                 </div>
               )}
@@ -810,13 +809,12 @@ function WorkflowBuildSourcePanel({
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 14 }}>
         <div style={{ minWidth: 0 }}>
-          <div className="eyebrow" style={{ marginBottom: 7 }}>Workflow build source</div>
+          <div className="eyebrow" style={{ marginBottom: 7 }}>Workflow source</div>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 650, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
             {workflow.name}
           </h2>
           <p style={{ margin: '7px 0 0', color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5, maxWidth: 720 }}>
-            Built in Workflow Studio. Pick a grounded agent template below to validate one step, capture the decision trace,
-            then promote the passing run into Anthropic Managed Agents.
+            Built in Workflow Builder. Pick a module below to validate one step, capture the audit trail, then release the qualified run.
           </p>
         </div>
         <button onClick={onOpenWorkflow} style={GHOST_BUTTON}>
@@ -826,7 +824,7 @@ function WorkflowBuildSourcePanel({
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
         <span style={SMALL_RUNTIME_PILL}>{workflow.draft.nodes.length} steps</span>
-        <span style={SMALL_RUNTIME_PILL}>{agenticSteps.length} agentic steps</span>
+        <span style={SMALL_RUNTIME_PILL}>{agenticSteps.length} module steps</span>
         <span style={SMALL_RUNTIME_PILL}>{workflow.processType || workflow.draft.processType || 'process'}</span>
         <span style={SMALL_RUNTIME_PILL}>{workflow.jurisdiction || workflow.draft.jurisdiction || 'jurisdiction'}</span>
       </div>
@@ -878,11 +876,11 @@ function WorkflowBuildSourcePanel({
                 {task.oneLiner}
               </div>
             </div>
-            <span style={{ color: 'var(--orange)', fontSize: 12, fontWeight: 650 }}>Run grounded build -&gt;</span>
+            <span style={{ color: 'var(--orange)', fontSize: 12, fontWeight: 650 }}>Run module -&gt;</span>
           </button>
         )) : (
           <div style={{ color: 'var(--ink-3)', fontSize: 13, lineHeight: 1.5 }}>
-            No direct template match found. Use the full template list below to choose the closest grounded agent.
+            No direct module match found. Use the full module list below to choose the closest fit.
           </div>
         )}
       </div>
@@ -969,11 +967,11 @@ function workflowBuildContext(workflow: WorkflowBuildSource, taskName: string): 
     automation: node.automation,
   }));
   return [
-    `This run is part of the saved agentic workflow "${workflow.name}".`,
+    `This run is part of the saved workflow "${workflow.name}".`,
     `Workflow process type: ${workflow.processType || workflow.draft.processType || 'unspecified'}.`,
     `Workflow jurisdiction: ${workflow.jurisdiction || workflow.draft.jurisdiction || 'unspecified'}.`,
-    `Current grounded template: ${taskName}.`,
-    'Use the workflow only as orchestration context. The regulatory decision must still be based on the input evidence and the graph obligations loaded for this run.',
+    `Current module: ${taskName}.`,
+    'Use the workflow only as process context. The regulatory decision must still be based on the input source data and applicable requirements loaded for this run.',
     `Workflow steps: ${JSON.stringify(nodes)}`,
     `Workflow edges: ${JSON.stringify(workflow.draft.edges)}`,
   ].join('\n');
@@ -1004,9 +1002,9 @@ function explainPromotionBlockers(violations: string[], events: LaneEvent[]): Pr
     if (violation.startsWith('output.')) {
       return {
         key: `${violation}-${idx}`,
-        title: 'The agent output was missing required structure.',
+        title: 'The module output was missing required structure.',
         reason: toSentence(violation.replace(/^output\./, '')),
-        nextStep: 'Review the generated result, add the missing required evidence, then run the template again.',
+        nextStep: 'Review the generated result, add the missing source data, then run the module again.',
       };
     }
     if (violation.startsWith('run.error:')) {
@@ -1014,14 +1012,14 @@ function explainPromotionBlockers(violations: string[], events: LaneEvent[]): Pr
         key: `${violation}-${idx}`,
         title: 'The run did not complete successfully.',
         reason: toSentence(violation.replace(/^run\.error:\s*/, '')),
-        nextStep: 'Run the template again after correcting the error shown in the audit trail.',
+        nextStep: 'Run the module again after correcting the error shown in the audit trail.',
       };
     }
     return {
       key: `${violation}-${idx}`,
       title: 'The run did not pass validation.',
       reason: toSentence(violation),
-      nextStep: 'Review the requirement coverage above, update the evidence or result, and run the template again.',
+      nextStep: 'Review the requirement coverage above, update the source data or result, and run the module again.',
     };
   });
 }
@@ -1054,10 +1052,10 @@ function obligationTitle(obligationId: string, summary?: string): string {
 
 function plainReason(reason: string | undefined): string {
   if (!reason) {
-    return 'The run did not provide enough evidence or explanation for this requirement.';
+    return 'The run did not provide enough source data or rationale for this requirement.';
   }
   if (reason.includes('not bound to process')) {
-    return 'This requirement is claimed by the template, but the current requirement map did not bind it to this process. The system blocks promotion so the agent cannot operate from an inconsistent scope.';
+    return 'This requirement is claimed by the module, but the current requirement map did not bind it to this process. Release is blocked because the scope is inconsistent.';
   }
   if (reason === 'Output did not satisfy obligation check.') {
     return 'The generated result did not prove that this requirement was satisfied.';
@@ -1067,18 +1065,18 @@ function plainReason(reason: string | undefined): string {
 
 function nextStepForObligation(obligationId: string): string {
   if (obligationId.startsWith('IMDRF.AET')) {
-    return 'Add enough event detail for device problem, clinical signs, health impact, investigation outcome, and coding rationale, then run the template again.';
+    return 'Add enough event detail for device problem, clinical signs, health impact, investigation outcome, and coding rationale, then run the module again.';
   }
   if (obligationId.startsWith('ISO13485.8.2.2')) {
-    return 'Add complaint record evidence such as receipt date, reporter, investigation status, actions taken, and required complaint-handling rationale.';
+    return 'Add complaint record source data such as receipt date, reporter, investigation status, actions taken, and required complaint-handling rationale.';
   }
   if (obligationId.startsWith('EUMDR.87')) {
     return 'Add the facts needed for reportability: seriousness, incident outcome, timing, region, and why the event is or is not reportable.';
   }
   if (obligationId.startsWith('CFR820.198')) {
-    return 'Add FDA complaint-file evidence such as investigation decision, MDR evaluation, corrective action link, or closure rationale.';
+    return 'Add FDA complaint-file source data such as investigation decision, MDR evaluation, corrective action link, or closure rationale.';
   }
-  return 'Add the missing evidence or rationale for this requirement, then run the template again.';
+  return 'Add the missing source data or rationale for this requirement, then run the module again.';
 }
 
 function toSentence(value: string): string {
@@ -1086,17 +1084,17 @@ function toSentence(value: string): string {
     .replace(/^obligation:/, '')
     .replace(/[_:]+/g, ' ')
     .trim();
-  if (!cleaned) return 'The run did not provide enough evidence for this check.';
+  if (!cleaned) return 'The run did not provide enough source data for this check.';
   return cleaned.endsWith('.') ? cleaned : `${cleaned}.`;
 }
 
 /* ── Flow stepper ────────────────────────────────────────────────────── */
 
 const FLOW_STEPS = [
-  { key: 'select', label: 'Select agent' },
-  { key: 'configure', label: 'Add evidence' },
-  { key: 'run', label: 'Ground run' },
-  { key: 'save', label: 'Create agent' },
+  { key: 'select', label: 'Select module' },
+  { key: 'configure', label: 'Add source data' },
+  { key: 'run', label: 'Run checks' },
+  { key: 'save', label: 'Release module' },
 ] as const;
 
 /** Slim Select → Evidence → Ground → Promote indicator on the run screen. */
@@ -1791,7 +1789,7 @@ function RegulationsPanel({
             <div style={{ fontSize: 12, color: 'var(--ink-2)', marginTop: 4, lineHeight: 1.5 }}>{o.summary}</div>
             {violations.has(o.obligationId) && (
               <div style={{ marginTop: 6, fontSize: 11, color: 'var(--orange)', fontStyle: 'italic' }}>
-                Output did not satisfy this obligation.
+                Output did not satisfy this requirement.
               </div>
             )}
           </div>
@@ -1834,7 +1832,7 @@ function TracePanel({
   return (
     <section style={CARD}>
       <div style={CARD_HEADER}>
-        <div className="eyebrow">Decision trace</div>
+        <div className="eyebrow">Audit trail</div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {runId && (
             <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
@@ -1864,7 +1862,7 @@ function TracePanel({
         ))}
         {interesting.length === 0 && (
           <li style={{ color: 'var(--ink-3)', listStyle: 'none', marginLeft: -16 }}>
-            Trace will appear here as the agent decides why the output is justified.
+            Audit trail entries will appear here as the module records each decision.
           </li>
         )}
       </ol>
@@ -1911,7 +1909,7 @@ function TraceLine({ event }: { event: LaneEvent }) {
     case 'output.gated':
       return (
         <span style={{ color: event.passed ? 'var(--ok, #2a8c4f)' : 'var(--orange)' }}>
-          {event.passed ? 'Output passed strict gate.' : `Output blocked by strict gate: ${event.violations.join('; ')}`}
+          {event.passed ? 'Output met acceptance criteria.' : `Output did not meet acceptance criteria: ${event.violations.join('; ')}`}
         </span>
       );
     default:

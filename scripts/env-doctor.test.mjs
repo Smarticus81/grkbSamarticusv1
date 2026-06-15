@@ -23,8 +23,31 @@ OPENAI_API_KEY=sk-example
 AUTH_BYPASS_DEV=false
 `;
 
+const validDevelopmentEnvWithoutClerk = `
+NODE_ENV=development
+DATABASE_URL=postgresql://user:pass@localhost:5432/regground
+NEO4J_URI=neo4j://localhost:7687
+NEO4J_USER=neo4j
+NEO4J_PASSWORD=password
+JWT_SECRET=this-is-a-long-random-development-secret
+VITE_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+CLERK_WEBHOOK_SIGNING_SECRET=
+ALLOWED_ORIGINS=http://localhost:5173
+VITE_API_URL=http://localhost:4000
+PSUR_SERVICE_URL=http://localhost:8000
+OPENAI_API_KEY=sk-example
+AUTH_BYPASS_DEV=true
+`;
+
 test('passes a complete production-shaped environment', () => {
   const result = analyzeEnvContent(validProductionEnv, { production: true });
+
+  assert.equal(result.errors.length, 0);
+});
+
+test('allows local development to run without Clerk configuration', () => {
+  const result = analyzeEnvContent(validDevelopmentEnvWithoutClerk, { production: false });
 
   assert.equal(result.errors.length, 0);
 });
@@ -85,6 +108,15 @@ PSUR_SERVICE_URL=http://psur.example.com
 
   assert(messages.some((message) => message.includes('VITE_API_URL must use https:// in production')));
   assert(messages.some((message) => message.includes('PSUR_SERVICE_URL must use https:// in production')));
+});
+
+test('normalizes trailing-dot HTTPS origins in production mode', () => {
+  const result = analyzeEnvContent(`
+${validProductionEnv}
+ALLOWED_ORIGINS=https://app.example.com.
+`, { production: true });
+
+  assert.equal(result.errors.length, 0);
 });
 
 test('requires valid session timeout build args in production mode', () => {
