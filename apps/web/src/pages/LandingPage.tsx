@@ -31,12 +31,12 @@ const PRODUCTS: {
       'MDCG 2022-21 sections A\u2013M',
       'Deterministic statistics \u2014 numbers computed once, never fabricated',
       'Audit trail: each decision cites its reason and requirement',
-      'Tamper-evident verification and one-click audit pack',
+      'Tamper-evident trace chain and one-click audit pack',
     ],
     cta: { label: 'Watch the demo', to: '/demo/psur' },
     visual: 'psur',
     before: 'Two weeks of manual assembly: sales, complaints, incidents, trends, literature \u2014 reconciled by hand.',
-    after: 'A draft structured to MDCG 2022-21, with a verified audit trail behind every number.',
+    after: 'A draft structured to MDCG 2022-21, with a traceable audit trail behind every number.',
   },
   {
     eyebrow: 'Vigilance',
@@ -70,7 +70,7 @@ const PRODUCTS: {
   },
   {
     eyebrow: 'Regulatory requirements library',
-    title: 'One map. Eight regulations. Every relationship.',
+    title: 'One map. Every regulation. Every relationship.',
     body: 'Modules retrieve versioned requirements, cross-references, source data types, and constraints.',
     bullets: [
       `${OBLIGATION_COUNT} requirements across ${REG_COUNT} regulations and standards`,
@@ -103,12 +103,12 @@ function VisualPSUR() {
       <rect x="300" y="92" width="148" height="20" rx="2" stroke="var(--ink)" strokeWidth="1" />
       <text x="312" y="106" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">EU MDR ART. 86</text>
       <rect x="300" y="124" width="148" height="20" rx="2" fill="var(--orange)" />
-      <text x="312" y="138" fontFamily="var(--mono)" fontSize="9" fill="#fff" letterSpacing="0.12em">VALIDATED \u2713</text>
+      <text x="312" y="138" fontFamily="var(--mono)" fontSize="9" fill="#fff" letterSpacing="0.12em">FOR REVIEW</text>
       <line x1="300" y1="180" x2="448" y2="180" stroke="var(--rule-strong)" />
       <text x="300" y="200" fontFamily="var(--mono)" fontSize="9.5" fill="var(--ink-2)" letterSpacing="0.08em">10 MIN TO DRAFT</text>
       <text x="300" y="220" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">28 sections</text>
       <text x="300" y="238" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">142 data refs</text>
-      <text x="300" y="256" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">100% citation coverage</text>
+      <text x="300" y="256" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">Every section cited</text>
     </svg>
   );
 }
@@ -269,11 +269,11 @@ const HERO_DECISIONS: Array<{ text: string; reg: string; status: 'ok' | 'warn' |
   { text: 'ISO 13485 §8.2.2 — complaint handling data present', reg: 'ISO 13485', status: 'ok' },
   { text: 'EU MDR Art. 87 — reportability assessment complete', reg: 'EU MDR', status: 'ok' },
   { text: 'MDCG 2022-21 §6.12 — benefit-risk conclusion sourced', reg: 'MDCG', status: 'warn' },
-  { text: 'ISO 14971 §10 — residual risk acceptable', reg: 'ISO 14971', status: 'ok' },
+  { text: 'ISO 14971 §10 — residual risk data summarized', reg: 'ISO 14971', status: 'ok' },
   { text: 'EU MDR Annex XIV — PMS plan alignment confirmed', reg: 'EU MDR', status: 'ok' },
   { text: 'Deterministic stats — 142 data refs, zero fabrication', reg: 'System', status: 'ok' },
   { text: 'Hash chain verified — 24 entries, tamper-evident', reg: 'Audit', status: 'ok' },
-  { text: 'PSUR draft complete — 28 sections, 100% coverage', reg: 'Output', status: 'ok' },
+  { text: 'PSUR draft ready for review — 28 sections cited', reg: 'Output', status: 'ok' },
 ];
 
 // Total cycle is ~18s: 6s phases + 6.5s sections + 3s validation + 2.5s pause
@@ -853,19 +853,19 @@ export function LandingPage() {
           The requirements library your modules use.
         </h2>
         <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
-          One map holds <strong style={{ color: 'var(--ink)' }}>{REG_COUNT} regulations and standards</strong> with all
+          One map holds <strong style={{ color: 'var(--ink)' }}>{liveSemanticBuckets} regulations and standards</strong> with all
           the relationships between them. Modules trace each output back to the applicable requirement.
         </p>
 
         {/* Stats counters */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginTop: 36 }}>
           {[
-            { label: 'Requirements', value: OBLIGATION_COUNT },
+            { label: 'Requirements', value: liveRequirements },
             { label: 'Constraints', value: 98 },
             { label: 'Definitions', value: 55 },
-            { label: 'Source data types', value: 347 },
+            { label: 'Source data types', value: liveEvidenceTypes },
             { label: 'Cross-references', value: '1,200+' },
-            { label: 'Jurisdictions', value: REG_COUNT },
+            { label: 'Regulations & standards', value: liveSemanticBuckets },
           ].map((s) => (
             <div key={s.label} style={{ padding: 16, background: 'var(--paper-deep)', border: '1px solid var(--rule)', borderRadius: 'var(--r-2)' }}>
               <div style={{ fontFamily: 'var(--sans)', fontSize: 30, fontWeight: 400, letterSpacing: '-0.03em', color: 'var(--ink)', lineHeight: 1 }}>
