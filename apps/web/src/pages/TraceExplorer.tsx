@@ -323,7 +323,7 @@ export function TraceExplorer({ initialId }: Props) {
               padding: '20px 24px',
               border: `1px solid ${verification.valid ? 'var(--ok)' : 'var(--err)'}`,
               background: verification.valid ? 'var(--ok-soft)' : 'var(--err-soft)',
-              borderRadius: 'var(--r-3)',
+              borderRadius: 'var(--radius)',
               display: 'flex',
               alignItems: 'center',
               gap: 16,
@@ -332,9 +332,9 @@ export function TraceExplorer({ initialId }: Props) {
           >
             <div
               style={{
-                width: 44,
-                height: 44,
-                borderRadius: '50%',
+                width: 36,
+                height: 36,
+                borderRadius: 'var(--radius)',
                 background: verification.valid ? 'var(--ok)' : 'var(--err)',
                 color: 'var(--paper)',
                 display: 'flex',
@@ -482,7 +482,7 @@ function DecisionCard({
       style={{
         border: `1px solid var(--rule)`,
         borderLeft: `3px solid ${color}`,
-        borderRadius: 'var(--r-2)',
+        borderRadius: 'var(--radius)',
         background: 'var(--paper)',
         overflow: 'hidden',
       }}
@@ -505,12 +505,13 @@ function DecisionCard({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span
               style={{
-                fontFamily: 'var(--mono)',
+                fontFamily: 'var(--sans)',
                 fontSize: 10,
-                letterSpacing: '0.12em',
+                fontWeight: 500,
+                letterSpacing: '0.04em',
                 textTransform: 'uppercase',
-                padding: '3px 8px',
-                borderRadius: 999,
+                padding: '2px 6px',
+                borderRadius: 'var(--radius-sm)',
                 border: `1px solid ${color}`,
                 color,
               }}

@@ -106,15 +106,15 @@ export function Home() {
       <style>{`
         .hw-wrap { max-width: 1120px; margin: 0 auto; padding: 0 40px; }
         .hw-actions { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 30px; }
-        .hw-action { min-height: 132px; text-align:left; padding:20px; border:1px solid var(--rule); border-radius: var(--r-3); background:var(--surface); cursor:pointer; display:flex; flex-direction:column; justify-content:space-between; gap:14px; }
+        .hw-action { min-height: 110px; text-align:left; padding:16px; border:1px solid var(--rule); border-radius: var(--radius); background:var(--surface); cursor:pointer; display:flex; flex-direction:column; justify-content:space-between; gap:10px; }
         .hw-action:hover { border-color: var(--ink); }
-        .hw-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 22px; max-width: 680px; }
+        .hw-metrics { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; margin-top: 18px; border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); }
         .hw-continue { display: grid; gap: 24px; }
-        .hw-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 15px; border:1px solid var(--rule); border-radius: var(--r-2); background: var(--paper); cursor:pointer; text-align:left; width:100%; transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
-        .hw-row:hover { border-color: var(--ink); background: var(--paper-deep); }
+        .hw-row { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 14px; border:1px solid var(--rule); border-radius: var(--radius); background: var(--surface); cursor:pointer; text-align:left; width:100%; transition: border-color var(--t-fast) var(--ease), background var(--t-fast) var(--ease); }
+        .hw-row:hover { border-color: var(--rule-strong); background: var(--paper-deep); }
         @media (max-width: 860px) {
           .hw-actions { grid-template-columns: 1fr; }
-          .hw-metrics { grid-template-columns: 1fr; }
+          .hw-metrics { grid-template-columns: repeat(3, 1fr); }
           .hw-continue { grid-template-columns: 1fr !important; }
         }
       `}</style>
@@ -130,15 +130,15 @@ export function Home() {
             pointerEvents: 'none',
           }}
         />
-        <div className="hw-wrap" style={{ position: 'relative', padding: '56px 40px 44px' }}>
+        <div className="hw-wrap" style={{ position: 'relative', padding: '36px 32px 28px' }}>
           <div className="eyebrow" style={{ marginBottom: 14 }}>
             <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
             Post-Market Surveillance Platform
           </div>
-          <h1 style={{ fontSize: 'clamp(42px, 6vw, 78px)', fontWeight: 500, letterSpacing: '-0.06em', lineHeight: 0.92, margin: 0, maxWidth: 760 }}>
-            Audit-ready PSURs from your source data.
+          <h1 style={{ fontSize: 'clamp(24px, 3vw, 30px)', fontWeight: 600, letterSpacing: '-0.01em', lineHeight: 1.15, margin: 0, maxWidth: 760 }}>
+            Draft PSURs and QMS records from your source data.
           </h1>
-          <p style={{ marginTop: 20, fontSize: 17, lineHeight: 1.6, color: 'var(--ink-2)', maxWidth: 610 }}>
+          <p style={{ marginTop: 12, fontSize: 15, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 610 }}>
             Configure once, generate from controlled inputs, review with a full audit trail.
           </p>
           <div style={{ marginTop: 24, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -254,17 +254,15 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div
       style={{
-        padding: '15px 16px',
-        border: '1px solid rgba(255, 115, 0, 0.20)',
-        borderRadius: 'var(--r-3)',
-        background: 'var(--surface-glass)',
-        boxShadow: '0 14px 38px rgba(17, 24, 39, 0.045)',
+        padding: '10px 16px',
+        borderRight: '1px solid var(--rule)',
+        background: 'transparent',
       }}
     >
-      <div style={{ fontSize: 24, fontWeight: 650, letterSpacing: '-0.04em', color: 'var(--ink)' }}>{value}</div>
-      <div style={{ marginTop: 3, fontFamily: 'var(--mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-3)' }}>
+      <div style={{ fontFamily: 'var(--sans)', fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--ink-3)', marginBottom: 2 }}>
         {label}
       </div>
+      <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--ink)' }}>{value}</div>
     </div>
   );
 }

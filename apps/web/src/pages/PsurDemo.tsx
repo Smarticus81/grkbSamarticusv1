@@ -312,13 +312,13 @@ function SectionHeading({ eyebrow, title, body }: { eyebrow: string; title: stri
   );
 }
 
-/** Sign-up / sign-in pair (modal when Clerk is mounted, pricing link otherwise). */
+/** Sign-up / sign-in pair (modal when Clerk is mounted, contact link otherwise). */
 function AuthCtaButtons({ compact = false }: { compact?: boolean }) {
   const size: CSSProperties = compact ? { fontSize: 12.5, padding: '7px 14px' } : {};
   if (!clerkAvailable) {
     return (
-      <Link href="/pricing" className="btn btn-ghost" style={{ textDecoration: 'none', ...size }}>
-        See pricing
+      <Link href="/contact" className="btn btn-ghost" style={{ textDecoration: 'none', ...size }}>
+        Contact us
       </Link>
     );
   }

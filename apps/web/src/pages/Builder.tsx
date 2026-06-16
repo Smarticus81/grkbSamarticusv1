@@ -579,14 +579,14 @@ export function Builder() {
                     style={{
                       display: 'flex',
                       flexDirection: 'column',
-                      gap: 12,
+                      gap: 10,
                       aspectRatio: '1 / 1',
-                      minHeight: 230,
-                      padding: 18,
-                      border: `1px solid ${deployed ? 'var(--rule-strong)' : 'var(--signal-edge)'}`,
-                      borderRadius: 18,
+                      minHeight: 210,
+                      padding: 16,
+                      border: `1px solid ${deployed ? 'var(--rule-strong)' : 'var(--rule)'}`,
+                      borderLeft: deployed ? '3px solid var(--ok)' : '3px solid var(--rule)',
+                      borderRadius: 'var(--radius)',
                       background: 'var(--surface)',
-                      boxShadow: '0 14px 38px rgba(17, 24, 39, 0.045)',
                     }}
                   >
                     <div style={{ display: 'grid', gap: 10 }}>
@@ -862,21 +862,22 @@ function RuntimeBadge({ label, color }: { label: string; color: string }) {
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        gap: 7,
-        height: 30,
-        padding: '0 10px',
-        borderRadius: 999,
+        gap: 6,
+        height: 24,
+        padding: '0 8px',
+        borderRadius: 'var(--radius-sm)',
         background: 'var(--surface)',
         border: `1px solid ${color}`,
         color,
-        fontFamily: 'var(--mono)',
+        fontFamily: 'var(--sans)',
         fontSize: 10,
-        letterSpacing: '0.06em',
+        fontWeight: 500,
+        letterSpacing: '0.04em',
         textTransform: 'uppercase',
         whiteSpace: 'nowrap',
       }}
     >
-      <span style={{ width: 6, height: 6, borderRadius: 999, background: color }} />
+      <span style={{ width: 5, height: 5, borderRadius: '50%', background: color }} />
       {label}
     </div>
   );

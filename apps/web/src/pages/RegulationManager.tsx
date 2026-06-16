@@ -165,7 +165,7 @@ export function RegulationManager() {
       <style>{`
         .rm-chip {
           font-family: var(--sans); font-size: 11.5px; padding: 5px 11px;
-          border: 1px solid var(--rule-strong); border-radius: 999px;
+          border: 1px solid var(--rule-strong); border-radius: var(--radius-sm);
           background: transparent; color: var(--ink-3); cursor: pointer;
           transition: border-color var(--t-fast) var(--ease), color var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
         }

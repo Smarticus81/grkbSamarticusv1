@@ -37,12 +37,15 @@ export function EmptyState({
       style={{
         margin: '0 auto',
         maxWidth: 560,
-        padding: '64px 32px',
+        padding: '40px 28px',
         textAlign: 'center',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        gap: 16,
+        gap: 12,
+        border: '1px solid var(--rule)',
+        borderRadius: 'var(--radius)',
+        background: 'var(--surface)',
       }}
       className="rise"
     >
@@ -54,9 +57,9 @@ export function EmptyState({
       )}
       <h2
         style={{
-          fontSize: 22,
-          fontWeight: 500,
-          letterSpacing: '-0.02em',
+          fontSize: 17,
+          fontWeight: 600,
+          letterSpacing: '-0.01em',
           margin: 0,
           color: 'var(--ink)',
           lineHeight: 1.2,

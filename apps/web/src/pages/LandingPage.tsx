@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { RegulatorHeroRail } from '../components/ui/RegulatorAssets.js';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
@@ -250,13 +250,165 @@ function CheckOrange() {
   );
 }
 
-/* ── Pain card icon: red X ── */
-function PainIcon() {
+/* ── PSUR generation preview — looping animation for the hero ── */
+
+const HERO_PHASES = [
+  'Discovery', 'Parsing', 'Device context', 'IMDRF coding',
+  'Statistics', 'Charts', 'Section modules', 'Audit',
+  'Remediation', 'Validation', 'Rendering', 'Outputs',
+] as const;
+
+const HERO_SECTIONS = ['A','B','C','D','E','F','G','H','I','J','K','L','M'] as const;
+
+const HERO_DECISIONS: Array<{ text: string; reg: string; status: 'ok' | 'warn' | 'info' }> = [
+  { text: 'MDCG 2022-21 §6.4 — section A content verified', reg: 'EU MDR', status: 'ok' },
+  { text: 'ISO 14971 §7.4 — risk trend data present', reg: 'ISO 14971', status: 'ok' },
+  { text: 'EU MDR Art. 86 — complaint summary cross-referenced', reg: 'EU MDR', status: 'ok' },
+  { text: 'MDCG 2022-21 §6.8 — FSCA records linked', reg: 'MDCG', status: 'ok' },
+  { text: '21 CFR 803 — MDR evaluation included', reg: 'FDA', status: 'info' },
+  { text: 'ISO 13485 §8.2.2 — complaint handling data present', reg: 'ISO 13485', status: 'ok' },
+  { text: 'EU MDR Art. 87 — reportability assessment complete', reg: 'EU MDR', status: 'ok' },
+  { text: 'MDCG 2022-21 §6.12 — benefit-risk conclusion sourced', reg: 'MDCG', status: 'warn' },
+  { text: 'ISO 14971 §10 — residual risk acceptable', reg: 'ISO 14971', status: 'ok' },
+  { text: 'EU MDR Annex XIV — PMS plan alignment confirmed', reg: 'EU MDR', status: 'ok' },
+  { text: 'Deterministic stats — 142 data refs, zero fabrication', reg: 'System', status: 'ok' },
+  { text: 'Hash chain verified — 24 entries, tamper-evident', reg: 'Audit', status: 'ok' },
+  { text: 'PSUR draft complete — 28 sections, 100% coverage', reg: 'Output', status: 'ok' },
+];
+
+// Total cycle is ~18s: 6s phases + 6.5s sections + 3s validation + 2.5s pause
+const CYCLE_MS = 18000;
+
+function PsurGenerationPreview() {
+  const [tick, setTick] = useState(0);
+  const rafRef = useRef(0);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    startRef.current = Date.now();
+    let running = true;
+    function loop() {
+      if (!running) return;
+      setTick(Date.now() - startRef.current);
+      rafRef.current = requestAnimationFrame(loop);
+    }
+    rafRef.current = requestAnimationFrame(loop);
+    return () => { running = false; cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  // Normalize tick into a cycle position (0..1)
+  const t = (tick % CYCLE_MS) / CYCLE_MS;
+
+  // Phase progress: 0–0.33 maps to phases 0–11
+  const phaseProgress = Math.min(t / 0.33, 1);
+  const activePhaseIdx = Math.min(Math.floor(phaseProgress * 12), 11);
+
+  // Section progress: 0.15–0.52 maps to sections A–M
+  const secStart = 0.15;
+  const secEnd = 0.52;
+  const secProgress = t < secStart ? 0 : t > secEnd ? 1 : (t - secStart) / (secEnd - secStart);
+  const activeSectionIdx = Math.min(Math.floor(secProgress * 13), 12);
+  const doneSections = t > secEnd ? 13 : Math.floor(secProgress * 13);
+
+  // Decision stream: fade in decisions between 0.10–0.75
+  const decStart = 0.10;
+  const decEnd = 0.75;
+  const decProgress = t < decStart ? 0 : t > decEnd ? 1 : (t - decStart) / (decEnd - decStart);
+  const visibleDecisions = Math.min(Math.floor(decProgress * HERO_DECISIONS.length), HERO_DECISIONS.length);
+
+  // Overall progress bar
+  const overallPct = Math.min(t / 0.82, 1) * 100;
+
+  // Elapsed clock
+  const elapsed = Math.floor((t * CYCLE_MS) / 1000 * 0.6); // Scaled to look like ~10 min
+  const clockMin = Math.floor(elapsed / 60);
+  const clockSec = elapsed % 60;
+
+  // After 82% we show "complete" state
+  const isComplete = t > 0.82;
+
+  // Status badge hash (fake, cycles)
+  const hashChars = '0123456789abcdef';
+  const fakeHash = Array.from({ length: 8 }, (_, i) => hashChars[(tick / 100 + i * 3) % 16 | 0]).join('');
+
   return (
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      <circle cx="14" cy="14" r="13" stroke="var(--err)" strokeWidth="1.2" />
-      <path d="M10 10l8 8M18 10l-8 8" stroke="var(--err)" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
+    <div className="psur-preview">
+      {/* Header bar */}
+      <div className="psur-preview-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%',
+            background: isComplete ? 'var(--ok)' : 'var(--ink)',
+            animation: isComplete ? 'none' : 'phase-pulse 1s ease infinite',
+          }} />
+          <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink)' }}>
+            {isComplete ? 'PSUR draft complete' : 'Generating PSUR draft…'}
+          </span>
+        </div>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-3)' }}>
+          {String(clockMin).padStart(2, '0')}:{String(clockSec).padStart(2, '0')}
+        </span>
+      </div>
+
+      {/* Progress bar */}
+      <div className="psur-progress-bar">
+        <div className="psur-progress-fill" style={{ width: `${overallPct}%` }} />
+      </div>
+
+      {/* Phase timeline */}
+      <div className="psur-phases">
+        {HERO_PHASES.map((p, i) => (
+          <div
+            key={p}
+            className={`psur-phase ${i < activePhaseIdx ? 'done' : i === activePhaseIdx && !isComplete ? 'active' : i <= activePhaseIdx ? 'done' : ''}`}
+          >
+            {p.length > 8 ? p.slice(0, 6) + '…' : p}
+          </div>
+        ))}
+      </div>
+
+      {/* Section grid A–M */}
+      <div className="psur-sections">
+        {HERO_SECTIONS.map((letter, i) => (
+          <div
+            key={letter}
+            className={`psur-sec ${i < doneSections ? 'done' : i === activeSectionIdx && secProgress > 0 && secProgress < 1 ? 'writing' : ''}`}
+          >
+            {letter}
+          </div>
+        ))}
+      </div>
+
+      {/* Decision stream */}
+      <div className="psur-decisions">
+        {HERO_DECISIONS.slice(0, visibleDecisions).slice(-5).map((d, i) => {
+          const dotColor = d.status === 'ok' ? 'var(--ok)' : d.status === 'warn' ? 'var(--warn)' : 'var(--info)';
+          return (
+            <div className="psur-decision" key={`${d.text}-${i}`}>
+              <span className="d-dot" style={{ background: dotColor }} />
+              <span style={{ color: 'var(--ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {d.text}
+              </span>
+              <span className="d-hash">{d.reg}</span>
+            </div>
+          );
+        })}
+        {visibleDecisions === 0 && (
+          <div style={{ fontSize: 11, color: 'var(--ink-4)', padding: '8px 0' }}>
+            Waiting for first decision…
+          </div>
+        )}
+      </div>
+
+      {/* Footer stats */}
+      <div className="psur-preview-footer">
+        <span><strong>{doneSections}</strong>/13 sections</span>
+        <span><strong>{visibleDecisions}</strong> decisions</span>
+        <span style={{ fontFamily: 'var(--mono)', fontSize: 9 }}>
+          {isComplete ? '✓ chain verified' : `sha256:${fakeHash}…`}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -288,8 +440,6 @@ export function LandingPage() {
         minHeight: '100vh',
         background: 'var(--paper)',
         color: 'var(--ink)',
-        display: 'flex',
-        flexDirection: 'column',
       }}
     >
       <style>{`
@@ -299,146 +449,190 @@ export function LandingPage() {
           margin: 0 auto;
           width: 100%;
           display: grid;
-          grid-template-columns: minmax(0, 1fr) minmax(320px, 430px);
-          gap: 56px;
+          grid-template-columns: minmax(0, 1fr) minmax(340px, 460px);
+          gap: 48px;
           align-items: center;
         }
-        .regulatory-panel {
+        @media (max-width: 900px) {
+          .landing-hero { grid-template-columns: 1fr; gap: 32px; }
+        }
+
+        /* ── PSUR generation preview panel ── */
+        .psur-preview {
           border: 1px solid var(--rule);
-          border-radius: var(--r-3);
-          background:
-            radial-gradient(circle at 18% 20%, var(--signal-soft), transparent 34%),
-            linear-gradient(135deg, var(--surface-glass-strong), var(--surface-soft));
-          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.16);
-          padding: 22px;
+          border-radius: var(--radius);
+          background: var(--surface);
+          overflow: hidden;
+          font-family: var(--sans);
+        }
+        .psur-preview-header {
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--rule);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: var(--paper-deep);
+        }
+
+        /* ── Phase timeline ── */
+        .psur-phases {
+          display: flex;
+          gap: 0;
+          padding: 0 16px;
+          border-bottom: 1px solid var(--rule);
           overflow: hidden;
         }
-        .regulatory-step {
-          display: grid;
-          grid-template-columns: 28px 1fr;
-          gap: 12px;
-          padding: 14px 0;
-          border-top: 1px solid var(--rule);
+        .psur-phase {
+          flex: 1;
+          padding: 8px 2px;
+          text-align: center;
+          font-size: 8px;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+          color: var(--ink-4);
+          position: relative;
+          transition: color 0.3s;
         }
-        .regulatory-step:first-of-type { border-top: 0; }
-        .regulatory-number {
-          width: 24px;
-          height: 24px;
-          border-radius: 999px;
-          border: 1px solid rgba(255, 115, 0, 0.38);
-          color: var(--orange);
+        .psur-phase::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 10%;
+          width: 80%;
+          height: 2px;
+          background: transparent;
+          transition: background 0.3s;
+        }
+        .psur-phase.done { color: var(--ok); }
+        .psur-phase.done::after { background: var(--ok); }
+        .psur-phase.active { color: var(--ink); }
+        .psur-phase.active::after { background: var(--ink); animation: phase-pulse 1s ease infinite; }
+        @keyframes phase-pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+
+        /* ── Section grid (A–M) ── */
+        .psur-sections {
+          display: grid;
+          grid-template-columns: repeat(13, 1fr);
+          gap: 3px;
+          padding: 10px 16px;
+          border-bottom: 1px solid var(--rule);
+        }
+        .psur-sec {
+          aspect-ratio: 1;
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: var(--mono);
-          font-size: 11px;
-        }
-        .runtime-orbit {
-          position: relative;
-          height: 330px;
-          margin-top: 14px;
+          font-size: 10px;
           border: 1px solid var(--rule);
-          border-radius: 18px;
-          background:
-            radial-gradient(circle at 50% 45%, var(--signal-soft), transparent 24%),
-            radial-gradient(circle at 18% 22%, rgba(255, 122, 61, 0.16), transparent 26%),
-            var(--paper-deep);
+          border-radius: var(--radius-sm);
+          background: var(--paper);
+          color: var(--ink-4);
+          transition: all 0.4s;
+        }
+        .psur-sec.writing {
+          border-color: var(--ink);
+          color: var(--ink);
+          background: var(--paper-deep);
+          animation: sec-write 0.8s ease infinite;
+        }
+        .psur-sec.done {
+          border-color: var(--ok);
+          color: var(--ok);
+          background: var(--ok-soft);
+        }
+        @keyframes sec-write {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        /* ── Decision stream ── */
+        .psur-decisions {
+          padding: 10px 16px 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-height: 120px;
+          max-height: 160px;
           overflow: hidden;
         }
-        .runtime-orbit::before {
-          content: '';
-          position: absolute;
-          inset: 28px;
-          border: 1px solid var(--rule-strong);
-          border-radius: 50%;
-          animation: semantic-spin 18s linear infinite;
-        }
-        .runtime-orbit::after {
-          content: '';
-          position: absolute;
-          inset: 72px;
-          border: 1px dashed var(--signal-edge);
-          border-radius: 50%;
-          animation: semantic-spin 12s linear infinite reverse;
-        }
-        .runtime-core {
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-          width: 138px;
-          height: 138px;
-          border-radius: 28px;
-          border: 1px solid var(--signal-edge);
-          background: var(--surface);
+        .psur-decision {
           display: grid;
-          place-items: center;
-          text-align: center;
-          padding: 18px;
-          box-shadow: 0 22px 60px rgba(0, 0, 0, 0.18), 0 0 0 8px var(--signal-soft);
-          animation: core-breathe 3.6s var(--ease) infinite;
-          z-index: 2;
-        }
-        .runtime-node {
-          position: absolute;
-          width: 104px;
-          padding: 10px 12px;
+          grid-template-columns: 6px 1fr auto;
+          gap: 8px;
+          align-items: center;
+          padding: 5px 8px;
           border: 1px solid var(--rule);
-          border-radius: 14px;
-          background: var(--surface-glass-strong);
-          box-shadow: var(--shadow-2);
-          z-index: 3;
-          animation: node-float 5s var(--ease) infinite;
+          border-radius: var(--radius-sm);
+          background: var(--surface);
+          font-size: 11px;
+          animation: decision-in 0.3s ease both;
         }
-        .runtime-node:nth-child(2) { left: 18px; top: 28px; animation-delay: 0ms; }
-        .runtime-node:nth-child(3) { right: 18px; top: 54px; animation-delay: 240ms; }
-        .runtime-node:nth-child(4) { left: 26px; bottom: 36px; animation-delay: 480ms; }
-        .runtime-node:nth-child(5) { right: 28px; bottom: 28px; animation-delay: 720ms; }
-        .runtime-line {
+        .psur-decision .d-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+        }
+        .psur-decision .d-hash {
+          font-family: var(--mono);
+          font-size: 9px;
+          color: var(--ink-4);
+        }
+        @keyframes decision-in {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ── Progress bar ── */
+        .psur-progress-bar {
+          height: 3px;
+          background: var(--rule);
+          position: relative;
+          overflow: hidden;
+        }
+        .psur-progress-fill {
           position: absolute;
-          left: 50%;
-          top: 50%;
-          width: 44%;
-          height: 1px;
-          background: linear-gradient(90deg, transparent, var(--signal-edge), transparent);
-          transform-origin: left center;
-          z-index: 1;
-          animation: line-pulse 2.8s var(--ease) infinite;
+          left: 0; top: 0; bottom: 0;
+          background: var(--ok);
+          transition: width 0.5s ease;
         }
-        .runtime-line.l1 { transform: rotate(220deg); }
-        .runtime-line.l2 { transform: rotate(318deg); animation-delay: 180ms; }
-        .runtime-line.l3 { transform: rotate(142deg); animation-delay: 360ms; }
-        .runtime-line.l4 { transform: rotate(42deg); animation-delay: 540ms; }
-        @keyframes semantic-spin {
-          to { transform: rotate(360deg); }
+
+        /* ── Footer stats ── */
+        .psur-preview-footer {
+          padding: 8px 16px;
+          display: flex;
+          gap: 16px;
+          font-size: 10px;
+          color: var(--ink-3);
+          border-top: 1px solid var(--rule);
+          background: var(--paper-deep);
         }
-        @keyframes core-breathe {
-          0%, 100% { transform: translate(-50%, -50%) scale(1); }
-          50% { transform: translate(-50%, -50%) scale(1.035); }
-        }
-        @keyframes node-float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-7px); }
-        }
-        @keyframes line-pulse {
-          0%, 100% { opacity: 0.34; }
-          50% { opacity: 0.92; }
-        }
-        @media (max-width: 900px) {
-          .landing-hero { grid-template-columns: 1fr; gap: 36px; }
-        }
+        .psur-preview-footer strong { color: var(--ink); font-weight: 600; }
       `}</style>
       <nav
         style={{
-          height: 68,
+          position: 'sticky', top: 0, zIndex: 50,
+          height: 56,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 32px',
           borderBottom: '1px solid var(--rule)',
+          background: 'color-mix(in srgb, var(--paper) 92%, transparent)',
+          backdropFilter: 'blur(8px)',
         }}
       >
         <SmarticusWordmark size={16} tagline={false} />
+        <div className="nav-mid" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Modules</button>
+          <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Requirements</button>
+          <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Workflow</button>
+          <button className="nav-link" onClick={() => navigate('/contact')}>Contact</button>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ThemeToggle />
           <button className="btn btn-ghost" onClick={() => navigate('/app')}>
@@ -452,7 +646,7 @@ export function LandingPage() {
           flex: 1,
           display: 'flex',
           alignItems: 'center',
-          padding: '56px 32px',
+          padding: '48px 32px',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -463,7 +657,7 @@ export function LandingPage() {
           style={{
             position: 'absolute',
             inset: 0,
-            opacity: 0.12,
+            opacity: 0.08,
             maskImage: 'radial-gradient(ellipse 60% 80% at 86% 22%, #000 18%, transparent 70%)',
             WebkitMaskImage: 'radial-gradient(ellipse 60% 80% at 86% 22%, #000 18%, transparent 70%)',
             pointerEvents: 'none',
@@ -471,35 +665,35 @@ export function LandingPage() {
         />
         <section className="landing-hero">
           <div>
-            <div className="eyebrow" style={{ marginBottom: 18 }}>
-              <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
-              Regulatory requirements checks
+            <div className="eyebrow" style={{ marginBottom: 14 }}>
+              <span className="signal-dot" style={{ marginRight: 8, verticalAlign: 1 }} />
+              Post-market surveillance platform
             </div>
             <h1
               style={{
                 margin: 0,
-                maxWidth: 720,
-                fontSize: 'clamp(48px, 8vw, 98px)',
-                lineHeight: 0.92,
-                letterSpacing: '-0.06em',
-                fontWeight: 500,
+                maxWidth: 620,
+                fontSize: 'clamp(28px, 4vw, 36px)',
+                lineHeight: 1.15,
+                letterSpacing: '-0.015em',
+                fontWeight: 600,
                 color: 'var(--ink)',
               }}
             >
-              Audit-ready QMS outputs from controlled inputs.
+              Draft PSURs from controlled source data. Review with a full audit trail.
             </h1>
             <p
               style={{
-                margin: '24px 0 0',
-                maxWidth: 610,
+                margin: '16px 0 0',
+                maxWidth: 540,
                 color: 'var(--ink-2)',
-                fontSize: 18,
+                fontSize: 15,
                 lineHeight: 1.55,
               }}
             >
-              Smarticus checks QMS work against medical-device requirements and records the source for each decision.
+              Smarticus drafts regulatory records from your source data — each output is traceable back to the input that produced it.
             </p>
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 30 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 24 }}>
               <button className="btn btn-orange" onClick={() => navigate('/demo/psur')}>
                 Watch a PSUR draft
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -507,67 +701,30 @@ export function LandingPage() {
                 </svg>
               </button>
               <button className="btn btn-ghost" onClick={() => navigate('/app/sandbox')}>
-                Run with requirement checks
+                Try a module
               </button>
             </div>
             <p
               style={{
-                margin: '28px 0 0',
-                fontFamily: 'var(--mono)',
-                fontSize: 11,
-                letterSpacing: '0.12em',
+                margin: '20px 0 0',
+                fontFamily: 'var(--sans)',
+                fontSize: 10,
+                fontWeight: 500,
+                letterSpacing: '0.04em',
                 textTransform: 'uppercase',
                 color: 'var(--ink-4)',
               }}
             >
-              Requirements library: {liveRequirements} requirements, {liveEvidenceTypes} source data types, {liveSemanticBuckets} data categories.
+              {liveRequirements} requirements · {liveEvidenceTypes} source data types · {liveSemanticBuckets} data categories
             </p>
           </div>
 
-          <aside className="regulatory-panel" aria-label="Regulatory requirements controls">
-            <div className="eyebrow" style={{ marginBottom: 8 }}>Regulatory requirements layer</div>
-            <h2 style={{ margin: 0, fontSize: 24, fontWeight: 600, letterSpacing: '-0.03em', color: 'var(--ink)' }}>
-              Requirements define the checks.
-            </h2>
-            <div className="runtime-orbit" aria-hidden="true">
-              <div className="runtime-core">
-                <div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--orange)' }}>Routine use</div>
-                  <div style={{ marginTop: 7, fontSize: 15, fontWeight: 650, lineHeight: 1.1, color: 'var(--ink)' }}>Allowed actions only</div>
-                </div>
-              </div>
-              <div className="runtime-node">
-                <div className="eyebrow" style={{ fontSize: 8 }}>EU MDR</div>
-                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Requirements</div>
-              </div>
-              <div className="runtime-node">
-                <div className="eyebrow" style={{ fontSize: 8 }}>QMS</div>
-                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Source data</div>
-              </div>
-              <div className="runtime-node">
-                <div className="eyebrow" style={{ fontSize: 8 }}>Guardrails</div>
-                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Block / allow</div>
-              </div>
-              <div className="runtime-node">
-                <div className="eyebrow" style={{ fontSize: 8 }}>Audit trail</div>
-                <div style={{ fontSize: 12, fontWeight: 650, color: 'var(--ink)' }}>Why recorded</div>
-              </div>
-              <span className="runtime-line l1" />
-              <span className="runtime-line l2" />
-              <span className="runtime-line l3" />
-              <span className="runtime-line l4" />
-            </div>
-            <p style={{ margin: '16px 0 0', fontSize: 12.5, lineHeight: 1.5, color: 'var(--ink-3)' }}>
-              Requirements define inputs, checks, and outputs. Your team reviews the result.
-            </p>
+          <aside aria-label="PSUR generation preview">
+            <PsurGenerationPreview />
           </aside>
         </section>
       </main>
-    </div>
-  );
 
-  return (
-    <div style={{ background: 'var(--paper)', minHeight: '100vh', color: 'var(--ink)' }}>
       <style>{`
         .nav-link {
           color: var(--ink-3); font-size: 13px; letter-spacing: -0.005em;
@@ -630,121 +787,9 @@ export function LandingPage() {
         }
       `}</style>
 
-      {/* ── Nav ── */}
-      <nav
-        style={{
-          position: 'sticky', top: 0, zIndex: 50,
-          background: 'color-mix(in srgb, var(--paper) 92%, transparent)',
-          backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--rule)',
-        }}
-      >
-        <div className="container" style={{ padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <SmarticusWordmark size={16} tagline={false} />
-          <div className="nav-mid" style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
-            <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Products</button>
-            <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Requirements</button>
-            <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Workflow Builder</button>
-            <button className="nav-link" onClick={() => navigate('/app/connect')}>Developers</button>
-            <ThemeToggle />
-            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Configure module
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* ── Section 1: Hero ── */}
-      <section style={{ position: 'relative', overflow: 'hidden' }}>
-        <div
-          aria-hidden="true"
-          className="halftone"
-          style={{
-            position: 'absolute', inset: 0, opacity: 0.22,
-            maskImage: 'radial-gradient(ellipse 70% 80% at 80% 30%, #000 30%, transparent 75%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 70% 80% at 80% 30%, #000 30%, transparent 75%)',
-            pointerEvents: 'none',
-          }}
-        />
-        <div className="container" style={{ position: 'relative', padding: '92px 32px 48px' }}>
-          <div className="eyebrow rise" style={{ marginBottom: 28 }}>
-            <span className="signal-dot" style={{ marginRight: 10, verticalAlign: 1 }} />
-            Post-Market Surveillance Platform
-          </div>
-
-          <h1 className="hero-display rise-1" style={{ maxWidth: 1100 }}>
-            Audit-ready PSURs and QMS records from controlled inputs.
-          </h1>
-
-          <p
-            className="rise-2"
-            style={{
-              marginTop: 30, maxWidth: 720, fontSize: 18, lineHeight: 1.55,
-              color: 'var(--ink-2)',
-            }}
-          >
-            Configure modules for PSURs, complaints, IMDRF coding, audits, PMS plans, CAPA, and change control.
-          </p>
-
-          <div className="rise-3" style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Configure module
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-            <button className="btn btn-ghost" onClick={() => navigate('/app/builder')}>
-              Open Dashboard
-            </button>
-          </div>
-
-          <div className="rise-4" style={{ marginTop: 18 }}>
-            <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 13.5, maxWidth: 640 }}>
-              Smarticus prepares and checks the work. Your QMS team owns final review and release.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* ── Regulator strip ── */}
       <section className="container" style={{ padding: '8px 32px 56px' }}>
         <RegulatorHeroRail />
-      </section>
-
-      {/* ── Section 2: Pain section ── */}
-      <section style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', padding: '64px 0' }}>
-        <div className="container">
-          <div className="eyebrow" style={{ marginBottom: 14 }}>The problem</div>
-          <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-            General-purpose tools are fast. QMS work has to be <span style={{ color: 'var(--orange)' }}>defensible</span>.
-          </h2>
-
-          <div className="pain-grid">
-            <div className="pain-card">
-              <div style={{ marginBottom: 14 }}><PainIcon /></div>
-              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Missing requirements</h3>
-              <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
-                Outputs that reference rules incorrectly or invent requirements.
-              </p>
-            </div>
-            <div className="pain-card">
-              <div style={{ marginBottom: 14 }}><PainIcon /></div>
-              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>Missing required data</h3>
-              <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
-                Drafts that sound complete but skip required records.
-              </p>
-            </div>
-            <div className="pain-card">
-              <div style={{ marginBottom: 14 }}><PainIcon /></div>
-              <h3 style={{ fontSize: 17, fontWeight: 500, letterSpacing: '-0.01em', margin: '0 0 8px' }}>No audit trail</h3>
-              <p style={{ margin: 0, color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
-                Decisions that cannot be replayed, defended, or verified.
-              </p>
-            </div>
-          </div>
-
-          <p style={{ marginTop: 32, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
-            Smarticus links each module run to <strong style={{ color: 'var(--ink)' }}>requirements</strong>, <strong style={{ color: 'var(--ink)' }}>required data</strong>, and <strong style={{ color: 'var(--ink)' }}>audit trails</strong>.
-          </p>
-        </div>
       </section>
 
       {/* ── Section 3: Product proof rows ── */}
@@ -809,7 +854,7 @@ export function LandingPage() {
         </h2>
         <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
           One map holds <strong style={{ color: 'var(--ink)' }}>{REG_COUNT} regulations and standards</strong> with all
-          the relationships between them. Modules check the requirements before and after each run.
+          the relationships between them. Modules trace each output back to the applicable requirement.
         </p>
 
         {/* Stats counters */}
@@ -893,23 +938,23 @@ export function LandingPage() {
       <section className="container" style={{ padding: '64px 32px' }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>For developers</div>
         <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-          Connect Smarticus requirement checks to your tools.
+          Connect Smarticus to your QMS and source systems.
         </h2>
         <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-          Connect any MCP-compatible tool to the Smarticus regulatory requirements library. Eleven tools, one line to install.
+          A REST API lets your quality and engineering teams pull drafts, run compliance checks, and export tamper-evident audit packs straight into your eQMS.
         </p>
 
         <pre style={{ marginTop: 28, fontSize: 14, padding: '18px 22px', maxWidth: 480 }}>
-          <code style={{ background: 'transparent', padding: 0 }}>npx @smarticus/mcp</code>
+          <code style={{ background: 'transparent', padding: 0 }}>curl https://api.smarticus.ai/v1/runs</code>
         </pre>
 
         <div className="mcp-tools-list">
           {[
-            'discover_obligations',
-            'check_qualification',
-            'validate_compliance',
-            'explain_obligation',
-            'find_obligation_path',
+            'Query the requirement map',
+            'Run compliance checks',
+            'Trigger module runs',
+            'Export tamper-evident audit packs',
+            'Read the source-record catalog',
           ].map((tool) => (
             <div
               key={tool}
@@ -931,7 +976,7 @@ export function LandingPage() {
 
         <div style={{ marginTop: 28 }}>
           <button className="btn btn-ghost" onClick={() => navigate('/app/connect')}>
-            View developer docs
+            View API & integration docs
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
         </div>
@@ -969,14 +1014,14 @@ export function LandingPage() {
             <button
               className="btn btn-ghost"
               style={{ color: 'var(--paper)', borderColor: 'var(--ink-3)' }}
-              onClick={() => window.location.href = 'mailto:hello@thinkertons.com'}
+              onClick={() => navigate('/contact')}
             >
-              Talk to us
+              Contact us
             </button>
           </div>
 
           <p style={{ marginTop: 24, color: 'var(--ink-4)', fontSize: 14, maxWidth: 560 }}>
-            Smarticus does not replace QMS judgment. It prepares, checks, and records the work for review.
+            Smarticus does not replace QMS judgment. It drafts the records — your team reviews and releases.
           </p>
         </div>
       </section>

@@ -26,7 +26,7 @@ export function PageHeader({ eyebrow, title, subtitle, actions, meta }: PageHead
   return (
     <header
       style={{
-        padding: '32px 40px 24px',
+        padding: '24px 32px 18px',
         borderBottom: '1px solid var(--rule)',
         background: 'var(--paper)',
       }}
@@ -46,11 +46,11 @@ export function PageHeader({ eyebrow, title, subtitle, actions, meta }: PageHead
           </div>
           <h1
             style={{
-              fontSize: 28,
-              fontWeight: 500,
-              letterSpacing: '-0.025em',
+              fontSize: 22,
+              fontWeight: 600,
+              letterSpacing: '-0.01em',
               margin: 0,
-              lineHeight: 1.1,
+              lineHeight: 1.2,
             }}
           >
             {title}
@@ -58,11 +58,11 @@ export function PageHeader({ eyebrow, title, subtitle, actions, meta }: PageHead
           {subtitle && (
             <p
               style={{
-                margin: '10px 0 0',
-                color: 'var(--ink-3)',
-                fontSize: 14,
-                lineHeight: 1.55,
-                maxWidth: 640,
+                margin: '8px 0 0',
+                color: 'var(--ink-2)',
+                fontSize: 13,
+                lineHeight: 1.5,
+                maxWidth: 600,
               }}
             >
               {subtitle}
@@ -75,7 +75,7 @@ export function PageHeader({ eyebrow, title, subtitle, actions, meta }: PageHead
           </div>
         )}
       </div>
-      {meta && <div style={{ marginTop: 16 }}>{meta}</div>}
+      {meta && <div style={{ marginTop: 12 }}>{meta}</div>}
     </header>
   );
 }

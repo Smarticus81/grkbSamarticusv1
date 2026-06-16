@@ -15,7 +15,7 @@ import {
 const LandingPage = lazy(() => import('./pages/LandingPage.js'));
 const PsurDemo = lazy(() => import('./pages/PsurDemo.js'));
 const Home = lazy(() => import('./pages/Home.js'));
-const Pricing = lazy(() => import('./pages/Pricing.js'));
+const Contact = lazy(() => import('./pages/Contact.js'));
 const TraceExplorer = lazy(() => import('./pages/TraceExplorer.js'));
 const RegulationManager = lazy(() => import('./pages/RegulationManager.js'));
 const ApiAccess = lazy(() => import('./pages/ApiAccess.js'));
@@ -65,30 +65,20 @@ function NavLink({ href, label, exact }: { href: string; label: string; exact?: 
         display: 'grid',
         gridTemplateColumns: '1fr',
         alignItems: 'center',
-        padding: '10px 14px',
+        padding: '8px 14px',
         textDecoration: 'none',
         borderBottom: '0',
+        borderLeft: active ? '3px solid var(--accent)' : '3px solid transparent',
         color: active ? 'var(--ink)' : 'var(--ink-3)',
-        background: 'transparent',
-        fontSize: 13.5,
-        letterSpacing: '-0.005em',
+        background: active ? 'var(--paper-deep)' : 'transparent',
+        fontSize: 13,
+        letterSpacing: '0',
         position: 'relative',
-        transition: 'color var(--t-fast) var(--ease)',
+        transition: 'color var(--t-fast) var(--ease), background var(--t-fast) var(--ease)',
       }}
     >
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
         {label}
-        {active && (
-          <span
-            style={{
-              width: 4,
-              height: 4,
-              borderRadius: '50%',
-              background: 'var(--signal)',
-              marginLeft: 4,
-            }}
-          />
-        )}
       </span>
     </Link>
   );
@@ -162,17 +152,20 @@ function ClerkSidebarAuthControls() {
           background: 'var(--surface)',
         }}
       >
-        <div className="eyebrow" style={{ fontSize: 9, marginBottom: 4 }}>
-          Active workspace
-        </div>
-        <div style={{ fontSize: 12.5, fontWeight: 650, color: 'var(--ink)' }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', lineHeight: 1.3 }}>
           {workspaceDisplay.title}
         </div>
-        <div style={{ marginTop: 3, fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)' }}>
+        <div style={{ marginTop: 3, fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', cursor: 'pointer' }} title="Copy workspace ID">
           {workspaceDisplay.shortKey}
         </div>
-        <div style={{ marginTop: 5, fontSize: 10.5, color: workspaceDisplay.inactive ? 'var(--danger)' : 'var(--ink-4)' }}>
-          {workspaceError ? 'Workspace sync unavailable' : workspaceDisplay.inactive ? 'Inactive workspace' : workspaceDisplay.subtitle}
+        <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: 'var(--ink-4)' }}>
+          {workspaceError ? (
+            <><span className="dot-warn" /> <span>sync unavailable</span></>
+          ) : workspaceDisplay.inactive ? (
+            <><span className="dot-err" /> <span>inactive</span></>
+          ) : (
+            <><span className="dot-ok" /> <span>{workspaceDisplay.subtitle}</span></>
+          )}
         </div>
       </div>
       <OrganizationSwitcher
@@ -295,9 +288,10 @@ function AppShell() {
               <div
                 style={{
                   padding: '0 14px 1px',
-                  fontFamily: 'var(--mono)',
-                  fontSize: 9.5,
-                  letterSpacing: '0.14em',
+                  fontFamily: 'var(--sans)',
+                  fontSize: 10,
+                  fontWeight: 500,
+                  letterSpacing: '0.04em',
                   textTransform: 'uppercase',
                   color: 'var(--ink-4)',
                 }}
@@ -318,8 +312,8 @@ function AppShell() {
 
         <SidebarAuthControls />
 
-        <div data-sidebar-version style={{ padding: '0 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.14em' }}>
+        <div data-sidebar-version style={{ padding: '6px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--rule)' }}>
+          <span style={{ fontFamily: 'var(--sans)', fontSize: 10, color: 'var(--ink-4)', letterSpacing: '0.02em' }}>
             v0.1
           </span>
           <ThemeToggle />
@@ -384,7 +378,7 @@ export function App() {
           {/* PSUR walkthrough: public route always runs the no-profile simulation.
               Signed-in live runs live under /app/psur/build in the workspace. */}
           <Route path="/demo/psur" component={PsurDemo} />
-          <Route path="/pricing" component={Pricing} />
+          <Route path="/contact" component={Contact} />
           <Route path="/app" component={ProtectedAppShell} />
           <Route path="/app/*" component={ProtectedAppShell} />
         </Switch>
