@@ -391,17 +391,16 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                 onClick={() => navigate(`/app/sandbox/${t.id}`)}
                 style={{
                   textAlign: 'left',
-                  background: 'linear-gradient(135deg, var(--surface) 0%, var(--surface-warm) 100%)',
-                  border: '1px solid var(--signal-edge)',
-                  borderRadius: 16,
-                  padding: 16,
+                  background: 'var(--surface)',
+                  border: '1px solid var(--rule)',
+                  borderRadius: 'var(--radius)',
+                  padding: 14,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  gap: 12,
+                  gap: 10,
                   aspectRatio: '1 / 1',
-                  boxShadow: '0 14px 36px rgba(17, 24, 39, 0.04)',
                 }}
               >
                 <div>
@@ -604,7 +603,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
                 )}
               </div>
               <p style={{ margin: '0 0 14px', fontSize: 12.5, color: 'var(--ink-3)', lineHeight: 1.55 }}>
-                Capture the source data input, requirement checks, and controls from this run. The module can then be versioned and used again.
+                Capture the source data input, validation results, and controls from this run. The module can then be versioned and used again.
               </p>
               {!canPromote && (
                 <div
@@ -751,7 +750,7 @@ export function Sandbox({ initialTaskId }: { initialTaskId?: string }) {
 const CARD: React.CSSProperties = {
   background: 'var(--surface)',
   border: '1px solid var(--rule)',
-  borderRadius: 10,
+  borderRadius: 'var(--radius)',
 };
 const CARD_HEADER: React.CSSProperties = {
   padding: '12px 16px',
@@ -772,15 +771,16 @@ const GHOST_BUTTON: React.CSSProperties = {
 const SMALL_RUNTIME_PILL: React.CSSProperties = {
   display: 'inline-flex',
   alignItems: 'center',
-  height: 24,
-  padding: '0 9px',
-  border: '1px solid rgba(255, 115, 0, 0.22)',
-  borderRadius: 999,
+  height: 22,
+  padding: '0 7px',
+  border: '1px solid var(--rule-strong)',
+  borderRadius: 'var(--radius-sm)',
   background: 'var(--surface)',
   color: 'var(--ink-3)',
-  fontFamily: 'var(--mono)',
+  fontFamily: 'var(--sans)',
   fontSize: 10,
-  letterSpacing: '0.05em',
+  fontWeight: 500,
+  letterSpacing: '0.04em',
   textTransform: 'uppercase',
 };
 
@@ -1804,7 +1804,7 @@ function RegulationsPanel({
 
 const OBLIGATION_ROW: React.CSSProperties = {
   border: '1px solid var(--rule)',
-  borderRadius: 8,
+  borderRadius: 'var(--radius)',
   padding: '10px 12px',
   background: 'var(--surface)',
 };

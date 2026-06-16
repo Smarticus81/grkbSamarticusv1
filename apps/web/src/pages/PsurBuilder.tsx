@@ -303,10 +303,10 @@ export function PsurBuilder() {
 
 function SummaryCard({ label, value, body }: { label: string; value: string; body: string }) {
   return (
-    <div style={{ padding: 18, border: '1px solid var(--rule)', borderRadius: 'var(--r-3)', background: 'var(--surface)' }}>
-      <div className="eyebrow" style={{ marginBottom: 8 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 650, letterSpacing: '-0.035em', color: 'var(--ink)' }}>{value}</div>
-      <p style={{ margin: '7px 0 0', fontSize: 13, lineHeight: 1.45, color: 'var(--ink-3)' }}>{body}</p>
+    <div style={{ padding: '12px 16px', border: '1px solid var(--rule)', borderRadius: 'var(--radius)', background: 'var(--surface)' }}>
+      <div style={{ fontFamily: 'var(--sans)', fontSize: 10, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--ink-3)', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 20, fontWeight: 600, letterSpacing: '-0.02em', color: 'var(--ink)' }}>{value}</div>
+      <p style={{ margin: '5px 0 0', fontSize: 13, lineHeight: 1.45, color: 'var(--ink-3)' }}>{body}</p>
     </div>
   );
 }

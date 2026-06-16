@@ -119,7 +119,7 @@ claude mcp add smarticus npx @regground/mcp-server@latest \\
 
   return `You are building ${desc}.
 
-Smarticus provides requirement checks for this module. Before you run, before you respond, and before you write anything to disk, you MUST:
+Smarticus provides traceable drafting for this module. Before you run, before you respond, and before you write anything to disk, you MUST:
 
   1. Call regground_check_qualification to confirm you have the right inputs.
   2. Call regground_discover_obligations or regground_search_obligations to find the requirements that govern your output.
@@ -301,8 +301,8 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
     <div style={{ background: 'var(--paper)', minHeight: '100vh' }}>
       <PageHeader
         eyebrow="Connect"
-        title="Connect any AI tool to the requirements."
-        subtitle="Smarticus runs as an MCP server — the same protocol Cursor, Claude Code, Windsurf, and VS Code already speak. Get a key, paste a snippet, and your AI starts citing requirements within seconds."
+        title="Connect Smarticus to your tools and QMS."
+        subtitle="Smarticus exposes a REST API and an MCP server — the same protocol Cursor, Claude Code, Windsurf, and VS Code already speak. Get a key, paste a snippet, and your tools can pull drafts, run compliance checks, and read the requirement map within seconds."
         actions={
           <div style={{ display: 'flex', gap: 6, padding: 4, border: '1px solid var(--rule)', borderRadius: 'var(--r-2)' }}>
             <ViewTab active={view === 'guide'} onClick={() => setView('guide')} label="Setup guide" />
