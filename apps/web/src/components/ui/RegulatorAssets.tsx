@@ -18,7 +18,6 @@ export function RegulatorHeroRail() {
 
   return (
     <div style={{ marginTop: 28 }}>
-      <div className="eyebrow" style={{ marginBottom: 12 }}>Regulatory coverage</div>
       <div
         style={{
           display: 'grid',

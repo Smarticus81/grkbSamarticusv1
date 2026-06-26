@@ -680,7 +680,7 @@ export function LandingPage() {
                 color: 'var(--ink)',
               }}
             >
-              Draft PSURs from controlled source data. Review with a full audit trail.
+              Quickly Draft accurate and traceable PSURs and other QMS documents and never miss a regulatory deadline.
             </h1>
             <p
               style={{
@@ -691,7 +691,7 @@ export function LandingPage() {
                 lineHeight: 1.55,
               }}
             >
-              Smarticus drafts regulatory records from your source data — each output is traceable back to the input that produced it.
+              Every report will come with an Audit checklist and decision traces to make our report defensible.
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 24 }}>
               <button className="btn btn-orange" onClick={() => navigate('/demo/psur')}>
@@ -704,19 +704,6 @@ export function LandingPage() {
                 Try a module
               </button>
             </div>
-            <p
-              style={{
-                margin: '20px 0 0',
-                fontFamily: 'var(--sans)',
-                fontSize: 10,
-                fontWeight: 500,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                color: 'var(--ink-4)',
-              }}
-            >
-              {liveRequirements} requirements · {liveEvidenceTypes} source data types · {liveSemanticBuckets} data categories
-            </p>
           </div>
 
           <aside aria-label="PSUR generation preview">
@@ -794,15 +781,6 @@ export function LandingPage() {
 
       {/* ── Section 3: Product proof rows ── */}
       <section id="products" className="container" style={{ padding: '48px 32px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-          <h2 style={{ fontSize: 'clamp(28px, 3.4vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0 }}>
-            Pre-built modules, tied to requirements.
-          </h2>
-          <p style={{ margin: 0, color: 'var(--ink-3)', fontSize: 14, maxWidth: 480 }}>
-            Each module lists its inputs, outputs, and applicable requirements.
-          </p>
-        </div>
-
         {PRODUCTS.map((p, i) => (
           <article key={p.title} className={`product-row ${i % 2 === 1 ? 'flip' : ''}`}>
             <div>
