@@ -1,18 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'wouter';
 import { RegulatorHeroRail } from '../components/ui/RegulatorAssets.js';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
 import { SmarticusWordmark, SmarticusMark, SmarticusByThinkertonsLockup } from '../components/ui/logos.js';
-import { EVIDENCE_TYPE_COUNT, REG_COUNT, OBLIGATION_COUNT } from '../lib/coverage.js';
-import { api } from '../lib/queryClient.js';
 
-interface GraphStats {
-  regulations: number;
-  obligations: number;
-  evidenceTypes: number;
+/** Calendly scheduling link for "Book a demo" CTAs. */
+const CALENDLY_URL = 'https://calendly.com/tmusoni81/30min';
+
+function openCalendly() {
+  window.open(CALENDLY_URL, '_blank', 'noopener,noreferrer');
 }
 
-/* ── Featured product rows (Mistral-style alternating showcase) ── */
+/* ── Featured product rows (alternating showcase) ── */
 const PRODUCTS: {
   eyebrow: string;
   title: string;
@@ -26,12 +25,12 @@ const PRODUCTS: {
   {
     eyebrow: 'Authoring',
     title: 'PSUR Compiler.',
-    body: 'Generates an MDCG 2022-21 PSUR draft from controlled source data.',
+    body: 'Turns controlled source data into an MDCG 2022-21 PSUR draft — sections A through M — in minutes.',
     bullets: [
-      'MDCG 2022-21 sections A\u2013M',
+      'MDCG 2022-21 sections A\u2013M, EU MDR Art. 86 aligned',
       'Deterministic statistics \u2014 numbers computed once, never fabricated',
-      'Audit trail: each decision cites its reason and requirement',
-      'Tamper-evident trace chain and one-click audit pack',
+      'Every decision cites its reason and its requirement',
+      'Tamper-evident decision trace and one-click audit pack',
     ],
     cta: { label: 'Watch the demo', to: '/demo/psur' },
     visual: 'psur',
@@ -48,7 +47,7 @@ const PRODUCTS: {
       'ISO 13485 \u00a78.2.2 required data trail',
       'Auto-coded with IMDRF Annex A through G',
     ],
-    cta: { label: 'Configure module', to: '/app' },
+    cta: { label: 'See the module', to: '/app/sandbox' },
     visual: 'complaints',
     before: 'A spreadsheet triage with deadlines tracked manually across three regulations.',
     after: 'A single queue with SLA clocks mapped to EU MDR Art. 87, 21 CFR 803, and ISO 13485 \u00a78.2.2, with coded rationale.',
@@ -63,29 +62,14 @@ const PRODUCTS: {
       'Reviewable before connecting to production',
       'Versioned against IMDRF terminology releases',
     ],
-    cta: { label: 'Configure module', to: '/app' },
+    cta: { label: 'See the module', to: '/app/sandbox' },
     visual: 'imdrf',
     before: 'Manual IMDRF coding with inconsistent annex coverage and no confidence scores.',
     after: 'Automated codes across Annexes A\u2013G with rationale, confidence, and version-locked terminology.',
   },
-  {
-    eyebrow: 'Regulatory requirements library',
-    title: 'One map. Every regulation. Every relationship.',
-    body: 'Modules retrieve versioned requirements, cross-references, source data types, and constraints.',
-    bullets: [
-      `${OBLIGATION_COUNT} requirements across ${REG_COUNT} regulations and standards`,
-      'Walks chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
-      'Versioned to the source date so an audit can be replayed',
-      'Smarticus never sees your proprietary data',
-    ],
-    cta: { label: 'Browse the requirements', to: '/app/requirements' },
-    visual: 'graph',
-    before: 'Manual PDF checks with limited cross-reference awareness.',
-    after: 'Modules query versioned requirements, constraints, source data types, and cross-references.',
-  },
 ];
 
-/* ── SVG visuals (paper-and-ink with orange accent) ── */
+/* ── SVG visuals (paper-and-ink with accent) ── */
 function VisualPSUR() {
   return (
     <svg viewBox="0 0 480 320" width="100%" height="100%" fill="none">
@@ -99,13 +83,13 @@ function VisualPSUR() {
       <rect x="56" y="216" width="80" height="36" rx="2" fill="var(--orange)" />
       <text x="96" y="239" textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="#fff" letterSpacing="0.1em">SECTION 7</text>
       <rect x="300" y="60" width="148" height="20" rx="2" stroke="var(--ink)" strokeWidth="1" />
-      <text x="312" y="74" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">MDCG 2022-21 \u00a76.4</text>
+      <text x="312" y="74" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">MDCG 2022-21 §6.4</text>
       <rect x="300" y="92" width="148" height="20" rx="2" stroke="var(--ink)" strokeWidth="1" />
       <text x="312" y="106" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)" letterSpacing="0.12em">EU MDR ART. 86</text>
       <rect x="300" y="124" width="148" height="20" rx="2" fill="var(--orange)" />
       <text x="312" y="138" fontFamily="var(--mono)" fontSize="9" fill="#fff" letterSpacing="0.12em">FOR REVIEW</text>
       <line x1="300" y1="180" x2="448" y2="180" stroke="var(--rule-strong)" />
-      <text x="300" y="200" fontFamily="var(--mono)" fontSize="9.5" fill="var(--ink-2)" letterSpacing="0.08em">10 MIN TO DRAFT</text>
+      <text x="300" y="200" fontFamily="var(--mono)" fontSize="9.5" fill="var(--ink-2)" letterSpacing="0.08em">MINUTES TO DRAFT</text>
       <text x="300" y="220" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">28 sections</text>
       <text x="300" y="238" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">142 data refs</text>
       <text x="300" y="256" fontFamily="var(--sans)" fontSize="13" fill="var(--ink)">Every section cited</text>
@@ -205,7 +189,7 @@ function VisualGraph() {
         </g>
       ))}
       <text x="240" y="298" textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-3)" letterSpacing="0.18em">
-        REQUIREMENTS \u00b7 DEFINITIONS \u00b7 REQUIRED DATA \u00b7 CONSTRAINTS
+        REQUIREMENTS · DEFINITIONS · REQUIRED DATA · CONSTRAINTS
       </text>
     </svg>
   );
@@ -247,6 +231,14 @@ function CheckOrange() {
         <path d="M2 5.4l2.1 2L8 3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     </span>
+  );
+}
+
+function ArrowRight() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
@@ -296,44 +288,35 @@ function PsurGenerationPreview() {
     return () => { running = false; cancelAnimationFrame(rafRef.current); };
   }, []);
 
-  // Normalize tick into a cycle position (0..1)
   const t = (tick % CYCLE_MS) / CYCLE_MS;
 
-  // Phase progress: 0–0.33 maps to phases 0–11
   const phaseProgress = Math.min(t / 0.33, 1);
   const activePhaseIdx = Math.min(Math.floor(phaseProgress * 12), 11);
 
-  // Section progress: 0.15–0.52 maps to sections A–M
   const secStart = 0.15;
   const secEnd = 0.52;
   const secProgress = t < secStart ? 0 : t > secEnd ? 1 : (t - secStart) / (secEnd - secStart);
   const activeSectionIdx = Math.min(Math.floor(secProgress * 13), 12);
   const doneSections = t > secEnd ? 13 : Math.floor(secProgress * 13);
 
-  // Decision stream: fade in decisions between 0.10–0.75
   const decStart = 0.10;
   const decEnd = 0.75;
   const decProgress = t < decStart ? 0 : t > decEnd ? 1 : (t - decStart) / (decEnd - decStart);
   const visibleDecisions = Math.min(Math.floor(decProgress * HERO_DECISIONS.length), HERO_DECISIONS.length);
 
-  // Overall progress bar
   const overallPct = Math.min(t / 0.82, 1) * 100;
 
-  // Elapsed clock
-  const elapsed = Math.floor((t * CYCLE_MS) / 1000 * 0.6); // Scaled to look like ~10 min
+  const elapsed = Math.floor((t * CYCLE_MS) / 1000 * 0.6);
   const clockMin = Math.floor(elapsed / 60);
   const clockSec = elapsed % 60;
 
-  // After 82% we show "complete" state
   const isComplete = t > 0.82;
 
-  // Status badge hash (fake, cycles)
   const hashChars = '0123456789abcdef';
   const fakeHash = Array.from({ length: 8 }, (_, i) => hashChars[(tick / 100 + i * 3) % 16 | 0]).join('');
 
   return (
     <div className="psur-preview">
-      {/* Header bar */}
       <div className="psur-preview-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{
@@ -350,12 +333,10 @@ function PsurGenerationPreview() {
         </span>
       </div>
 
-      {/* Progress bar */}
       <div className="psur-progress-bar">
         <div className="psur-progress-fill" style={{ width: `${overallPct}%` }} />
       </div>
 
-      {/* Phase timeline */}
       <div className="psur-phases">
         {HERO_PHASES.map((p, i) => (
           <div
@@ -367,7 +348,6 @@ function PsurGenerationPreview() {
         ))}
       </div>
 
-      {/* Section grid A–M */}
       <div className="psur-sections">
         {HERO_SECTIONS.map((letter, i) => (
           <div
@@ -379,7 +359,6 @@ function PsurGenerationPreview() {
         ))}
       </div>
 
-      {/* Decision stream */}
       <div className="psur-decisions">
         {HERO_DECISIONS.slice(0, visibleDecisions).slice(-5).map((d, i) => {
           const dotColor = d.status === 'ok' ? 'var(--ok)' : d.status === 'warn' ? 'var(--warn)' : 'var(--info)';
@@ -400,7 +379,6 @@ function PsurGenerationPreview() {
         )}
       </div>
 
-      {/* Footer stats */}
       <div className="psur-preview-footer">
         <span><strong>{doneSections}</strong>/13 sections</span>
         <span><strong>{visibleDecisions}</strong> decisions</span>
@@ -412,27 +390,86 @@ function PsurGenerationPreview() {
   );
 }
 
+/* ── ROI calculator — real client-side math, no backend ── */
+const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+
+function RoiCalculator() {
+  const [psursPerYear, setPsursPerYear] = useState(6);
+  const [hoursPerPsur, setHoursPerPsur] = useState(80);
+  const [blendedRate, setBlendedRate] = useState(95);
+
+  const result = useMemo(() => {
+    // With Smarticus, the first draft is generated in minutes; the remaining
+    // human effort is review + sign-off, modeled at ~12% of manual assembly time.
+    const reviewFraction = 0.12;
+    const reviewHours = hoursPerPsur * reviewFraction;
+    const hoursSavedPerPsur = Math.max(hoursPerPsur - reviewHours, 0);
+    const hoursSaved = hoursSavedPerPsur * psursPerYear;
+    const costSaved = hoursSaved * blendedRate;
+    const manualWeeks = (hoursPerPsur * psursPerYear) / 40;
+    const newWeeks = (reviewHours * psursPerYear) / 40;
+    const weeksSaved = Math.max(manualWeeks - newWeeks, 0);
+    const reductionPct = hoursPerPsur > 0 ? Math.round((hoursSavedPerPsur / hoursPerPsur) * 100) : 0;
+    return { hoursSaved, costSaved, weeksSaved, reductionPct, reviewHours };
+  }, [psursPerYear, hoursPerPsur, blendedRate]);
+
+  const controls: { label: string; value: number; set: (v: number) => void; min: number; max: number; step: number; suffix?: string; prefix?: string }[] = [
+    { label: 'PSURs / PMSRs per year', value: psursPerYear, set: setPsursPerYear, min: 1, max: 60, step: 1 },
+    { label: 'Hours to assemble one (manual)', value: hoursPerPsur, set: setHoursPerPsur, min: 10, max: 200, step: 5, suffix: ' hrs' },
+    { label: 'Blended team cost', value: blendedRate, set: setBlendedRate, min: 40, max: 250, step: 5, prefix: '$', suffix: ' /hr' },
+  ];
+
+  return (
+    <div className="roi-grid">
+      <div className="roi-inputs">
+        {controls.map((c) => (
+          <div key={c.label} className="roi-field">
+            <div className="roi-field-head">
+              <label htmlFor={`roi-${c.label}`}>{c.label}</label>
+              <span className="roi-field-value">{c.prefix ?? ''}{number.format(c.value)}{c.suffix ?? ''}</span>
+            </div>
+            <input
+              id={`roi-${c.label}`}
+              type="range"
+              min={c.min}
+              max={c.max}
+              step={c.step}
+              value={c.value}
+              onChange={(e) => c.set(Number(e.target.value))}
+              className="roi-range"
+            />
+          </div>
+        ))}
+        <p className="roi-note">
+          Assumes Smarticus drafts the PSUR in minutes; remaining effort is QA review and sign-off
+          (~{number.format(result.reviewHours)} hrs each). Adjust the inputs to your program.
+        </p>
+      </div>
+
+      <div className="roi-output">
+        <div className="roi-output-row">
+          <div className="roi-stat">
+            <div className="roi-stat-value">{number.format(result.hoursSaved)}</div>
+            <div className="roi-stat-label">Hours saved / year</div>
+          </div>
+          <div className="roi-stat">
+            <div className="roi-stat-value">{result.reductionPct}%</div>
+            <div className="roi-stat-label">Less time per report</div>
+          </div>
+        </div>
+        <div className="roi-headline">
+          <div className="roi-headline-label">Estimated savings / year</div>
+          <div className="roi-headline-value">{currency.format(result.costSaved)}</div>
+          <div className="roi-headline-sub">≈ {number.format(result.weeksSaved)} weeks of calendar time returned to your team</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LandingPage() {
   const [, navigate] = useLocation();
-  const [graphStats, setGraphStats] = useState<GraphStats | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    api<GraphStats>('/api/graph/stats')
-      .then((stats) => {
-        if (!cancelled) setGraphStats(stats);
-      })
-      .catch(() => {
-        if (!cancelled) setGraphStats(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const liveRequirements = graphStats?.obligations ?? OBLIGATION_COUNT;
-  const liveEvidenceTypes = graphStats?.evidenceTypes ?? EVIDENCE_TYPE_COUNT;
-  const liveSemanticBuckets = graphStats?.regulations ?? REG_COUNT;
 
   return (
     <div
@@ -473,8 +510,6 @@ export function LandingPage() {
           justify-content: space-between;
           background: var(--paper-deep);
         }
-
-        /* ── Phase timeline ── */
         .psur-phases {
           display: flex;
           gap: 0;
@@ -512,8 +547,6 @@ export function LandingPage() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.4; }
         }
-
-        /* ── Section grid (A–M) ── */
         .psur-sections {
           display: grid;
           grid-template-columns: repeat(13, 1fr);
@@ -549,8 +582,6 @@ export function LandingPage() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.5; }
         }
-
-        /* ── Decision stream ── */
         .psur-decisions {
           padding: 10px 16px 12px;
           display: flex;
@@ -572,36 +603,14 @@ export function LandingPage() {
           font-size: 11px;
           animation: decision-in 0.3s ease both;
         }
-        .psur-decision .d-dot {
-          width: 5px;
-          height: 5px;
-          border-radius: 50%;
-        }
-        .psur-decision .d-hash {
-          font-family: var(--mono);
-          font-size: 9px;
-          color: var(--ink-4);
-        }
+        .psur-decision .d-dot { width: 5px; height: 5px; border-radius: 50%; }
+        .psur-decision .d-hash { font-family: var(--mono); font-size: 9px; color: var(--ink-4); }
         @keyframes decision-in {
           from { opacity: 0; transform: translateY(6px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-
-        /* ── Progress bar ── */
-        .psur-progress-bar {
-          height: 3px;
-          background: var(--rule);
-          position: relative;
-          overflow: hidden;
-        }
-        .psur-progress-fill {
-          position: absolute;
-          left: 0; top: 0; bottom: 0;
-          background: var(--ok);
-          transition: width 0.5s ease;
-        }
-
-        /* ── Footer stats ── */
+        .psur-progress-bar { height: 3px; background: var(--rule); position: relative; overflow: hidden; }
+        .psur-progress-fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ok); transition: width 0.5s ease; }
         .psur-preview-footer {
           padding: 8px 16px;
           display: flex;
@@ -628,16 +637,15 @@ export function LandingPage() {
       >
         <SmarticusWordmark size={16} tagline={false} />
         <div className="nav-mid" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          <button className="nav-link" onClick={() => document.getElementById('service')?.scrollIntoView({ behavior: 'smooth' })}>Services</button>
+          <button className="nav-link" onClick={() => document.getElementById('roi')?.scrollIntoView({ behavior: 'smooth' })}>ROI</button>
+          <button className="nav-link" onClick={() => document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth' })}>Why Smarticus</button>
           <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Modules</button>
-          <button className="nav-link" onClick={() => document.getElementById('graph')?.scrollIntoView({ behavior: 'smooth' })}>Requirements</button>
-          <button className="nav-link" onClick={() => document.getElementById('builder')?.scrollIntoView({ behavior: 'smooth' })}>Workflow</button>
-          <button className="nav-link" onClick={() => navigate('/contact')}>Contact</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ThemeToggle />
-          <button className="btn btn-ghost" onClick={() => navigate('/app')}>
-            Sign in
-          </button>
+          <button className="nav-link" onClick={() => navigate('/app')}>Sign in</button>
+          <button className="btn btn-orange" onClick={openCalendly}>Book a demo</button>
         </div>
       </nav>
 
@@ -646,7 +654,7 @@ export function LandingPage() {
           flex: 1,
           display: 'flex',
           alignItems: 'center',
-          padding: '48px 32px',
+          padding: '56px 32px',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -665,44 +673,53 @@ export function LandingPage() {
         />
         <section className="landing-hero">
           <div>
-            <div className="eyebrow" style={{ marginBottom: 14 }}>
+            <div className="eyebrow" style={{ marginBottom: 16 }}>
               <span className="signal-dot" style={{ marginRight: 8, verticalAlign: 1 }} />
-              Post-market surveillance platform
+              PSUR generation for medical device teams
             </div>
             <h1
               style={{
                 margin: 0,
-                maxWidth: 620,
-                fontSize: 'clamp(28px, 4vw, 36px)',
-                lineHeight: 1.15,
-                letterSpacing: '-0.015em',
+                maxWidth: 640,
+                fontSize: 'clamp(34px, 5.2vw, 56px)',
+                lineHeight: 1.04,
+                letterSpacing: '-0.03em',
                 fontWeight: 600,
                 color: 'var(--ink)',
               }}
             >
-              Quickly Draft accurate and traceable PSURs and other QMS documents and never miss a regulatory deadline.
+              Draft a PSUR in minutes.
+              <br />
+              <span style={{ color: 'var(--orange)' }}>Audit-ready in 24–48 hours.</span>
             </h1>
             <p
               style={{
-                margin: '16px 0 0',
+                margin: '20px 0 0',
                 maxWidth: 540,
                 color: 'var(--ink-2)',
-                fontSize: 15,
+                fontSize: 17,
                 lineHeight: 1.55,
               }}
             >
-              Every report will come with an Audit checklist and decision traces to make our report defensible.
+              Smarticus turns your post-market data into a regulator-grade PSUR — structured to
+              MDCG 2022-21, every figure traced to its source, every decision defensible. The two
+              weeks of manual assembly disappear.
             </p>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 24 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 28 }}>
               <button className="btn btn-orange" onClick={() => navigate('/demo/psur')}>
-                Watch a PSUR draft
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
+                Watch a PSUR draft itself
+                <ArrowRight />
               </button>
-              <button className="btn btn-ghost" onClick={() => navigate('/app/sandbox')}>
-                Try a module
+              <button className="btn btn-ghost" onClick={() => navigate('/contact')}>
+                Book a demo
               </button>
+            </div>
+            <div style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: '8px 20px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.06em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
+              <span>MDCG 2022-21</span>
+              <span>EU MDR Art. 86</span>
+              <span>ISO 14971</span>
+              <span>UK MDR</span>
+              <span style={{ color: 'var(--ink-4)' }}>· Your data stays in your workspace</span>
             </div>
           </div>
 
@@ -720,6 +737,84 @@ export function LandingPage() {
         }
         .nav-link:hover { color: var(--ink); }
         .container { max-width: 1240px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+
+        /* outcome metric band */
+        .metric-band {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          border: 1px solid var(--rule);
+          border-radius: var(--r-3);
+          overflow: hidden;
+          background: var(--surface);
+        }
+        .metric-cell { padding: 26px 24px; border-right: 1px solid var(--rule); }
+        .metric-cell:last-child { border-right: 0; }
+        .metric-value { font-size: clamp(30px, 4vw, 44px); font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+        .metric-value .accent { color: var(--orange); }
+        .metric-label { margin-top: 8px; font-size: 13px; color: var(--ink-2); line-height: 1.4; }
+        .metric-sub { margin-top: 4px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-4); }
+        @media (max-width: 880px) { .metric-band { grid-template-columns: 1fr 1fr; } .metric-cell:nth-child(2) { border-right: 0; } .metric-cell:nth-child(1), .metric-cell:nth-child(2) { border-bottom: 1px solid var(--rule); } }
+
+        /* service tiers */
+        .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 36px; }
+        @media (max-width: 880px) { .service-grid { grid-template-columns: 1fr; } }
+        .service-card {
+          position: relative;
+          border: 1px solid var(--rule);
+          border-radius: var(--r-3);
+          background: var(--surface);
+          padding: 28px;
+          display: flex;
+          flex-direction: column;
+          transition: border-color var(--t-base) var(--ease);
+        }
+        .service-card:hover { border-color: var(--rule-strong); }
+        .service-card.featured { border-color: var(--orange); }
+        .service-tag {
+          position: absolute; top: -10px; left: 24px;
+          font-family: var(--sans); font-size: 10px; font-weight: 600;
+          letter-spacing: 0.06em; text-transform: uppercase;
+          color: #fff; background: var(--orange);
+          padding: 3px 8px; border-radius: var(--radius-sm);
+        }
+        .service-time { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--orange); }
+        .service-title { margin: 10px 0 0; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
+        .service-desc { margin: 10px 0 0; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+
+        /* ROI */
+        .roi-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 24px; margin-top: 36px; }
+        @media (max-width: 880px) { .roi-grid { grid-template-columns: 1fr; } }
+        .roi-inputs { border: 1px solid var(--rule); border-radius: var(--r-3); background: var(--surface); padding: 26px; }
+        .roi-field { margin-bottom: 22px; }
+        .roi-field-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+        .roi-field-head label { font-size: 13.5px; color: var(--ink-2); }
+        .roi-field-value { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--ink); }
+        .roi-range { width: 100%; -webkit-appearance: none; appearance: none; height: 3px; background: var(--rule-strong); border-radius: 2px; outline: none; padding: 0; border: 0; }
+        .roi-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--orange); cursor: pointer; border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--orange); }
+        .roi-range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--orange); cursor: pointer; border: 3px solid var(--surface); }
+        .roi-note { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--ink-4); }
+        .roi-output { border: 1px solid var(--orange); border-radius: var(--r-3); background: var(--surface); padding: 26px; display: flex; flex-direction: column; justify-content: center; }
+        .roi-output-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding-bottom: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--rule); }
+        .roi-stat-value { font-size: 30px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+        .roi-stat-label { margin-top: 6px; font-size: 12px; color: var(--ink-3); }
+        .roi-headline-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-4); }
+        .roi-headline-value { font-size: clamp(34px, 5vw, 48px); font-weight: 600; letter-spacing: -0.035em; line-height: 1; color: var(--orange); margin-top: 8px; }
+        .roi-headline-sub { margin-top: 10px; font-size: 13px; color: var(--ink-2); line-height: 1.45; }
+
+        /* comparison */
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 36px; border: 1px solid var(--rule); border-radius: var(--r-3); overflow: hidden; }
+        @media (max-width: 760px) { .compare-grid { grid-template-columns: 1fr; } }
+        .compare-col { padding: 28px; }
+        .compare-col.them { background: var(--paper-deep); border-right: 1px solid var(--rule); }
+        .compare-col.us { background: var(--surface); }
+        .compare-head { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px; }
+        .compare-sub { font-size: 12.5px; color: var(--ink-3); margin: 0 0 18px; }
+        .compare-row { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-top: 1px solid var(--rule); font-size: 14px; line-height: 1.45; }
+        .compare-row .mk { flex-shrink: 0; margin-top: 2px; }
+        .compare-col.them .compare-row { color: var(--ink-3); }
+        .compare-col.us .compare-row { color: var(--ink); }
+
+        .x-mark { width: 16px; height: 16px; border-radius: var(--radius-sm); border: 1px solid var(--rule-strong); color: var(--ink-4); display: inline-flex; align-items: center; justify-content: center; }
 
         .hero-display {
           font-family: var(--sans);
@@ -745,47 +840,185 @@ export function LandingPage() {
         .check-list { display: grid; gap: 12px; margin-top: 22px; padding: 0; list-style: none; }
         .check-list li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; color: var(--ink-2); line-height: 1.5; }
 
-        .pain-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-          margin-top: 32px;
-        }
-
-        .pain-card {
-          padding: 24px;
-          background: var(--paper);
-          border: 1px solid var(--rule);
-          border-radius: var(--r-2);
-        }
-
-        .mcp-tools-list {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 8px;
-          margin-top: 20px;
-        }
-
         @media (max-width: 880px) {
           .product-row { grid-template-columns: 1fr; gap: 28px; padding: 40px 0; }
           .product-row.flip > .product-visual { order: 0; }
           .nav-mid { display: none !important; }
-          .pain-grid { grid-template-columns: 1fr; }
         }
       `}</style>
 
-      {/* ── Regulator strip ── */}
-      <section className="container" style={{ padding: '8px 32px 56px' }}>
+      {/* ── Trust strip ── */}
+      <section className="container" style={{ padding: '8px 32px 40px' }}>
+        <p style={{ textAlign: 'center', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-4)', margin: '0 0 20px' }}>
+          Grounded in the regulations that govern your reports
+        </p>
         <RegulatorHeroRail />
       </section>
 
-      {/* ── Section 3: Product proof rows ── */}
-      <section id="products" className="container" style={{ padding: '48px 32px 24px' }}>
+      {/* ── Outcome metric band ── */}
+      <section className="container" style={{ padding: '0 32px 16px' }}>
+        <div className="metric-band">
+          <div className="metric-cell">
+            <div className="metric-value">Minutes</div>
+            <div className="metric-label">To a complete PSUR first draft</div>
+            <div className="metric-sub">from 2+ weeks manual</div>
+          </div>
+          <div className="metric-cell">
+            <div className="metric-value"><span className="accent">24–48h</span></div>
+            <div className="metric-label">To a fully audited, submission-ready PSUR</div>
+            <div className="metric-sub">human-reviewed, remediated</div>
+          </div>
+          <div className="metric-cell">
+            <div className="metric-value">99%</div>
+            <div className="metric-label">Less time from data to draft</div>
+            <div className="metric-sub">labor returned to your team</div>
+          </div>
+          <div className="metric-cell">
+            <div className="metric-value">100%</div>
+            <div className="metric-label">Of figures traced to source</div>
+            <div className="metric-sub">zero fabrication, audit-ready</div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Services: two ways to get your PSUR ── */}
+      <section id="service" className="container" style={{ padding: '56px 32px 24px' }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>The service</div>
+        <h2 style={{ fontSize: 'clamp(30px, 4.2vw, 52px)', fontWeight: 600, letterSpacing: '-0.035em', margin: 0, lineHeight: 1.04, maxWidth: 880 }}>
+          Two ways to get your PSUR. Both end in a defensible record.
+        </h2>
+        <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 680 }}>
+          Run it yourself in minutes, or let our regulatory team deliver a submission-ready report in
+          a day or two. Same engine, same traceability, same obligation graph underneath.
+        </p>
+
+        <div className="service-grid">
+          <div className="service-card">
+            <span className="service-time">Self-serve · minutes</span>
+            <h3 className="service-title">PSUR Draft, on demand</h3>
+            <p className="service-desc">
+              Bring controlled source data, get an MDCG 2022-21 draft back in minutes — with a live
+              decision trace behind every section. Perfect for first drafts, internal review, and
+              rescuing a deadline.
+            </p>
+            <ul className="check-list">
+              {[
+                'Sections A\u2013M generated and cross-referenced',
+                'Deterministic statistics \u2014 numbers never fabricated',
+                'Tamper-evident decision trace + one-click audit pack',
+                'DOCX + JSON export, ready for your reviewer',
+              ].map((b) => (<li key={b}><CheckOrange /><span>{b}</span></li>))}
+            </ul>
+            <div style={{ marginTop: 'auto', paddingTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button className="btn btn-orange" onClick={() => navigate('/demo/psur')}>Watch it run<ArrowRight /></button>
+              <button className="btn btn-ghost" onClick={() => navigate('/app/psur')}>Open PSUR builder</button>
+            </div>
+          </div>
+
+          <div className="service-card featured">
+            <span className="service-tag">Most popular</span>
+            <span className="service-time">Managed · 24–48 hours</span>
+            <h3 className="service-title">Fully Audited PSUR, delivered</h3>
+            <p className="service-desc">
+              Our regulatory team drives the engine, reviews every section, remediates findings, and
+              hands you a submission-ready PSUR plus a complete audit pack — typically within
+              24–48 hours.
+            </p>
+            <ul className="check-list">
+              {[
+                'Human-in-the-loop review against MDCG 2022-21 + EU MDR',
+                'Audit-remediation loop closed before delivery',
+                'Notified Body\u2013ready report and evidence pack',
+                'Verified hash-chained trace for every decision',
+              ].map((b) => (<li key={b}><CheckOrange /><span>{b}</span></li>))}
+            </ul>
+            <div style={{ marginTop: 'auto', paddingTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button className="btn btn-orange" onClick={openCalendly}>Book a demo<ArrowRight /></button>
+              <button className="btn btn-ghost" onClick={() => navigate('/contact')}>Talk to our team</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── ROI calculator ── */}
+      <section id="roi" style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', marginTop: 40 }}>
+        <div className="container" style={{ padding: '64px 32px' }}>
+          <div className="eyebrow" style={{ marginBottom: 14 }}>The math</div>
+          <h2 style={{ fontSize: 'clamp(28px, 3.8vw, 46px)', fontWeight: 600, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 820 }}>
+            See what PSUR automation returns to your team.
+          </h2>
+          <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
+            Move the sliders to your program. The numbers update live — no sign-up, no sales call required.
+          </p>
+          <RoiCalculator />
+          <div style={{ marginTop: 28 }}>
+            <button className="btn btn-orange" onClick={() => navigate('/contact')}>
+              Get this costed for your devices
+              <ArrowRight />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Why Smarticus (head-to-head) ── */}
+      <section id="compare" className="container" style={{ padding: '64px 32px 24px' }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Why Smarticus</div>
+        <h2 style={{ fontSize: 'clamp(28px, 3.8vw, 46px)', fontWeight: 600, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 880 }}>
+          Purpose-built for the report. Not a PMS suite with reporting bolted on.
+        </h2>
+        <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 680 }}>
+          Generic post-market suites make you assemble the PSUR by hand and store your data in their
+          cloud. Smarticus generates the report, grounds every line in the regulation, and leaves your
+          data where it belongs.
+        </p>
+
+        <div className="compare-grid">
+          <div className="compare-col them">
+            <h3 className="compare-head">Bolted-on PMS suites</h3>
+            <p className="compare-sub">Platform-first. The PSUR is still your problem.</p>
+            {[
+              'PSUR assembled by hand from exports and spreadsheets',
+              'Salesforce-native — locked to a platform and per-seat licensing',
+              'Your proprietary data lives in their cloud',
+              'Audit evidence compiled manually across modules',
+              'AI add-ons with no traceable rationale per decision',
+              'Weeks of calendar time per report',
+            ].map((t) => (
+              <div className="compare-row" key={t}>
+                <span className="mk x-mark" aria-hidden="true">
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                </span>
+                <span>{t}</span>
+              </div>
+            ))}
+          </div>
+          <div className="compare-col us">
+            <h3 className="compare-head" style={{ color: 'var(--orange)' }}>Smarticus</h3>
+            <p className="compare-sub">Report-first. The PSUR writes itself, grounded in the regs.</p>
+            {[
+              'MDCG 2022-21 draft generated in minutes from your source data',
+              'No platform lock-in — runs standalone or connects to your eQMS',
+              'Your data stays in your workspace; the model queries the requirement graph',
+              'One-click, tamper-evident audit pack with a verified hash chain',
+              'Every decision cites its reason and its requirement',
+              'Fully audited, submission-ready option in 24–48 hours',
+            ].map((t) => (
+              <div className="compare-row" key={t}>
+                <span className="mk"><CheckOrange /></span>
+                <span>{t}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Product proof rows ── */}
+      <section id="products" className="container" style={{ padding: '40px 32px 24px' }}>
         {PRODUCTS.map((p, i) => (
           <article key={p.title} className={`product-row ${i % 2 === 1 ? 'flip' : ''}`}>
             <div>
               <div className="eyebrow" style={{ marginBottom: 14 }}>{p.eyebrow}</div>
-              <h3 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', lineHeight: 1.05, margin: 0 }}>
+              <h3 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 600, letterSpacing: '-0.03em', lineHeight: 1.05, margin: 0 }}>
                 {p.title}
               </h3>
               <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 520 }}>
@@ -800,7 +1033,6 @@ export function LandingPage() {
                 ))}
               </ul>
 
-              {/* Before / After comparison */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 24 }}>
                 <div className="comparison-before">
                   <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--ink-3)' }}>{p.before}</p>
@@ -813,7 +1045,7 @@ export function LandingPage() {
               <div style={{ marginTop: 26 }}>
                 <button className="btn btn-orange" onClick={() => navigate(p.cta.to)}>
                   {p.cta.label}
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  <ArrowRight />
                 </button>
               </div>
             </div>
@@ -824,143 +1056,7 @@ export function LandingPage() {
         ))}
       </section>
 
-      {/* ── Section 4: Graph section (emotional center) ── */}
-      <section id="graph" className="container" style={{ padding: '64px 32px 48px' }}>
-        <div className="eyebrow" style={{ marginBottom: 14 }}>Requirements library</div>
-        <h2 style={{ fontSize: 'clamp(34px, 4.6vw, 60px)', fontWeight: 500, letterSpacing: '-0.035em', margin: 0, lineHeight: 1.04, maxWidth: 980 }}>
-          The requirements library your modules use.
-        </h2>
-        <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 720 }}>
-          One map holds <strong style={{ color: 'var(--ink)' }}>{liveSemanticBuckets} regulations and standards</strong> with all
-          the relationships between them. Modules trace each output back to the applicable requirement.
-        </p>
-
-        {/* Stats counters */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 16, marginTop: 36 }}>
-          {[
-            { label: 'Requirements', value: liveRequirements },
-            { label: 'Constraints', value: 98 },
-            { label: 'Definitions', value: 55 },
-            { label: 'Source data types', value: liveEvidenceTypes },
-            { label: 'Cross-references', value: '1,200+' },
-            { label: 'Regulations & standards', value: liveSemanticBuckets },
-          ].map((s) => (
-            <div key={s.label} style={{ padding: 16, background: 'var(--paper-deep)', border: '1px solid var(--rule)', borderRadius: 'var(--r-2)' }}>
-              <div style={{ fontFamily: 'var(--sans)', fontSize: 30, fontWeight: 400, letterSpacing: '-0.03em', color: 'var(--ink)', lineHeight: 1 }}>
-                {s.value}
-              </div>
-              <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--ink-4)', marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 36, alignItems: 'center' }}>
-          <ProductVisual kind="graph" />
-          <div>
-            <ul className="check-list" style={{ marginTop: 0 }}>
-              {[
-                'Cross-references walk chains like ISO 13485 \u00a78.5.2 \u2192 820.100 \u2192 EU MDR Annex IX',
-                'Versioned to source \u2014 replay any audit on the date it was conducted',
-                'Queryable by process, jurisdiction, required data type, or citation',
-                'Smarticus never sees your proprietary data \u2014 modules query the requirements library; payloads stay in your workspace',
-              ].map((b) => (
-                <li key={b}><CheckOrange /><span>{b}</span></li>
-              ))}
-            </ul>
-            <div style={{ marginTop: 26 }}>
-              <button className="btn btn-orange" onClick={() => navigate('/app/requirements')}>
-                Browse the requirements
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Section 5: Agent OS preview ── */}
-      <section id="builder" style={{ background: 'var(--paper-deep)', borderTop: '1px solid var(--rule)', borderBottom: '1px solid var(--rule)', padding: '64px 0' }}>
-        <div className="container">
-          <div className="eyebrow" style={{ marginBottom: 14 }}>Workflow Builder</div>
-          <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-            Configure by QMS task, not by prompt.
-          </h2>
-          <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-            Choose a regulatory job. Smarticus lists the module, requirements, source data, and validation path.
-          </p>
-
-          <div className="flow-steps" style={{ marginTop: 48, marginBottom: 48 }}>
-            {[
-              { step: '1', label: 'Choose QMS job' },
-              { step: '2', label: 'Select requirements' },
-              { step: '3', label: 'Attach source data' },
-              { step: '4', label: 'Run module' },
-              { step: '5', label: 'Export or connect' },
-            ].map((s) => (
-              <div key={s.step} className="flow-step">
-                <div className="flow-dot">{s.step}</div>
-                <span style={{ fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--ink-2)', letterSpacing: '0.02em', marginTop: 4 }}>{s.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ textAlign: 'center' }}>
-            <button className="btn btn-orange" onClick={() => navigate('/app/builder')}>
-              Open Modules in Routine Use
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Section 6: Developer / MCP section ── */}
-      <section className="container" style={{ padding: '64px 32px' }}>
-        <div className="eyebrow" style={{ marginBottom: 14 }}>For developers</div>
-        <h2 style={{ fontSize: 'clamp(28px, 3.6vw, 44px)', fontWeight: 500, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 800 }}>
-          Connect Smarticus to your QMS and source systems.
-        </h2>
-        <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-          A REST API lets your quality and engineering teams pull drafts, run compliance checks, and export tamper-evident audit packs straight into your eQMS.
-        </p>
-
-        <pre style={{ marginTop: 28, fontSize: 14, padding: '18px 22px', maxWidth: 480 }}>
-          <code style={{ background: 'transparent', padding: 0 }}>curl https://api.smarticus.ai/v1/runs</code>
-        </pre>
-
-        <div className="mcp-tools-list">
-          {[
-            'Query the requirement map',
-            'Run compliance checks',
-            'Trigger module runs',
-            'Export tamper-evident audit packs',
-            'Read the source-record catalog',
-          ].map((tool) => (
-            <div
-              key={tool}
-              style={{
-                padding: '10px 14px',
-                background: 'var(--paper-deep)',
-                border: '1px solid var(--rule)',
-                borderRadius: 'var(--r-2)',
-                fontFamily: 'var(--mono)',
-                fontSize: 12,
-                color: 'var(--ink-2)',
-                letterSpacing: '0.02em',
-              }}
-            >
-              {tool}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ marginTop: 28 }}>
-          <button className="btn btn-ghost" onClick={() => navigate('/app/connect')}>
-            View API & integration docs
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </button>
-        </div>
-      </section>
-
-      {/* ── Section 7: Final CTA ── */}
+      {/* ── Final CTA ── */}
       <section style={{ background: 'var(--ink)', color: 'var(--paper)', position: 'relative', overflow: 'hidden' }}>
         <div
           aria-hidden="true"
@@ -976,25 +1072,29 @@ export function LandingPage() {
           <h2
             style={{
               fontFamily: 'var(--sans)',
-              fontSize: 'clamp(40px, 6vw, 84px)',
-              fontWeight: 500, letterSpacing: '-0.04em', lineHeight: 1.02,
+              fontSize: 'clamp(38px, 5.6vw, 76px)',
+              fontWeight: 600, letterSpacing: '-0.04em', lineHeight: 1.02,
               color: 'var(--paper)', maxWidth: 1100, margin: 0,
             }}
           >
-            Give your QMS team modules with reviewable <span style={{ color: 'var(--orange)' }}>audit trails</span>.
+            Your next PSUR can be drafting itself <span style={{ color: 'var(--orange)' }}>this week</span>.
           </h2>
+          <p style={{ marginTop: 22, color: 'var(--ink-4)', fontSize: 16, maxWidth: 600, lineHeight: 1.55 }}>
+            Book a 20-minute demo and watch your own report take shape — or have us deliver a fully
+            audited PSUR in 24–48 hours.
+          </p>
 
-          <div style={{ marginTop: 30, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button className="btn btn-orange" onClick={() => navigate('/app/sandbox')}>
-              Configure module
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <div style={{ marginTop: 28, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button className="btn btn-orange" onClick={openCalendly}>
+              Book a demo
+              <ArrowRight />
             </button>
             <button
               className="btn btn-ghost"
-              style={{ color: 'var(--paper)', borderColor: 'var(--ink-3)' }}
-              onClick={() => navigate('/contact')}
+              style={{ color: 'var(--paper)', borderColor: 'var(--ink-3)', background: 'transparent' }}
+              onClick={() => navigate('/demo/psur')}
             >
-              Contact us
+              Watch a PSUR draft itself
             </button>
           </div>
 
@@ -1004,7 +1104,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Section 8: Footer ── */}
+      {/* ── Footer ── */}
       <footer
         className="container"
         style={{
@@ -1023,9 +1123,9 @@ export function LandingPage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <SmarticusMark size={14} />
-            <span>Smarticus \u00b7 Post-market surveillance</span>
+            <span>Smarticus · PSUR generation & post-market surveillance</span>
           </div>
-          <span>2026 \u00b7 Built by Thinkertons</span>
+          <span>2026 · Built by Thinkertons</span>
         </div>
       </footer>
     </div>
