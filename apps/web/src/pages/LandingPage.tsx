@@ -640,7 +640,7 @@ export function LandingPage() {
           <button className="nav-link" onClick={() => document.getElementById('service')?.scrollIntoView({ behavior: 'smooth' })}>Services</button>
           <button className="nav-link" onClick={() => document.getElementById('roi')?.scrollIntoView({ behavior: 'smooth' })}>ROI</button>
           <button className="nav-link" onClick={() => document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth' })}>Why Smarticus</button>
-          <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Modules</button>
+          <button className="nav-link" onClick={() => document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' })}>Agents</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <ThemeToggle />
@@ -675,7 +675,7 @@ export function LandingPage() {
           <div>
             <div className="eyebrow" style={{ marginBottom: 16 }}>
               <span className="signal-dot" style={{ marginRight: 8, verticalAlign: 1 }} />
-              PSUR generation for medical device teams
+              The PSUR agent · built on the Smarticus platform
             </div>
             <h1
               style={{
@@ -710,7 +710,7 @@ export function LandingPage() {
                 Watch a PSUR draft itself
                 <ArrowRight />
               </button>
-              <button className="btn btn-ghost" onClick={() => navigate('/contact')}>
+              <button className="btn btn-ghost" onClick={openCalendly}>
                 Book a demo
               </button>
             </div>
@@ -1012,8 +1012,20 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Product proof rows ── */}
-      <section id="products" className="container" style={{ padding: '40px 32px 24px' }}>
+      {/* ── The agent library (Smarticus platform) ── */}
+      <section id="products" className="container" style={{ padding: '64px 32px 24px' }}>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>The agent library</div>
+        <h2 style={{ fontSize: 'clamp(28px, 3.8vw, 48px)', fontWeight: 600, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 880 }}>
+          PSUR is one agent. Smarticus runs the rest.
+        </h2>
+        <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 700 }}>
+          Smarticus is the platform Thinkertons built to create, run, and experiment with AI agents
+          across <strong style={{ color: 'var(--ink)' }}>medical device and pharma</strong>. Every agent is grounded in the
+          regulation, traces each decision, and is yours to configure. PSUR is simply the one that pays
+          for itself first.
+        </p>
+
+        <div style={{ marginTop: 24 }}>
         {PRODUCTS.map((p, i) => (
           <article key={p.title} className={`product-row ${i % 2 === 1 ? 'flip' : ''}`}>
             <div>
@@ -1054,6 +1066,43 @@ export function LandingPage() {
             </div>
           </article>
         ))}
+        </div>
+
+        {/* Build-your-own / managed strip — both audiences */}
+        <div
+          style={{
+            marginTop: 32,
+            border: '1px solid var(--rule)',
+            borderRadius: 'var(--r-3)',
+            background: 'var(--paper-deep)',
+            padding: '32px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 24,
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ maxWidth: 640 }}>
+            <h3 style={{ fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>
+              Build your own agent — or have us run it for you.
+            </h3>
+            <p style={{ margin: '10px 0 0', fontSize: 15, lineHeight: 1.55, color: 'var(--ink-2)' }}>
+              Compose agents for complaints, CAPA, risk, vigilance, and PSUR/PMSR on the same grounded
+              platform — for medical device and pharma. Run them self-serve, or let our team deliver the
+              outcome as a managed service.
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button className="btn btn-orange" onClick={() => navigate('/app')}>
+              Start building on Smarticus
+              <ArrowRight />
+            </button>
+            <button className="btn btn-ghost" onClick={openCalendly}>
+              Book a demo
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* ── Final CTA ── */}
@@ -1123,7 +1172,7 @@ export function LandingPage() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <SmarticusMark size={14} />
-            <span>Smarticus · PSUR generation & post-market surveillance</span>
+            <span>Smarticus · The AI agent platform for medical device & pharma</span>
           </div>
           <span>2026 · Built by Thinkertons</span>
         </div>
