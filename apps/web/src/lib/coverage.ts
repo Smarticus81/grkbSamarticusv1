@@ -23,7 +23,7 @@ export const REGULATIONS: Regulation[] = [
 
 export const REG_COUNT = 27;
 export const OBLIGATION_COUNT = REGULATIONS.reduce((sum, r) => sum + r.count, 0);
-/** User-facing alias — displays as "requirements" */
+/** User-facing alias - displays as "requirements" */
 export const REQUIREMENT_COUNT = OBLIGATION_COUNT;
 export const EVIDENCE_TYPE_COUNT = 853;
 export const JURISDICTION_COUNT = 5;

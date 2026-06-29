@@ -26,7 +26,7 @@ import { SmarticusWordmark } from '../components/ui/logos.js';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
 
 /**
- * /demo/psur — the PSUR walkthrough, in two modes:
+ * /demo/psur - the PSUR walkthrough, in two modes:
  *
  * LIVE (signed in): the real generation pipeline behind /api/psur, streamed
  * over authenticated SSE, with graph-grounded decision traces written under
@@ -39,12 +39,12 @@ import { ThemeToggle } from '../components/ui/ThemeToggle.js';
  * watermarked SIMULATED on every page. Nothing leaves the browser; sign-up
  * unlocks the real engine.
  *
- * 1. Intro    — the 2-weeks-to-20-minutes story.
- * 2. Inputs   — editable mock data pack (content editable, structure locked).
- * 3. Run      — the runtime, end to end: elapsed clock, phase timeline with
- *               per-phase timings, section agents A–M, animated decision
+ * 1. Intro    - the 2-weeks-to-20-minutes story.
+ * 2. Inputs   - editable mock data pack (content editable, structure locked).
+ * 3. Run      - the runtime, end to end: elapsed clock, phase timeline with
+ *               per-phase timings, section agents A-M, animated decision
  *               stream, and a live runtime log from run-start to artifacts.
- * 4. Results  — inline document preview, PDF/DOCX/trace downloads, validation
+ * 4. Results  - inline document preview, PDF/DOCX/trace downloads, validation
  *               summary, and the hero artifact: the hash-chained decision
  *               trace with a verification badge.
  */
@@ -95,7 +95,7 @@ interface LogLine {
   text: string;
 }
 
-/** One row from GET /api/psur/runs — the signed-in user's durable run history. */
+/** One row from GET /api/psur/runs - the signed-in user's durable run history. */
 interface PsurRunSummary {
   runId: string;
   processInstanceId: string;
@@ -273,7 +273,7 @@ function Chip({
     active: { borderColor: 'var(--orange)', color: 'var(--orange)', background: 'var(--paper)' },
     done: { borderColor: 'var(--orange)', color: '#fff', background: 'var(--orange)' },
     warn: { borderColor: 'var(--err)', color: 'var(--err)', background: 'var(--paper)' },
-    // Simulation: on-brand orange, dashed — unmistakably "not the real thing".
+    // Simulation: on-brand orange, dashed - unmistakably "not the real thing".
     sim: { borderColor: 'var(--orange)', borderStyle: 'dashed', color: 'var(--orange)', background: 'var(--paper)' },
   };
   return (
@@ -337,7 +337,7 @@ function AuthCtaButtons({ compact = false }: { compact?: boolean }) {
   );
 }
 
-/** Persistent strip shown in simulation mode — never lets the visitor mistake the simulation for the real run. */
+/** Persistent strip shown in simulation mode - never lets the visitor mistake the simulation for the real run. */
 function LiveWorkspaceControls() {
   const { signOut } = useClerk();
   const { api, isSignedIn, orgId, userId } = useAuthenticatedApi();
@@ -596,7 +596,7 @@ function TableEditor({
               {input.columns.map((c) => (
                 <th
                   key={c.name}
-                  title={`${c.type}${c.required ? ' · required' : ''} — column locked`}
+                  title={`${c.type}${c.required ? ' · required' : ''} - column locked`}
                   style={{
                     ...mono,
                     fontSize: 10,
@@ -716,7 +716,7 @@ function JsonEditor({
                       setValue(key, JSON.parse(e.target.value) as unknown);
                       setJsonErrors((prev) => ({ ...prev, [key]: '' }));
                     } catch {
-                      setJsonErrors((prev) => ({ ...prev, [key]: 'Invalid JSON — value not saved.' }));
+                      setJsonErrors((prev) => ({ ...prev, [key]: 'Invalid JSON - value not saved.' }));
                     }
                   }}
                   style={{
@@ -767,7 +767,7 @@ function InputsStep({
   if (loadError) {
     return (
       <div style={{ maxWidth: 640 }}>
-        <SectionHeading eyebrow="Step 2 — Inputs" title="The demo service is not reachable right now." body={loadError} />
+        <SectionHeading eyebrow="Step 2 - Inputs" title="The demo service is not reachable right now." body={loadError} />
         <div style={{ marginTop: 22 }}>
           <button className="btn btn-ghost" onClick={onBack}>Back</button>
         </div>
@@ -777,7 +777,7 @@ function InputsStep({
   if (!defaults || !current) {
     return (
       <div style={{ maxWidth: 640 }}>
-        <SectionHeading eyebrow="Step 2 — Inputs" title="Loading the mock data pack…" />
+        <SectionHeading eyebrow="Step 2 - Inputs" title="Loading the mock data pack…" />
       </div>
     );
   }
@@ -793,11 +793,11 @@ function InputsStep({
   return (
     <div>
       <SectionHeading
-        eyebrow="Step 2 — Inputs"
+        eyebrow="Step 2 - Inputs"
         title="The mock data pack."
         body={
           mode === 'simulation'
-            ? 'Content is editable; structure is locked. This is where the simulation earns its keep: change any number — add complaint rows until the rate crosses the PMS-plan trend threshold, for instance — and the Article 88 trend finding and the benefit–risk conclusion will recompute from your edits.'
+            ? 'Content is editable; structure is locked. This is where the simulation earns its keep: change any number - add complaint rows until the rate crosses the PMS-plan trend threshold, for instance - and the Article 88 trend finding and the benefit-risk conclusion will recompute from your edits.'
             : 'Content is editable; structure is locked. Change any number or narrative and the run calculations will change with it. Columns and field names cannot be added, removed, or renamed; structural edits are rejected with a precise error.'
         }
       />
@@ -805,7 +805,7 @@ function InputsStep({
         REPORTING PERIOD {defaults.period.start} → {defaults.period.end}
       </div>
 
-      {/* Input tabs — one input type on screen at a time */}
+      {/* Input tabs - one input type on screen at a time */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 18, borderBottom: '1px solid var(--rule)', paddingBottom: 10 }}>
         {names.map((name) => (
           <button
@@ -860,7 +860,7 @@ function InputsStep({
 }
 
 // ---------------------------------------------------------------------------
-// Step 3: Run — the runtime, end to end
+// Step 3: Run - the runtime, end to end
 // ---------------------------------------------------------------------------
 
 interface RunState {
@@ -1031,7 +1031,7 @@ function RunStep({
   onRetry: () => void;
   onBack: () => void;
 }) {
-  // Live clock — ticks while the run is in flight.
+  // Live clock - ticks while the run is in flight.
   const [now, setNow] = useState(() => Date.now());
   const running = runState.startedAt !== null && runState.endedAt === null && !startError;
   useEffect(() => {
@@ -1043,7 +1043,7 @@ function RunStep({
   if (startError) {
     return (
       <div style={{ maxWidth: 640 }}>
-        <SectionHeading eyebrow="Step 3 — Run" title={runState.busy ? 'The demo is busy right now.' : 'The run could not start.'} body={startError} />
+        <SectionHeading eyebrow="Step 3 - Run" title={runState.busy ? 'The demo is busy right now.' : 'The run could not start.'} body={startError} />
         <div style={{ display: 'flex', gap: 12, marginTop: 22 }}>
           <button className="btn btn-ghost" onClick={onBack}>Back to inputs</button>
           <button className="btn btn-orange" onClick={onRetry}>Try again</button>
@@ -1059,7 +1059,7 @@ function RunStep({
   return (
     <div>
       <SectionHeading
-        eyebrow={mode === 'simulation' ? 'Step 3 — Run · simulation' : 'Step 3 — Run'}
+        eyebrow={mode === 'simulation' ? 'Step 3 - Run · simulation' : 'Step 3 - Run'}
         title={
           mode === 'simulation'
             ? 'Simulated process run.'
@@ -1141,7 +1141,7 @@ function RunStep({
 
         {/* Section modules + audit trail */}
         <div style={{ flex: '1 1 440px', minWidth: 320 }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Section modules A–M</div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Section modules A-M</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {SECTION_LETTERS.map((letter) => {
               const status = runState.sections[letter] ?? 'pending';
@@ -1254,7 +1254,7 @@ function ResultsStep({
   return (
     <div>
       <SectionHeading
-        eyebrow={mode === 'simulation' ? 'Step 4 — Results · simulation' : 'Step 4 — Results'}
+        eyebrow={mode === 'simulation' ? 'Step 4 - Results · simulation' : 'Step 4 - Results'}
         title={mode === 'simulation' ? 'Simulated draft delivered. Local chain verified.' : 'Draft delivered. Audit trail verified.'}
         body={
           mode === 'simulation'
@@ -1416,7 +1416,7 @@ function ResultsStep({
       </div>
 
       {mode === 'simulation' ? (
-        /* The conversion moment: the simulation just proved the experience —
+        /* The conversion moment: the simulation just proved the experience -
            the real engine is one sign-up away. */
         <div
           style={{
@@ -1470,7 +1470,7 @@ function ResultsStep({
 }
 
 // ---------------------------------------------------------------------------
-// Your runs — durable, per-user run history
+// Your runs - durable, per-user run history
 // ---------------------------------------------------------------------------
 
 function fmtRunDate(iso: string): string {
@@ -1678,7 +1678,7 @@ function PsurDemoCore({
   const abortRef = useRef<AbortController | null>(null);
   const logIdRef = useRef(0);
 
-  // Your runs — durable, per-user history (live mode only).
+  // Your runs - durable, per-user history (live mode only).
   const [pastRuns, setPastRuns] = useState<PsurRunSummary[]>([]);
   const [pastRunsLoading, setPastRunsLoading] = useState(false);
   const [reopeningRunId, setReopeningRunId] = useState<string | null>(null);
@@ -1730,7 +1730,7 @@ function PsurDemoCore({
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
-  /** Shared SSE/sim event reducer — feeds phases, agents, decisions, timings, and the runtime log. */
+  /** Shared SSE/sim event reducer - feeds phases, agents, decisions, timings, and the runtime log. */
   const applyRunEvent = useCallback((ev: Record<string, unknown>) => {
     const nowMs = Date.now();
     const appendLog = (s: RunState, kind: LogLine['kind'], text: string): LogLine[] => {
@@ -1755,7 +1755,7 @@ function PsurDemoCore({
         if (section) {
           const letter = section.charAt(0).toUpperCase();
           next.sections = { ...s.sections, [letter]: status };
-          next.log = appendLog(s, 'agent', `module ${letter} · ${sectionPretty(section)} — ${status}`);
+          next.log = appendLog(s, 'agent', `module ${letter} · ${sectionPretty(section)} - ${status}`);
         } else {
           next.log = appendLog(s, 'phase', `${PHASE_LABELS[phase] ?? phase} ${status}`);
         }
@@ -1882,7 +1882,7 @@ function PsurDemoCore({
       }
       if (status === 409) {
         setRunState((s) => ({ ...s, busy: true }));
-        setStartError('Another run is in progress right now — the demo only runs one PSUR at a time. Please try again in a few minutes.');
+        setStartError('Another run is in progress right now - the demo only runs one PSUR at a time. Please try again in a few minutes.');
         setStarting(false);
         return;
       }
@@ -1894,7 +1894,7 @@ function PsurDemoCore({
       if (status === 422) {
         setStartError(
           `The service rejected the inputs as structurally invalid: ${JSON.stringify(body.detail ?? body)}. ` +
-            'Structure is locked — reset the affected input to default and try again.',
+            'Structure is locked - reset the affected input to default and try again.',
         );
         setStarting(false);
         return;
@@ -2068,7 +2068,7 @@ function PsurDemoCore({
         if (!cancelled) setPreviewHtml(text);
       } catch (err) {
         if (isAuthTokenRequired(err) && !cancelled) setRunState((s) => ({ ...s, error: sessionExpiredMessage() }));
-        // No preview — downloads still work.
+        // No preview - downloads still work.
       }
     })();
     return () => {

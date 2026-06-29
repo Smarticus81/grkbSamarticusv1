@@ -1,5 +1,5 @@
 /**
- * EmptyState — every empty state in the app uses this.
+ * EmptyState - every empty state in the app uses this.
  *
  * Why: the cold "no data" state is where users churn. The warm
  * "here's what to do next" state is where they convert.
@@ -12,13 +12,13 @@ import { Link } from 'wouter';
 export interface EmptyStateProps {
   /** Eyebrow above the title. Sets expectation. */
   eyebrow?: string;
-  /** Big, plain-English line. Tell them what they're seeing — or not seeing. */
+  /** Big, plain-English line. Tell them what they're seeing - or not seeing. */
   title: string;
   /** One supportive sentence. Calm, specific, never apologetic. */
   body: string;
-  /** Primary CTA — the one obvious next step. */
+  /** Primary CTA - the one obvious next step. */
   primaryAction?: { label: string; href?: string; onClick?: () => void };
-  /** Optional secondary action — usually "Learn more". */
+  /** Optional secondary action - usually "Learn more". */
   secondaryAction?: { label: string; href?: string; onClick?: () => void };
   /** Optional inline visual (illustration, icon, status dot row). */
   visual?: ReactNode;

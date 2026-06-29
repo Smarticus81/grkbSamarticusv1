@@ -22,8 +22,8 @@ if (authBootMode === 'clerk' && clerkPubKey) {
     </React.StrictMode>,
   );
 } else if (authBootMode === 'dev-open') {
-  // Dev mode without Clerk — render without auth provider
-  console.warn('[auth] VITE_CLERK_PUBLISHABLE_KEY not set — running without Clerk auth');
+  // Dev mode without Clerk - render without auth provider
+  console.warn('[auth] VITE_CLERK_PUBLISHABLE_KEY not set - running without Clerk auth');
   root.render(
     <React.StrictMode>
       <App />

@@ -9,7 +9,7 @@ import {
   type BlobResponse,
 } from '../lib/queryClient.js';
 
-// Build-time constant — true only when a Clerk publishable key is present.
+// Build-time constant - true only when a Clerk publishable key is present.
 // This never changes between renders, so selecting the hook at module init
 // satisfies React's rules of hooks.
 const CLERK_ENABLED = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -59,7 +59,7 @@ function useClerkApi(): AuthenticatedApiReturn {
 }
 
 // ---------------------------------------------------------------------------
-// No-auth fallback (used when Clerk is not configured — dev bypass mode)
+// No-auth fallback (used when Clerk is not configured - dev bypass mode)
 // ---------------------------------------------------------------------------
 function useDevApi(): AuthenticatedApiReturn {
   const stableApi = useMemo(() => unauthApi, []);
@@ -73,7 +73,7 @@ function useDevApi(): AuthenticatedApiReturn {
  *
  * When `VITE_CLERK_PUBLISHABLE_KEY` is set, attaches a Clerk JWT Bearer token
  * to every request. When not set (dev / local mode), falls back to the
- * unauthenticated helper — pair this with `AUTH_BYPASS_DEV=true` on the API.
+ * unauthenticated helper - pair this with `AUTH_BYPASS_DEV=true` on the API.
  *
  * Usage:
  * ```ts

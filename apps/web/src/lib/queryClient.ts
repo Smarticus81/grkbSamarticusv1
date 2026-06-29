@@ -62,7 +62,7 @@ async function getRequiredToken(
 }
 
 /**
- * Unauthenticated API helper — use for health checks and public endpoints.
+ * Unauthenticated API helper - use for health checks and public endpoints.
  */
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

@@ -11,7 +11,7 @@
  *
  * Wordmark: "Smarticus" with refined casing, orange verified-dot accent.
  *
- * Thinkertons visual: a minimalist "T" with a strong crossbar — appears only
+ * Thinkertons visual: a minimalist "T" with a strong crossbar - appears only
  * on the landing page, in the by-Thinkertons lockup, and in the audit badge.
  */
 
@@ -59,7 +59,7 @@ export function SmarticusMark({
       style={style}
       aria-hidden="true"
     >
-      {/* Outer rounded square — controlled process boundary */}
+      {/* Outer rounded square - controlled process boundary */}
       <rect
         x="4" y="4" width="56" height="56" rx="8"
         stroke={color}
@@ -74,7 +74,7 @@ export function SmarticusMark({
       <circle cx="20" cy="22" r="4.5" fill={color} />
       {/* Node: Required Data (top-right) */}
       <circle cx="44" cy="22" r="4.5" fill={color} />
-      {/* Node: Review Output — verified (bottom-center, orange) */}
+      {/* Node: Review Output - verified (bottom-center, orange) */}
       <circle cx="32" cy="44" r="5" fill={accentColor} />
       {/* Small verification check inside orange node */}
       <path
@@ -161,7 +161,7 @@ export function SmarticusWordmark({
           }}
         >
           <span>Smarticus</span>
-          {/* Verified dot — the brand accent */}
+          {/* Verified dot - the brand accent */}
           <svg
             width={Math.max(4, size * 0.22)}
             height={Math.max(4, size * 0.22)}
@@ -205,9 +205,9 @@ export function ThinkertonsMark({
       style={style}
       aria-hidden="true"
     >
-      {/* Outer top bar — extends past the column edges */}
+      {/* Outer top bar - extends past the column edges */}
       <line x1="6" y1="10" x2="42" y2="10" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
-      {/* Inner top bar — narrower, sits below */}
+      {/* Inner top bar - narrower, sits below */}
       <line x1="14" y1="16" x2="34" y2="16" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
       {/* Stem */}
       <line x1="24" y1="16" x2="24" y2="42" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
@@ -415,7 +415,7 @@ export function SmarticusBadge({
 
 /* ────────────────────────────────────────────────────────────────────────
  * BrandSidebarBlock
- * Small composition used in the app shell sidebar — mark + lowercase
+ * Small composition used in the app shell sidebar - mark + lowercase
  * wordmark stacked above the brand tagline.
  * ──────────────────────────────────────────────────────────────────────── */
 export function BrandSidebarBlock({

@@ -1,5 +1,5 @@
 /**
- * Managed Agents — operate medical-device agents promoted from validated runs.
+ * Managed Agents - operate medical-device agents promoted from validated runs.
  *
  * This page does ONE thing: list managed agent configurations and let operators
  * deploy, version, rename, delete, or start live Claude Managed Agent sessions.
@@ -146,7 +146,7 @@ const processS: process[] = [
     id: 'imdrf-coder',
     taskId: 'ae-reportability',
     title: 'IMDRF Coding Assistant',
-    blurb: 'Code adverse events with IMDRF Annexes A–G.',
+    blurb: 'Code adverse events with IMDRF Annexes A-G.',
     regulations: ['IMDRF'],
     risk: 'MEDIUM',
     obligationCount: 6,

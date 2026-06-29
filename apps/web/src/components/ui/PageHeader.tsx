@@ -1,7 +1,7 @@
 /**
- * PageHeader — the one true page header for every app page.
+ * PageHeader - the one true page header for every app page.
  *
- * Why: Hayes Raffle's first principle — a person should always know,
+ * Why: Hayes Raffle's first principle - a person should always know,
  * within 200ms of arriving on a screen, three things:
  *   1. Where am I? (eyebrow)
  *   2. What am I looking at? (title)
@@ -16,7 +16,7 @@ export interface PageHeaderProps {
   eyebrow: string;
   title: string;
   subtitle?: string;
-  /** Optional right-hand area — primary action(s) live here. */
+  /** Optional right-hand area - primary action(s) live here. */
   actions?: ReactNode;
   /** Optional sub-row beneath subtitle (filters, tabs, breadcrumb). */
   meta?: ReactNode;

@@ -1,5 +1,5 @@
 /**
- * Agent Templates — launch a medical-device agent against real evidence,
+ * Agent Templates - launch a medical-device agent against real evidence,
  * then promote the validated run into the managed runtime.
  *
  * Layout
@@ -1487,7 +1487,7 @@ function OutputRenderer({ value }: { value: unknown }) {
     );
   }
 
-  // PSUR Content Review — per-obligation content findings.
+  // PSUR Content Review - per-obligation content findings.
   const findings = obj.findings;
   if (
     Array.isArray(findings) &&
@@ -1497,7 +1497,7 @@ function OutputRenderer({ value }: { value: unknown }) {
     return <PsurFindingsView obj={obj} findings={findings as Array<Record<string, unknown>>} />;
   }
 
-  // PSUR Template Reviewer — per-obligation section coverage.
+  // PSUR Template Reviewer - per-obligation section coverage.
   const coverage = obj.coverage;
   if (
     Array.isArray(coverage) &&
@@ -1507,7 +1507,7 @@ function OutputRenderer({ value }: { value: unknown }) {
     return <PsurCoverageView obj={obj} coverage={coverage as Array<Record<string, unknown>>} />;
   }
 
-  // Generic object — show top-level fields.
+  // Generic object - show top-level fields.
   const entries = Object.entries(obj);
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1714,7 +1714,7 @@ function ValueRow({ label, value }: { label: string; value: unknown }) {
 }
 
 function renderValue(v: unknown): React.ReactNode {
-  if (v == null) return <Muted>—</Muted>;
+  if (v == null) return <Muted>-</Muted>;
   if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return String(v);
   if (Array.isArray(v)) {
     if (v.every((x) => typeof x === 'string' || typeof x === 'number')) {
@@ -1889,21 +1889,21 @@ function TraceLine({ event }: { event: LaneEvent }) {
         <span>
           <b style={{ color: 'var(--ink)' }}>Decision · </b>
           {event.decision}
-          <span style={{ color: 'var(--ink-3)' }}> — Why: {event.reason}</span>
+          <span style={{ color: 'var(--ink-3)' }}> - Why: {event.reason}</span>
         </span>
       );
     case 'obligation.satisfied':
       return (
         <span style={{ color: 'var(--ok, #2a8c4f)' }}>
           ✓ Satisfied <span style={{ fontFamily: 'var(--mono)', color: 'var(--ink-3)' }}>{event.obligationId}</span>
-          {event.reason && <span style={{ color: 'var(--ink-3)' }}> — {event.reason}</span>}
+          {event.reason && <span style={{ color: 'var(--ink-3)' }}> - {event.reason}</span>}
         </span>
       );
     case 'obligation.missed':
       return (
         <span style={{ color: 'var(--orange)' }}>
           ✗ Missed <span style={{ fontFamily: 'var(--mono)', color: 'var(--ink-3)' }}>{event.obligationId}</span>
-          {event.reason && <span style={{ color: 'var(--ink-3)' }}> — {event.reason}</span>}
+          {event.reason && <span style={{ color: 'var(--ink-3)' }}> - {event.reason}</span>}
         </span>
       );
     case 'output.gated':

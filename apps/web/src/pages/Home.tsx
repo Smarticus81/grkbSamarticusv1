@@ -1,5 +1,5 @@
 /**
- * Home — the medical-device agent command center.
+ * Home - the medical-device agent command center.
  *
  * Design intent: a first-time user must understand the product and know their
  * next action within seconds. So the screen is deliberately low-density and
@@ -10,7 +10,7 @@
  *   3. Live operational counts from the existing APIs.
  *   4. Medical-device lanes instead of technical feature buckets.
  *
- * Everything is wired to live endpoints — no placeholder data.
+ * Everything is wired to live endpoints - no placeholder data.
  */
 
 import { useEffect, useState } from 'react';

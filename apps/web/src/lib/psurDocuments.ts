@@ -1,7 +1,7 @@
 /**
  * PSUR document rendering for the simulated demo run.
  *
- * One document model, three renderers — all fully client-side:
+ * One document model, three renderers - all fully client-side:
  *   - renderPsurHtml  → inline preview (results step iframe)
  *   - renderPsurPdf   → downloadable PDF (jsPDF + autotable, lazy-loaded)
  *   - renderPsurDocx  → downloadable DOCX (docx, lazy-loaded)
@@ -244,12 +244,12 @@ export function buildPsurModel(
   };
 
   const trendNarrative = stats.trendSignal
-    ? `The complaint rate of ${stats.ratePer10k} per 10,000 units sold EXCEEDS the PMS-plan trend threshold of ${stats.threshold} per 10,000. A statistically significant increase within the meaning of EU MDR Article 88 is identified; a trend report and escalation to the risk management file are required before this report can conclude a favourable benefit–risk profile.`
+    ? `The complaint rate of ${stats.ratePer10k} per 10,000 units sold EXCEEDS the PMS-plan trend threshold of ${stats.threshold} per 10,000. A statistically significant increase within the meaning of EU MDR Article 88 is identified; a trend report and escalation to the risk management file are required before this report can conclude a favourable benefit-risk profile.`
     : `The complaint rate of ${stats.ratePer10k} per 10,000 units sold remains below the PMS-plan trend threshold of ${stats.threshold} per 10,000 (previous period: ${stats.prevRatePer10k}). No statistically significant increase within the meaning of EU MDR Article 88 is identified.`;
 
   const conclusion = stats.benefitRiskFavourable
-    ? `the benefit–risk determination for the ${str(device.device_name)} remains FAVOURABLE. The known and foreseeable risks documented in the risk management file are outweighed by the clinical benefit of controlled infusion therapy, and no new hazards were identified in the reporting period.`
-    : `the benefit–risk determination for the ${str(device.device_name)} CANNOT be confirmed as favourable without further action. The complaint-trend signal identified in Section E must be investigated, the risk management file updated, and corrective measures evaluated before the next periodic review.`;
+    ? `the benefit-risk determination for the ${str(device.device_name)} remains FAVOURABLE. The known and foreseeable risks documented in the risk management file are outweighed by the clinical benefit of controlled infusion therapy, and no new hazards were identified in the reporting period.`
+    : `the benefit-risk determination for the ${str(device.device_name)} CANNOT be confirmed as favourable without further action. The complaint-trend signal identified in Section E must be investigated, the risk management file updated, and corrective measures evaluated before the next periodic review.`;
 
   const euCadenceText =
     stats.reportType === 'PMSR'
@@ -265,7 +265,7 @@ export function buildPsurModel(
     rows:
       stats.topImdrf.length > 0
         ? stats.topImdrf.map((t) => [t.code, t.label, String(t.count)])
-        : [['—', 'No coded complaints', '0']],
+        : [['-', 'No coded complaints', '0']],
   };
 
   const regulatoryBasisTable: PsurTableModel = {
@@ -412,21 +412,21 @@ export function buildPsurModel(
 
   const sections: PsurSectionModel[] = [
     {
-      title: 'Section A — Executive Summary',
+      title: 'Section A - Executive Summary',
       paragraphs: [
-        `During the reporting period, ${fmt(stats.unitsSold)} units were sold across ${markets}. ${fmt(stats.complaintCount)} complaints were received (${stats.ratePer10k} per 10,000 units; previous period ${stats.prevRatePer10k}), of which ${fmt(stats.seriousCount)} were serious. ${fmt(stats.fscaCount)} field safety corrective action(s) were undertaken and ${fmt(stats.capaTotal)} CAPA(s) were processed (${fmt(stats.capaOpen)} remaining open). Based on the totality of post-market surveillance data summarised in Sections C–L, ${conclusion}`,
+        `During the reporting period, ${fmt(stats.unitsSold)} units were sold across ${markets}. ${fmt(stats.complaintCount)} complaints were received (${stats.ratePer10k} per 10,000 units; previous period ${stats.prevRatePer10k}), of which ${fmt(stats.seriousCount)} were serious. ${fmt(stats.fscaCount)} field safety corrective action(s) were undertaken and ${fmt(stats.capaTotal)} CAPA(s) were processed (${fmt(stats.capaOpen)} remaining open). Based on the totality of post-market surveillance data summarised in Sections C-L, ${conclusion}`,
       ],
       tables: [reconciliationTable],
     },
     {
-      title: 'Section B — Device Description and Classification',
+      title: 'Section B - Device Description and Classification',
       paragraphs: [
         `${str(device.device_name)} (${str(device.intended_purpose)}). Class ${str(device.risk_class)} under EU MDR Annex VIII; certificate ${str(device.certificate_number)} issued by ${str(device.notified_body)}. ${euCadenceText} ${ukCadenceText}`,
       ],
       tables: [regulatoryBasisTable, sectionCoverageTable],
     },
     {
-      title: 'Section C — Sales, Usage and Population Exposure',
+      title: 'Section C - Sales, Usage and Population Exposure',
       paragraphs: [
         `Total units sold in the period: ${fmt(stats.unitsSold)}, including ${fmt(stats.ukUnitsSold)} unit(s) in the UK market. Exposure is estimated per unit placed on the market; usage assumptions follow the PMS plan.`,
       ],
@@ -434,71 +434,71 @@ export function buildPsurModel(
       tables: inputTable(inputs, 'sales'),
     },
     {
-      title: 'Section D — Serious Incidents and Field Safety Corrective Actions',
+      title: 'Section D - Serious Incidents and Field Safety Corrective Actions',
       paragraphs: [
         `${fmt(stats.seriousCount)} serious incident(s) were recorded in the period. ${str(clinicalSafety.summary)}`,
       ],
       tables: [...seriousComplaintTables, ...inputTable(inputs, 'fsca')],
     },
     {
-      title: 'Section E — Complaint Data and Trend Analysis (Article 88)',
+      title: 'Section E - Complaint Data and Trend Analysis (Article 88)',
       paragraphs: [trendNarrative],
       charts: [complaintsByQuarterChart, complaintsBySeverityChart, complaintRateChart],
       tables: [imdrfTable, severityBreakdownTable(complaintRows), ...inputTable(inputs, 'complaints', 'Complaint records')],
     },
     {
-      title: 'Section F — Corrective and Preventive Actions',
+      title: 'Section F - Corrective and Preventive Actions',
       paragraphs: [
         `${fmt(stats.capaTotal)} CAPA(s) were linked to post-market data in the period; ${fmt(stats.capaOpen)} remain open and are tracked to closure under ISO 13485 §8.5.2.`,
       ],
       tables: inputTable(inputs, 'capa'),
     },
     {
-      title: 'Section G — External Vigilance and Similar-Device Events',
+      title: 'Section G - External Vigilance and Similar-Device Events',
       paragraphs: [
         `${fmt(stats.externalEventCount)} relevant event(s) were identified in external vigilance databases. None indicate a new hazard not already addressed by the risk management file.`,
       ],
       tables: inputTable(inputs, 'external_events'),
     },
     {
-      title: 'Section H — Literature Review',
+      title: 'Section H - Literature Review',
       paragraphs: [
         `${fmt(stats.literatureCount)} publication(s) met the inclusion criteria of the literature search protocol.`,
       ],
       tables: inputTable(inputs, 'literature'),
     },
     {
-      title: 'Section I — Follow-up on Previous PSUR',
+      title: 'Section I - Follow-up on Previous PSUR',
       paragraphs: [
-        `The previous PSUR (period ending ${str(previous.period_end)}) concluded a ${str(previous.benefit_risk_conclusion)} benefit–risk profile with a complaint rate of ${stats.prevRatePer10k} per 10,000 units. Open actions carried forward: ${str(previous.open_actions)}.`,
+        `The previous PSUR (period ending ${str(previous.period_end)}) concluded a ${str(previous.benefit_risk_conclusion)} benefit-risk profile with a complaint rate of ${stats.prevRatePer10k} per 10,000 units. Open actions carried forward: ${str(previous.open_actions)}.`,
       ],
       tables: [],
     },
     {
-      title: 'Section J — Clinical Safety Summary',
+      title: 'Section J - Clinical Safety Summary',
       paragraphs: [
         `Serious incidents reported: ${str(clinicalSafety.serious_incidents_reported)}; deaths: ${str(clinicalSafety.deaths)}. ${str(clinicalSafety.summary)}`,
       ],
       tables: [],
     },
     {
-      title: 'Section K — Clinical Performance Summary',
+      title: 'Section K - Clinical Performance Summary',
       paragraphs: [
         `Specified flow accuracy: ${str(clinicalPerformance.flow_accuracy_spec)}; observed: ${str(clinicalPerformance.observed_flow_accuracy)}. ${str(clinicalPerformance.summary)}`,
       ],
       tables: [],
     },
     {
-      title: 'Section L — Risk Management File Reconciliation',
+      title: 'Section L - Risk Management File Reconciliation',
       paragraphs: [
         `${fmt(stats.ractControlled)} of ${fmt(stats.ractTotal)} risk-file line items are in a controlled state. Post-market data in this period were reconciled against the risk analysis per ISO 14971 §10; no new hazards required addition to the file${stats.trendSignal ? ', except that the Article 88 trend signal in Section E mandates a risk-file review before closure' : ''}.`,
       ],
       tables: inputTable(inputs, 'ract'),
     },
     {
-      title: 'Section M — Benefit–Risk Determination',
+      title: 'Section M - Benefit-Risk Determination',
       paragraphs: [
-        `Considering the sales volume (Section C), incident and FSCA record (Section D), complaint trend (Section E), CAPA status (Section F), external vigilance (Section G), literature (Section H) and clinical/risk source data (Sections J–K), ${conclusion}`,
+        `Considering the sales volume (Section C), incident and FSCA record (Section D), complaint trend (Section E), CAPA status (Section F), external vigilance (Section G), literature (Section H) and clinical/risk source data (Sections J-K), ${conclusion}`,
       ],
       tables: [],
     },
@@ -515,11 +515,11 @@ export function buildPsurModel(
       `Reporting period: ${period.start} → ${period.end} · Prepared per EU MDR Article 86 and MDCG 2022-21 · PMS plan: ${str(pmsPlan.plan_id)}`,
     ].filter((line) => !(stats.reportType === 'PMSR' && line.includes('Article 86'))),
     disclaimer:
-      'SIMULATED OUTPUT — NOT A REGULATORY DOCUMENT. This draft was generated locally in your browser by the Smarticus PSUR demo simulation. No requirements lookup or regulatory review was performed. Sign in at the demo to run the signed-in builder, which produces an auditable draft with a verifiable audit trail.',
+      'SIMULATED OUTPUT - NOT A REGULATORY DOCUMENT. This draft was generated locally in your browser by the Smarticus PSUR demo simulation. No requirements lookup or regulatory review was performed. Sign in at the demo to run the signed-in builder, which produces an auditable draft with a verifiable audit trail.',
     watermark: 'SIMULATION',
     sections,
     footerNote:
-      'Generated by the Smarticus PSUR demo — simulation mode. Every number above was recomputed locally from the editable mock data pack; the narrative is template-based. The signed-in builder drafts each section and records a tamper-evident audit trail with requirement citations.',
+      'Generated by the Smarticus PSUR demo - simulation mode. Every number above was recomputed locally from the editable mock data pack; the narrative is template-based. The signed-in builder drafts each section and records a tamper-evident audit trail with requirement citations.',
   };
 }
 
@@ -941,12 +941,12 @@ export async function renderPsurPdf(model: PsurModel): Promise<Blob> {
     doc.setPage(i);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(92);
-    doc.setTextColor(250, 222, 207); // pale orange — visible, never obscuring
+    doc.setTextColor(250, 222, 207); // pale orange - visible, never obscuring
     doc.text(model.watermark, PAGE_W / 2, PAGE_H / 2, { angle: 32, align: 'center' });
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(150, 150, 150);
-    doc.text('SIMULATED OUTPUT — NOT A REGULATORY DOCUMENT', MARGIN_X, PAGE_H - 32);
+    doc.text('SIMULATED OUTPUT - NOT A REGULATORY DOCUMENT', MARGIN_X, PAGE_H - 32);
     doc.text(`Page ${i} of ${pageCount}`, PAGE_W - MARGIN_X, PAGE_H - 32, { align: 'right' });
   }
 
@@ -1099,7 +1099,7 @@ export async function renderPsurDocx(model: PsurModel): Promise<Blob> {
                 alignment: AlignmentType.CENTER,
                 children: [
                   new TextRun({
-                    text: 'SIMULATED OUTPUT — NOT A REGULATORY DOCUMENT',
+                    text: 'SIMULATED OUTPUT - NOT A REGULATORY DOCUMENT',
                     bold: true,
                     color: 'C2491A',
                     size: 16,

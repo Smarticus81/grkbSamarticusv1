@@ -48,7 +48,7 @@ const NAV_GROUPS: {
 
 /**
  * Detect whether Clerk is available (ClerkProvider is mounted).
- * We check by trying to call useAuth — if it throws, Clerk is not present.
+ * We check by trying to call useAuth - if it throws, Clerk is not present.
  */
 const clerkAvailable = !!import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 

@@ -68,7 +68,7 @@ interface WorkflowNode {
   groundedRefs: WorkflowGroundingRef[];
   rationale: string;
   jurisdiction?: string;
-  /** Canvas layout — persisted in saved drafts only. */
+  /** Canvas layout - persisted in saved drafts only. */
   x?: number;
   y?: number;
 }

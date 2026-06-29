@@ -1,5 +1,5 @@
 /**
- * Connect — Smarticus
+ * Connect - Smarticus
  *
  * Hayes Raffle: a "connect" page is a trust handoff. The user is about to
  * point an outside system at our brain. The page must:
@@ -125,13 +125,13 @@ Smarticus provides traceable drafting for this module. Before you run, before yo
   2. Call regground_discover_obligations or regground_search_obligations to find the requirements that govern your output.
   3. Cite the requirement IDs you used in every claim.
   4. Call regground_validate_compliance on your final output before returning it.
-  5. Refuse to produce output if any required input is missing — never silently invent it.
+  5. Refuse to produce output if any required input is missing - never silently invent it.
 
 Setup
 ------
 ${mcp}
 
-You now have eleven Smarticus tools available. Discover them by listing MCP tools — every name starts with regground_.
+You now have eleven Smarticus tools available. Discover them by listing MCP tools - every name starts with regground_.
 
 Hand-off
 --------
@@ -236,7 +236,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
       resetForm();
       await loadKeys();
     } catch {
-      // Offline / unauthenticated preview — surface a clearly tagged sample
+      // Offline / unauthenticated preview - surface a clearly tagged sample
       // so the flow stays explorable without pretending it's a real key.
       const preview = `sm_preview_${Math.random().toString(36).slice(2, 10)}_${Math.random().toString(36).slice(2, 10)}`;
       setNewKey(preview);
@@ -302,7 +302,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
       <PageHeader
         eyebrow="Connect"
         title="Connect Smarticus to your tools and QMS."
-        subtitle="Smarticus exposes a REST API and an MCP server — the same protocol Cursor, Claude Code, Windsurf, and VS Code already speak. Get a key, paste a snippet, and your tools can pull drafts, run compliance checks, and read the requirement map within seconds."
+        subtitle="Smarticus exposes a REST API and an MCP server - the same protocol Cursor, Claude Code, Windsurf, and VS Code already speak. Get a key, paste a snippet, and your tools can pull drafts, run compliance checks, and read the requirement map within seconds."
         actions={
           <div style={{ display: 'flex', gap: 6, padding: 4, border: '1px solid var(--rule)', borderRadius: 'var(--r-2)' }}>
             <ViewTab active={view === 'guide'} onClick={() => setView('guide')} label="Setup guide" />
@@ -329,14 +329,14 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
           >
             <div style={{ flex: '1 1 280px', minWidth: 260 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <div className="eyebrow">{isPreviewKey ? 'Preview key — offline mode' : 'Save this key'}</div>
+                <div className="eyebrow">{isPreviewKey ? 'Preview key - offline mode' : 'Save this key'}</div>
                 {isPreviewKey && (
                   <span className="badge badge-warn" style={{ fontSize: 9 }}>NOT AUTHENTICATED</span>
                 )}
               </div>
               <div style={{ fontSize: 14, color: 'var(--ink-2)', marginBottom: 10, lineHeight: 1.5 }}>
                 {isPreviewKey
-                  ? "This is a sample value so you can see the snippet flow. It won't authenticate against the API — sign in to mint a real key."
+                  ? "This is a sample value so you can see the snippet flow. It won't authenticate against the API - sign in to mint a real key."
                   : "This is the only time we'll show the full key. Paste it into the snippet below or your password manager now."}
               </div>
               <div
@@ -436,7 +436,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                     title="Get an API key"
                     body={
                       hasKey
-                        ? "You're set — your key is below."
+                        ? "You're set - your key is below."
                         : 'A scoped API key tells Smarticus who you are and what you can do. We default to read-only scopes.'
                     }
                   >
@@ -490,7 +490,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                       </button>
                       {!hasKey && (
                         <span style={{ fontSize: 12, color: 'var(--warn)' }}>
-                          Tip — create a key first so the snippet uses it.
+                          Tip - create a key first so the snippet uses it.
                         </span>
                       )}
                     </div>
@@ -536,7 +536,7 @@ export function ApiAccess({ isAdmin: _isAdmin = false }: Props) {
                   <div className="eyebrow" style={{ marginBottom: 8 }}>MCP integration</div>
                   <h3 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 500 }}>Run the MCP server</h3>
                   <p style={{ margin: '0 0 12px', fontSize: 13, color: 'var(--ink-2)', lineHeight: 1.55 }}>
-                    The simplest path. The MCP server is a single npx command — point any MCP-aware tool at it.
+                    The simplest path. The MCP server is a single npx command - point any MCP-aware tool at it.
                   </p>
                   <pre
                     style={{
@@ -828,7 +828,7 @@ function CreateKeyModal({
           <input
             value={keyName}
             onChange={(e) => setKeyName(e.target.value)}
-            placeholder="e.g. CAPA triage module — production"
+            placeholder="e.g. CAPA triage module - production"
             style={{ ...inputStyle, width: '100%', fontSize: 13 }}
           />
         </div>

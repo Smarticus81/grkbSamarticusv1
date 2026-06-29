@@ -25,7 +25,7 @@ const PRODUCTS: {
   {
     eyebrow: 'Authoring',
     title: 'PSUR Compiler.',
-    body: 'Turns controlled source data into an MDCG 2022-21 PSUR draft — sections A through M — in minutes.',
+    body: 'Turns controlled source data into an MDCG 2022-21 PSUR draft - sections A through M - in minutes.',
     bullets: [
       'MDCG 2022-21 sections A\u2013M, EU MDR Art. 86 aligned',
       'Deterministic statistics \u2014 numbers computed once, never fabricated',
@@ -242,7 +242,7 @@ function ArrowRight() {
   );
 }
 
-/* ── PSUR generation preview — looping animation for the hero ── */
+/* ── PSUR generation preview - looping animation for the hero ── */
 
 const HERO_PHASES = [
   'Discovery', 'Parsing', 'Device context', 'IMDRF coding',
@@ -253,19 +253,19 @@ const HERO_PHASES = [
 const HERO_SECTIONS = ['A','B','C','D','E','F','G','H','I','J','K','L','M'] as const;
 
 const HERO_DECISIONS: Array<{ text: string; reg: string; status: 'ok' | 'warn' | 'info' }> = [
-  { text: 'MDCG 2022-21 §6.4 — section A content verified', reg: 'EU MDR', status: 'ok' },
-  { text: 'ISO 14971 §7.4 — risk trend data present', reg: 'ISO 14971', status: 'ok' },
-  { text: 'EU MDR Art. 86 — complaint summary cross-referenced', reg: 'EU MDR', status: 'ok' },
-  { text: 'MDCG 2022-21 §6.8 — FSCA records linked', reg: 'MDCG', status: 'ok' },
-  { text: '21 CFR 803 — MDR evaluation included', reg: 'FDA', status: 'info' },
-  { text: 'ISO 13485 §8.2.2 — complaint handling data present', reg: 'ISO 13485', status: 'ok' },
-  { text: 'EU MDR Art. 87 — reportability assessment complete', reg: 'EU MDR', status: 'ok' },
-  { text: 'MDCG 2022-21 §6.12 — benefit-risk conclusion sourced', reg: 'MDCG', status: 'warn' },
-  { text: 'ISO 14971 §10 — residual risk data summarized', reg: 'ISO 14971', status: 'ok' },
-  { text: 'EU MDR Annex XIV — PMS plan alignment confirmed', reg: 'EU MDR', status: 'ok' },
-  { text: 'Deterministic stats — 142 data refs, zero fabrication', reg: 'System', status: 'ok' },
-  { text: 'Hash chain verified — 24 entries, tamper-evident', reg: 'Audit', status: 'ok' },
-  { text: 'PSUR draft ready for review — 28 sections cited', reg: 'Output', status: 'ok' },
+  { text: 'MDCG 2022-21 §6.4 - section A content verified', reg: 'EU MDR', status: 'ok' },
+  { text: 'ISO 14971 §7.4 - risk trend data present', reg: 'ISO 14971', status: 'ok' },
+  { text: 'EU MDR Art. 86 - complaint summary cross-referenced', reg: 'EU MDR', status: 'ok' },
+  { text: 'MDCG 2022-21 §6.8 - FSCA records linked', reg: 'MDCG', status: 'ok' },
+  { text: '21 CFR 803 - MDR evaluation included', reg: 'FDA', status: 'info' },
+  { text: 'ISO 13485 §8.2.2 - complaint handling data present', reg: 'ISO 13485', status: 'ok' },
+  { text: 'EU MDR Art. 87 - reportability assessment complete', reg: 'EU MDR', status: 'ok' },
+  { text: 'MDCG 2022-21 §6.12 - benefit-risk conclusion sourced', reg: 'MDCG', status: 'warn' },
+  { text: 'ISO 14971 §10 - residual risk data summarized', reg: 'ISO 14971', status: 'ok' },
+  { text: 'EU MDR Annex XIV - PMS plan alignment confirmed', reg: 'EU MDR', status: 'ok' },
+  { text: 'Deterministic stats - 142 data refs, zero fabrication', reg: 'System', status: 'ok' },
+  { text: 'Hash chain verified - 24 entries, tamper-evident', reg: 'Audit', status: 'ok' },
+  { text: 'PSUR draft ready for review - 28 sections cited', reg: 'Output', status: 'ok' },
 ];
 
 // Total cycle is ~18s: 6s phases + 6.5s sections + 3s validation + 2.5s pause
@@ -390,7 +390,7 @@ function PsurGenerationPreview() {
   );
 }
 
-/* ── ROI calculator — real client-side math, no backend ── */
+/* ── ROI calculator - real client-side math, no backend ── */
 const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 const number = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
 
@@ -675,7 +675,7 @@ export function LandingPage() {
           <div>
             <div className="eyebrow" style={{ marginBottom: 16 }}>
               <span className="signal-dot" style={{ marginRight: 8, verticalAlign: 1 }} />
-              The PSUR agent · built on the Smarticus platform
+              Done-for-you PSUR service for medical device & pharma
             </div>
             <h1
               style={{
@@ -688,9 +688,9 @@ export function LandingPage() {
                 color: 'var(--ink)',
               }}
             >
-              Draft a PSUR in minutes.
+              We write your PSURs.
               <br />
-              <span style={{ color: 'var(--orange)' }}>Audit-ready in 24–48 hours.</span>
+              <span style={{ color: 'var(--orange)' }}>Audit-ready in 24-48 hours.</span>
             </h1>
             <p
               style={{
@@ -701,17 +701,17 @@ export function LandingPage() {
                 lineHeight: 1.55,
               }}
             >
-              Smarticus turns your post-market data into a regulator-grade PSUR — structured to
-              MDCG 2022-21, every figure traced to its source, every decision defensible. The two
-              weeks of manual assembly disappear.
+              Hand us your post-market data and our regulatory team, powered by the Smarticus agent
+              system, delivers a submission-ready PSUR in days, not weeks. Every figure traced to its
+              source, every decision defensible. A fraction of the consultant cost.
             </p>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 28 }}>
-              <button className="btn btn-orange" onClick={() => navigate('/demo/psur')}>
-                Watch a PSUR draft itself
+              <button className="btn btn-orange" onClick={openCalendly}>
+                Book a demo
                 <ArrowRight />
               </button>
               <button className="btn btn-ghost" onClick={openCalendly}>
-                Book a demo
+                Book a call
               </button>
             </div>
             <div style={{ marginTop: 24, display: 'flex', flexWrap: 'wrap', gap: '8px 20px', fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.06em', color: 'var(--ink-3)', textTransform: 'uppercase' }}>
@@ -864,14 +864,14 @@ export function LandingPage() {
             <div className="metric-sub">from 2+ weeks manual</div>
           </div>
           <div className="metric-cell">
-            <div className="metric-value"><span className="accent">24–48h</span></div>
-            <div className="metric-label">To a fully audited, submission-ready PSUR</div>
-            <div className="metric-sub">human-reviewed, remediated</div>
+            <div className="metric-value"><span className="accent">24-48h</span></div>
+            <div className="metric-label">We deliver a submission-ready PSUR</div>
+            <div className="metric-sub">done-for-you, human-reviewed</div>
           </div>
           <div className="metric-cell">
-            <div className="metric-value">99%</div>
-            <div className="metric-label">Less time from data to draft</div>
-            <div className="metric-sub">labor returned to your team</div>
+            <div className="metric-value">Fraction</div>
+            <div className="metric-label">Of traditional consultant cost</div>
+            <div className="metric-sub">no weeks of day-rate</div>
           </div>
           <div className="metric-cell">
             <div className="metric-value">100%</div>
@@ -881,25 +881,49 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── Services: two ways to get your PSUR ── */}
+      {/* ── Services: managed first, self-serve second ── */}
       <section id="service" className="container" style={{ padding: '56px 32px 24px' }}>
         <div className="eyebrow" style={{ marginBottom: 14 }}>The service</div>
         <h2 style={{ fontSize: 'clamp(30px, 4.2vw, 52px)', fontWeight: 600, letterSpacing: '-0.035em', margin: 0, lineHeight: 1.04, maxWidth: 880 }}>
-          Two ways to get your PSUR. Both end in a defensible record.
+          Hire us to run your PSURs. Keep the consultant budget.
         </h2>
         <p style={{ marginTop: 18, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 680 }}>
-          Run it yourself in minutes, or let our regulatory team deliver a submission-ready report in
-          a day or two. Same engine, same traceability, same obligation graph underneath.
+          Our regulatory team delivers submission-ready reports using the Smarticus agent system, so
+          you get expert-grade PSURs in days at a fraction of the cost. Prefer to run it in-house?
+          The same engine is available self-serve.
         </p>
 
         <div className="service-grid">
+          <div className="service-card featured">
+            <span className="service-tag">Recommended</span>
+            <span className="service-time">Done-for-you · 24-48 hours</span>
+            <h3 className="service-title">We deliver your PSUR</h3>
+            <p className="service-desc">
+              Send us your post-market data. Our regulatory team drives the agents, reviews every
+              section, remediates findings, and hands you a submission-ready PSUR plus a complete
+              audit pack, typically within 24-48 hours, for a fraction of consultant fees.
+            </p>
+            <ul className="check-list">
+              {[
+                'Expert human review against MDCG 2022-21 + EU MDR',
+                'Audit-remediation loop closed before delivery',
+                'Notified Body\u2013ready report and evidence pack',
+                'Far less than traditional consultant day-rates',
+              ].map((b) => (<li key={b}><CheckOrange /><span>{b}</span></li>))}
+            </ul>
+            <div style={{ marginTop: 'auto', paddingTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button className="btn btn-orange" onClick={openCalendly}>Book a demo<ArrowRight /></button>
+              <button className="btn btn-ghost" onClick={openCalendly}>Book a call</button>
+            </div>
+          </div>
+
           <div className="service-card">
             <span className="service-time">Self-serve · minutes</span>
-            <h3 className="service-title">PSUR Draft, on demand</h3>
+            <h3 className="service-title">Or run it yourself</h3>
             <p className="service-desc">
-              Bring controlled source data, get an MDCG 2022-21 draft back in minutes — with a live
-              decision trace behind every section. Perfect for first drafts, internal review, and
-              rescuing a deadline.
+              Prefer to keep it in-house? Bring controlled source data and get an MDCG 2022-21 draft
+              back in minutes, with a live decision trace behind every section. Same engine our team
+              uses.
             </p>
             <ul className="check-list">
               {[
@@ -910,31 +934,8 @@ export function LandingPage() {
               ].map((b) => (<li key={b}><CheckOrange /><span>{b}</span></li>))}
             </ul>
             <div style={{ marginTop: 'auto', paddingTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button className="btn btn-orange" onClick={() => navigate('/demo/psur')}>Watch it run<ArrowRight /></button>
+              <button className="btn btn-ghost" onClick={() => navigate('/demo/psur')}>Watch it run<ArrowRight /></button>
               <button className="btn btn-ghost" onClick={() => navigate('/app/psur')}>Open PSUR builder</button>
-            </div>
-          </div>
-
-          <div className="service-card featured">
-            <span className="service-tag">Most popular</span>
-            <span className="service-time">Managed · 24–48 hours</span>
-            <h3 className="service-title">Fully Audited PSUR, delivered</h3>
-            <p className="service-desc">
-              Our regulatory team drives the engine, reviews every section, remediates findings, and
-              hands you a submission-ready PSUR plus a complete audit pack — typically within
-              24–48 hours.
-            </p>
-            <ul className="check-list">
-              {[
-                'Human-in-the-loop review against MDCG 2022-21 + EU MDR',
-                'Audit-remediation loop closed before delivery',
-                'Notified Body\u2013ready report and evidence pack',
-                'Verified hash-chained trace for every decision',
-              ].map((b) => (<li key={b}><CheckOrange /><span>{b}</span></li>))}
-            </ul>
-            <div style={{ marginTop: 'auto', paddingTop: 24, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <button className="btn btn-orange" onClick={openCalendly}>Book a demo<ArrowRight /></button>
-              <button className="btn btn-ghost" onClick={() => navigate('/contact')}>Talk to our team</button>
             </div>
           </div>
         </div>
@@ -945,15 +946,16 @@ export function LandingPage() {
         <div className="container" style={{ padding: '64px 32px' }}>
           <div className="eyebrow" style={{ marginBottom: 14 }}>The math</div>
           <h2 style={{ fontSize: 'clamp(28px, 3.8vw, 46px)', fontWeight: 600, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 820 }}>
-            See what PSUR automation returns to your team.
+            See what handing us your PSURs saves.
           </h2>
           <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 640 }}>
-            Move the sliders to your program. The numbers update live — no sign-up, no sales call required.
+            Move the sliders to your program. The numbers update live. Then book a call and we will
+            quote a fixed price against your real volume.
           </p>
           <RoiCalculator />
           <div style={{ marginTop: 28 }}>
-            <button className="btn btn-orange" onClick={() => navigate('/contact')}>
-              Get this costed for your devices
+            <button className="btn btn-orange" onClick={openCalendly}>
+              Book a call to get your quote
               <ArrowRight />
             </button>
           </div>
@@ -962,27 +964,27 @@ export function LandingPage() {
 
       {/* ── Why Smarticus (head-to-head) ── */}
       <section id="compare" className="container" style={{ padding: '64px 32px 24px' }}>
-        <div className="eyebrow" style={{ marginBottom: 14 }}>Why Smarticus</div>
+        <div className="eyebrow" style={{ marginBottom: 14 }}>Why hire us</div>
         <h2 style={{ fontSize: 'clamp(28px, 3.8vw, 46px)', fontWeight: 600, letterSpacing: '-0.03em', margin: 0, lineHeight: 1.05, maxWidth: 880 }}>
-          Purpose-built for the report. Not a PMS suite with reporting bolted on.
+          The output of a consultant. The speed and cost of automation.
         </h2>
         <p style={{ marginTop: 16, fontSize: 16, lineHeight: 1.55, color: 'var(--ink-2)', maxWidth: 680 }}>
-          Generic post-market suites make you assemble the PSUR by hand and store your data in their
-          cloud. Smarticus generates the report, grounds every line in the regulation, and leaves your
-          data where it belongs.
+          A traditional consultant bills weeks of day-rate to assemble one PSUR by hand. We deliver the
+          same submission-ready report in 24-48 hours, grounded in the regulation, with a full audit
+          trail, for a fraction of the cost.
         </p>
 
         <div className="compare-grid">
           <div className="compare-col them">
-            <h3 className="compare-head">Bolted-on PMS suites</h3>
-            <p className="compare-sub">Platform-first. The PSUR is still your problem.</p>
+            <h3 className="compare-head">Traditional consultant</h3>
+            <p className="compare-sub">High day-rates. Weeks of turnaround.</p>
             {[
               'PSUR assembled by hand from exports and spreadsheets',
-              'Salesforce-native — locked to a platform and per-seat licensing',
-              'Your proprietary data lives in their cloud',
-              'Audit evidence compiled manually across modules',
-              'AI add-ons with no traceable rationale per decision',
+              'Billed at premium consultant day-rates',
               'Weeks of calendar time per report',
+              'Audit evidence compiled manually, no decision trail',
+              'Quality varies with whoever is assigned',
+              'You re-explain your devices every engagement',
             ].map((t) => (
               <div className="compare-row" key={t}>
                 <span className="mk x-mark" aria-hidden="true">
@@ -993,15 +995,15 @@ export function LandingPage() {
             ))}
           </div>
           <div className="compare-col us">
-            <h3 className="compare-head" style={{ color: 'var(--orange)' }}>Smarticus</h3>
-            <p className="compare-sub">Report-first. The PSUR writes itself, grounded in the regs.</p>
+            <h3 className="compare-head" style={{ color: 'var(--orange)' }}>Smarticus, done-for-you</h3>
+            <p className="compare-sub">Our team + our agents. Days, not weeks.</p>
             {[
-              'MDCG 2022-21 draft generated in minutes from your source data',
-              'No platform lock-in — runs standalone or connects to your eQMS',
-              'Your data stays in your workspace; the model queries the requirement graph',
+              'Submission-ready PSUR delivered in 24-48 hours',
+              'A fraction of traditional consultant cost',
+              'Expert human review on top of the agent system',
               'One-click, tamper-evident audit pack with a verified hash chain',
               'Every decision cites its reason and its requirement',
-              'Fully audited, submission-ready option in 24–48 hours',
+              'Your data stays in your workspace, never resold',
             ].map((t) => (
               <div className="compare-row" key={t}>
                 <span className="mk"><CheckOrange /></span>
@@ -1009,6 +1011,13 @@ export function LandingPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div style={{ marginTop: 28 }}>
+          <button className="btn btn-orange" onClick={openCalendly}>
+            Book a demo
+            <ArrowRight />
+          </button>
         </div>
       </section>
 
@@ -1068,7 +1077,7 @@ export function LandingPage() {
         ))}
         </div>
 
-        {/* Build-your-own / managed strip — both audiences */}
+        {/* Build-your-own / managed strip - both audiences */}
         <div
           style={{
             marginTop: 32,
@@ -1085,21 +1094,21 @@ export function LandingPage() {
         >
           <div style={{ maxWidth: 640 }}>
             <h3 style={{ fontSize: 'clamp(22px, 2.6vw, 30px)', fontWeight: 600, letterSpacing: '-0.02em', margin: 0 }}>
-              Build your own agent — or have us run it for you.
+              Let us run it for you - or build your own.
             </h3>
             <p style={{ margin: '10px 0 0', fontSize: 15, lineHeight: 1.55, color: 'var(--ink-2)' }}>
-              Compose agents for complaints, CAPA, risk, vigilance, and PSUR/PMSR on the same grounded
-              platform — for medical device and pharma. Run them self-serve, or let our team deliver the
-              outcome as a managed service.
+              Beyond PSURs, our team can deliver complaints, CAPA, risk, and vigilance work as a managed
+              service on the same grounded platform, for medical device and pharma. Or run the agents
+              yourself, self-serve.
             </p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <button className="btn btn-orange" onClick={() => navigate('/app')}>
-              Start building on Smarticus
+            <button className="btn btn-orange" onClick={openCalendly}>
+              Book a demo
               <ArrowRight />
             </button>
-            <button className="btn btn-ghost" onClick={openCalendly}>
-              Book a demo
+            <button className="btn btn-ghost" onClick={() => navigate('/app')}>
+              Explore the platform
             </button>
           </div>
         </div>
@@ -1126,11 +1135,11 @@ export function LandingPage() {
               color: 'var(--paper)', maxWidth: 1100, margin: 0,
             }}
           >
-            Your next PSUR can be drafting itself <span style={{ color: 'var(--orange)' }}>this week</span>.
+            Let us write your next PSUR <span style={{ color: 'var(--orange)' }}>this week</span>.
           </h2>
           <p style={{ marginTop: 22, color: 'var(--ink-4)', fontSize: 16, maxWidth: 600, lineHeight: 1.55 }}>
-            Book a 20-minute demo and watch your own report take shape — or have us deliver a fully
-            audited PSUR in 24–48 hours.
+            Book a 20-minute demo or a call. We will show you the agent system, scope your devices, and
+            quote a fixed price to deliver your PSURs in 24-48 hours.
           </p>
 
           <div style={{ marginTop: 28, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -1141,14 +1150,14 @@ export function LandingPage() {
             <button
               className="btn btn-ghost"
               style={{ color: 'var(--paper)', borderColor: 'var(--ink-3)', background: 'transparent' }}
-              onClick={() => navigate('/demo/psur')}
+              onClick={openCalendly}
             >
-              Watch a PSUR draft itself
+              Book a call
             </button>
           </div>
 
           <p style={{ marginTop: 24, color: 'var(--ink-4)', fontSize: 14, maxWidth: 560 }}>
-            Smarticus does not replace QMS judgment. It drafts the records — your team reviews and releases.
+            We deliver the report; your team reviews and releases. Smarticus does not replace QMS judgment.
           </p>
         </div>
       </section>

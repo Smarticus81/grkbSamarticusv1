@@ -3,8 +3,8 @@
  *
  * The real generation pipeline (/api/psur) requires sign-in. This module gives
  * prospective customers the full walkthrough experience without an account:
- * a scripted run that mirrors the live pipeline's phases, section agents A–M,
- * and decision ticker — with every conclusion recomputed from the visitor's
+ * a scripted run that mirrors the live pipeline's phases, section agents A-M,
+ * and decision ticker - with every conclusion recomputed from the visitor's
  * edited inputs, a genuine SHA-256 hash chain built and verified in the
  * browser, and a downloadable, watermarked simulated PSUR draft.
  *
@@ -22,7 +22,7 @@ import {
 } from './psurDocuments.js';
 
 // ---------------------------------------------------------------------------
-// Contract types (mirror apps/api/src/psur/schemas.ts — shared with PsurDemo)
+// Contract types (mirror apps/api/src/psur/schemas.ts - shared with PsurDemo)
 // ---------------------------------------------------------------------------
 
 export interface ColumnSpec {
@@ -76,7 +76,7 @@ export interface TraceResponse {
   verification: { valid: boolean; verifiedEntries: number; totalEntries: number };
 }
 
-/** Events emitted by the simulation — same envelope as the live SSE stream. */
+/** Events emitted by the simulation - same envelope as the live SSE stream. */
 export type SimEvent =
   | { kind: 'progress'; phase: string; status: 'started' | 'completed'; section?: string }
   | {
@@ -106,7 +106,7 @@ export interface SimRunResult {
 }
 
 // ---------------------------------------------------------------------------
-// The simulated mock data pack — a Class IIb infusion pump
+// The simulated mock data pack - a Class IIb infusion pump
 // ---------------------------------------------------------------------------
 
 function table(columns: [string, string, boolean][], rows: Record<string, unknown>[]): TableInput {
@@ -229,8 +229,8 @@ export const SIMULATED_DEFAULTS: Defaults = {
       [
         { citation: 'Hartmann et al., J Clin Eng 49(2)', year: 2025, relevance: 'direct', finding: 'Ambulatory infusion pump alarm fatigue reduced 31% with prioritised alarm schemes' },
         { citation: 'Okafor & Lindqvist, BMJ Innov 11(1)', year: 2025, relevance: 'direct', finding: 'No new hazards identified in systematic review of volumetric pump occlusion detection' },
-        { citation: 'Sato et al., Med Devices Evid Res 18', year: 2024, relevance: 'supportive', finding: 'Lithium cell runtime degradation accelerates below 5°C — consistent with FSN-2025-001 labelling update' },
-        { citation: 'EU PMS Consortium, Ann Biomed Saf 7', year: 2025, relevance: 'supportive', finding: 'Benchmark complaint rates for Class IIb infusion systems: 1.2–3.0 per 10,000 units' },
+        { citation: 'Sato et al., Med Devices Evid Res 18', year: 2024, relevance: 'supportive', finding: 'Lithium cell runtime degradation accelerates below 5°C - consistent with FSN-2025-001 labelling update' },
+        { citation: 'EU PMS Consortium, Ann Biomed Saf 7', year: 2025, relevance: 'supportive', finding: 'Benchmark complaint rates for Class IIb infusion systems: 1.2-3.0 per 10,000 units' },
       ],
     ),
     device_context: {
@@ -285,12 +285,12 @@ export const SIMULATED_DEFAULTS: Defaults = {
 };
 
 // ---------------------------------------------------------------------------
-// Derived statistics — recomputed live from the visitor's edited inputs
+// Derived statistics - recomputed live from the visitor's edited inputs
 // ---------------------------------------------------------------------------
 
 const IMDRF_LABELS: Record<string, string> = {
-  A0502: 'Mechanical problem — closure',
-  A0506: 'Mechanical problem — activation/positioning',
+  A0502: 'Mechanical problem - closure',
+  A0506: 'Mechanical problem - activation/positioning',
   A0702: 'Flow or infusion rate problem',
   A0703: 'Occlusion within device',
   A0901: 'Display or visual feedback problem',
@@ -422,7 +422,7 @@ export function deriveSimStats(inputs: Record<string, InputDefault>): SimDerived
 const fmt = (n: number): string => n.toLocaleString('en-GB');
 
 // ---------------------------------------------------------------------------
-// Local hash chain — real SHA-256 over simulated decisions
+// Local hash chain - real SHA-256 over simulated decisions
 // ---------------------------------------------------------------------------
 
 async function sha256Hex(text: string): Promise<string> {
@@ -455,7 +455,7 @@ class LocalHashChain {
     return full;
   }
 
-  /** Walk the chain from genesis and recompute every hash — real verification. */
+  /** Walk the chain from genesis and recompute every hash - real verification. */
   async verify(): Promise<{ valid: boolean; verifiedEntries: number; totalEntries: number }> {
     let prev = await sha256Hex('regground-psur-simulation-genesis');
     let verified = 0;
@@ -518,7 +518,7 @@ const SECTION_AGENTS: { section: string; title: string; decision: (s: SimDerived
     title: 'Executive summary',
     decision: (s) => ({
       decision: 'Section A drafted',
-      reason: `Executive summary states ${fmt(s.unitsSold)} units sold, ${fmt(s.complaintCount)} complaints and mirrors the Section M conclusion verbatim — no independent claims.`,
+      reason: `Executive summary states ${fmt(s.unitsSold)} units sold, ${fmt(s.complaintCount)} complaints and mirrors the Section M conclusion verbatim - no independent claims.`,
       basis: ['MDCG 2022-21 §3.1'],
     }),
   },
@@ -527,7 +527,7 @@ const SECTION_AGENTS: { section: string; title: string; decision: (s: SimDerived
     title: 'Device description',
     decision: () => ({
       decision: 'Section B drafted',
-      reason: 'Device description, Basic UDI-DI, classification and certificate copied verbatim from the device-context input — never inferred.',
+      reason: 'Device description, Basic UDI-DI, classification and certificate copied verbatim from the device-context input - never inferred.',
       basis: ['MDCG 2022-21 §3.2', 'EU MDR Annex VIII'],
     }),
   },
@@ -574,7 +574,7 @@ const SECTION_AGENTS: { section: string; title: string; decision: (s: SimDerived
     title: 'External vigilance',
     decision: (s) => ({
       decision: 'Section G drafted',
-      reason: `${fmt(s.externalEventCount)} similar-device event(s) from external vigilance databases assessed against the risk file — none introduce a new hazard.`,
+      reason: `${fmt(s.externalEventCount)} similar-device event(s) from external vigilance databases assessed against the risk file - none introduce a new hazard.`,
       basis: ['MDCG 2022-21 §3.6'],
     }),
   },
@@ -619,18 +619,18 @@ const SECTION_AGENTS: { section: string; title: string; decision: (s: SimDerived
     title: 'Risk reconciliation',
     decision: (s) => ({
       decision: 'Section L drafted',
-      reason: `${fmt(s.ractControlled)}/${fmt(s.ractTotal)} risk-file items controlled; period data reconciled against the risk analysis${s.trendSignal ? ' — trend signal flagged for risk-file review' : ''}.`,
+      reason: `${fmt(s.ractControlled)}/${fmt(s.ractTotal)} risk-file items controlled; period data reconciled against the risk analysis${s.trendSignal ? ' - trend signal flagged for risk-file review' : ''}.`,
       basis: ['ISO 14971 §10'],
     }),
   },
   {
     section: 'M_benefit_risk',
-    title: 'Benefit–risk',
+    title: 'Benefit-risk',
     decision: (s) => ({
       decision: 'Section M drafted',
       reason: s.benefitRiskFavourable
-        ? 'Benefit–risk determination concluded FAVOURABLE: no Article 88 signal, risks controlled, clinical benefit sustained.'
-        : 'Benefit–risk determination NOT confirmed: the Article 88 trend signal must be resolved before a favourable conclusion.',
+        ? 'Benefit-risk determination concluded FAVOURABLE: no Article 88 signal, risks controlled, clinical benefit sustained.'
+        : 'Benefit-risk determination NOT confirmed: the Article 88 trend signal must be resolved before a favourable conclusion.',
       basis: ['EU MDR Annex I §1', 'EU MDR Annex I §8'],
     }),
   },
@@ -733,7 +733,7 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     await tick(500);
     await emitDecision({
       decision: 'Reporting period accepted',
-      reason: `Period ${period.start} → ${period.end} is contiguous with the previous PSUR period end (${String(valueOf(inputs, 'previous_psur').period_end ?? 'unknown')}) — no surveillance gap.`,
+      reason: `Period ${period.start} → ${period.end} is contiguous with the previous PSUR period end (${String(valueOf(inputs, 'previous_psur').period_end ?? 'unknown')}) - no surveillance gap.`,
       basis: ['MDCG 2022-21 §1.2'],
     });
     await tick(500);
@@ -764,12 +764,12 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
       stats.trendSignal
         ? {
             decision: 'Trend signal RAISED',
-            reason: `Rate ${stats.ratePer10k}/10k exceeds the PMS-plan threshold of ${stats.threshold}/10k — a statistically significant increase. Trend escalation drafted into Sections E, L and M.`,
+            reason: `Rate ${stats.ratePer10k}/10k exceeds the PMS-plan threshold of ${stats.threshold}/10k - a statistically significant increase. Trend escalation drafted into Sections E, L and M.`,
             basis: ['EU MDR Art. 88', 'PMS plan threshold'],
           }
         : {
             decision: 'No trend signal',
-            reason: `Rate ${stats.ratePer10k}/10k is within the PMS-plan threshold of ${stats.threshold}/10k — no statistically significant increase to report.`,
+            reason: `Rate ${stats.ratePer10k}/10k is within the PMS-plan threshold of ${stats.threshold}/10k - no statistically significant increase to report.`,
             basis: ['EU MDR Art. 88', 'PMS plan threshold'],
           },
     );
@@ -781,13 +781,13 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     await tick(900);
     await emitDecision({
       decision: 'Charts rendered',
-      reason: 'Complaint-trend and sales-by-region charts rendered from the statistics block — figures and prose can no longer diverge.',
+      reason: 'Complaint-trend and sales-by-region charts rendered from the statistics block - figures and prose can no longer diverge.',
       basis: ['MDCG 2022-21 §3.5'],
     });
     await tick(400);
     phase('charts', 'completed');
 
-    // -- Generation: section agents A–M ---------------------------------------
+    // -- Generation: section agents A-M ---------------------------------------
     phase('generation', 'started');
     for (const agent of SECTION_AGENTS) {
       phase('generation', 'started', agent.section);
@@ -803,7 +803,7 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
     await tick(1300);
     await emitDecision({
       decision: 'Numeric cross-audit passed with one finding',
-      reason: `All ${fmt(34 + stats.topImdrf.length)} numeric claims across Sections A–M reconcile with the statistics block. One finding: Section H cited a publication dated outside the reporting window.`,
+      reason: `All ${fmt(34 + stats.topImdrf.length)} numeric claims across Sections A-M reconcile with the statistics block. One finding: Section H cited a publication dated outside the reporting window.`,
       basis: ['MDCG 2022-21 §2'],
     });
     await tick(600);
@@ -856,7 +856,7 @@ export async function runPsurSimulation(opts: RunSimulationOptions): Promise<Sim
 
     await chain.append({
       eventType: 'psur.run.completed',
-      humanSummary: `Simulated PSUR run completed: 3 artifact(s), validation ${consistencyAudit.passed ? 'passed' : 'failed'} (${consistencyAudit.findings.length} error(s)). Benefit–risk: ${stats.benefitRiskFavourable ? 'favourable' : 'requires action'}.`,
+      humanSummary: `Simulated PSUR run completed: 3 artifact(s), validation ${consistencyAudit.passed ? 'passed' : 'failed'} (${consistencyAudit.findings.length} error(s)). Benefit-risk: ${stats.benefitRiskFavourable ? 'favourable' : 'requires action'}.`,
     });
 
     const verification = await chain.verify();

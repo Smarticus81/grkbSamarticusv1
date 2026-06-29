@@ -1,5 +1,5 @@
 /**
- * Contact — let a medical-device team reach the Smarticus crew.
+ * Contact - let a medical-device team reach the Smarticus crew.
  *
  * No backend dependency: the form composes a structured mailto to
  * hello@thinkertons.com so it works in every deployment. On submit we open the
@@ -31,7 +31,7 @@ const EMPTY_FORM: ContactForm = {
 };
 
 function buildMailto(form: ContactForm): string {
-  const subject = `Smarticus enquiry — ${form.organization || form.name || 'new contact'}`;
+  const subject = `Smarticus enquiry - ${form.organization || form.name || 'new contact'}`;
   const lines = [
     `Name: ${form.name}`,
     `Work email: ${form.email}`,
@@ -124,7 +124,7 @@ export function Contact() {
               border: '1px solid var(--ok)', borderRadius: 'var(--r-3)',
             }}
           >
-            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>Thanks — your email is ready to send.</h2>
+            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.01em' }}>Thanks - your email is ready to send.</h2>
             <p style={{ margin: '12px 0 0', color: 'var(--ink-2)', fontSize: 14.5, lineHeight: 1.55 }}>
               We opened your mail client with the details pre-filled. If nothing appeared, email us directly at{' '}
               <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--orange)' }}>{CONTACT_EMAIL}</a>.

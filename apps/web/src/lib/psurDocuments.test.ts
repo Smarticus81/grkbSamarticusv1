@@ -278,7 +278,7 @@ describe('renderers', () => {
   it('renders watermarked HTML with every section', () => {
     const html = renderPsurHtml(buildPsurModel(period, inputs, stats));
     expect(html).toContain('SIMULATION');
-    expect(html).toContain('Section M — Benefit–Risk Determination');
+    expect(html).toContain('Section M - Benefit-Risk Determination');
     expect(html).toContain('Periodic Safety Update Report');
     expect(html).toContain('Units sold by market');
     expect(html).toContain('Complaint rate versus PMS threshold');

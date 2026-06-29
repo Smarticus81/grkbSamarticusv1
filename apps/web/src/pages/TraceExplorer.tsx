@@ -1,14 +1,14 @@
 /**
- * Decision Trails — Smarticus
+ * Decision Trails - Smarticus
  *
- * An audit trail isn't a database — it's a story your future self tells an
+ * An audit trail isn't a database - it's a story your future self tells an
  * inspector. It is NOT a log of every step the system took. It is the
  * record of every *decision* the system made:
  *
- *   WHY  — the reason for the decision
- *   WHO  — the agent that made it
- *   WHEN — when it was made
- *   REG  — the granular regulation or standard it came from
+ *   WHY  - the reason for the decision
+ *   WHO  - the agent that made it
+ *   WHEN - when it was made
+ *   REG  - the granular regulation or standard it came from
  *
  * Steps (queries, thinking, internal plumbing) are intentionally hidden.
  */
@@ -270,7 +270,7 @@ export function TraceExplorer({ initialId }: Props) {
         meta={
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', maxWidth: 560 }}>
             <input
-              placeholder="Process instance ID — e.g. pi_2026_04_..."
+              placeholder="Process instance ID - e.g. pi_2026_04_..."
               value={pid}
               onChange={(e) => { setPid(e.target.value); setError(null); }}
               onKeyDown={(e) => e.key === 'Enter' && load()}
