@@ -4,11 +4,12 @@
 
 The Regulatory Ground MCP server gives MCP-compatible AI tools (Claude Code,
 Claude Desktop, Cursor, Windsurf, custom agents) runtime access to an
-obligation knowledge graph: 303 obligations, 98 constraints, 55 definitions,
-and 347 evidence types across 7 regulations (EU MDR, ISO 13485, ISO 14971,
-21 CFR 820, UK MDR, MDCG 2022-21, IMDRF). Your agent discovers what the
-regulations require, gates itself before acting, and validates its output
-after — every answer cited to the actual regulation text.
+obligation knowledge graph spanning 7 regulations (EU MDR, ISO 13485, ISO 14971,
+21 CFR 820, UK MDR, MDCG 2022-21, IMDRF) — hundreds of obligations, constraints,
+definitions, and evidence types. Your agent discovers what the regulations
+require, gates itself before acting, and validates its output after — every
+answer cited to the actual regulation text. Call `regground_get_graph_stats`
+for the live counts of the graph you're connected to.
 
 ## 5-minute quickstart
 
