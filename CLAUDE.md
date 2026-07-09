@@ -13,8 +13,8 @@ knowledge graph. Three go-to-market surfaces:
 
 1. **MCP Server** (`@regground/mcp-server`) — The primary distribution mechanism.
    Any MCP-compatible tool (Claude Code, Cursor, Windsurf, custom agents) can call
-   the knowledge graph at runtime. 11 tools: discover, explain, search, qualify,
-   validate, trace. This is the #1 priority.
+   the knowledge graph at runtime. 12 tools: discover, explain, search, define,
+   qualify, validate, trace. This is the #1 priority.
 2. **Knowledge Graph API** — RESTful + GraphQL API for non-MCP integrations.
    Paid SaaS tier for enterprise agent platforms that need compliance grounding.
 3. **Agent Builder** (future) — A web UI where QMS professionals configure
@@ -23,10 +23,12 @@ knowledge graph. Three go-to-market surfaces:
 
 **Underlying infrastructure:**
 
-- **The Ground** — Neo4j obligation knowledge graph (303 obligations, 98 constraints,
-  55 definitions, 347 evidence types across 8 regulations: EU MDR, ISO 13485,
-  ISO 14971, 21 CFR 820, IMDRF, UK MDR, MDCG 2022-21). Open-source regulation
-  YAMLs — community-contributed, Thinkertons-curated.
+- **The Ground** — Neo4j obligation knowledge graph. The regulation YAML source
+  currently encodes ~680 obligations, ~210 constraints, ~170 definitions, and
+  850+ distinct evidence types across 7 regulations: EU MDR, ISO 13485, ISO 14971,
+  21 CFR 820, IMDRF, UK MDR, MDCG 2022-21. (`regground_get_graph_stats` returns the
+  live seeded totals; the seeder loads every YAML under `regulations/`.) Open-source
+  regulation YAMLs — community-contributed, Thinkertons-curated.
 - **Guardrails** — Qualification gates (pre-execution) + compliance validation
   (post-execution) + hash-chained decision traceability.
 - **The Sandbox** — Multi-tenant runtime for grounded agent processes.
@@ -42,13 +44,30 @@ pnpm install              # install all workspaces
 pnpm dev                  # run api + web concurrently
 pnpm build                # build all packages
 pnpm check                # typecheck all packages
-pnpm test                 # run vitest in all packages
+pnpm test                 # node:test scripts (scripts/*.test.mjs) + vitest in all packages
 pnpm test:harness         # run agent test harnesses (sandbox)
-pnpm db:push              # push Drizzle schema to Postgres
-pnpm seed:graph           # seed Neo4j obligation graph from regulations/*.yaml
-pnpm seed:all             # full seed (graph + any future seeders)
 pnpm lint                 # eslint
 pnpm format               # prettier
+
+# Database
+pnpm db:push              # push Drizzle schema to Postgres
+pnpm db:secure            # db:push + tenant-key backfill + Postgres RLS (local setup / prod upgrades)
+
+# Graph
+pnpm seed:graph           # seed Neo4j obligation graph + processes from regulations/*.yaml
+pnpm seed:all             # alias for seed:graph
+pnpm embed:graph          # backfill vector embeddings for semantic search
+pnpm check:graph          # graph-quality checks (scripts/check-graph-quality.mjs)
+
+# Evals (compliance regression gating — packages/evals)
+pnpm bench                # baseline-gated compliance-validation benchmark
+pnpm bench:update         # rewrite the committed validation baseline
+pnpm eval                 # run the eval runner
+pnpm eval:all             # run all eval suites (adversarial, crosswalk, capa)
+
+# Ops
+pnpm env:doctor           # validate .env (scripts/env-doctor.mjs)
+pnpm smoke:prod           # production smoke test (scripts/production-smoke.mjs)
 
 # MCP Server (packages/mcp-server/)
 cd packages/mcp-server
@@ -94,41 +113,60 @@ deploy to Railway. See `RAILWAY.md` for full setup. Key points:
 ```
 regulatory-ground/
 ├── packages/
-│   ├── mcp-server/        @regground/mcp-server  ⭐ PRIMARY PRODUCT
+│   ├── mcp-server/        @regground/mcp-server  ⭐ PRIMARY PRODUCT (publishable, zero monorepo deps)
 │   │   src/
-│   │     index.ts         MCP server (stdio + HTTP transports, 11 tools)
+│   │     index.ts         MCP server (stdio + HTTP transports, 12 tools)
 │   │     services/
 │   │       graph-client.ts  Standalone Neo4j client (no monorepo dependency)
+│   │     auth/            API-key tool-scope map (enterprise HTTP mode)
 │   │
 │   ├── core/              @regground/core
 │   │   src/
-│   │     graph/           Neo4j obligation graph (PRIMARY source of truth)
-│   │     guardrails/      Qualification, compliance, strict, boundary policies
+│   │     graph/           Neo4j obligation graph (PRIMARY source of truth) + seeder
+│   │     guardrails/      Qualification gate + 5-validator compliance pipeline, strict/boundary policies
 │   │     traceability/    Hash-chained decision + content traces, provenance
 │   │     agents/          Sealed BaseGroundedAgent + registry + orchestrator + harness
 │   │     llm/             Capability-based LLM abstraction (multi-provider)
 │   │     evidence/        Atomizer, parsers, slot mapper, registry
 │   │     process/         Process definitions, instances, HITL gates, validator
-│   │     db/              Drizzle schema + connection (PG + Neo4j)
+│   │     db/              Drizzle schema + connection (PG + Neo4j), RLS, tenant upgrade
+│   │     auth/            Shared API-key scopes (reused by api + mcp-server)
+│   │     config/          Zod env loader + YAML schema + regulation loader
+│   │     observability/   OpenTelemetry tracing + metrics
+│   │     skills/          Skill registry (hybrid global + tenant override)
 │   │     harness/         Test harness (mock graph, mock LLM, assertions)
-│   │   regulations/       YAML obligation definitions (8 regulations, 303 obligations)
+│   │   regulations/       YAML obligation definitions (7 regulations)
+│   │
+│   ├── evals/             @regground/evals — compliance regression harness
+│   │   src/
+│   │     runner.ts        Eval suites: obligation recall / citation accuracy / miss-rate
+│   │     validation-bench.ts  Baseline-gated CompliancePipeline benchmark (MockGraph)
+│   │   suites/            adversarial, crosswalk, capa
+│   │   validation-cases/  golden cases per validator
 │   │
 │   └── sandbox/           @regground/sandbox
 │       src/
 │         workspace/       Multi-tenant isolation
-│         processes/       capa, complaints, nonconformances, trend-reporting, change-control, audit
+│         processes/       capa, complaints, nonconformances, trend-reporting, change-control,
+│                          audit, adverse-event-reportability, complaint-classification,
+│                          management-review, psur-compilation (+ ProcessRegistry)
 │         runtime/         SandboxRunner, SSE streaming, state machine
 │         templates/       Generators for SKILL.md / .agent.md / .instructions.md / hooks.json
 │
 └── apps/
-    ├── api/               Express API (graph queries, trace verification, API keys)
-    └── web/               React + Vite dashboard (Landing, Regulations, Traces, API Access)
+    ├── api/               @regground/api — Express API (Clerk auth, helmet, rate-limit). Routers:
+    │                      graph, traces (+ audit-pack export), api-keys, sandbox, builder,
+    │                      managed-agents, psur, usage, workspace, validate-draft, clerk-webhook, readiness
+    └── web/               @regground/web — React + Vite + wouter. Public: LandingPage,
+                           PsurDemo (/demo/psur), Contact. Signed-in /app (Clerk-gated): dashboard,
+                           Sandbox, PsurBuilder, Builder, ProcessDesigner, RegulationManager,
+                           TraceExplorer, ApiAccess
 ```
 
 ## MCP Server
 
 The MCP server (`packages/mcp-server/`) is the primary product surface. It exposes
-11 tools via the Model Context Protocol:
+12 tools via the Model Context Protocol:
 
 - `regground_discover_obligations` — Auto-discover applicable obligations for process + jurisdiction
 - `regground_get_obligation` — Look up a single obligation by ID
@@ -136,6 +174,7 @@ The MCP server (`packages/mcp-server/`) is the primary product surface. It expos
 - `regground_search_obligations` — Free-text search across all obligations
 - `regground_get_evidence_requirements` — Evidence types needed for a process
 - `regground_find_obligation_path` — Find regulatory cross-reference chain between obligations
+- `regground_get_definition` — Look up a regulatory definition by ID, or search definitions by term
 - `regground_check_qualification` — Pre-execution gate: can this process run?
 - `regground_validate_compliance` — Post-execution check: did the output comply?
 - `regground_get_graph_stats` — Graph summary statistics
@@ -148,6 +187,23 @@ cloud deployment, API gateway, programmatic access).
 **Key design choice:** The MCP server has its own standalone `GraphClient` with zero
 dependency on `@regground/core`. This means it can be published, deployed, and
 used independently of the monorepo.
+
+## Testing, evals & CI
+
+- **Unit/integration:** `pnpm test` runs the `node:test` scripts (`scripts/*.test.mjs`)
+  plus Vitest across every package. `pnpm test:harness` runs the sandbox agent scenarios.
+- **`@regground/evals`** is the compliance regression harness:
+  - `pnpm bench` runs the **baseline-gated** compliance-validation benchmark against the
+    five-validator `CompliancePipeline` (ClaimCoverage, EvidenceBackedCompliance,
+    ConstraintEvaluator, CitationVerifier, RegulatoryContradictionDetector) on an in-memory
+    `MockGraph`. Any accuracy drop vs `validation-baseline.json` fails the run;
+    `pnpm bench:update` rewrites the baseline intentionally.
+  - `pnpm eval` / `pnpm eval:all` run the YAML eval suites (`adversarial`, `crosswalk`,
+    `capa`), scoring obligation recall, citation accuracy, and mandatory-miss rate.
+- **CI** (`.github/workflows/`): `ci.yml` (lint / check / test / build on Node 20 & 22),
+  `eval.yml` (baseline-gated `bench` + graph-quality + eval suites — on PRs touching
+  regulations/evals/graph/guardrails and nightly), `codeql.yml`, and `container.yml`
+  (builds the three Dockerfiles and pushes to GHCR).
 
 ## Key conventions
 
@@ -175,12 +231,18 @@ used independently of the monorepo.
 
 ## Environment variables
 
-See `.env.example`. Required to run locally:
+See `.env.example` (run `pnpm env:doctor` to validate). Key variables:
 
 - `DATABASE_URL` — Postgres connection string
-- `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD` — Neo4j connection
-- `JWT_SECRET` — API auth signing key
-- At least one of `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY`
+- `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `NEO4J_DATABASE` — Neo4j connection
+- `JWT_SECRET` (+ `JWT_SECRET_PREVIOUS` for rotation) — API auth signing key
+- `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET` —
+  Clerk B2B auth; Clerk Organizations map to `tenant_id`, and both the web app and `/api` gate on Clerk
+- `ALLOWED_ORIGINS` — CORS allow-list (required in production)
+- `PSUR_SERVICE_URL` — live PSUR generation service (the signed-out `/demo/psur` runs a
+  client-side simulation and does not need it)
+- `MCP_TRANSPORT` (`stdio` | `http`), `MCP_PORT` (default 3100) — MCP server transport
+- At least one of `OPENAI_API_KEY` / `ANTHROPIC_API_KEY` / `GOOGLE_API_KEY` for live agent/PSUR runs
 
 ## How to add things
 
