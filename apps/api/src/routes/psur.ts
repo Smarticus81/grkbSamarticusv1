@@ -837,6 +837,83 @@ export function createPsurRouter(opts: PsurRouterOptions = {}): Router {
   });
 
   // -------------------------------------------------------------------------
+  // DELETE /runs/:id — remove a finished run from the user's history and
+  // delete its workspace on the Python service. The hash-chained trace is
+  // NOT touched: traces are append-only audit evidence and survive run
+  // deletion by design.
+  // -------------------------------------------------------------------------
+  router.delete('/runs/:id', async (req, res) => {
+    const runId = req.params.id!;
+    const { userId, tenantId } = caller(req);
+
+    // Ownership + liveness via the in-memory record when we have one.
+    const rec = runs.get(runId);
+    if (rec && !canAccessRun(req, rec)) {
+      return res.status(404).json({ error: 'run not found' });
+    }
+    if (rec?.active) {
+      return res.status(409).json({ error: 'run is still in progress — wait for it to finish before deleting' });
+    }
+
+    // Ownership via the persisted history row (best-effort — Postgres may be
+    // unavailable; the in-memory record then carries the decision alone).
+    let rowFound = false;
+    try {
+      const rows = await tenantDb(tenantId, (db) => db
+        .select({ runId: schema.psurRuns.runId })
+        .from(schema.psurRuns)
+        .where(
+          and(
+            eq(schema.psurRuns.runId, runId),
+            eq(schema.psurRuns.tenantId, tenantId),
+            eq(schema.psurRuns.userId, persistedCallerUserId(userId)),
+          ),
+        )
+        .limit(1));
+      rowFound = rows.length > 0;
+    } catch (err) {
+      console.warn('[psur] history lookup failed during delete:', err instanceof Error ? err.message : err);
+    }
+    if (!rec && !rowFound) {
+      return res.status(404).json({ error: 'run not found' });
+    }
+
+    // Delete the workspace on the Python service. 409 = still running there
+    // (authoritative — refuse); 404 = already gone; unreachable = tolerated,
+    // the history row is still removed and the workspace can be swept later.
+    let workspaceRemoved = false;
+    try {
+      const upstream = await doFetch(`${serviceUrl()}/runs/${encodeURIComponent(runId)}`, { method: 'DELETE' });
+      if (upstream.status === 409) {
+        return res.status(409).json({ error: 'run is still in progress on the PSUR service' });
+      }
+      if (upstream.ok) {
+        const body = (await upstream.json()) as { workspace_removed?: unknown };
+        workspaceRemoved = body.workspace_removed === true;
+      }
+    } catch (err) {
+      console.warn('[psur] service delete failed:', err instanceof Error ? err.message : err);
+    }
+
+    try {
+      await tenantDb(tenantId, (db) => db
+        .delete(schema.psurRuns)
+        .where(
+          and(
+            eq(schema.psurRuns.runId, runId),
+            eq(schema.psurRuns.tenantId, tenantId),
+            eq(schema.psurRuns.userId, persistedCallerUserId(userId)),
+          ),
+        ));
+    } catch (err) {
+      console.warn('[psur] failed to delete run history row:', err instanceof Error ? err.message : err);
+    }
+
+    runs.delete(runId);
+    res.json({ run_id: runId, deleted: true, workspace_removed: workspaceRemoved });
+  });
+
+  // -------------------------------------------------------------------------
   // GET /runs/:id — status proxy
   // -------------------------------------------------------------------------
   router.get('/runs/:id', async (req, res) => {
