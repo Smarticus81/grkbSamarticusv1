@@ -132,6 +132,22 @@ export function PsurBuilder() {
     navigate(psurWorkspaceBuilderPath(run.runId));
   }
 
+  async function deleteRun(run: PsurRunSummary) {
+    const label = run.deviceName ?? run.runId;
+    if (!window.confirm(`Delete run "${label}" and its generated outputs? The audit trail is preserved.`)) return;
+    const key = `${run.runId}:delete`;
+    setBusy(key);
+    setError(null);
+    try {
+      await api(`/api/psur/runs/${encodeURIComponent(run.runId)}`, { method: 'DELETE' });
+      await refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not delete run.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const summary = summarizePsurWorkspace(runs ?? []);
 
   return (
@@ -265,6 +281,15 @@ export function PsurBuilder() {
                         style={{ fontSize: 12, padding: '7px 11px' }}
                       >
                         New run
+                      </button>
+                      <button
+                        className="btn btn-ghost"
+                        disabled={run.status === 'running' || busy === `${run.runId}:delete`}
+                        onClick={() => void deleteRun(run)}
+                        title={run.status === 'running' ? 'Wait for the run to finish before deleting' : 'Delete this run and its generated outputs'}
+                        style={{ fontSize: 12, padding: '7px 11px', color: 'var(--err)' }}
+                      >
+                        {busy === `${run.runId}:delete` ? 'Deleting...' : 'Delete'}
                       </button>
                     </div>
                   </div>

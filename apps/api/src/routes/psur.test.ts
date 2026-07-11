@@ -143,6 +143,13 @@ function fakePsurService(options: FakeServiceOptions = {}): FakeService {
         },
       });
     }
+    if (method === 'DELETE' && /^\/runs\/[^/]+$/.test(url.pathname)) {
+      return Response.json({
+        run_id: url.pathname.split('/')[2],
+        deleted: true,
+        workspace_removed: true,
+      });
+    }
     if (method === 'GET' && /^\/runs\/[^/]+$/.test(url.pathname)) {
       return Response.json({ run_id: url.pathname.split('/')[2], status: 'running' });
     }
@@ -686,5 +693,65 @@ describe('trace + verification (the hero artifact)', () => {
 
     expect(trace.status).toBe(404);
     expect(verification.status).toBe(404);
+  });
+});
+
+describe('DELETE /api/psur/runs/:id', () => {
+  it('deletes a finished run and proxies the workspace delete to the service', async () => {
+    const h = await startHarness();
+    const created = (await (await postRun(h.baseUrl)).json()) as { runId: string };
+    // Run the stream to completion so the record is no longer active.
+    await readSse(await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}/stream`));
+
+    const res = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}`, { method: 'DELETE' });
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      run_id: created.runId,
+      deleted: true,
+      workspace_removed: true,
+    });
+    expect(h.service.requests).toContainEqual(
+      expect.objectContaining({ method: 'DELETE', path: `/runs/${created.runId}` }),
+    );
+
+    // Gone from the bridge afterwards.
+    const status = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}`);
+    expect(status.status).toBe(404);
+  });
+
+  it('refuses to delete a run that is still in progress', async () => {
+    const h = await startHarness();
+    const created = (await (await postRun(h.baseUrl)).json()) as { runId: string };
+
+    const res = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}`, { method: 'DELETE' });
+    expect(res.status).toBe(409);
+    expect(h.service.requests).not.toContainEqual(
+      expect.objectContaining({ method: 'DELETE', path: `/runs/${created.runId}` }),
+    );
+  });
+
+  it('returns 404 for unknown runs', async () => {
+    const h = await startHarness();
+    const res = await fetch(`${h.baseUrl}/api/psur/runs/no-such-run`, { method: 'DELETE' });
+    expect(res.status).toBe(404);
+  });
+
+  it('enforces tenant isolation', async () => {
+    const h = await startHarness();
+    const owner = { 'x-test-tenant': 'tenant-a', 'x-test-user': 'user-a' };
+    const created = (await (await postRun(h.baseUrl, RUN_REQUEST, owner)).json()) as { runId: string };
+    await readSse(await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}/stream`, { headers: owner }));
+
+    const blocked = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}`, {
+      method: 'DELETE',
+      headers: { 'x-test-tenant': 'tenant-b', 'x-test-user': 'user-b' },
+    });
+    expect(blocked.status).toBe(404);
+
+    const allowed = await fetch(`${h.baseUrl}/api/psur/runs/${created.runId}`, {
+      method: 'DELETE',
+      headers: owner,
+    });
+    expect(allowed.status).toBe(200);
   });
 });

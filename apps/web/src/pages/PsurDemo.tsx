@@ -22,6 +22,7 @@ import {
   type TableInput,
   type TraceResponse,
 } from '../lib/psurSimulation.js';
+import { evaluateIntakeReadiness, type GateSeverity } from '../lib/psurIntakeGate.js';
 import { SmarticusWordmark } from '../components/ui/logos.js';
 import { ThemeToggle } from '../components/ui/ThemeToggle.js';
 
@@ -447,6 +448,7 @@ function SimulationBanner({ showSimulationSignup }: { showSimulationSignup: bool
 const STEPS = [
   { id: 'intro', label: 'Intro' },
   { id: 'inputs', label: 'Inputs' },
+  { id: 'gate', label: 'Readiness' },
   { id: 'run', label: 'Run' },
   { id: 'results', label: 'Results' },
 ] as const;
@@ -851,7 +853,7 @@ function InputsStep({
       <div style={{ display: 'flex', gap: 12, marginTop: 28 }}>
         <button className="btn btn-ghost" onClick={onBack}>Back</button>
         <button className="btn btn-orange" onClick={onRun}>
-          {mode === 'simulation' ? 'Run the simulation' : 'Run the pipeline'}
+          Continue to readiness check
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
       </div>
@@ -860,7 +862,113 @@ function InputsStep({
 }
 
 // ---------------------------------------------------------------------------
-// Step 3: Run - the runtime, end to end
+// Step 3: Readiness gate - deterministic intake pre-flight
+// ---------------------------------------------------------------------------
+
+const GATE_SEVERITY_STYLE: Record<GateSeverity, { label: string; color: string; bg: string }> = {
+  pass: { label: 'PASS', color: 'var(--ok, #1a7f4b)', bg: 'transparent' },
+  warning: { label: 'WARNING', color: 'var(--warn, #a86a00)', bg: 'transparent' },
+  blocker: { label: 'BLOCKER', color: 'var(--err)', bg: 'var(--err-soft, transparent)' },
+};
+
+function GateStep({
+  mode,
+  defaults,
+  edited,
+  onBack,
+  onRun,
+}: {
+  mode: DemoMode;
+  defaults: Defaults | null;
+  edited: Record<string, InputDefault>;
+  onBack: () => void;
+  onRun: () => void;
+}) {
+  const gate = useMemo(
+    () => (defaults ? evaluateIntakeReadiness(mode, defaults, edited) : null),
+    [mode, defaults, edited],
+  );
+
+  if (!defaults || !gate) {
+    return (
+      <div style={{ maxWidth: 640 }}>
+        <SectionHeading eyebrow="Step 3 - Readiness" title="Loading the data pack…" />
+      </div>
+    );
+  }
+
+  const ordered = [...gate.checks].sort((a, b) => {
+    const rank = { blocker: 0, warning: 1, pass: 2 } as const;
+    return rank[a.severity] - rank[b.severity];
+  });
+
+  return (
+    <div style={{ maxWidth: 820 }}>
+      <SectionHeading
+        eyebrow="Step 3 - Readiness"
+        title={gate.green ? 'The gate is green.' : `${gate.blockers} blocker${gate.blockers === 1 ? '' : 's'} before this can run.`}
+        body="A deterministic pre-flight over the edited pack — the same checks a compliant intake runs before a PSUR is generated. Blockers must be fixed in the Inputs step; warnings run, but tell you exactly what the pipeline will do with the data as-is. Nothing here is inferred or sent anywhere."
+      />
+
+      <div style={{ display: 'flex', gap: 8, marginTop: 16, flexWrap: 'wrap' }}>
+        <Chip tone={gate.green ? 'done' : 'warn'}>{gate.green ? 'gate green' : 'gate red'}</Chip>
+        <Chip tone="neutral">{gate.checks.length - gate.blockers - gate.warnings} passed</Chip>
+        {gate.warnings > 0 && <Chip tone="warn">{gate.warnings} warning{gate.warnings === 1 ? '' : 's'}</Chip>}
+        {gate.blockers > 0 && <Chip tone="warn">{gate.blockers} blocker{gate.blockers === 1 ? '' : 's'}</Chip>}
+      </div>
+
+      <ul style={{ listStyle: 'none', margin: '20px 0 0', padding: 0, display: 'grid', gap: 10 }}>
+        {ordered.map((check) => {
+          const s = GATE_SEVERITY_STYLE[check.severity];
+          return (
+            <li
+              key={check.id}
+              style={{
+                border: '1px solid',
+                borderColor: check.severity === 'blocker' ? 'var(--err-edge, var(--err))' : 'var(--rule)',
+                borderRadius: 10,
+                padding: '13px 15px',
+                background: s.bg,
+                display: 'grid',
+                gap: 5,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                <span style={{ ...mono, fontSize: 9.5, fontWeight: 700, letterSpacing: '0.06em', color: s.color }}>
+                  {s.label}
+                </span>
+                <span style={{ fontSize: 13.5, fontWeight: 620, color: 'var(--ink)' }}>{check.title}</span>
+              </div>
+              <div style={{ fontSize: 13, lineHeight: 1.55, color: 'var(--ink-3)' }}>{check.detail}</div>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div style={{ display: 'flex', gap: 12, marginTop: 28, alignItems: 'center' }}>
+        <button className="btn btn-ghost" onClick={onBack}>Back to inputs</button>
+        <button
+          className="btn btn-orange"
+          disabled={!gate.green}
+          onClick={onRun}
+          title={gate.green ? undefined : 'Fix the blockers in the Inputs step first'}
+          style={{ opacity: gate.green ? 1 : 0.5, cursor: gate.green ? 'pointer' : 'default' }}
+        >
+          {mode === 'simulation' ? 'Run the simulation' : 'Run the pipeline'}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 6h6m-3-3 3 3-3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        {!gate.green && (
+          <span style={{ fontSize: 12.5, color: 'var(--ink-3)' }}>
+            The run starts only when every blocker is resolved.
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Step 4: Run - the runtime, end to end
 // ---------------------------------------------------------------------------
 
 interface RunState {
@@ -1489,15 +1597,19 @@ function YourRunsPanel({
   runs,
   loading,
   busyRunId,
+  deletingRunId,
   onReopen,
   onDownload,
+  onDelete,
   onRefresh,
 }: {
   runs: PsurRunSummary[];
   loading: boolean;
   busyRunId: string | null;
+  deletingRunId: string | null;
   onReopen: (run: PsurRunSummary) => void;
   onDownload: (runId: string, name: string) => void;
+  onDelete: (run: PsurRunSummary) => void;
   onRefresh: () => void;
 }) {
   return (
@@ -1614,6 +1726,26 @@ function YourRunsPanel({
                       Download DOCX
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => onDelete(run)}
+                    disabled={run.status === 'running' || deletingRunId === run.runId}
+                    title={run.status === 'running' ? 'Wait for the run to finish before deleting' : 'Delete this run and its generated outputs'}
+                    style={{
+                      ...mono,
+                      fontSize: 10.5,
+                      textTransform: 'uppercase',
+                      padding: '6px 13px',
+                      borderRadius: 999,
+                      border: '1px solid var(--rule)',
+                      background: 'var(--paper)',
+                      color: 'var(--err)',
+                      cursor: run.status === 'running' || deletingRunId === run.runId ? 'default' : 'pointer',
+                      opacity: run.status === 'running' || deletingRunId === run.runId ? 0.5 : 1,
+                    }}
+                  >
+                    {deletingRunId === run.runId ? 'Deleting…' : 'Delete'}
+                  </button>
                 </div>
               </li>
             );
@@ -1682,6 +1814,7 @@ function PsurDemoCore({
   const [pastRuns, setPastRuns] = useState<PsurRunSummary[]>([]);
   const [pastRunsLoading, setPastRunsLoading] = useState(false);
   const [reopeningRunId, setReopeningRunId] = useState<string | null>(null);
+  const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
   const requestedRunHandledRef = useRef(false);
 
   // Simulation playback speed (1× scripted, 4× fast-forward).
@@ -2042,6 +2175,27 @@ function PsurDemoCore({
     [apiJson, resetRunOutputs],
   );
 
+  const deleteRun = useCallback(
+    async (run: PsurRunSummary) => {
+      if (run.status === 'running') return;
+      const label = run.deviceName ?? run.runId;
+      if (!window.confirm(`Delete run "${label}" and its generated outputs? The audit trail is preserved.`)) return;
+      setDeletingRunId(run.runId);
+      try {
+        const { status } = await apiJson<{ deleted?: boolean }>(
+          `/api/psur/runs/${encodeURIComponent(run.runId)}`,
+          { method: 'DELETE' },
+        );
+        if (status === 200) setPastRuns((prev) => prev.filter((r) => r.runId !== run.runId));
+      } catch {
+        // Best-effort; the row stays visible and can be retried.
+      } finally {
+        setDeletingRunId(null);
+      }
+    },
+    [apiJson],
+  );
+
   useEffect(() => {
     if (mode !== 'live' || !requestedRunId || requestedRunHandledRef.current) return;
     if (pastRunsLoading) return;
@@ -2163,8 +2317,10 @@ function PsurDemoCore({
             runs={pastRuns}
             loading={pastRunsLoading}
             busyRunId={reopeningRunId}
+            deletingRunId={deletingRunId}
             onReopen={(run) => void reopenRun(run)}
             onDownload={(forRunId, name) => void downloadFromRun(forRunId, name)}
+            onDelete={(run) => void deleteRun(run)}
             onRefresh={() => void refreshRuns()}
           />
         )}
@@ -2176,6 +2332,15 @@ function PsurDemoCore({
             setEdited={setEdited}
             loadError={loadError}
             onBack={() => setStep('intro')}
+            onRun={() => setStep('gate')}
+          />
+        )}
+        {step === 'gate' && (
+          <GateStep
+            mode={mode}
+            defaults={defaults}
+            edited={edited}
+            onBack={() => setStep('inputs')}
             onRun={startRun}
           />
         )}
@@ -2188,7 +2353,7 @@ function PsurDemoCore({
             speed={speed}
             onSpeedChange={setSpeed}
             onRetry={startRun}
-            onBack={() => setStep('inputs')}
+            onBack={() => setStep('gate')}
           />
         )}
         {step === 'results' && complete && (
