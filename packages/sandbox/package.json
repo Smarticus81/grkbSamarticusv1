@@ -16,10 +16,10 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && node ./scripts/copy-harness-yaml.mjs",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run --passWithNoTests",
-    "test:harness": "vitest run --dir src/processes"
+    "test:harness": "vitest run src/processes"
   },
   "dependencies": {
     "@regground/core": "workspace:*",

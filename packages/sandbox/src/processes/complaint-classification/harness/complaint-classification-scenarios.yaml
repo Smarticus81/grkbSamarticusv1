@@ -1,0 +1,68 @@
+name: Complaint classification
+description: IMDRF adverse event terminology coding and reportability screening.
+scenarios:
+  - name: "Infection narrative maps to IMDRF Annex E"
+    agent: IMDRFCodingAgent
+    input: { complaintId: "C-1", narrative: "Patient developed sepsis two days after the procedure" }
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      noComplianceGaps: true
+      output:
+        complaintId: "C-1"
+        codes:
+          - { annex: E, code: E0501, term: Infection, confidence: 0.85 }
+
+  - name: "Software crash maps to Annex B"
+    agent: IMDRFCodingAgent
+    input: { complaintId: "C-2", narrative: "The firmware crash forced a restart mid-use" }
+    assertions:
+      output:
+        codes:
+          - { annex: B, code: B0801 }
+
+  - name: "Unmatched narrative falls back to unspecified problem"
+    agent: IMDRFCodingAgent
+    input: { complaintId: "C-3", narrative: "Customer unhappy with the colour" }
+    assertions:
+      output:
+        codes:
+          - { annex: A, code: A0000, confidence: 0.3 }
+
+  - name: "Harm-coded complaint escalates to reportability"
+    agent: ReportabilityScreenAgent
+    input:
+      complaintId: "C-1"
+      imdrfCodes:
+        - { annex: E, code: E0501, term: Infection, confidence: 0.85 }
+      severity: nonserious
+    assertions:
+      traceChainValid: true
+      noComplianceGaps: true
+      output:
+        escalateToReportability: true
+        jurisdictionsToEvaluate: [EU, US, UK]
+
+  - name: "Serious severity escalates even without harm codes"
+    agent: ReportabilityScreenAgent
+    input:
+      complaintId: "C-2"
+      imdrfCodes:
+        - { annex: B, code: B0801, term: Software malfunction, confidence: 0.85 }
+      severity: serious
+    assertions:
+      output: { escalateToReportability: true }
+
+  - name: "Non-serious device-only complaint stays below threshold"
+    agent: ReportabilityScreenAgent
+    input:
+      complaintId: "C-3"
+      imdrfCodes:
+        - { annex: A, code: A0000, term: Unspecified device problem, confidence: 0.3 }
+      severity: nonserious
+    assertions:
+      traceChainValid: true
+      output:
+        escalateToReportability: false
+        jurisdictionsToEvaluate: []
+        rationale: "Below screening threshold; no reportability evaluation required."

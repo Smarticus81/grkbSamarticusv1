@@ -17,7 +17,13 @@ Scaffold a new QMS process under `packages/sandbox/src/processes/<name>/`.
    `BaseGroundedAgent`. Use the `create-agent` skill to scaffold.
 4. Create `obligations.yaml` listing the subset of obligationIds this process
    addresses (these must already exist in the graph).
-5. Create `harness/<process>-scenarios.yaml` with at least 5 test scenarios.
+5. Create `harness/<process>-scenarios.yaml` with at least 5 test scenarios
+   (`generateHarnessYAML` from `@regground/sandbox` scaffolds one). Include a
+   happy path per agent, an `output:` expectation for each decision branch, and
+   a gate refusal (`context: { availableEvidenceTypes: [] }` with
+   `assertions: { qualificationStatus: BLOCKED }`). Obligation ids must exist in
+   `packages/core/regulations`; the runner rejects unknown ids. Run
+   `pnpm test:harness` — the suite is also listed on the web Agent Harness page.
 6. Validate the process:
    ```ts
    const v = new ProcessValidator(graph);

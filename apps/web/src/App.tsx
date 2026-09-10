@@ -23,6 +23,7 @@ const Sandbox = lazy(() => import('./pages/Sandbox.js'));
 const Builder = lazy(() => import('./pages/Builder.js'));
 const ProcessDesigner = lazy(() => import('./pages/ProcessDesigner.js'));
 const PsurBuilder = lazy(() => import('./pages/PsurBuilder.js'));
+const Harness = lazy(() => import('./pages/Harness.js'));
 
 /**
  * Navigation presents one product: a medical-device agent operating system.
@@ -42,6 +43,7 @@ const NAV_GROUPS: {
       { href: '/app/psur',     label: 'PSUR Builder' },
       { href: '/app/builder',  label: 'Modules in Routine Use' },
       { href: '/app/designer', label: 'Workflow Builder' },
+      { href: '/app/harness',  label: 'Agent Harness' },
     ],
   },
 ];
@@ -331,6 +333,7 @@ function AppShell() {
               <Route path="/app/builder" component={Builder} />
               <Route path="/app/sandbox/:taskId">{(params) => <Sandbox initialTaskId={params.taskId} />}</Route>
               <Route path="/app/sandbox">{() => <Sandbox />}</Route>
+              <Route path="/app/harness" component={Harness} />
               <Route path="/app/requirements" component={RegulationManager} />
               <Route path="/app/trails/:id">{(params) => <TraceExplorer initialId={params.id} />}</Route>
               <Route path="/app/trails">{() => <TraceExplorer />}</Route>

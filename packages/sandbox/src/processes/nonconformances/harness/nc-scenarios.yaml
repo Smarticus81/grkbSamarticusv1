@@ -1,9 +1,66 @@
+name: Nonconformance handling
+description: ISO 13485 §8.3 — classification, investigation and disposition of nonconforming product.
 scenarios:
   - name: "Critical safety NC"
     agent: NCClassificationAgent
     input: { ncId: "NC-1", description: "Safety-critical material lot mismatch" }
-    assertions: { traceChainValid: true }
-  - name: "Functional NC -> rework disposition"
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      obligationsCovered: ["ISO13485.8.3.OBL.001"]
+      noComplianceGaps: true
+      output: { ncId: "NC-1", classification: critical }
+
+  - name: "Functional NC is major"
+    agent: NCClassificationAgent
+    input: { ncId: "NC-2", description: "Functional test failure on power-on self test" }
+    assertions:
+      output: { classification: major }
+
+  - name: "Cosmetic NC is minor"
+    agent: NCClassificationAgent
+    input: { ncId: "NC-3", description: "Scratch on housing" }
+    assertions:
+      output: { classification: minor }
+
+  - name: "Classification blocked without NC records"
+    agent: NCClassificationAgent
+    input: { ncId: "NC-4", description: "Anything" }
+    context: { availableEvidenceTypes: [] }
+    assertions:
+      qualificationStatus: BLOCKED
+
+  - name: "Major NC investigation needs CAPA"
+    agent: NCInvestigationAgent
+    input: { ncId: "NC-2", classification: "major" }
+    assertions:
+      traceChainValid: true
+      noComplianceGaps: true
+      output: { needsCAPA: true }
+
+  - name: "Minor NC investigation closes locally"
+    agent: NCInvestigationAgent
+    input: { ncId: "NC-3", classification: "minor" }
+    assertions:
+      output: { needsCAPA: false }
+
+  - name: "Critical NC -> scrap disposition"
+    agent: NCDispositionAgent
+    input: { ncId: "NC-1", classification: "critical" }
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.3.OBL.002", "ISO13485.8.3.OBL.003"]
+      output: { disposition: scrap, requiresAuthorization: false }
+
+  - name: "Major NC -> rework disposition"
     agent: NCDispositionAgent
     input: { ncId: "NC-2", classification: "major" }
-    assertions: { traceChainValid: true }
+    assertions:
+      traceChainValid: true
+      output: { disposition: rework }
+
+  - name: "Concession requires authorisation"
+    agent: NCDispositionAgent
+    input: { ncId: "NC-5", classification: "concession" }
+    assertions:
+      output: { disposition: concession, requiresAuthorization: true }

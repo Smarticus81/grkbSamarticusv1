@@ -1,3 +1,5 @@
+name: Complaint handling
+description: ISO 13485 §8.2.2, 21 CFR 820.198 and EU MDR Art. 87 — intake, triage, investigation and trend detection.
 scenarios:
   - name: "Patient harm complaint - critical"
     agent: ComplaintIntakeAgent
@@ -5,7 +7,11 @@ scenarios:
       rawComplaint: "Patient suffered injury during procedure"
       source: "field_report"
       receivedAt: "2026-04-09T10:00:00Z"
-    assertions: { traceChainValid: true }
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      noComplianceGaps: true
+      output: { category: patient_harm, source: field_report, receivedAt: "2026-04-09T10:00:00Z" }
 
   - name: "Device malfunction complaint"
     agent: ComplaintIntakeAgent
@@ -13,25 +19,84 @@ scenarios:
       rawComplaint: "Device firmware caused malfunction"
       source: "support_ticket"
       receivedAt: "2026-04-09T10:00:00Z"
-    assertions: { traceChainValid: true }
+    assertions:
+      traceChainValid: true
+      output: { category: device_malfunction }
 
-  - name: "Triage routes to reportable"
+  - name: "Uncategorised feedback lands in 'other'"
+    agent: ComplaintIntakeAgent
+    input:
+      rawComplaint: "Packaging arrived dented"
+      source: "distributor"
+      receivedAt: "2026-04-10T08:00:00Z"
+    assertions:
+      output: { category: other }
+
+  - name: "Intake is blocked without complaint records"
+    agent: ComplaintIntakeAgent
+    input:
+      rawComplaint: "Anything"
+      source: "email"
+      receivedAt: "2026-04-10T08:00:00Z"
+    context: { availableEvidenceTypes: [] }
+    assertions:
+      qualificationStatus: BLOCKED
+      hasEvents: [QUALIFICATION_BLOCKED]
+
+  - name: "Triage routes patient harm to reportable"
     agent: ComplaintTriageAgent
     input:
       complaintId: "COMP-1"
       category: patient_harm
-    assertions: { traceChainValid: true }
+    assertions:
+      traceChainValid: true
+      noComplianceGaps: true
+      obligationsCovered: ["ISO13485.8.2.2.OBL.003", "ISO13485.8.2.2.OBL.004", "CFR820.198.OBL.002"]
+      output: { severity: critical, reportable: true, reportingDeadlineDays: 10 }
+
+  - name: "Triage keeps malfunction non-reportable"
+    agent: ComplaintTriageAgent
+    input:
+      complaintId: "COMP-2"
+      category: device_malfunction
+    assertions:
+      output: { severity: medium, reportable: false, reportingDeadlineDays: 0 }
+
+  - name: "Critical investigation escalates to CAPA"
+    agent: ComplaintInvestigationAgent
+    input:
+      complaintId: "COMP-1"
+      severity: critical
+    assertions:
+      traceChainValid: true
+      noComplianceGaps: true
+      output: { needsCAPA: true }
+
+  - name: "Low severity investigation closes without CAPA"
+    agent: ComplaintInvestigationAgent
+    input:
+      complaintId: "COMP-3"
+      severity: low
+    assertions:
+      output: { needsCAPA: false }
 
   - name: "Trend detection finds UCL breach"
     agent: TrendDetectionAgent
     input:
       series: [3, 4, 3, 5, 4, 3, 25]
       windowDays: 30
-    assertions: { traceChainValid: true }
+    assertions:
+      traceChainValid: true
+      noComplianceGaps: true
+      obligationsCovered: ["EUMDR.87.OBL.001", "EUMDR.87.OBL.002", "EUMDR.87.OBL.003"]
+      # Baseline [3,4,3,5,4,3]: mean 3.667, UCL 5.903; the latest point 25 breaches it.
+      output: { signal: true, signalReason: "Latest value 25 breached UCL", mean: 3.667, ucl: 5.903 }
 
   - name: "Trend detection no signal"
     agent: TrendDetectionAgent
     input:
       series: [3, 4, 3, 5, 4, 3, 4]
       windowDays: 30
-    assertions: { traceChainValid: true }
+    assertions:
+      traceChainValid: true
+      output: { signal: false, signalReason: "Within control limits" }

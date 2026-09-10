@@ -17,6 +17,7 @@ import graph, { graphStatsHandler } from './routes/graph.js';
 import traces from './routes/traces.js';
 import apiKeysRoute from './routes/api-keys.js';
 import sandbox from './routes/sandbox.js';
+import harness from './routes/harness.js';
 import builder from './routes/builder.js';
 import managedAgents from './routes/managed-agents.js';
 import usage from './routes/usage.js';
@@ -179,6 +180,7 @@ const apiKeysLimiter = rateLimit({
 app.use('/api/graph', graph);
 app.use('/api/traces', traces);
 app.use('/api/api-keys', apiKeysLimiter, apiKeysRoute);
+app.use('/api/sandbox/harness', harness);
 app.use('/api/sandbox', sandbox);
 app.use('/api/builder', builder);
 app.use('/api/builder', managedAgents);

@@ -45,7 +45,7 @@ pnpm dev                  # run api + web concurrently
 pnpm build                # build all packages
 pnpm check                # typecheck all packages
 pnpm test                 # node:test scripts (scripts/*.test.mjs) + vitest in all packages
-pnpm test:harness         # run agent test harnesses (sandbox)
+pnpm test:harness         # run every process's YAML scenario suite through the agent harness
 pnpm lint                 # eslint
 pnpm format               # prettier
 
@@ -155,11 +155,11 @@ regulatory-ground/
 │
 └── apps/
     ├── api/               @regground/api — Express API (Clerk auth, helmet, rate-limit). Routers:
-    │                      graph, traces (+ audit-pack export), api-keys, sandbox, builder,
+    │                      graph, traces (+ audit-pack export), api-keys, sandbox, sandbox/harness, builder,
     │                      managed-agents, psur, usage, workspace, validate-draft, clerk-webhook, readiness
     └── web/               @regground/web — React + Vite + wouter. Public: LandingPage,
                            PsurDemo (/demo/psur), Contact. Signed-in /app (Clerk-gated): dashboard,
-                           Sandbox, PsurBuilder, Builder, ProcessDesigner, RegulationManager,
+                           Sandbox, PsurBuilder, Builder, ProcessDesigner, Harness (agent scenario harness), RegulationManager,
                            TraceExplorer, ApiAccess
 ```
 
@@ -191,7 +191,8 @@ used independently of the monorepo.
 ## Testing, evals & CI
 
 - **Unit/integration:** `pnpm test` runs the `node:test` scripts (`scripts/*.test.mjs`)
-  plus Vitest across every package. `pnpm test:harness` runs the sandbox agent scenarios.
+  plus Vitest across every package. `pnpm test:harness` runs every process's
+  `harness/*.yaml` scenario suite through `HarnessRunner` (see **Key conventions**).
 - **`@regground/evals`** is the compliance regression harness:
   - `pnpm bench` runs the **baseline-gated** compliance-validation benchmark against the
     five-validator `CompliancePipeline` (ClaimCoverage, EvidenceBackedCompliance,
@@ -227,7 +228,24 @@ used independently of the monorepo.
   decisions are traced via `DecisionTraceService`.
 - **Database access** goes through Drizzle ORM (`packages/core/src/db/schema.ts`).
 - **Agent tests** use `TestHarness` (with `MockGraph`, `MockLLM`,
-  `ComplianceAssertions`) from `packages/core/src/harness/`.
+  `ComplianceAssertions`) from `packages/core/src/harness/`. The graph handed to
+  agents is a stable handle, so `withGraph()` / `withMockGraph()` can re-seed
+  between runs without rebuilding agents; `runAgent()` reports LLM/graph timing.
+- **Scenario harness (YAML).** Every process ships `harness/<process>-scenarios.yaml`.
+  `HarnessRunner` (core) runs them; `packages/sandbox/src/processes/harnessSuites.ts`
+  discovers them, registers every agent, seeds the mock graph from the real
+  regulation catalog (`loadObligationCatalog(packages/core/regulations)`) and is the
+  single code path behind `pnpm test:harness`, `POST /api/sandbox/harness/run`, and
+  the web **Agent Harness** page (`/app/harness`). Scenario fields: `agent`, `input`,
+  optional `context` (`processType`, `jurisdiction`, `processId`,
+  `availableEvidenceTypes` — pass `[]` to force a BLOCKED gate), `mockObligations`
+  (defaults to the agent's declared obligations), `mockLLM`, `mockEvidence`, and
+  `assertions` (`success`, `qualificationStatus`, `traceChainValid`,
+  `obligationsCovered`, `noComplianceGaps`, `complianceScoreAbove`,
+  `confidenceAbove`, `llmCalls`, `hasEvents`, `noEvents`, `output` deep-subset match,
+  `errorMatches`). File-level `defaults` apply to every scenario. Every scenario is
+  isolated (graph re-seeded, canned LLM responses replaced, traces cleared) and all
+  failed assertions are reported together.
 
 ## Environment variables
 

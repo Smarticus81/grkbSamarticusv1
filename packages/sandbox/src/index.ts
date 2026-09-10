@@ -27,6 +27,17 @@ export type { SandboxRunInput, SandboxRunResult, ProgressEvent } from './runtime
 // processes
 export { ProcessRegistry } from './processes/ProcessRegistry.js';
 export { registerAllProcesses, registerAllAgents } from './processes/registerAll.js';
+export {
+  listHarnessSuites,
+  listHarnessSuiteFiles,
+  runHarnessSuites,
+  createSandboxHarnessRunner,
+  resolveRegulationsDir,
+  type HarnessSuiteInfo,
+  type HarnessRunReport,
+  type HarnessRunnerBundle,
+  type RunHarnessOptions,
+} from './processes/harnessSuites.js';
 export { CAPA_PROCESS } from './processes/capa/CAPAProcessDefinition.js';
 export { COMPLAINT_PROCESS } from './processes/complaints/ComplaintProcessDefinition.js';
 export { NC_PROCESS } from './processes/nonconformances/NCProcessDefinition.js';

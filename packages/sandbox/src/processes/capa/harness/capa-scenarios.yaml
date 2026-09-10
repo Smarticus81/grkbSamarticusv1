@@ -1,3 +1,8 @@
+name: CAPA lifecycle
+description: >
+  ISO 13485 §8.5.2/§8.5.3 and 21 CFR 820.100 — trigger classification, root cause,
+  action planning, effectiveness verification and closure. Obligations are seeded
+  from the regulation catalog; evidence defaults to what those obligations require.
 scenarios:
   - name: "CAPA from complaint trigger - high severity"
     agent: CAPAInitiationAgent
@@ -6,12 +11,19 @@ scenarios:
       triggerType: complaint
       description: "Patient reported device malfunction during use"
       severity: high
-    mockObligations: ["ISO13485.8.5.2.OBL.001"]
-    mockLLM: []
     assertions:
       traceChainValid: true
-      obligationsCovered: ["ISO13485.8.5.2.OBL.001"]
-      confidenceAbove: 0.5
+      qualificationStatus: QUALIFIED
+      obligationsCovered: ["ISO13485.8.5.2.OBL.001", "CFR820.100.OBL.001"]
+      noComplianceGaps: true
+      confidenceAbove: 0.99
+      output:
+        capaId: "CAPA-COMP-2026-001"
+        triggerClassification: complaint
+        capaRequired: true
+      hasEvents: [QUALIFICATION_PASSED, AGENT_SPAWNED, AGENT_COMPLETED]
+      noEvents: [AGENT_FAILED, QUALIFICATION_BLOCKED]
+      llmCalls: 0
 
   - name: "CAPA from audit finding - medium severity"
     agent: CAPAInitiationAgent
@@ -23,6 +35,7 @@ scenarios:
     assertions:
       traceChainValid: true
       obligationsCovered: ["ISO13485.8.5.2.OBL.001"]
+      output: { capaRequired: true, triggerClassification: audit_finding }
 
   - name: "Low severity does not require CAPA"
     agent: CAPAInitiationAgent
@@ -33,6 +46,35 @@ scenarios:
       severity: low
     assertions:
       traceChainValid: true
+      noComplianceGaps: true
+      output: { capaRequired: false }
+
+  - name: "Initiation is blocked without trigger evidence"
+    agent: CAPAInitiationAgent
+    input:
+      triggerId: "COMP-2026-002"
+      triggerType: complaint
+      description: "Missing records"
+      severity: high
+    context:
+      availableEvidenceTypes: []
+    assertions:
+      qualificationStatus: BLOCKED
+      errorMatches: "missing evidence"
+      hasEvents: [QUALIFICATION_BLOCKED]
+      noEvents: [AGENT_SPAWNED, AGENT_COMPLETED]
+
+  - name: "Initiation is out of scope with no governing obligations"
+    agent: CAPAInitiationAgent
+    input:
+      triggerId: "COMP-2026-003"
+      triggerType: complaint
+      description: "No process bound"
+      severity: high
+    mockObligations: []
+    assertions:
+      qualificationStatus: OUT_OF_SCOPE
+      errorMatches: "no applicable obligations"
 
   - name: "Root cause via 5-Why"
     agent: RootCauseAnalysisAgent
@@ -44,6 +86,23 @@ scenarios:
     assertions:
       traceChainValid: true
       obligationsCovered: ["ISO13485.8.5.2.OBL.002"]
+      noComplianceGaps: true
+      output:
+        capaId: "CAPA-COMP-2026-001"
+        method: "5-Why"
+        rootCause: "Primary contributor: Device firmware crashed mid-procedure"
+        contributingFactors: ["Recent firmware update introduced unhandled edge case"]
+
+  - name: "Action plan covers corrective and preventive obligations"
+    agent: ActionPlanAgent
+    input:
+      capaId: "CAPA-COMP-2026-001"
+      rootCause: "Unhandled edge case in firmware update"
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.5.2.OBL.002", "ISO13485.8.5.3.OBL.001", "CFR820.100.OBL.002"]
+      noComplianceGaps: true
+      output: { capaId: "CAPA-COMP-2026-001" }
 
   - name: "Effectiveness check passes"
     agent: EffectivenessCheckAgent
@@ -53,4 +112,31 @@ scenarios:
       baselineMetrics: { defect_rate: 10 }
     assertions:
       traceChainValid: true
-      obligationsCovered: ["ISO13485.8.5.2.OBL.003"]
+      obligationsCovered: ["ISO13485.8.5.2.OBL.003", "CFR820.100.OBL.003"]
+      output:
+        effective: true
+        improvementsByMetric: { defect_rate: 0.9 }
+
+  - name: "Effectiveness check fails on insufficient improvement"
+    agent: EffectivenessCheckAgent
+    input:
+      capaId: "CAPA-COMP-2026-001"
+      postImplementationMetrics: { defect_rate: 9.5 }
+      baselineMetrics: { defect_rate: 10 }
+    assertions:
+      traceChainValid: true
+      output:
+        effective: false
+        improvementsByMetric: { defect_rate: 0.05 }
+
+  - name: "Closure after approved effectiveness"
+    agent: CAPAClosureAgent
+    input:
+      capaId: "CAPA-COMP-2026-001"
+      effectivenessApproved: true
+      approver: "quality_manager"
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.5.2.OBL.003", "CFR820.100.OBL.003"]
+      noComplianceGaps: true
+      output: { capaId: "CAPA-COMP-2026-001" }

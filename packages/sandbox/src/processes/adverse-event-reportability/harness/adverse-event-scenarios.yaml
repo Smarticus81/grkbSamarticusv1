@@ -1,0 +1,82 @@
+name: Adverse event reportability
+description: EU MDR Art. 87, 21 CFR 803 and UK MDR — per-jurisdiction reportability decisions with HITL escalation.
+scenarios:
+  - name: "Death in the EU is reportable within 10 days and needs HITL"
+    agent: ReportabilityDecisionAgent
+    input:
+      eventId: "AE-1"
+      occurredAt: "2026-03-01T09:00:00Z"
+      awareAt: "2026-03-01T12:00:00Z"
+      severity: death
+      recurring: false
+      jurisdictions: [EU]
+      fscaPlanned: false
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      noComplianceGaps: true
+      output:
+        eventId: "AE-1"
+        hitlRequired: true
+        hitlGateId: "HITL.EUMDR.87.SeriousIncident"
+        decisions:
+          - { jurisdiction: EU, reportable: true, clockDays: 10 }
+
+  - name: "Public health threat uses the 2-day clock"
+    agent: ReportabilityDecisionAgent
+    input:
+      eventId: "AE-2"
+      occurredAt: "2026-03-01T09:00:00Z"
+      awareAt: "2026-03-01T12:00:00Z"
+      severity: public_health_threat
+      jurisdictions: [EU]
+    assertions:
+      output:
+        decisions:
+          - { jurisdiction: EU, reportable: true, clockDays: 2 }
+
+  - name: "Non-serious event without FSCA is below the EU threshold"
+    agent: ReportabilityDecisionAgent
+    input:
+      eventId: "AE-3"
+      occurredAt: "2026-03-01T09:00:00Z"
+      awareAt: "2026-03-01T12:00:00Z"
+      severity: nonserious
+      jurisdictions: [EU]
+    assertions:
+      traceChainValid: true
+      output:
+        hitlRequired: false
+        decisions:
+          - { jurisdiction: EU, reportable: false }
+
+  - name: "Planned FSCA makes a non-serious EU event reportable"
+    agent: ReportabilityDecisionAgent
+    input:
+      eventId: "AE-4"
+      occurredAt: "2026-03-01T09:00:00Z"
+      awareAt: "2026-03-01T12:00:00Z"
+      severity: nonserious
+      jurisdictions: [EU]
+      fscaPlanned: true
+    assertions:
+      output:
+        hitlRequired: true
+        decisions:
+          - { jurisdiction: EU, reportable: true, clockDays: 15 }
+
+  - name: "Multi-jurisdiction event yields one decision per market"
+    agent: ReportabilityDecisionAgent
+    input:
+      eventId: "AE-5"
+      occurredAt: "2026-03-01T09:00:00Z"
+      awareAt: "2026-03-01T12:00:00Z"
+      severity: serious
+      jurisdictions: [EU, US, UK]
+    assertions:
+      traceChainValid: true
+      output:
+        decisions:
+          - { jurisdiction: EU }
+          - { jurisdiction: US }
+          - { jurisdiction: UK }

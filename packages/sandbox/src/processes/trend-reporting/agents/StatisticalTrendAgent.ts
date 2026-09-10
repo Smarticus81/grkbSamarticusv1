@@ -63,13 +63,17 @@ export class StatisticalTrendAgent extends BaseGroundedAgent<StatTrendInput, Sta
     _o: ObligationNode[],
     _c: ConstraintNode[],
   ): Promise<StatTrendOutput> {
-    const n = input.series.length;
-    const mean = input.series.reduce((a, b) => a + b, 0) / n;
-    const variance = input.series.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
+    // Control limits and the Poisson expectation come from the baseline (every
+    // point before the latest). Including the latest point would let a single
+    // spike inflate its own UCL and mask the signal.
+    const latest = input.series[input.series.length - 1]!;
+    const baseline = input.series.slice(0, -1);
+    const n = baseline.length;
+    const mean = baseline.reduce((a, b) => a + b, 0) / n;
+    const variance = baseline.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
     const stddev = Math.sqrt(variance);
     const ucl = mean + 3 * stddev;
     const lcl = Math.max(0, mean - 3 * stddev);
-    const latest = input.series[input.series.length - 1]!;
     let signal = latest > ucl || latest < lcl;
     let pValue: number | undefined;
 
@@ -80,7 +84,7 @@ export class StatisticalTrendAgent extends BaseGroundedAgent<StatTrendInput, Sta
       pValue = 1 - normalCdf(z);
       signal = pValue < 0.01;
     } else if (input.method === 'binomial') {
-      const trials = n;
+      const trials = input.series.length;
       const successes = input.series.filter((x) => x > 0).length;
       const p = successes / trials;
       const expected = p * trials;

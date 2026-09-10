@@ -165,12 +165,22 @@ export { VALID_SCOPES, ScopeSchema, type Scope } from './auth/scopes.js';
 
 // harness
 export * from './harness/types.js';
-export { TestHarness, InMemoryTraceService } from './harness/TestHarness.js';
+export { TestHarness, InMemoryTraceService, subsetMismatches } from './harness/TestHarness.js';
 export { MockGraph } from './harness/MockGraph.js';
 export { MockLLM } from './harness/MockLLM.js';
 export { TraceAssertions } from './harness/TraceAssertions.js';
 export { ComplianceAssertions } from './harness/ComplianceAssertions.js';
-export { HarnessRunner, type ScenarioFile, type AgentLookup } from './harness/HarnessRunner.js';
+export {
+  HarnessRunner,
+  ScenarioFileSchema,
+  summarizeSuites,
+  formatHarnessReport,
+  type ScenarioFile,
+  type Scenario,
+  type AgentLookup,
+  type HarnessRunnerOptions,
+} from './harness/HarnessRunner.js';
+export { loadObligationCatalog, catalogFromNodes, type ObligationCatalog } from './harness/ObligationCatalog.js';
 
 // observability
 export * from './observability/index.js';

@@ -1,0 +1,46 @@
+name: Change control
+description: ISO 13485 §7.3.9 — design and development change impact assessment and verification.
+scenarios:
+  - name: "Single-component change is low risk"
+    agent: ChangeImpactAgent
+    input: { changeId: "CHG-1", scope: ["label"] }
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      obligationsCovered: ["ISO13485.7.3.9.OBL.001", "ISO13485.7.3.9.OBL.002"]
+      noComplianceGaps: true
+      output: { riskLevel: low, requiresRevalidation: false, impactedComponents: ["label"] }
+
+  - name: "Three-component change is medium risk"
+    agent: ChangeImpactAgent
+    input: { changeId: "CHG-2", scope: ["firmware", "battery", "housing"] }
+    assertions:
+      output: { riskLevel: medium, requiresRevalidation: true }
+
+  - name: "Broad change is high risk"
+    agent: ChangeImpactAgent
+    input: { changeId: "CHG-3", scope: ["a", "b", "c", "d", "e", "f"] }
+    assertions:
+      output: { riskLevel: high, requiresRevalidation: true }
+
+  - name: "Impact assessment blocked without change records"
+    agent: ChangeImpactAgent
+    input: { changeId: "CHG-4", scope: ["label"] }
+    context: { availableEvidenceTypes: [] }
+    assertions:
+      qualificationStatus: BLOCKED
+
+  - name: "Verification with activities passes"
+    agent: ChangeVerificationAgent
+    input: { changeId: "CHG-2", verificationActivities: ["regression test", "usability check"] }
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.7.3.9.OBL.001"]
+      noComplianceGaps: true
+      output: { verified: true, evidence: ["regression test", "usability check"] }
+
+  - name: "Verification without activities fails"
+    agent: ChangeVerificationAgent
+    input: { changeId: "CHG-3", verificationActivities: [] }
+    assertions:
+      output: { verified: false }

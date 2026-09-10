@@ -1,9 +1,48 @@
+name: Trend reporting
+description: EU MDR Art. 83-88 and MDCG 2022-21 — statistical trend detection and narrative reporting.
 scenarios:
   - name: "UCL/LCL signal"
     agent: StatisticalTrendAgent
     input: { series: [3, 4, 3, 5, 4, 3, 25], method: ucl_lcl }
-    assertions: { traceChainValid: true }
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      noComplianceGaps: true
+      # Baseline [3,4,3,5,4,3]: mean 3.667, stddev 0.745 -> UCL 5.903; 25 breaches it.
+      output: { method: ucl_lcl, signal: true, mean: 3.667, controlLimits: { ucl: 5.903, lcl: 1.431 } }
+
+  - name: "UCL/LCL no signal"
+    agent: StatisticalTrendAgent
+    input: { series: [3, 4, 3, 5, 4, 3, 4], method: ucl_lcl }
+    assertions:
+      output: { signal: false }
+
   - name: "Poisson rate spike"
     agent: StatisticalTrendAgent
     input: { series: [2, 3, 2, 3, 2, 12], method: poisson }
-    assertions: { traceChainValid: true }
+    assertions:
+      traceChainValid: true
+      output: { method: poisson, signal: true, mean: 2.4 }
+
+  - name: "Narrative for a confirmed signal"
+    agent: TrendNarrativeAgent
+    input:
+      metric: "complaint_rate"
+      signal: true
+      method: "ucl_lcl"
+      details: { latest: 25, ucl: 23.9 }
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["EUMDR.85.OBL.001", "MDCG2022-21.2.OBL.007"]
+      noComplianceGaps: true
+
+  - name: "Narrative when no signal"
+    agent: TrendNarrativeAgent
+    input:
+      metric: "complaint_rate"
+      signal: false
+      method: "poisson"
+      details: {}
+    assertions:
+      traceChainValid: true
+      noComplianceGaps: true
