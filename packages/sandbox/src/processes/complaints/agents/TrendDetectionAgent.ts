@@ -55,13 +55,17 @@ export class TrendDetectionAgent extends BaseGroundedAgent<TrendInput, TrendOutp
     _o: ObligationNode[],
     _c: ConstraintNode[],
   ): Promise<TrendOutput> {
-    const n = input.series.length;
-    const mean = input.series.reduce((a, b) => a + b, 0) / n;
-    const variance = input.series.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
+    // Control limits come from the baseline (every point before the latest).
+    // Including the latest point would let a single spike inflate its own UCL
+    // and mask the very signal this agent exists to detect.
+    const latest = input.series[input.series.length - 1]!;
+    const baseline = input.series.slice(0, -1);
+    const n = baseline.length;
+    const mean = baseline.reduce((a, b) => a + b, 0) / n;
+    const variance = baseline.reduce((a, b) => a + (b - mean) ** 2, 0) / n;
     const stddev = Math.sqrt(variance);
     const ucl = mean + 3 * stddev;
     const lcl = Math.max(0, mean - 3 * stddev);
-    const latest = input.series[input.series.length - 1]!;
     const signal = latest > ucl || latest < lcl;
     return {
       mean: Number(mean.toFixed(3)),

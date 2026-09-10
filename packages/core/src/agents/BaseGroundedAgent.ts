@@ -254,6 +254,18 @@ export abstract class BaseGroundedAgent<TInput, TOutput> {
     }
   }
 
+  // === Read-only introspection (used by harnesses, registries, and UIs) ===
+
+  /** Obligation ids this agent declares it must satisfy. */
+  get declaredObligations(): string[] {
+    return [...this.getRequiredObligations()];
+  }
+
+  /** Process types this agent is registered for. */
+  get processTypes(): string[] {
+    return [...this.config.processTypes];
+  }
+
   // === Subclass hooks ===
   protected abstract execute(
     input: TInput,

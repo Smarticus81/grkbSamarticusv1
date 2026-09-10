@@ -1,0 +1,81 @@
+name: PSUR compilation
+description: EU MDR Art. 86 and MDCG 2022-21 — structural completeness and grounded section content with mandatory HITL approval.
+scenarios:
+  - name: "Fully drafted PSUR is structurally compliant"
+    agent: PSURStructureAgent
+    input:
+      deviceId: "DEV-1"
+      reportingPeriodStart: "2025-01-01T00:00:00Z"
+      reportingPeriodEnd: "2025-12-31T23:59:59Z"
+      draftedSectionIds:
+        - identification
+        - scope_and_purpose
+        - complaints_summary
+        - vigilance_summary
+        - literature_review
+        - registries_pmcf
+        - sales_volume
+        - population_estimate
+        - incident_fsca_analysis
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      noComplianceGaps: true
+      output: { structurallyCompliant: true, missingSections: [] }
+
+  - name: "Missing sections are reported in MDCG order"
+    agent: PSURStructureAgent
+    input:
+      deviceId: "DEV-1"
+      reportingPeriodStart: "2025-01-01T00:00:00Z"
+      reportingPeriodEnd: "2025-12-31T23:59:59Z"
+      draftedSectionIds: [identification, scope_and_purpose, complaints_summary, vigilance_summary, literature_review, registries_pmcf, sales_volume]
+    assertions:
+      output:
+        structurallyCompliant: false
+        missingSections: [population_estimate, incident_fsca_analysis]
+
+  - name: "Content agent grounds every MDCG §2 section and requires HITL"
+    agent: PSURContentAgent
+    input:
+      deviceId: "DEV-1"
+      complaintCount: 14
+      vigilanceReportCount: 1
+      literatureItems: 6
+      registryRecords: 120
+      salesUnits: 100000
+      populationEstimate: 85000
+      incidentCount: 2
+      fscaCount: 0
+    assertions:
+      traceChainValid: true
+      noComplianceGaps: true
+      output:
+        deviceId: "DEV-1"
+        hitlRequired: true
+        hitlGateId: "HITL.EUMDR.86.PSURApproval"
+        benefitRiskConclusion: "Benefit-risk profile remains favorable (20.00 incidents/Munit)."
+        sections:
+          - { sectionId: complaints_summary, obligationId: "MDCG2022-21.2.OBL.001", evidenceCount: 14 }
+          - { sectionId: vigilance_summary, obligationId: "MDCG2022-21.2.OBL.002" }
+          - { sectionId: literature_review, obligationId: "MDCG2022-21.2.OBL.003" }
+          - { sectionId: registries_pmcf, obligationId: "MDCG2022-21.2.OBL.004" }
+          - { sectionId: sales_volume, obligationId: "MDCG2022-21.2.OBL.005" }
+          - { sectionId: population_estimate, obligationId: "MDCG2022-21.2.OBL.006" }
+          - { sectionId: incident_fsca_analysis, obligationId: "MDCG2022-21.2.OBL.007", evidenceCount: 2 }
+
+  - name: "High incidence rate flags benefit-risk for re-evaluation"
+    agent: PSURContentAgent
+    input:
+      deviceId: "DEV-2"
+      complaintCount: 40
+      vigilanceReportCount: 9
+      literatureItems: 2
+      registryRecords: 0
+      salesUnits: 10000
+      populationEstimate: 9000
+      incidentCount: 5
+      fscaCount: 1
+    assertions:
+      output:
+        benefitRiskConclusion: "Benefit-risk profile flagged for re-evaluation (500.00 incidents/Munit exceeds 100/Munit threshold)."

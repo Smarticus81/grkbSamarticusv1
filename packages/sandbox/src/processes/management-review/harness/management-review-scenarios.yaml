@@ -1,0 +1,87 @@
+name: Management review
+description: ISO 13485 §5.6 — review inputs completeness and management decisions.
+scenarios:
+  - name: "Complete §5.6.2 inputs"
+    agent: MgmtReviewInputsAgent
+    input:
+      reviewPeriodStart: "2025-01-01T00:00:00Z"
+      reviewPeriodEnd: "2025-12-31T23:59:59Z"
+      feedbackCount: 12
+      complaintCount: 3
+      ncCount: 1
+      capaCount: 2
+      internalAuditFindings: 2
+      monitoringAlerts: 5
+      regulatoryChanges: ["EU MDR Art. 10 guidance update"]
+      previousActionsOpen: 0
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      obligationsCovered: ["ISO13485.5.6.OBL.001"]
+      noComplianceGaps: true
+      output:
+        coverageComplete: true
+        missingInputs: []
+        inputs: { complaints: 3, capa: 2, regulatoryChanges: ["EU MDR Art. 10 guidance update"] }
+
+  - name: "Inputs blocked without review records"
+    agent: MgmtReviewInputsAgent
+    input:
+      reviewPeriodStart: "2025-01-01T00:00:00Z"
+      reviewPeriodEnd: "2025-12-31T23:59:59Z"
+      feedbackCount: 0
+      complaintCount: 0
+      ncCount: 0
+      capaCount: 0
+      internalAuditFindings: 0
+      monitoringAlerts: 0
+    context: { availableEvidenceTypes: [] }
+    assertions:
+      qualificationStatus: BLOCKED
+
+  - name: "Decisions cover every input signal"
+    agent: MgmtReviewDecisionAgent
+    input:
+      reviewId: "MR-2025"
+      inputs:
+        feedback: 12
+        complaints: 3
+        nonconformances: 1
+        capa: 2
+        auditFindings: 2
+        monitoring: 5
+        regulatoryChanges: ["EU MDR Art. 10 guidance update"]
+        previousActionsOpen: 0
+      coverageComplete: true
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.5.6.OBL.001", "ISO13485.5.6.OBL.002"]
+      noComplianceGaps: true
+      output:
+        reviewId: "MR-2025"
+        effectivenessConclusion: "QMS reviewed against complete §5.6.2 inputs; effectiveness deemed adequate, subject to listed actions."
+        decisions:
+          - { category: product_improvement, ownerRole: quality_manager }
+          - { category: qms_improvement, ownerRole: quality_manager }
+          - { category: regulatory_response, ownerRole: regulatory_affairs }
+          - { category: resource_need, ownerRole: top_management }
+
+  - name: "Incomplete coverage defers the effectiveness conclusion"
+    agent: MgmtReviewDecisionAgent
+    input:
+      reviewId: "MR-2025-partial"
+      inputs:
+        feedback: 0
+        complaints: 0
+        nonconformances: 0
+        capa: 1
+        auditFindings: 0
+        monitoring: 0
+        regulatoryChanges: []
+        previousActionsOpen: 2
+      coverageComplete: false
+    assertions:
+      output:
+        effectivenessConclusion: "QMS effectiveness conclusion deferred — input coverage incomplete."
+        decisions:
+          - { category: qms_improvement, ownerRole: top_management, dueDateDays: 30 }

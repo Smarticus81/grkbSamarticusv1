@@ -1,0 +1,45 @@
+name: Internal audit
+description: ISO 13485 §8.2.4 — audit planning, finding classification and reporting.
+scenarios:
+  - name: "Plan an audit of production and CAPA"
+    agent: AuditPlanningAgent
+    input: { scope: ["production", "capa"], auditor: "lead_auditor" }
+    assertions:
+      traceChainValid: true
+      qualificationStatus: QUALIFIED
+      obligationsCovered: ["ISO13485.8.2.4.OBL.001", "ISO13485.8.2.4.OBL.003", "ISO13485.8.2.4.OBL.004"]
+      noComplianceGaps: true
+      output: { scope: ["production", "capa"], auditor: "lead_auditor" }
+
+  - name: "Planning blocked without audit programme evidence"
+    agent: AuditPlanningAgent
+    input: { scope: ["production"], auditor: "lead_auditor" }
+    context: { availableEvidenceTypes: [] }
+    assertions:
+      qualificationStatus: BLOCKED
+
+  - name: "Critical observation becomes a major finding"
+    agent: AuditFindingAgent
+    input:
+      auditId: "AUD-1"
+      observations:
+        - "Critical: sterilisation records missing for lot 42"
+        - "Training matrix not updated"
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.2.4.OBL.002"]
+      noComplianceGaps: true
+      output:
+        auditId: "AUD-1"
+        findings:
+          - { id: "AUD-1-F1", classification: major }
+          - { id: "AUD-1-F2", classification: minor }
+
+  - name: "Report closes the audit"
+    agent: AuditReportAgent
+    input: { auditId: "AUD-1", findingsCount: 2 }
+    assertions:
+      traceChainValid: true
+      obligationsCovered: ["ISO13485.8.2.4.OBL.002", "ISO13485.8.2.4.OBL.005"]
+      noComplianceGaps: true
+      output: { auditId: "AUD-1" }

@@ -8,30 +8,49 @@ export interface HarnessTemplateParams {
 }
 
 const HARNESS_TEMPLATE = `# Auto-generated harness for {{processName}}
+# Run with: pnpm test:harness (or POST /api/sandbox/harness/run)
+#
+# Every scenario is isolated: the mock graph is re-seeded with the listed
+# obligations (resolved from packages/core/regulations), evidence defaults to
+# what those obligations require, and the mock LLM is reset. Omit
+# \`mockObligations\` to seed the agent's own declared obligations.
+name: {{processName}}
+defaults:
+  mockObligations:
+{{#each mockObligationsRendered}}
+    - "{{this}}"
+{{/each}}
 scenarios:
 {{#each agents}}
   - name: "{{agentType}} happy path"
     agent: {{agentType}}
     input: {}
-    mockObligations:
-{{#each mockObligationsRendered}}
-      - "{{this}}"
-{{/each}}
     mockLLM: []
     assertions:
       traceChainValid: true
+      qualificationStatus: QUALIFIED
+      noComplianceGaps: true
       confidenceAbove: 0.5
+      hasEvents: [AGENT_COMPLETED]
+
+  - name: "{{agentType}} is blocked without evidence"
+    agent: {{agentType}}
+    input: {}
+    context:
+      availableEvidenceTypes: []
+    assertions:
+      qualificationStatus: BLOCKED
+      hasEvents: [QUALIFICATION_BLOCKED]
 {{/each}}
 `;
 
 export function generateHarnessYAML(params: HarnessTemplateParams): string {
   const engine = new TemplateEngine();
-  const renderedObligations = params.mockObligations.map((o) => ({ this: o }));
+  // Plain strings: the engine binds each item to `{{this}}`; wrapping them in
+  // objects used to render "[object Object]".
   return engine.render(HARNESS_TEMPLATE, {
     processName: params.processDefinition.name,
-    agents: params.agents.map((a) => ({
-      agentType: a.agentType,
-      mockObligationsRendered: renderedObligations,
-    })),
+    mockObligationsRendered: [...params.mockObligations],
+    agents: params.agents.map((a) => ({ agentType: a.agentType })),
   });
 }
