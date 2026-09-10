@@ -352,5 +352,11 @@ export function formatHarnessReport(suites: ScenarioSuiteResult[]): string {
 }
 
 function slug(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'scenario';
+  // Bound the input first, then collapse non-alphanumerics to single dashes.
+  // After collapsing there is at most one leading and one trailing dash, so a
+  // single-character trim is enough (and stays linear for CodeQL's ReDoS check).
+  let out = value.slice(0, 96).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  if (out.startsWith('-')) out = out.slice(1);
+  if (out.endsWith('-')) out = out.slice(0, -1);
+  return out.slice(0, 48) || 'scenario';
 }
